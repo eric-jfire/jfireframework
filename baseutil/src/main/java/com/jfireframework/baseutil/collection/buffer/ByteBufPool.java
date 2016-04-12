@@ -3,12 +3,13 @@ package com.jfireframework.baseutil.collection.buffer;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedTransferQueue;
 
 public abstract class ByteBufPool<T>
 {
-	protected CacheSize[]	sizes;
-	protected Queue<T>[]	arrays;
+	protected CacheSize[]		sizes;
+	protected Queue<T>[]		memorys;
+	protected Queue<ByteBuf<T>>	bufHost;
 	
 	@SuppressWarnings("unchecked")
 	public ByteBufPool()
@@ -31,10 +32,10 @@ public abstract class ByteBufPool<T>
 			index++;
 		}
 		sizes = tmp.toArray(new CacheSize[0]);
-		arrays = new Queue[sizes.length];
+		memorys = new Queue[sizes.length];
 		for (int i = 0; i < sizes.length; i++)
 		{
-			arrays[i] = new ConcurrentLinkedQueue<T>();
+			memorys[i] = new LinkedTransferQueue<T>();
 		}
 	}
 	

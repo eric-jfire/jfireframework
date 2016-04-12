@@ -2,6 +2,7 @@ package com.jfireframework.baseutil.collection.buffer;
 
 import java.nio.ByteBuffer;
 import java.util.Queue;
+import java.util.concurrent.LinkedTransferQueue;
 
 public class DirectByteBufPool extends ByteBufPool<ByteBuffer>
 {
@@ -10,6 +11,8 @@ public class DirectByteBufPool extends ByteBufPool<ByteBuffer>
 	
 	private DirectByteBufPool()
 	{
+		super();
+		bufHost = new LinkedTransferQueue<ByteBuf<ByteBuffer>>();
 	}
 	
 	public static DirectByteBufPool getInstance()
@@ -36,7 +39,7 @@ public class DirectByteBufPool extends ByteBufPool<ByteBuffer>
 		{
 			if (each.biggerThan(need))
 			{
-				ByteBuffer buffer = arrays[each.index()].poll();
+				ByteBuffer buffer = memorys[each.index()].poll();
 				if (buffer != null)
 				{
 					tmp = buffer;
@@ -46,7 +49,7 @@ public class DirectByteBufPool extends ByteBufPool<ByteBuffer>
 				{
 					tmp = ByteBuffer.allocateDirect(each.size());
 				}
-				host = arrays[each.index()];
+				host = memorys[each.index()];
 				break;
 			}
 		}
@@ -58,7 +61,7 @@ public class DirectByteBufPool extends ByteBufPool<ByteBuffer>
 		ByteBuffer src = buf.memory;
 		tmp.put(src);
 		buf.release();
-		buf.host = host;
+		buf.memHost = host;
 		buf.memory = tmp;
 		buf.readIndex(0);
 		buf.writeIndex(tmp.position());
@@ -71,19 +74,30 @@ public class DirectByteBufPool extends ByteBufPool<ByteBuffer>
 		{
 			if (each.biggerThan(size))
 			{
-				ByteBuffer buffer = arrays[each.index()].poll();
+				ByteBuffer buffer = memorys[each.index()].poll();
 				if (buffer != null)
 				{
 					buffer.clear();
-					return new DirectByteBuf(buffer, arrays[each.index()]);
 				}
 				else
 				{
-					return new DirectByteBuf(ByteBuffer.allocateDirect(each.size()), arrays[each.index()]);
+					buffer = ByteBuffer.allocateDirect(each.size());
 				}
+				DirectByteBuf buf = (DirectByteBuf) bufHost.poll();
+				if (buf == null)
+				{
+					buf = new DirectByteBuf(buffer, memorys[each.index()], bufHost);
+					return buf;
+				}
+				else
+				{
+					buf.init(buffer, memorys[each.index()], bufHost);
+					return buf;
+				}
+				
 			}
 		}
-		return new DirectByteBuf(ByteBuffer.allocateDirect(size), null);
+		return new DirectByteBuf(ByteBuffer.allocateDirect(size), null, bufHost);
 	}
 	
 }

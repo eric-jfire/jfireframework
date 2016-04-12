@@ -1,18 +1,12 @@
 package com.jfireframework.jnet.common.decodec;
 
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
-import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
+import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
 import com.jfireframework.jnet.common.exception.BufNotEnoughException;
 import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 
-/**
- * 报文长度整体frame解码器。其中需要解码的长度所代表的长度信息是保温整体的长度信息，也就是包含报文头和报文体一起的总长度
- * 
- * @author eric(eric@jfire.cn)
- * 
- */
-public class TotalLengthFieldBasedFrameDecoder implements FrameDecodec
+public class TotalLengthFieldBasedFrameDecoderByHeap implements FrameDecodec
 {
 	// 代表长度字段开始读取的位置
 	private final int	lengthFieldOffset;
@@ -31,7 +25,7 @@ public class TotalLengthFieldBasedFrameDecoder implements FrameDecodec
 	 * @param skipBytes 解析后的报文需要跳过的位数
 	 * @param maxLength
 	 */
-	public TotalLengthFieldBasedFrameDecoder(int lengthFieldOffset, int lengthFieldLength, int skipBytes, int maxLength)
+	public TotalLengthFieldBasedFrameDecoderByHeap(int lengthFieldOffset, int lengthFieldLength, int skipBytes, int maxLength)
 	{
 		this.lengthFieldLength = lengthFieldLength;
 		this.lengthFieldOffset = lengthFieldOffset;
@@ -48,7 +42,7 @@ public class TotalLengthFieldBasedFrameDecoder implements FrameDecodec
 		{
 			return null;
 		}
-		//iobuffer中可能包含好几个报文，所以这里应该是增加的方式而不是直接设置的方式
+		// iobuffer中可能包含好几个报文，所以这里应该是增加的方式而不是直接设置的方式
 		ioBuffer.addReadIndex(lengthFieldOffset);
 		// 获取到整体报文的长度
 		int length = 0;
@@ -76,7 +70,7 @@ public class TotalLengthFieldBasedFrameDecoder implements FrameDecodec
 		}
 		else
 		{
-			DirectByteBuf result = DirectByteBuf.allocate(length);
+			ByteBuf<?> result = HeapByteBuf.allocate(length);
 			result.put(ioBuffer, length);
 			ioBuffer.addReadIndex(length);
 			if (skipBytes != 0)
@@ -86,5 +80,4 @@ public class TotalLengthFieldBasedFrameDecoder implements FrameDecodec
 			return result;
 		}
 	}
-	
 }

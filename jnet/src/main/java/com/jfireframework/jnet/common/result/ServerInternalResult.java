@@ -5,7 +5,6 @@ import com.jfireframework.jnet.common.exception.SelfCloseException;
 import com.jfireframework.jnet.server.server.ServerChannelInfo;
 import sun.misc.Unsafe;
 
-@SuppressWarnings("restriction")
 public class ServerInternalResult extends AbstractInternalResult
 {
     private static Unsafe       unsafe      = ReflectUtil.getUnsafe();

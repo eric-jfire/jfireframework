@@ -18,10 +18,8 @@ public abstract class ByteBuf<T>
 	protected int					maskRead		= 0;
 	protected int					readIndex		= 0;
 	protected T						memory;
-	protected Queue<T>				host;
-	protected volatile int			release			= UNRELEASE;
-	public static final int			UNRELEASE		= 0;
-	public static final int			RELEASE			= 1;
+	protected Queue<T>				memHost;
+	protected Queue<ByteBuf<T>>		bufHost;
 	protected static final char[]	DIGITS_LOWER	= { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 	protected String				releaseInfo;
 	protected boolean				traceFlag		= false;
@@ -86,25 +84,22 @@ public abstract class ByteBuf<T>
 	
 	public void release()
 	{
-		if (release == UNRELEASE)
+		readIndex = writeIndex = capacity = 0;
+		if (memHost == null)
 		{
-			release = RELEASE;
-			readIndex = writeIndex = capacity = 0;
-			if (host == null)
-			{
-				_release();
-				return;
-			}
-			if (host != null)
-			{
-				host.offer(memory);
-				memory = null;
-			}
-			if (traceFlag)
-			{
-				releaseInfo = CodeLocation.getCodeLocation(2);
-			}
+			_release();
+			return;
 		}
+		if (memHost != null)
+		{
+			memHost.offer(memory);
+			memory = null;
+		}
+		if (traceFlag)
+		{
+			releaseInfo = CodeLocation.getCodeLocation(4);
+		}
+		bufHost.offer(this);
 	}
 	
 	protected abstract void _release();

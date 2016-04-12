@@ -77,15 +77,14 @@ public class ChannelReadHandler implements CompletionHandler<Integer, ServerChan
 	private int frameAndHandle(ServerChannelInfo channelInfo) throws Exception
 	{
 		
-		ByteBuf<?> buf = frameDecodec.decodec(channelInfo.ioBuf());
-		if (buf == null)
+		Object intermediateResult = frameDecodec.decodec(channelInfo.ioBuf());
+		if (intermediateResult == null)
 		{
 			return CONTINUE_READ;
 		}
-		ServerInternalResult result = new ServerInternalResult(buf, channelInfo, 0);
+		ServerInternalResult result = new ServerInternalResult(intermediateResult, channelInfo, 0);
 		channelInfo.addWriteResult(result);
 		DataHandler[] handlers = channelInfo.getHandlers();
-		Object intermediateResult = buf;
 		for (int i = 0; i < handlers.length;)
 		{
 			intermediateResult = handlers[i].handle(intermediateResult, result);
