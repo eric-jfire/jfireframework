@@ -50,11 +50,12 @@ public class Md5Util
 	 * @param length
 	 * @return
 	 */
-	public static String md5(File file, int offset, int length)
+	public static String md5(File file, long offset, long length)
 	{
 		try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r"))
 		{
-			MappedByteBuffer buffer = randomAccessFile.getChannel().map(MapMode.READ_ONLY, offset, length);
+			
+			final MappedByteBuffer buffer = randomAccessFile.getChannel().map(MapMode.READ_ONLY, offset, length);
 			MessageDigest md = MessageDigest.getInstance("MD5");
 			byte[] src;
 			if (length > 1024 * 1024)
@@ -63,16 +64,16 @@ public class Md5Util
 			}
 			else
 			{
-				src = new byte[length];
+				src = new byte[(int) length];
 			}
-			int index = 0;
+			long index = 0;
 			for (; index + src.length < length; index += src.length)
 			{
 				buffer.get(src);
 				md.update(src);
 			}
-			buffer.get(src, 0, length - index);
-			md.update(src, 0, length - index);
+			buffer.get(src, 0, (int) (length - index));
+			md.update(src, 0, (int) (length - index));
 			return StringUtil.toHexString(md.digest());
 		}
 		catch (Exception e)

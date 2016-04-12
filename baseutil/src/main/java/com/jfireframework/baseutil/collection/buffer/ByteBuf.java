@@ -82,7 +82,7 @@ public abstract class ByteBuf<T>
 		return this;
 	}
 	
-	public void release()
+	public void releaseMemOnly()
 	{
 		readIndex = writeIndex = capacity = 0;
 		if (memHost == null)
@@ -90,11 +90,13 @@ public abstract class ByteBuf<T>
 			_release();
 			return;
 		}
-		if (memHost != null)
-		{
-			memHost.offer(memory);
-			memory = null;
-		}
+		memHost.offer(memory);
+		memory = null;
+	}
+	
+	public void release()
+	{
+		releaseMemOnly();
 		if (traceFlag)
 		{
 			releaseInfo = CodeLocation.getCodeLocation(4);

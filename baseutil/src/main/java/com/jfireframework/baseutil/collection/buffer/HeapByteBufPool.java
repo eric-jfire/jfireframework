@@ -57,7 +57,7 @@ public class HeapByteBufPool extends ByteBufPool<byte[]>
 		byte[] src = buf.memory;
 		int length = buf.remainRead();
 		System.arraycopy(src, buf.readIndex, tmp, 0, length);
-		buf.release();
+		buf.releaseMemOnly();
 		buf.memHost = host;
 		buf.memory = tmp;
 		buf.readIndex(0);

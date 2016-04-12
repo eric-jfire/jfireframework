@@ -68,6 +68,7 @@ public class TotalLengthFieldBasedFrameDecoder implements FrameDecodec
 		ioBuffer.resetRead();
 		if (length >= maxLegnth)
 		{
+			System.out.println("数据太长，溢出");
 			throw NotFitProtocolException.instance;
 		}
 		if (length > ioBuffer.remainRead())

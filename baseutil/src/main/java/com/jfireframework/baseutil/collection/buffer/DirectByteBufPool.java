@@ -60,7 +60,7 @@ public class DirectByteBufPool extends ByteBufPool<ByteBuffer>
 		((DirectByteBuf) buf).changeToReadState();
 		ByteBuffer src = buf.memory;
 		tmp.put(src);
-		buf.release();
+		buf.releaseMemOnly();
 		buf.memHost = host;
 		buf.memory = tmp;
 		buf.readIndex(0);

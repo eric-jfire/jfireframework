@@ -107,9 +107,11 @@ class ReadHandler implements DataHandler
 	public Object handle(Object data, InternalResult result) throws JnetException
 	{
 		ByteBuf<?> buf = (ByteBuf<?>) data;
-		return lbseLocal.get().deserialize(buf);
+		Object tmp = lbseLocal.get().deserialize(buf);
+		buf.release();
+		return tmp;
 	}
-
+	
 	@Override
 	public Object catchException(Object data, InternalResult result)
 	{
@@ -168,7 +170,7 @@ class WriteHandler implements DataHandler
 		prepareData(fose, methodName, args, buf);
 		return buf;
 	}
-
+	
 	@Override
 	public Object catchException(Object data, InternalResult result)
 	{
