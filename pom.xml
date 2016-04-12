@@ -7,18 +7,18 @@
 	<version>1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<modules>
-		<module>baseutil</module>
-		<module>codejson</module>
-		<module>context</module>
-		<module>sql</module>
-		<module>mvc</module>
-		<module>fose</module>
-		<module>jnet</module>
-		<module>rpc</module>
-		<module>dbunit</module>
-		<module>job</module>
-		<module>test</module>
-		<module>template</module>
+		<module>jfire-baseutil</module>
+		<module>jfire-codejson</module>
+		<module>jfire-context</module>
+		<module>jfire-sql</module>
+		<module>jfire-mvc</module>
+		<module>jfire-fose</module>
+		<module>jfire-jnet</module>
+		<module>jfire-rpc</module>
+		<module>jfire-dbunit</module>
+		<module>jfire-job</module>
+		<module>jfire-test</module>
+		<module>jfire-template</module>
 	</modules>
 	<dependencies>
 		<dependency>
