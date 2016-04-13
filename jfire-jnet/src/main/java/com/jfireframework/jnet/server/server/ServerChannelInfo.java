@@ -8,18 +8,26 @@ import com.jfireframework.baseutil.collection.SingleProduceAndConsumerQueue;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.disruptor.Disruptor;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
+import com.jfireframework.jnet.common.decodec.FrameDecodec;
+import com.jfireframework.jnet.common.exception.BufNotEnoughException;
+import com.jfireframework.jnet.common.exception.LessThanProtocolException;
+import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.ServerInternalResult;
 import com.jfireframework.jnet.server.CompletionHandler.ChannelReadHandler;
 import com.jfireframework.jnet.server.CompletionHandler.ChannelWriteHandler;
+import sun.misc.Unsafe;
 
+@SuppressWarnings("restriction")
 public class ServerChannelInfo
 {
     // 消息通道的打开状态
     private volatile Boolean                                          openStatus     = Boolean.TRUE;
     private Disruptor                                                 disruptor;
+    private FrameDecodec                                              frameDecodec;
     private ChannelReadHandler                                        channelReadHandler;
     private ChannelWriteHandler                                       channelWriteHandler;
     // 消息自身持有的socket通道
@@ -39,11 +47,46 @@ public class ServerChannelInfo
     private String                                                    address;
     private final SingleProduceAndConsumerQueue<ServerInternalResult> sendQueue      = new SingleProduceAndConsumerQueue<>();
     private DataHandler[]                                             handlers;
-                                                                      
-    public ServerChannelInfo(AsynchronousSocketChannel channel, ChannelReadHandler readHandler, ChannelWriteHandler writeHandler, Disruptor disruptor)
+    private ServerInternalResult[]                                    results;
+    private final int                                                 resultSize;
+    private final static int                                          resultOffset;
+    private final static int                                          resultShift;
+    private final int                                                 resuleSizeMask;
+    private static Unsafe                                             unsafe         = ReflectUtil.getUnsafe();
+    private volatile long                                             cursor;
+    private volatile long                                             wrapPoint;
+    public final static int                                           CONTINUE_READ  = 1;
+    // 暂时不监听监听当前通道上的数据
+    public final static int                                           FREE_OF_READ   = 2;
+    private volatile int                                              readState      = 0;
+    public final static long                                          readStateOff;
+    public final static int                                           IN_READ        = 1;
+    public final static int                                           OUT_OF_READ    = 2;
+                                                                                     
+    static
+    {
+        readStateOff = ReflectUtil.getFieldOffset("readState", ServerChannelInfo.class);
+        resultOffset = unsafe.arrayBaseOffset(ServerInternalResult[].class);
+        int scale = unsafe.arrayIndexScale(ServerInternalResult[].class);
+        if (scale == 4)
+        {
+            resultShift = 2;
+        }
+        else if (scale == 8)
+        {
+            resultShift = 3;
+        }
+        else
+        {
+            throw new RuntimeException("错误的位数");
+        }
+    }
+    
+    public ServerChannelInfo(AsynchronousSocketChannel channel, int resultSize, Disruptor disruptor)
     {
         try
         {
+            results = new ServerInternalResult[resultSize];
             address = channel.getRemoteAddress().toString();
         }
         catch (IOException e)
@@ -51,9 +94,158 @@ public class ServerChannelInfo
             e.printStackTrace();
         }
         this.disruptor = disruptor;
-        channelReadHandler = readHandler;
-        channelWriteHandler = writeHandler;
+        channelReadHandler = new ChannelReadHandler();
+        channelWriteHandler = new ChannelWriteHandler();
         this.channel = channel;
+        resuleSizeMask = resultSize - 1;
+        this.resultSize = resultSize;
+        wrapPoint = resultSize;
+        
+    }
+    
+    public int readState()
+    {
+        return readState;
+    }
+    
+    public void setReadState(int state)
+    {
+        readState = state;
+    }
+    
+    public boolean isAvailable(long cursor)
+    {
+        return cursor > this.cursor;
+    }
+    
+    public void reStartRead()
+    {
+        if (readState == OUT_OF_READ)
+        {
+            if (unsafe.compareAndSwapInt(this, readStateOff, OUT_OF_READ, IN_READ))
+            {
+                doRead();
+            }
+        }
+    }
+    
+    public void doRead()
+    {
+        while (true)
+        {
+            try
+            {
+                int result = frameAndHandle();
+                if (result == CONTINUE_READ)
+                {
+                    startReadWait();
+                    return;
+                }
+                else if (result == ServerChannelInfo.FREE_OF_READ)
+                {
+                    return;
+                }
+            }
+            catch (NotFitProtocolException e)
+            {
+                logger.debug("协议错误，关闭链接");
+                close(e);
+                return;
+            }
+            catch (LessThanProtocolException e)
+            {
+                startReadWait();
+                return;
+            }
+            catch (BufNotEnoughException e)
+            {
+                ioBuf.compact().ensureCapacity(e.getNeedSize());
+                continueRead();
+                return;
+            }
+            catch (Throwable e)
+            {
+                close(e);
+                return;
+            }
+        }
+    }
+    
+    public int frameAndHandle() throws Exception
+    {
+        while (true)
+        {
+            if (cursor >= wrapPoint)
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    wrapPoint = channelWriteHandler.cursor() + resultSize;
+                    if (cursor < wrapPoint)
+                    {
+                        break;
+                    }
+                }
+                if (cursor >= wrapPoint)
+                {
+                    readState = OUT_OF_READ;
+                    return FREE_OF_READ;
+                }
+            }
+            Object intermediateResult = frameDecodec.decodec(ioBuf);
+            if (intermediateResult == null)
+            {
+                return CONTINUE_READ;
+            }
+            ServerInternalResult result = new ServerInternalResult(cursor, intermediateResult, this, 0);
+            putResult(result, cursor);
+            cursor += 1;
+            for (int i = 0; i < handlers.length;)
+            {
+                intermediateResult = handlers[i].handle(intermediateResult, result);
+                if (intermediateResult == DataHandler.skipToWorkRing)
+                {
+                    break;
+                }
+                if (i == result.getIndex())
+                {
+                    i++;
+                    result.setIndex(i);
+                }
+                else
+                {
+                    i = result.getIndex();
+                }
+            }
+            if (intermediateResult instanceof ByteBuf<?>)
+            {
+                result.setData(intermediateResult);
+                result.flowDone();
+                write(result);
+            }
+            if (ioBuf().remainRead() == 0)
+            {
+                return CONTINUE_READ;
+            }
+        }
+        
+    }
+    
+    private void putResult(ServerInternalResult result, long cursor)
+    {
+        unsafe.putObjectVolatile(results, resultOffset + ((cursor & resuleSizeMask) << resultShift), result);
+    }
+    
+    public ServerInternalResult getResult(long cursor)
+    {
+        Object result = unsafe.getObjectVolatile(results, resultOffset + ((cursor & resuleSizeMask) << resultShift));
+        if (result == null)
+        {
+            return null;
+        }
+        else
+        {
+            return (ServerInternalResult) result;
+        }
     }
     
     /**
@@ -88,7 +280,7 @@ public class ServerChannelInfo
         }
         try
         {
-            ServerInternalResult result = new ServerInternalResult(exc, this, 0);
+            ServerInternalResult result = new ServerInternalResult(-1, exc, this, 0);
             Object intermediateResult = exc;
             try
             {
@@ -125,6 +317,7 @@ public class ServerChannelInfo
      */
     public void startReadWait()
     {
+        readState = IN_READ;
         startCountdown = false;
         channel.read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, this, channelReadHandler);
     }
@@ -216,6 +409,11 @@ public class ServerChannelInfo
         return sendQueue.isTop(result);
     }
     
+    public boolean canWrite(ServerInternalResult result)
+    {
+        return result.cursor() == channelWriteHandler.cursor();
+    }
+    
     public void sendOne()
     {
         sendQueue.poll();
@@ -244,6 +442,11 @@ public class ServerChannelInfo
     public DataHandler[] getHandlers()
     {
         return handlers;
+    }
+
+    public void setFrameDecodec(FrameDecodec frameDecodec)
+    {
+        this.frameDecodec = frameDecodec;
     }
     
 }

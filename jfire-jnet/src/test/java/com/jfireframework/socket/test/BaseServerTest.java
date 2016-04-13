@@ -9,6 +9,7 @@ import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.client.AioClient;
 import com.jfireframework.jnet.client.FutureClient;
 import com.jfireframework.jnet.common.decodec.LineBasedFrameDecodec;
+import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.InternalResult;
@@ -31,7 +32,6 @@ public class BaseServerTest
         // 设置包解码器。包解码器用来从tcp的数据流中截取出一个完整的tcp报文
         // 这个解码器是行解码器。使用换行符进行报文切割
         // 当然，开发者也可以根据自己的业务需求，自行定制包解码器。框架本身提供了4种最为常见的包解码器。
-        config.setFrameDecodec(new LineBasedFrameDecodec(1000));
         // 使用上面的配置新建一个服务端对象
         AioServer aioServer = new AioServer(config);
         // 启动服务端
@@ -93,6 +93,7 @@ class myInitListener implements ChannelInitListener
     @Override
     public void channelInit(ServerChannelInfo serverChannelInfo)
     {
+        serverChannelInfo.setFrameDecodec(new LineBasedFrameDecodec(1000));
         // 可以设置通道的读取超时时长。默认为3000毫秒
         serverChannelInfo.setReadTimeout(3000);
         // 可以设置通道无数据的读取等待时长。默认为30分钟

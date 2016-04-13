@@ -32,11 +32,11 @@ public class NewServerTest
             @Override
             public void channelInit(ServerChannelInfo serverChannelInfo)
             {
+                serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
                 serverChannelInfo.setHandlers(new Loghandler(), new EchoHandler(), new LengthPreHandler(0, 4));
             }
             
         });
-        serverConfig.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
         AioServer aioServer = new AioServer(serverConfig);
         aioServer.start();
         AioClient aioClient = new FutureClient();

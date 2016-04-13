@@ -27,7 +27,18 @@ public class ServerConfig
     private int                 socketThreadSize  = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
     private int                 handlerThreadSize = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
     private int                 ringArrayType     = Disruptor.SimpleMult;
+    private int                 resultSize        = 1024;
                                                   
+    public int getResultSize()
+    {
+        return resultSize;
+    }
+    
+    public void setResultSize(int resultSize)
+    {
+        this.resultSize = resultSize;
+    }
+    
     public ChannelInitListener getInitListener()
     {
         return initListener;

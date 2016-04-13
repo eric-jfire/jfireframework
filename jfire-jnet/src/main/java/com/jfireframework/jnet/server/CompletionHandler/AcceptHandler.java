@@ -16,10 +16,8 @@ import com.jfireframework.jnet.server.server.ServerConfig;
 public class AcceptHandler implements CompletionHandler<AsynchronousSocketChannel, Object>
 {
     private AioServer           aioServer;
-    private Logger              logger              = ConsoleLogFactory.getLogger();
+    private Logger              logger = ConsoleLogFactory.getLogger();
     private ServerConfig        config;
-    private ChannelReadHandler  channelReadHandler;
-    private ChannelWriteHandler channelWriteHandler = new ChannelWriteHandler();
     private ChannelInitListener initListener;
     private Disruptor           disruptor;
                                 
@@ -29,7 +27,6 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
         this.initListener = serverConfig.getInitListener();
         Verify.notNull(initListener, "initListener不能为空");
         this.aioServer = aioServer;
-        channelReadHandler = new ChannelReadHandler(serverConfig.getFrameDecodec());
         ServerInternalResultAction[] actions = new ServerInternalResultAction[serverConfig.getHandlerThreadSize()];
         for (int i = 0; i < actions.length; i++)
         {
@@ -48,7 +45,7 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
     {
         try
         {
-            ServerChannelInfo channelInfo = new ServerChannelInfo(socketChannel, channelReadHandler, channelWriteHandler, disruptor);
+            ServerChannelInfo channelInfo = new ServerChannelInfo(socketChannel, config.getResultSize(), disruptor);
             channelInfo.setReadTimeout(config.getReadTiemout());
             channelInfo.setWaitTimeout(config.getWaitTimeout());
             initListener.channelInit(channelInfo);

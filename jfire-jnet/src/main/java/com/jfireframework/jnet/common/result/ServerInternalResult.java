@@ -5,6 +5,7 @@ import com.jfireframework.jnet.common.exception.SelfCloseException;
 import com.jfireframework.jnet.server.server.ServerChannelInfo;
 import sun.misc.Unsafe;
 
+@SuppressWarnings("restriction")
 public class ServerInternalResult extends AbstractInternalResult
 {
     private static Unsafe       unsafe      = ReflectUtil.getUnsafe();
@@ -16,14 +17,21 @@ public class ServerInternalResult extends AbstractInternalResult
     private volatile int        writeState  = UNWRITED;
     private static long         writeOffset = ReflectUtil.getFieldOffset("writeState", ServerInternalResult.class);
     private ServerChannelInfo   channelInfo;
+    private volatile long       cursor;
                                 
-    public ServerInternalResult(Object data, ServerChannelInfo channelInfo, int index)
+    public ServerInternalResult(long cursor, Object data, ServerChannelInfo channelInfo, int index)
     {
         this.channelInfo = channelInfo;
         this.index = index;
         this.data = data;
+        this.cursor = cursor;
         flowState = UNDONE;
         writeState = UNWRITED;
+    }
+    
+    public long cursor()
+    {
+        return cursor;
     }
     
     public void flowDone()
@@ -33,7 +41,7 @@ public class ServerInternalResult extends AbstractInternalResult
     
     public boolean tryWrite()
     {
-        if (writeState == WRITED || channelInfo.isTopWriteResult(this) == false || flowState == UNDONE)
+        if (writeState == WRITED || channelInfo.canWrite(this) == false || flowState == UNDONE)
         {
             return false;
         }

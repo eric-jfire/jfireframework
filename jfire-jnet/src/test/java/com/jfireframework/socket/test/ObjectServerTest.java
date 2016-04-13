@@ -27,12 +27,12 @@ public class ObjectServerTest
         
         ServerConfig serverConfig = new ServerConfig();
         serverConfig.setPort(81);
-        serverConfig.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
         serverConfig.setInitListener(new ChannelInitListener() {
             
             @Override
             public void channelInit(ServerChannelInfo serverChannelInfo)
             {
+                serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
                 serverChannelInfo.setHandlers(new DataHandler() {
                     
                     @Override
