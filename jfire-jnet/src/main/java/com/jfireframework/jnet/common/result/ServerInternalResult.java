@@ -11,22 +11,30 @@ public class ServerInternalResult extends AbstractInternalResult
     private static Unsafe       unsafe      = ReflectUtil.getUnsafe();
     public static final boolean UNDONE      = false;
     public static final boolean DONE        = true;
+    private volatile boolean    flowState   = UNDONE;
     public static final int     UNWRITED    = 0;
     public static final int     WRITED      = 1;
-    private volatile boolean    flowState   = UNDONE;
     private volatile int        writeState  = UNWRITED;
-    private static long         writeOffset = ReflectUtil.getFieldOffset("writeState", ServerInternalResult.class);
+    private static long         _writeState = ReflectUtil.getFieldOffset("writeState", ServerInternalResult.class);
     private ServerChannelInfo   channelInfo;
     private volatile long       cursor;
-                                
+    private static final long   _cursor     = ReflectUtil.getFieldOffset("cursor", ServerInternalResult.class);
+                                            
     public ServerInternalResult(long cursor, Object data, ServerChannelInfo channelInfo, int index)
+    {
+        init(cursor, data, channelInfo, index);
+    }
+    
+    public void init(long cursor, Object data, ServerChannelInfo channelInfo, int index)
     {
         this.channelInfo = channelInfo;
         this.index = index;
         this.data = data;
-        this.cursor = cursor;
+        // this.cursor = cursor;
+        // this.writeState = UNWRITED;
+        unsafe.putOrderedLong(this, _cursor, cursor);
+        unsafe.putOrderedInt(this, _writeState, UNWRITED);
         flowState = UNDONE;
-        writeState = UNWRITED;
     }
     
     public long cursor()
@@ -41,11 +49,11 @@ public class ServerInternalResult extends AbstractInternalResult
     
     public boolean tryWrite()
     {
-        if (writeState == WRITED || channelInfo.canWrite(this) == false || flowState == UNDONE)
+        if (flowState == UNDONE || writeState == WRITED || channelInfo.canWrite(this) == false)
         {
             return false;
         }
-        if (unsafe.compareAndSwapInt(this, writeOffset, UNWRITED, WRITED) == false)
+        if (unsafe.compareAndSwapInt(this, _writeState, UNWRITED, WRITED) == false)
         {
             return false;
         }

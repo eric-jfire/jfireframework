@@ -200,8 +200,16 @@ public class ServerChannelInfo
             {
                 return CONTINUE_READ;
             }
-            ServerInternalResult result = new ServerInternalResult(cursor, intermediateResult, this, 0);
-            putResult(result, cursor);
+            ServerInternalResult result = _getResult(cursor);
+            if (result == null)
+            {
+                result = new ServerInternalResult(cursor, intermediateResult, this, 0);
+                putResult(result, cursor);
+            }
+            else
+            {
+                result.init(cursor, intermediateResult, this, 0);
+            }
             cursor += 1;
             for (int i = 0; i < handlers.length;)
             {
@@ -243,19 +251,24 @@ public class ServerChannelInfo
     {
         if (isAvailable(cursor))
         {
-            Object result = unsafe.getObjectVolatile(results, resultOffset + ((cursor & resuleSizeMask) << resultShift));
-            if (result == null)
-            {
-                return null;
-            }
-            else
-            {
-                return (ServerInternalResult) result;
-            }
+            return _getResult(cursor);
         }
         else
         {
             return null;
+        }
+    }
+    
+    private ServerInternalResult _getResult(long cursor)
+    {
+        Object result = unsafe.getObjectVolatile(results, resultOffset + ((cursor & resuleSizeMask) << resultShift));
+        if (result == null)
+        {
+            return null;
+        }
+        else
+        {
+            return (ServerInternalResult) result;
         }
     }
     
