@@ -38,7 +38,7 @@ public class EchoTest
         config.setPort(8554);
         AioServer aioServer = new AioServer(config);
         aioServer.start();
-        Thread[] threads = new Thread[8];
+        Thread[] threads = new Thread[16];
         for (int i = 0; i < threads.length; i++)
         {
             threads[i] = new Thread(new Runnable() {

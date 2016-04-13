@@ -1,6 +1,7 @@
 package com.jfireframework.jnet.server.CompletionHandler;
 
 import java.nio.channels.CompletionHandler;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Resource;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.jnet.common.result.ServerInternalResult;
@@ -9,11 +10,11 @@ import com.jfireframework.jnet.server.server.ServerChannelInfo;
 @Resource
 public class ChannelWriteHandler implements CompletionHandler<Integer, ServerInternalResult>
 {
-    private volatile long cursor = 0;
+    private volatile AtomicLong cursor = new AtomicLong(0);
     
     public long cursor()
     {
-        return cursor;
+        return cursor.get();
     }
     
     @Override
@@ -33,11 +34,7 @@ public class ChannelWriteHandler implements CompletionHandler<Integer, ServerInt
                 buf.release();
                 ServerChannelInfo channelInfo = result.getChannelInfo();
                 channelInfo.reStartRead();
-                // 不能在sendOne之前尝试获取。否则的话，获取为空，而sendOne之前又有了数据，那么sendOne之后没有发送数据，也没有给其他线程发送数据
-                // channelInfo.sendOne();
-                cursor++;
-                ServerInternalResult next = channelInfo.getResult(cursor);
-                // 上面的方法调用后，后续的result可能会由另外的线程直接就执行了
+                ServerInternalResult next = channelInfo.getResult(cursor.incrementAndGet());
                 if (next != null)
                 {
                     next.getChannelInfo().write(next);

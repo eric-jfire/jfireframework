@@ -24,8 +24,11 @@ import sun.misc.Unsafe;
 @SuppressWarnings("restriction")
 public class ServerChannelInfo
 {
+    public final static int                                           OPEN           = 1;
+    public final static int                                           CLOSE          = 2;
     // 消息通道的打开状态
-    private volatile Boolean                                          openStatus     = Boolean.TRUE;
+    private volatile int                                              openState      = OPEN;
+    private static final long                                         openStateOff;
     private Disruptor                                                 disruptor;
     private FrameDecodec                                              frameDecodec;
     private ChannelReadHandler                                        channelReadHandler;
@@ -66,6 +69,7 @@ public class ServerChannelInfo
     static
     {
         readStateOff = ReflectUtil.getFieldOffset("readState", ServerChannelInfo.class);
+        openStateOff = ReflectUtil.getFieldOffset("openState", ServerChannelInfo.class);
         resultOffset = unsafe.arrayBaseOffset(ServerInternalResult[].class);
         int scale = unsafe.arrayIndexScale(ServerInternalResult[].class);
         if (scale == 4)
@@ -115,7 +119,7 @@ public class ServerChannelInfo
     
     public boolean isAvailable(long cursor)
     {
-        return cursor > this.cursor;
+        return cursor < this.cursor;
     }
     
     public void reStartRead()
@@ -237,14 +241,21 @@ public class ServerChannelInfo
     
     public ServerInternalResult getResult(long cursor)
     {
-        Object result = unsafe.getObjectVolatile(results, resultOffset + ((cursor & resuleSizeMask) << resultShift));
-        if (result == null)
+        if (isAvailable(cursor))
         {
-            return null;
+            Object result = unsafe.getObjectVolatile(results, resultOffset + ((cursor & resuleSizeMask) << resultShift));
+            if (result == null)
+            {
+                return null;
+            }
+            else
+            {
+                return (ServerInternalResult) result;
+            }
         }
         else
         {
-            return (ServerInternalResult) result;
+            return null;
         }
     }
     
@@ -255,7 +266,7 @@ public class ServerChannelInfo
      */
     public boolean isOpen()
     {
-        return openStatus;
+        return openState == OPEN;
     }
     
     /**
@@ -263,43 +274,35 @@ public class ServerChannelInfo
      */
     public void close(Throwable exc)
     {
-        if (openStatus == false)
+        if (openState == CLOSE)
         {
             return;
         }
-        synchronized (openStatus)
+        if (unsafe.compareAndSwapInt(this, openStateOff, OPEN, CLOSE))
         {
-            if (openStatus)
-            {
-                openStatus = false;
-            }
-            else
-            {
-                return;
-            }
-        }
-        try
-        {
-            ServerInternalResult result = new ServerInternalResult(-1, exc, this, 0);
-            Object intermediateResult = exc;
             try
             {
-                for (DataHandler each : handlers)
+                ServerInternalResult result = new ServerInternalResult(-1, exc, this, 0);
+                Object intermediateResult = exc;
+                try
                 {
-                    intermediateResult = each.catchException(intermediateResult, result);
+                    for (DataHandler each : handlers)
+                    {
+                        intermediateResult = each.catchException(intermediateResult, result);
+                    }
                 }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                channel.close();
             }
-            catch (Exception e)
+            catch (IOException e)
             {
-                e.printStackTrace();
+                logger.error("关闭通道异常", e);
             }
-            channel.close();
+            ioBuf.release();
         }
-        catch (IOException e)
-        {
-            logger.error("关闭通道异常", e);
-        }
-        ioBuf.release();
     }
     
     public DirectByteBuf ioBuf()
@@ -443,7 +446,7 @@ public class ServerChannelInfo
     {
         return handlers;
     }
-
+    
     public void setFrameDecodec(FrameDecodec frameDecodec)
     {
         this.frameDecodec = frameDecodec;
