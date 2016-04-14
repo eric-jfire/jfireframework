@@ -1,7 +1,6 @@
 package com.jfireframework.jnet.common.result;
 
-import com.jfireframework.jnet.client.ClientChannelInfo;
-import com.jfireframework.jnet.common.exception.SelfCloseException;
+import com.jfireframework.jnet.common.channel.ClientChannelInfo;
 
 public class ClientInternalResult extends AbstractInternalResult
 {
@@ -23,17 +22,6 @@ public class ClientInternalResult extends AbstractInternalResult
     {
         this.channelInfo = channelInfo;
     }
-    
-    @Override
-    public void closeChannel(Throwable e)
-    {
-        channelInfo.close(e);
-    }
-    
-    @Override
-    public void closeChannel()
-    {
-        channelInfo.close(new SelfCloseException());
-    }
+
     
 }

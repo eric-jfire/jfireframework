@@ -30,9 +30,7 @@ public class EchoHandler implements DataHandler
 	@Override
 	public Object catchException(Object data, InternalResult result)
 	{
-		System.out.println("服务端出现异常" + ((ServerInternalResult) result).getChannelInfo().left() + "," + CodeLocation.getCodeLocation(3));
 		Throwable e = (Throwable) data;
-		// e.printStackTrace();
 		return data;
 	}
 	

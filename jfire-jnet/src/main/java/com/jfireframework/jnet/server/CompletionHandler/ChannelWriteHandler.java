@@ -4,8 +4,8 @@ import java.nio.channels.CompletionHandler;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Resource;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
+import com.jfireframework.jnet.common.channel.ServerChannelInfo;
 import com.jfireframework.jnet.common.result.ServerInternalResult;
-import com.jfireframework.jnet.server.server.ServerChannelInfo;
 
 @Resource
 public class ChannelWriteHandler implements CompletionHandler<Integer, ServerInternalResult>

@@ -8,14 +8,14 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.client.AioClient;
 import com.jfireframework.jnet.client.FutureClient;
+import com.jfireframework.jnet.common.channel.ChannelInitListener;
+import com.jfireframework.jnet.common.channel.ServerChannelInfo;
 import com.jfireframework.jnet.common.decodec.LineBasedFrameDecodec;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.InternalResult;
 import com.jfireframework.jnet.server.server.AioServer;
-import com.jfireframework.jnet.server.server.ChannelInitListener;
-import com.jfireframework.jnet.server.server.ServerChannelInfo;
 import com.jfireframework.jnet.server.server.ServerConfig;
 
 public class BaseServerTest

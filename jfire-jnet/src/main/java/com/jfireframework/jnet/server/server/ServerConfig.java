@@ -3,6 +3,7 @@ package com.jfireframework.jnet.server.server;
 import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.baseutil.disruptor.waitstrategy.BlockWaitStrategy;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
+import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 
 /**

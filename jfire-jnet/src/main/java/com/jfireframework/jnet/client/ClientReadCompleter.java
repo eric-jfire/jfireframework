@@ -1,7 +1,11 @@
 package com.jfireframework.jnet.client;
 
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import com.jfireframework.baseutil.collection.buffer.ByteBuf;
+import java.util.concurrent.TimeUnit;
+import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
+import com.jfireframework.jnet.common.channel.ClientChannelInfo;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 import com.jfireframework.jnet.common.exception.BufNotEnoughException;
 import com.jfireframework.jnet.common.exception.EndOfStreamException;
@@ -12,17 +16,37 @@ import com.jfireframework.jnet.common.result.ClientInternalResult;
 
 public class ClientReadCompleter implements CompletionHandler<Integer, ClientChannelInfo>
 {
-	private DataHandler[]	handlers;
-	private FrameDecodec	frameDecodec;
+	private AsynchronousSocketChannel	socketChannel;
+	private DataHandler[]				handlers;
+	private FrameDecodec				frameDecodec;
+	private final boolean				futureClient;
+	private volatile long				cursor	= 0;
+	private final DirectByteBuf			ioBuf	= DirectByteBuf.allocate(100);
+	private final ClientChannelInfo		channelInfo;
+	protected long						readTimeout;
+	protected long						waitTimeout;
 	
-	public ClientReadCompleter(FrameDecodec frameDecodec, DataHandler... handlers)
+	public ClientReadCompleter(AioClient aioClient, ClientChannelInfo channelInfo)
 	{
-		if (handlers == null || handlers.length == 0)
+		if (aioClient instanceof FutureClient)
 		{
-			throw new RuntimeException("参数不能为空");
+			futureClient = true;
 		}
-		this.handlers = handlers;
-		this.frameDecodec = frameDecodec;
+		else
+		{
+			futureClient = false;
+		}
+		this.channelInfo = channelInfo;
+		readTimeout = channelInfo.getReadTimeout();
+		waitTimeout = channelInfo.getWaitTimeout();
+		frameDecodec = channelInfo.getFrameDecodec();
+		handlers = channelInfo.getHandlers();
+		socketChannel = channelInfo.socketChannel();
+	}
+	
+	public long cursor()
+	{
+		return cursor;
 	}
 	
 	@Override
@@ -30,11 +54,9 @@ public class ClientReadCompleter implements CompletionHandler<Integer, ClientCha
 	{
 		if (result == -1)
 		{
-			// 调用一个具体的方法将所有的future销毁
-			channelInfo.close(new EndOfStreamException());
+			catchThrowable(new EndOfStreamException());
 			return;
 		}
-		ByteBuf<?> ioBuf = channelInfo.ioBuf();
 		ioBuf.addWriteIndex(result);
 		Object decodeResult = null;
 		do
@@ -58,45 +80,82 @@ public class ClientReadCompleter implements CompletionHandler<Integer, ClientCha
 							i = internalResult.getIndex();
 						}
 					}
-					channelInfo.popOneFuture(decodeResult);
+					if (futureClient)
+					{
+						channelInfo.signal(decodeResult, cursor);
+						cursor += 1;
+					}
 				}
 				if (ioBuf.remainRead() == 0)
 				{
-					channelInfo.readAndWait();
+					readAndWait();
 					return;
 				}
 			}
 			catch (NotFitProtocolException e)
 			{
-				channelInfo.close(e);
+				catchThrowable(e);
 				return;
 			}
 			catch (BufNotEnoughException e)
 			{
 				ioBuf.compact();
 				ioBuf.ensureCapacity(e.getNeedSize());
-				channelInfo.continueRead();
+				continueRead();
 				return;
 			}
 			catch (LessThanProtocolException e)
 			{
-				channelInfo.readAndWait();
+				readAndWait();
 				return;
 			}
 			catch (Exception e)
 			{
-				channelInfo.close(e);
+				catchThrowable(e);
 				return;
 			}
 		} while (decodeResult != null);
-		channelInfo.readAndWait();
+		readAndWait();
 	}
 	
 	@Override
 	public void failed(Throwable exc, ClientChannelInfo channelInfo)
 	{
-		// 调用一个具体的方法将所有的future销毁
-		channelInfo.close(exc);
+		catchThrowable(exc);
+	}
+	
+	private void catchThrowable(Throwable e)
+	{
+		channelInfo.closeChannel();
+		ClientInternalResult result = new ClientInternalResult(e, null, 0);
+		Object tmp = e;
+		for (DataHandler each : handlers)
+		{
+			tmp = each.catchException(tmp, result);
+		}
+		ioBuf.release();
+		if (futureClient)
+		{
+			channelInfo.signalAll(e, cursor);
+		}
+	}
+	
+	public void continueRead()
+	{
+		socketChannel.read(getReadBuffer(), readTimeout, TimeUnit.MILLISECONDS, channelInfo, this);
+	}
+	
+	public void readAndWait()
+	{
+		socketChannel.read(getReadBuffer(), waitTimeout, TimeUnit.MILLISECONDS, channelInfo, this);
+	}
+	
+	private ByteBuffer getReadBuffer()
+	{
+		ioBuf.compact();
+		ByteBuffer ioBuffer = ioBuf.nioBuffer();
+		ioBuffer.position(ioBuffer.limit()).limit(ioBuffer.capacity());
+		return ioBuffer;
 	}
 	
 }

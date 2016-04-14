@@ -6,6 +6,8 @@ import org.junit.Test;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.jnet.client.FutureClient;
+import com.jfireframework.jnet.common.channel.ChannelInitListener;
+import com.jfireframework.jnet.common.channel.ServerChannelInfo;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoderByHeap;
 import com.jfireframework.jnet.common.exception.EndOfStreamException;
 import com.jfireframework.jnet.common.exception.JnetException;
@@ -13,8 +15,6 @@ import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
 import com.jfireframework.jnet.common.result.InternalResult;
 import com.jfireframework.jnet.server.server.AioServer;
-import com.jfireframework.jnet.server.server.ChannelInitListener;
-import com.jfireframework.jnet.server.server.ServerChannelInfo;
 import com.jfireframework.jnet.server.server.ServerConfig;
 
 public class EchoTest

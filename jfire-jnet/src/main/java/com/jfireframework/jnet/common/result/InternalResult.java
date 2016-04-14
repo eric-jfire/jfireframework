@@ -38,11 +38,4 @@ public interface InternalResult
 	 */
 	public void closeChannel();
 	
-	/**
-	 * 关闭当前的通道，并且传递一个异常
-	 * 
-	 * @param e
-	 */
-	public void closeChannel(Throwable e);
-	
 }

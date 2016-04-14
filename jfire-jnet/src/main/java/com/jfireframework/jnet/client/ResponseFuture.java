@@ -15,6 +15,21 @@ public class ResponseFuture implements Future<Object>
 	protected final Condition	hasResponse;
 	protected Throwable			e;
 	
+	public void setResult(Object result)
+	{
+		this.result = result;
+	}
+	
+	public void setE(Throwable e)
+	{
+		this.e = e;
+	}
+	
+	public Condition getHasResponse()
+	{
+		return hasResponse;
+	}
+	
 	public ResponseFuture(Lock lock, Condition hasResponse)
 	{
 		this.lock = lock;
