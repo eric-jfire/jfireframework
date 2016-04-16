@@ -17,13 +17,11 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
 {
     private AioServer           aioServer;
     private Logger              logger = ConsoleLogFactory.getLogger();
-    private ServerConfig        config;
     private ChannelInitListener initListener;
     private Disruptor           disruptor;
-                                
+    
     public AcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
-        config = serverConfig;
         this.initListener = serverConfig.getInitListener();
         Verify.notNull(initListener, "initListener不能为空");
         this.aioServer = aioServer;
@@ -45,12 +43,15 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
     {
         try
         {
-            ServerChannelInfo channelInfo = new ServerChannelInfo(socketChannel, config.getResultSize(), disruptor);
-            channelInfo.setReadTimeout(config.getReadTiemout());
-            channelInfo.setWaitTimeout(config.getWaitTimeout());
+            ServerChannelInfo channelInfo = new ServerChannelInfo();
+            channelInfo.setChannel(socketChannel);
             initListener.channelInit(channelInfo);
-            logger.debug("开启一个新通道{}", channelInfo.getAddress());
-            channelInfo.startReadWait();
+            Verify.notNull(channelInfo.getResultArray(), "没有设置entryArraySize");
+            Verify.notNull(channelInfo.getFrameDecodec(), "没有设置framedecodec");
+            Verify.notNull(channelInfo.getHandlers(), "没有设置Datahandler");
+            ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelInfo, disruptor);
+            logger.debug("开启一个新通道{}", channelInfo.getRemoteAddress());
+            readCompletionHandler.startReadWait();
             aioServer.getServerSocketChannel().accept(null, this);
         }
         catch (Exception e)

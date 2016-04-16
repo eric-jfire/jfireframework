@@ -4,23 +4,16 @@ import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.baseutil.disruptor.waitstrategy.BlockWaitStrategy;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
-import com.jfireframework.jnet.common.decodec.FrameDecodec;
 
 /**
  * 服务器的配置类，用以配置初始化服务器的信息。
- * 其中默认读取超时为3秒，空闲等待为30秒
  * 
- * @author 林斌（windfire@zailanghua.com）
- *         
+ * @author 林斌（eric@jfire.cn）
+ * 
  */
 public class ServerConfig
 {
     private ChannelInitListener initListener;
-    private FrameDecodec        frameDecodec;
-    // 链接空闲时的等待时间，默认为30分钟
-    private long                waitTimeout       = 1000 * 60 * 30;
-    // 读取超时时间，默认为3秒
-    private long                readTiemout       = 10000;
     // 服务器的启动端口
     private int                 port;
     private WaitStrategy        waitStrategy      = new BlockWaitStrategy();
@@ -28,17 +21,6 @@ public class ServerConfig
     private int                 socketThreadSize  = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
     private int                 handlerThreadSize = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
     private int                 ringArrayType     = Disruptor.SimpleMult;
-    private int                 resultSize        = 512;
-                                                  
-    public int getResultSize()
-    {
-        return resultSize;
-    }
-    
-    public void setResultSize(int resultSize)
-    {
-        this.resultSize = resultSize;
-    }
     
     public ChannelInitListener getInitListener()
     {
@@ -48,38 +30,6 @@ public class ServerConfig
     public void setInitListener(ChannelInitListener initListener)
     {
         this.initListener = initListener;
-    }
-    
-    public FrameDecodec getFrameDecodec()
-    {
-        return frameDecodec;
-    }
-    
-    public void setFrameDecodec(FrameDecodec frameDecodec)
-    {
-        this.frameDecodec = frameDecodec;
-    }
-    
-    public long getWaitTimeout()
-    {
-        return waitTimeout;
-    }
-    
-    public ServerConfig setWaitTimeout(long waitTimeout)
-    {
-        this.waitTimeout = waitTimeout;
-        return this;
-    }
-    
-    public long getReadTiemout()
-    {
-        return readTiemout;
-    }
-    
-    public ServerConfig setReadTiemout(long readTiemout)
-    {
-        this.readTiemout = readTiemout;
-        return this;
     }
     
     public int getPort()

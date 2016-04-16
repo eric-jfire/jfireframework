@@ -8,9 +8,8 @@ import com.jfireframework.baseutil.collection.buffer.HeapByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.client.FutureClient;
+import com.jfireframework.jnet.common.channel.ChannelInfo;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
-import com.jfireframework.jnet.common.channel.ServerChannelInfo;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
@@ -30,8 +29,9 @@ public class NewServerTest
         serverConfig.setInitListener(new ChannelInitListener() {
             
             @Override
-            public void channelInit(ServerChannelInfo serverChannelInfo)
+            public void channelInit(ChannelInfo serverChannelInfo)
             {
+                serverChannelInfo.setResultArrayLength(128);
                 serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
                 serverChannelInfo.setHandlers(new Loghandler(), new EchoHandler(), new LengthPreHandler(0, 4));
             }
@@ -39,8 +39,8 @@ public class NewServerTest
         });
         AioServer aioServer = new AioServer(serverConfig);
         aioServer.start();
-        AioClient aioClient = new FutureClient();
-        aioClient.setAddress("127.0.0.1").setPort(81).setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
+        AioClient aioClient = new AioClient();
+        aioClient.setAddress("127.0.0.1").setPort(81);
         aioClient.setWriteHandlers(new DataHandler() {
             
             @Override
@@ -60,24 +60,33 @@ public class NewServerTest
                 return null;
             }
         }, new LengthPreHandler(0, 4));
-        aioClient.setReadHandlers(new DataHandler() {
+        aioClient.setInitListener(new ChannelInitListener() {
             
             @Override
-            public Object handle(Object data, InternalResult client)
+            public void channelInit(ChannelInfo channelInfo)
             {
-                ByteBuf<?> val = (ByteBuf<?>) data;
-                System.out.println(val);
-                byte[] src = val.toArray();
-                val.release();
-                logger.debug("线程名称");
-                return new String(src, Charset.forName("utf8"));
-            }
-            
-            @Override
-            public Object catchException(Object data, InternalResult result)
-            {
-                // TODO Auto-generated method stub
-                return null;
+                channelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
+                channelInfo.setHandlers(new DataHandler() {
+                    
+                    @Override
+                    public Object handle(Object data, InternalResult client)
+                    {
+                        ByteBuf<?> val = (ByteBuf<?>) data;
+                        System.out.println(val);
+                        byte[] src = val.toArray();
+                        val.release();
+                        logger.debug("线程名称");
+                        return new String(src, Charset.forName("utf8"));
+                    }
+                    
+                    @Override
+                    public Object catchException(Object data, InternalResult result)
+                    {
+                        // TODO Auto-generated method stub
+                        return null;
+                    }
+                });
+                channelInfo.setResultArrayLength(128);
             }
         });
         aioClient.connect();

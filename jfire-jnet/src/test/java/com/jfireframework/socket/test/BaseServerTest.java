@@ -7,11 +7,9 @@ import com.jfireframework.baseutil.collection.buffer.DirectByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.client.FutureClient;
+import com.jfireframework.jnet.common.channel.ChannelInfo;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
-import com.jfireframework.jnet.common.channel.ServerChannelInfo;
 import com.jfireframework.jnet.common.decodec.LineBasedFrameDecodec;
-import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.InternalResult;
@@ -36,9 +34,8 @@ public class BaseServerTest
         AioServer aioServer = new AioServer(config);
         // 启动服务端
         aioServer.start();
-        AioClient aioClient = new FutureClient();
+        AioClient aioClient = new AioClient();
         aioClient.setAddress("127.0.0.1").setPort(81);
-        aioClient.setFrameDecodec(new LineBasedFrameDecodec(100));
         aioClient.setWriteHandlers(new DataHandler() {
             
             @Override
@@ -59,22 +56,33 @@ public class BaseServerTest
                 return null;
             }
         });
-        aioClient.setReadHandlers(new DataHandler() {
+        aioClient.setInitListener(new ChannelInitListener() {
             
             @Override
-            public Object handle(Object data, InternalResult result) throws JnetException
+            public void channelInit(ChannelInfo channelInfo)
             {
-                ByteBuf<?> buf = (ByteBuf<?>) data;
-                String value = buf.readString();
-                buf.release();
-                return value;
-            }
-            
-            @Override
-            public Object catchException(Object data, InternalResult result)
-            {
-                // TODO Auto-generated method stub
-                return null;
+                channelInfo.setResultArrayLength(128);
+                channelInfo.setFrameDecodec(new LineBasedFrameDecodec(1000));
+                channelInfo.setHandlers(new DataHandler() {
+                    
+                    @Override
+                    public Object handle(Object data, InternalResult result) throws JnetException
+                    {
+                        System.out.println("收到数据");
+                        ByteBuf<?> buf = (ByteBuf<?>) data;
+                        String value = buf.readString();
+                        buf.release();
+                        return value;
+                    }
+                    
+                    @Override
+                    public Object catchException(Object data, InternalResult result)
+                    {
+                        Throwable e = (Throwable) data;
+                        e.printStackTrace();
+                        return null;
+                    }
+                });
             }
         });
         // 使用对应的参数链接服务端
@@ -91,8 +99,9 @@ class myInitListener implements ChannelInitListener
     
     // 当通道被建立的时候触发
     @Override
-    public void channelInit(ServerChannelInfo serverChannelInfo)
+    public void channelInit(ChannelInfo serverChannelInfo)
     {
+        serverChannelInfo.setResultArrayLength(128);
         serverChannelInfo.setFrameDecodec(new LineBasedFrameDecodec(1000));
         // 可以设置通道的读取超时时长。默认为3000毫秒
         serverChannelInfo.setReadTimeout(3000);
@@ -117,7 +126,8 @@ class myInitListener implements ChannelInitListener
             @Override
             public Object catchException(Object data, InternalResult result)
             {
-                // TODO Auto-generated method stub
+                Throwable e = (Throwable) data;
+                e.printStackTrace();
                 return null;
             }
         }, new DataHandler() {

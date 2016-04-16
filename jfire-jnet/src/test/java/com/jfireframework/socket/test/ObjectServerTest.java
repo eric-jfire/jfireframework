@@ -6,9 +6,8 @@ import com.jfireframework.baseutil.collection.buffer.DirectByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.client.AsyncClient;
+import com.jfireframework.jnet.common.channel.ChannelInfo;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
-import com.jfireframework.jnet.common.channel.ServerChannelInfo;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
@@ -30,8 +29,9 @@ public class ObjectServerTest
         serverConfig.setInitListener(new ChannelInitListener() {
             
             @Override
-            public void channelInit(ServerChannelInfo serverChannelInfo)
+            public void channelInit(ChannelInfo serverChannelInfo)
             {
+                serverChannelInfo.setResultArrayLength(128);
                 serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
                 serverChannelInfo.setHandlers(new DataHandler() {
                     
@@ -57,8 +57,9 @@ public class ObjectServerTest
         });
         AioServer aioServer = new AioServer(serverConfig);
         aioServer.start();
-        AioClient aioClient = new AsyncClient();
-        aioClient.setPort(81).setAddress("127.0.0.1").setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
+        AioClient aioClient = new AioClient();
+        aioClient.setAsync(true);
+        aioClient.setPort(81).setAddress("127.0.0.1");
         aioClient.setWriteHandlers(new DataHandler() {
             
             @Override
@@ -87,26 +88,35 @@ public class ObjectServerTest
                 return null;
             }
         }, new LengthPreHandler(0, 4));
-        aioClient.setReadHandlers(new DataHandler() {
+        aioClient.setInitListener(new ChannelInitListener() {
             
             @Override
-            public Object handle(Object data, InternalResult result) throws JnetException
+            public void channelInit(ChannelInfo channelInfo)
             {
-                ByteBuf<?> buf = (ByteBuf<?>) data;
-                if (buf.remainRead() == 0)
-                {
-                    System.out.println("没有信息");
-                    return null;
-                }
-                System.out.println(new Person(buf.readString(), buf.readInt(), buf.readFloat()));
-                return null;
-            }
-            
-            @Override
-            public Object catchException(Object data, InternalResult result)
-            {
-                // TODO Auto-generated method stub
-                return null;
+                channelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
+                channelInfo.setHandlers(new DataHandler() {
+                    
+                    @Override
+                    public Object handle(Object data, InternalResult result) throws JnetException
+                    {
+                        ByteBuf<?> buf = (ByteBuf<?>) data;
+                        if (buf.remainRead() == 0)
+                        {
+                            System.out.println("没有信息");
+                            return null;
+                        }
+                        System.out.println(new Person(buf.readString(), buf.readInt(), buf.readFloat()));
+                        return null;
+                    }
+                    
+                    @Override
+                    public Object catchException(Object data, InternalResult result)
+                    {
+                        // TODO Auto-generated method stub
+                        return null;
+                    }
+                });
+                channelInfo.setResultArrayLength(128);
             }
         });
         aioClient.connect();
