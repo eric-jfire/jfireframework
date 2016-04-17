@@ -31,6 +31,7 @@ public class EchoHandler implements DataHandler
 	public Object catchException(Object data, InternalResult result)
 	{
 		Throwable e = (Throwable) data;
+		e.printStackTrace();
 		return data;
 	}
 	

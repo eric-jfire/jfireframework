@@ -30,8 +30,8 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     public final static int              CONTINUE_READ  = 1;
     // 暂时不监听监听当前通道上的数据
     public final static int              FREE_OF_READ   = 2;
-    private volatile int                 readState      = 0;
-    public final static long             _readState;
+    private volatile int                 readState      = IN_READ;
+    public final static long             _readState     = ReflectUtil.getFieldOffset("readState", ReadCompletionHandler.class);
     public final static int              IN_READ        = 1;
     public final static int              OUT_OF_READ    = 2;
     private volatile long                cursor;
@@ -47,10 +47,6 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     // 启动读取超时的计数
     private boolean                      startCountdown = false;
     private final Disruptor              disruptor;
-    static
-    {
-        _readState = ReflectUtil.getFieldOffset("readState", ReadCompletionHandler.class);
-    }
     
     public ReadCompletionHandler(ServerChannelInfo channelInfo, Disruptor disruptor)
     {
@@ -133,8 +129,6 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
                 }
                 else if (result == FREE_OF_READ)
                 {
-                    // logger.trace("暂停读取，当前读取{}", cursor - 1);
-                    readState = OUT_OF_READ;
                     return;
                 }
             }
@@ -165,21 +159,44 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
         }
     }
     
+    public void reStartRead()
+    {
+        if (readState == OUT_OF_READ)
+        {
+            if (unsafe.compareAndSwapInt(this, _readState, OUT_OF_READ, IN_READ))
+            {
+                // logger.trace("恢复读取，当前读取{}", cursor - 1);
+                doRead();
+            }
+        }
+    }
+    
     public int frameAndHandle() throws Exception
     {
         while (true)
         {
             testcursor: if (cursor >= wrapPoint)
             {
-                for (int i = 0; i < 2; i++)
+                wrapPoint = writeCompletionHandler.cursor() + channelInfo.getEntryArraySize();
+                if (cursor < wrapPoint)
                 {
-                    wrapPoint = writeCompletionHandler.cursor() + channelInfo.getEntryArraySize();
-                    if (cursor < wrapPoint)
+                    break testcursor;
+                }
+                // 在设置之前，可能写线程已经将所有的数据都写出完毕了并且写线程结束运行。此时就不会有人来唤醒读取线程了
+                readState = OUT_OF_READ;
+                // 设置之后必须进行尝试
+                wrapPoint = writeCompletionHandler.cursor() + channelInfo.getEntryArraySize();
+                if (cursor < wrapPoint)
+                {
+                    if (unsafe.compareAndSwapInt(this, _readState, OUT_OF_READ, IN_READ))
                     {
                         break testcursor;
                     }
+                    else
+                    {
+                        return FREE_OF_READ;
+                    }
                 }
-                readState = OUT_OF_READ;
                 return FREE_OF_READ;
             }
             Object intermediateResult = frameDecodec.decodec(ioBuf);
@@ -187,9 +204,16 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             {
                 return CONTINUE_READ;
             }
-            ServerInternalResult result = new ServerInternalResult(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
-            channelInfo.putResult(result, cursor);
-            // logger.trace("当前读取:{}", cursor);
+            ServerInternalResult result = (ServerInternalResult) channelInfo.getResult(cursor);
+            if (result == null)
+            {
+                result = new ServerInternalResult(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
+                channelInfo.putResult(result, cursor);
+            }
+            else
+            {
+                result.init(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
+            }
             cursor += 1;
             for (int i = 0; i < handlers.length;)
             {
@@ -231,7 +255,6 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
      */
     public void startReadWait()
     {
-        readState = IN_READ;
         startCountdown = false;
         channelInfo.getChannel().read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, channelInfo, this);
     }
@@ -272,18 +295,6 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     private long getRemainTime()
     {
         return endReadTime - lastReadTime;
-    }
-    
-    public void reStartRead()
-    {
-        if (readState == OUT_OF_READ)
-        {
-            if (unsafe.compareAndSwapInt(this, _readState, OUT_OF_READ, IN_READ))
-            {
-                // logger.trace("恢复读取，当前读取{}", cursor - 1);
-                doRead();
-            }
-        }
     }
     
     public void turnToWorkDisruptor(ServerInternalResult result)

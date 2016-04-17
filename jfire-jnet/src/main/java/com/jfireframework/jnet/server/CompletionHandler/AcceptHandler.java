@@ -50,7 +50,7 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
             Verify.notNull(channelInfo.getFrameDecodec(), "没有设置framedecodec");
             Verify.notNull(channelInfo.getHandlers(), "没有设置Datahandler");
             ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelInfo, disruptor);
-            logger.debug("开启一个新通道{}", channelInfo.getRemoteAddress());
+//            logger.debug("开启一个新通道{}", channelInfo.getRemoteAddress());
             readCompletionHandler.startReadWait();
             aioServer.getServerSocketChannel().accept(null, this);
         }

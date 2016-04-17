@@ -43,6 +43,11 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
         return cursor;
     }
     
+    public void setCursor(long cursor)
+    {
+        this.cursor = cursor;
+    }
+    
     @Override
     public void completed(Integer result, AbstractClientChannelInfo channelInfo)
     {
@@ -76,7 +81,6 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
                     }
                     // logger.trace("客户端处理完毕响应{}", cursor);
                     channelInfo.signal(decodeResult, cursor);
-                    cursor += 1;
                 }
                 if (ioBuf.remainRead() == 0)
                 {
@@ -127,7 +131,6 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
         }
         ioBuf.release();
         channelInfo.signalAll(e, cursor);
-        channelInfo.closeChannel();
     }
     
     public void continueRead()

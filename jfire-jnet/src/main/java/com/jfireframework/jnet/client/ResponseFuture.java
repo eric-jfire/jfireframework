@@ -9,7 +9,7 @@ import java.util.concurrent.locks.LockSupport;
 public class ResponseFuture implements Future<Object>
 {
     private static final Object  NORESULT  = new Object();
-    protected Object             result    = NORESULT;
+    protected volatile Object    result    = NORESULT;
     protected Thread             ownerThread;
     protected volatile Throwable e;
     public static final boolean  READY     = true;
@@ -53,7 +53,7 @@ public class ResponseFuture implements Future<Object>
     public Object get() throws InterruptedException, ExecutionException
     {
         // 这个语句不能放在while内部，否则一旦进入while循环后，设置ownerThread前，读取线程调用了ready方法后，就永远没有线程可以唤醒这个等待了。
-        // 这个语句放在这里保证了，如果进入while循环，那么就意味着ready方法中写入dataState还没有调用。而一旦调用，根据hb关系，必然课件ownerThread。必然可以唤醒。就不会出现这个get无人唤醒的情况
+        // 这个语句放在这里保证了，如果进入while循环，那么就意味着ready方法中写入dataState还没有调用。而一旦调用，根据hb关系，必然可见ownerThread。必然可以唤醒。就不会出现这个get无人唤醒的情况
         ownerThread = Thread.currentThread();
         while (dataState == UN_READY)
         {
@@ -70,7 +70,7 @@ public class ResponseFuture implements Future<Object>
     public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
     {
         ownerThread = Thread.currentThread();
-        while (dataState == UN_READY)
+        if (dataState == UN_READY)
         {
             LockSupport.park(unit.toNanos(timeout));
         }

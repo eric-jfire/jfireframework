@@ -13,6 +13,8 @@ public class FutureClientChannelInfo extends AbstractClientChannelInfo
         // 可以考虑一种很难出现的情况就是服务端收到一个请求的时候发送了两个响应。这样就会导致读取到不合适位置的future
         ResponseFuture future = (ResponseFuture) getResult(cursor);
         future.ready(obj, null);
+        // 这个调用，否则添加的线程（调用addFuture方法的线程）被唤醒后，仍然会再次进入等待
+        readCompleter.setCursor(cursor + 1);
         LockSupport.unpark(writeThread);
     }
     
@@ -25,6 +27,8 @@ public class FutureClientChannelInfo extends AbstractClientChannelInfo
             future.ready(null, e);
             cursor += 1;
         }
+        // 这个调用，否则添加的线程（调用addFuture方法的线程）被唤醒后，仍然会再次进入等待
+        readCompleter.setCursor(cursor);
         LockSupport.unpark(writeThread);
     }
     

@@ -43,7 +43,7 @@ public class LoggerImpl implements Logger
         {
             if (location)
             {
-                System.out.println(head + " " + msg + "    " + CodeLocation.getCodeLocation(3));
+                System.out.println(head + " " + msg + "    " + CodeLocation.getCodeLocation(4));
             }
             else
             {

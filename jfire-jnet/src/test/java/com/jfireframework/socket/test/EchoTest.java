@@ -22,7 +22,7 @@ public class EchoTest
 {
     private int threadCount = 16;
     private int sendCount   = 100000;
-    private int arraylength = 2048;
+    private int arraylength = 1024;
     
     @Test
     public void test() throws Throwable
@@ -61,7 +61,7 @@ public class EchoTest
                         e.printStackTrace();
                     }
                 }
-            });
+            }, "测试线程" + i);
             threads[i].start();
         }
         for (int i = 0; i < threads.length; i++)
@@ -92,7 +92,7 @@ public class EchoTest
             @Override
             public Object catchException(Object data, InternalResult result)
             {
-                ((Throwable) data).printStackTrace();
+                // ((Throwable) data).printStackTrace();
                 return data;
             }
         }, new LengthPreHandler(0, 4));
@@ -153,8 +153,7 @@ public class EchoTest
             // System.out.println(i);
         }
         Future<?> future = client.connect().write("987654321");
-        // System.out.println("写出完成");
-        Assert.assertEquals("987654321", (String) future.get(5, TimeUnit.SECONDS));
+        Assert.assertEquals("987654321", (String) future.get(20, TimeUnit.SECONDS));
         // System.out.println("完成");
         // TimeUnit.SECONDS.sleep(1000);
         client.close();

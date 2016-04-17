@@ -27,18 +27,17 @@ public class ServerInternalResult extends AbstractInternalResult
     
     public ServerInternalResult(long cursor, Object data, ServerChannelInfo channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, int index)
     {
-        // this.cursor =cursor;
         init(cursor, data, channelInfo, readCompletionHandler, writeCompletionHandler, index);
     }
     
-    private void init(long cursor, Object data, ServerChannelInfo channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, int index)
+    public void init(long cursor, Object data, ServerChannelInfo channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, int index)
     {
         this.channelInfo = channelInfo;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         this.index = index;
         this.data = data;
-         unsafe.putOrderedLong(this, _cursor, cursor);
+        unsafe.putOrderedLong(this, _cursor, cursor);
         unsafe.putOrderedInt(this, _writeState, UNWRITED);
         flowState = UNDONE;
     }
@@ -55,25 +54,7 @@ public class ServerInternalResult extends AbstractInternalResult
     
     public void write()
     {
-        // // if (flowState == UNDONE || writeState == WRITED || cursor !=
-        // // writeCompletionHandler.cursor())
-        // // {
-        // // return;
-        // // }
-        // // if (unsafe.compareAndSwapInt(this, _writeState, UNWRITED, WRITED)
-        // ==
-        // // false)
-        // // {
-        // // return;
-        // // }
-        // // channelInfo.socketChannel().write(((ByteBuf<?>) data).nioBuffer(),
-        // // 10, TimeUnit.SECONDS, this, writeCompletionHandler);
-        write(cursor);
-    }
-    
-    public void write(long cursor)
-    {
-        if (flowState == UNDONE || writeState == WRITED || cursor != writeCompletionHandler.cursor())
+        if (cursor != writeCompletionHandler.cursor() || writeState == WRITED)
         {
             return;
         }
@@ -81,6 +62,34 @@ public class ServerInternalResult extends AbstractInternalResult
         {
             return;
         }
+        channelInfo.socketChannel().write(((ByteBuf<?>) data).nioBuffer(), 10, TimeUnit.SECONDS, this, writeCompletionHandler);
+    }
+    
+    public void write(long cursor)
+    {
+        if (cursor != writeCompletionHandler.cursor() || flowState == UNDONE || writeState == WRITED)
+        {
+            return;
+        }
+        if (unsafe.compareAndSwapInt(this, _writeState, UNWRITED, WRITED) == false)
+        {
+            return;
+        }
+        channelInfo.socketChannel().write(((ByteBuf<?>) data).nioBuffer(), 10, TimeUnit.SECONDS, this, writeCompletionHandler);
+    }
+    
+    public boolean tryWrite()
+    {
+        if (flowState == UNDONE)
+        {
+            return false;
+        }
+        unsafe.putOrderedInt(this, _writeState, WRITED);
+        return true;
+    }
+    
+    public void directWrite()
+    {
         channelInfo.socketChannel().write(((ByteBuf<?>) data).nioBuffer(), 10, TimeUnit.SECONDS, this, writeCompletionHandler);
     }
     

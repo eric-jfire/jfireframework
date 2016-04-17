@@ -6,6 +6,7 @@ import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.AbstractClientChannelInfo;
@@ -77,7 +78,7 @@ public class AioClient
         if (clientChannelInfo == null || clientChannelInfo.isOpen() == false)
         {
             AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(channelGroup);
-            socketChannel.connect(new InetSocketAddress(address, port)).get();
+            socketChannel.connect(new InetSocketAddress(address, port)).get(30, TimeUnit.SECONDS);
             if (async == true)
             {
                 clientChannelInfo = new AsyncClientChannelInfo();
