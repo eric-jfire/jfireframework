@@ -11,40 +11,55 @@ import sun.misc.Unsafe;
 @SuppressWarnings("restriction")
 public class ServerInternalResult extends AbstractInternalResult
 {
+    
+    private static final class WriteState
+    {
+        public static final int UNWRITED = 0;
+        public static final int WRITED   = 1;
+        private final long      version;
+        private final int       state;
+        
+        private WriteState(int state, long version)
+        {
+            this.version = version;
+            this.state = state;
+        }
+        
+        static WriteState of(int state, long version)
+        {
+            return new WriteState(state, version);
+        }
+    }
+    
     private static Unsafe          unsafe      = ReflectUtil.getUnsafe();
     public static final boolean    UNDONE      = false;
     public static final boolean    DONE        = true;
     private volatile boolean       flowState   = UNDONE;
-    public static final int        UNWRITED    = 0;
-    public static final int        WRITED      = 1;
-    private volatile int           writeState  = UNWRITED;
+    private volatile WriteState    writeState;
     private static long            _writeState = ReflectUtil.getFieldOffset("writeState", ServerInternalResult.class);
-    private long                   cursor;
-    private static final long      _cursor     = ReflectUtil.getFieldOffset("cursor", ServerInternalResult.class);
     private ServerChannelInfo      channelInfo;
     private WriteCompletionHandler writeCompletionHandler;
     private ReadCompletionHandler  readCompletionHandler;
     
-    public ServerInternalResult(long cursor, Object data, ServerChannelInfo channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, int index)
+    public ServerInternalResult(long version, Object data, ServerChannelInfo channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, int index)
     {
-        init(cursor, data, channelInfo, readCompletionHandler, writeCompletionHandler, index);
+        init(version, data, channelInfo, readCompletionHandler, writeCompletionHandler, index);
     }
     
-    public void init(long cursor, Object data, ServerChannelInfo channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, int index)
+    public void init(long version, Object data, ServerChannelInfo channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, int index)
     {
         this.channelInfo = channelInfo;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         this.index = index;
         this.data = data;
-        unsafe.putOrderedLong(this, _cursor, cursor);
-        unsafe.putOrderedInt(this, _writeState, UNWRITED);
+        unsafe.putOrderedObject(this, _writeState, WriteState.of(WriteState.UNWRITED, version));
         flowState = UNDONE;
     }
     
-    public long cursor()
+    public long version()
     {
-        return cursor;
+        return writeState.version;
     }
     
     public void flowDone()
@@ -52,39 +67,32 @@ public class ServerInternalResult extends AbstractInternalResult
         flowState = DONE;
     }
     
-    public void write()
+    public void write(long version)
     {
-        if (cursor != writeCompletionHandler.cursor() || writeState == WRITED)
+        if (version != writeCompletionHandler.cursor() || flowState == UNDONE || writeState.state == WriteState.WRITED)
         {
             return;
         }
-        if (unsafe.compareAndSwapInt(this, _writeState, UNWRITED, WRITED) == false)
+        if (casState(version) == false)
         {
             return;
         }
         channelInfo.socketChannel().write(((ByteBuf<?>) data).nioBuffer(), 10, TimeUnit.SECONDS, this, writeCompletionHandler);
     }
     
-    public void write(long cursor)
+    private boolean casState(long expectedVersion)
     {
-        if (cursor != writeCompletionHandler.cursor() || flowState == UNDONE || writeState == WRITED)
-        {
-            return;
-        }
-        if (unsafe.compareAndSwapInt(this, _writeState, UNWRITED, WRITED) == false)
-        {
-            return;
-        }
-        channelInfo.socketChannel().write(((ByteBuf<?>) data).nioBuffer(), 10, TimeUnit.SECONDS, this, writeCompletionHandler);
+        WriteState current = writeState;
+        return current.version == expectedVersion && current.state == WriteState.UNWRITED && unsafe.compareAndSwapObject(this, _writeState, current, WriteState.of(WriteState.WRITED, expectedVersion));
     }
     
-    public boolean tryWrite()
+    public boolean tryWrite(long version)
     {
         if (flowState == UNDONE)
         {
             return false;
         }
-        unsafe.putOrderedInt(this, _writeState, WRITED);
+        unsafe.putOrderedObject(this, _writeState, WriteState.of(WriteState.WRITED, version));
         return true;
     }
     

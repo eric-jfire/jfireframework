@@ -46,10 +46,11 @@ public final class ServerInternalResultAction extends AbstractExclusiveEntryActi
             if (intermediateResult instanceof ByteBuf<?>)
             {
                 result.setData(intermediateResult);
+                long version = result.version();
                 result.flowDone();
                 if (result.getChannelInfo().isOpen())
                 {
-                    result.write();
+                    result.write(version);
                 }
             }
             else

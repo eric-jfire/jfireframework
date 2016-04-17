@@ -235,8 +235,9 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             if (intermediateResult instanceof ByteBuf<?>)
             {
                 result.setData(intermediateResult);
+                long version = result.version();
                 result.flowDone();
-                result.write();
+                result.write(version);
             }
             if (ioBuf.remainRead() == 0)
             {
