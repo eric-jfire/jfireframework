@@ -8,10 +8,10 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.fose.Fose;
 import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.client.FutureClient;
+import com.jfireframework.jnet.common.channel.ChannelInfo;
+import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.exception.JnetException;
-import com.jfireframework.jnet.common.exception.SelfCloseException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
 import com.jfireframework.jnet.common.result.InternalResult;
@@ -25,20 +25,29 @@ public class BytecodeInvoker
 	protected int						port;
 	protected static Charset			charset				= Charset.forName("utf8");
 	protected String					proxyName;
-	protected ThreadLocal<FutureClient>	clientChanelLocal;
+	protected ThreadLocal<AioClient>	clientChanelLocal;
 	private static Logger				logger				= ConsoleLogFactory.getLogger();
 	
 	public BytecodeInvoker build()
 	{
-		clientChanelLocal = new ThreadLocal<FutureClient>() {
+		clientChanelLocal = new ThreadLocal<AioClient>() {
 			@Override
-			protected FutureClient initialValue()
+			protected AioClient initialValue()
 			{
-				FutureClient client = new FutureClient();
-				client.setAddress(ip).setPort(port).setReadTimeout(readTimeout);
-				client.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, maxLength));
+				AioClient client = new AioClient();
+				client.setAddress(ip).setPort(port);
+				client.setInitListener(new ChannelInitListener() {
+			        
+			        @Override
+			        public void channelInit(ChannelInfo channelInfo)
+			        {
+				        channelInfo.setReadTimeout(readTimeout);
+				        channelInfo.setResultArrayLength(1024);
+				        channelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, maxLength));
+				        channelInfo.setHandlers(new ReadHandler());
+			        }
+		        });
 				client.setWriteHandlers(new WriteHandler(proxyName), new LengthPreHandler(0, 4));
-				client.setReadHandlers(new ReadHandler());
 				return client;
 			}
 		};
@@ -87,7 +96,7 @@ public class BytecodeInvoker
 	
 	public void close()
 	{
-		clientChanelLocal.get().close(new SelfCloseException());
+		clientChanelLocal.get().close();
 		clientChanelLocal.remove();
 	}
 	

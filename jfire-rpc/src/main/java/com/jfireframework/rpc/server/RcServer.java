@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
+import com.jfireframework.jnet.common.channel.ChannelInfo;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
-import com.jfireframework.jnet.common.channel.ServerChannelInfo;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
 import com.jfireframework.jnet.server.server.AioServer;
@@ -50,16 +50,17 @@ public class RcServer
 	 * @param port
 	 * @param impl
 	 */
-	public RcServer(RcConfig rcConfig)
+	public RcServer(final RcConfig rcConfig)
 	{
 		final InvokeEntryHandler handler = bind(rcConfig.getImplMap());
-		rcConfig.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, rcConfig.getMaxLength()));
 		rcConfig.setInitListener(new ChannelInitListener() {
 			
 			@Override
-			public void channelInit(ServerChannelInfo serverChannelInfo)
+			public void channelInit(ChannelInfo serverChannelInfo)
 			{
+				serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, rcConfig.getMaxLength()));
 				serverChannelInfo.setHandlers(handler, new LengthPreHandler(0, 4));
+				serverChannelInfo.setResultArrayLength(1024);
 			}
 		});
 		serverMain = new AioServer(rcConfig);
