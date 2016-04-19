@@ -2,16 +2,17 @@ package com.jfireframework.codejson.function.impl.write;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.codejson.function.WriterContext;
-import java.util.Set;
+import com.jfireframework.codejson.tracker.Tracker;
 
 public class MapWriter extends WriterAdapter
 {
     
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public void write(Object field, StringCache cache, Object entity)
+    public void write(Object field, StringCache cache, Object entity,Tracker tracker)
     {
         cache.append('{');
         Set<Entry> set = ((Map) field).entrySet();

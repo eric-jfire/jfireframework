@@ -33,6 +33,7 @@ import com.jfireframework.codejson.test.strategy.FunctionData7;
 import com.jfireframework.codejson.test.strategy.FunctionData8;
 import com.jfireframework.codejson.test.strategy.FunctionData9;
 import com.jfireframework.codejson.test.strategy.NestInfo;
+import com.jfireframework.codejson.tracker.Tracker;
 
 public class TestStrategy
 {
@@ -59,7 +60,7 @@ public class TestStrategy
             private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
             
             @Override
-            public void write(Object field, StringCache cache, Object entity)
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 cache.append('\"').append(format.format((Date) field)).append('\"');
             }
@@ -344,18 +345,18 @@ public class TestStrategy
         data.setName("linbin");
         data.setUrl("jfire.link");
         data.setIcon("ok");
-//        System.out.println(JsonTool.write(data));
+        // System.out.println(JsonTool.write(data));
         final WriteStrategy strategy = new WriteStrategy();
         strategy.addIgnoreField("com.jfireframework.codejson.test.strategy.FunctionData15.url");
         strategy.addIgnoreField("com.jfireframework.codejson.test.strategy.FunctionData15.icon");
         strategy.addFieldStrategy("com.jfireframework.codejson.test.strategy.FunctionData15.attributes", new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 FunctionData15 data15 = (FunctionData15) entity;
                 Map<String, String> att = (Map<String, String>) field;
                 att.put("url", data15.getUrl());
                 att.put("icon", data15.getIcon());
-                strategy.getWriter(Map.class).write(att, cache, entity);
+                strategy.getWriter(Map.class).write(att, cache, entity, tracker);
             }
         });
         data.setAttributes(new HashMap<String, String>());

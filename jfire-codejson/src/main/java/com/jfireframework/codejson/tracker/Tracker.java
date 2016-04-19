@@ -12,6 +12,12 @@ public class Tracker
         map.put(obj, info);
     }
     
+    public String getPath(Object obj)
+    {
+        Pathinfo info = map.get(obj);
+        return info == null ? null : info.getPath();
+    }
+    
     public static class Pathinfo
     {
         private Object obj;

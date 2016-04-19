@@ -1,6 +1,7 @@
 package com.jfireframework.codejson.function;
 
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.codejson.tracker.Tracker;
 
 public interface JsonWriter
 {
@@ -11,7 +12,7 @@ public interface JsonWriter
      * @param entity TODO
      * @return
      */
-    public void write(Object field, StringCache cache, Object entity);
+    public void write(Object field, StringCache cache, Object entity,Tracker tracker);
     
     public void write(int field, StringCache cache, Object entity);
     

@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.codejson.function.impl.write.WriterAdapter;
+import com.jfireframework.codejson.tracker.Tracker;
 
 public class DateWriter extends WriterAdapter
 {
@@ -15,7 +16,7 @@ public class DateWriter extends WriterAdapter
                                                          };
     
     @Override
-    public void write(Object field, StringCache cache, Object entity)
+    public void write(Object field, StringCache cache, Object entity,Tracker tracker)
     {
         cache.append('\"').append(formats.get().format((Date) field)).append('\"');
     }

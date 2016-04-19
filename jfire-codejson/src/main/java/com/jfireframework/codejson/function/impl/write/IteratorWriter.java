@@ -3,13 +3,14 @@ package com.jfireframework.codejson.function.impl.write;
 import java.util.Iterator;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.codejson.function.WriterContext;
+import com.jfireframework.codejson.tracker.Tracker;
 
 public class IteratorWriter extends WriterAdapter
 {
     
     @SuppressWarnings("rawtypes")
     @Override
-    public void write(Object field, StringCache cache, Object entity)
+    public void write(Object field, StringCache cache, Object entity,Tracker tracker)
     {
         cache.append('[');
         Iterator it = ((Iterable) field).iterator();
