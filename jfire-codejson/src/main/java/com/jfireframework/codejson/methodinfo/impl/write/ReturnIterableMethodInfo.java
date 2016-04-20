@@ -22,13 +22,34 @@ public class ReturnIterableMethodInfo extends AbstractWriteMethodInfo
         {
             str += "\tcache.append(\"\\\"" + fieldName + "\\\":\");\n";
             str += "\tJsonWriter writer = writeStrategy.getWriterByField(\"" + key + "\");\n";
-            str += "\twriter.write(" + fieldName + ",cache," + entityName + ");\n";
+            str += "\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+\"." + fieldName + "\";\n";
+            str += "\t((Tracker)$4).put(" + fieldName + ",newPath);\n";
+            str += "\twriter.write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
             str += "\tcache.append(',');\n";
             str += "}\n";
         }
         else
         {
+            if (strategy != null && strategy.isUseTracker())
+            {
+                str += "\tString path = ((Tracker)$4).getPath(" + fieldName + ");\n";
+                str += "\tif(path != null)\n";
+                str += "\t{\n";
+                str += "\t\tif(writeStrategy.containsTrackerType(" + fieldName + ".getClass()))\n";
+                str += "\t\t{\n";
+                str += "\t\t\twriteStrategy.getTrackerType(" + fieldName + ".getClass()).write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
+                str += "\t\t}\n";
+                str += "\t\telse\n";
+                str += "\t\t{\n";
+                str += "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(path).append('\"').append('}');\n";
+                str += "\t\t}\n";
+                str += "\telse\n";
+                str += "\t{\n";
+                str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+'.\"" + fieldName + "\";\n";
+                str += "\t\t((Tracker)$4).put(" + fieldName + ",newPath);\n";
+            }
             str += "\tcache.append(\"\\\"" + fieldName + "\\\":[\");\n";
+            str += "\tint count = 0;\n";
             str += "\tIterator it =" + fieldName + ".iterator();\n";
             str += "\tObject valueTmp = null;\n";
             str += "\twhile(it.hasNext())\n\t{\n";
@@ -44,12 +65,36 @@ public class ReturnIterableMethodInfo extends AbstractWriteMethodInfo
             {
                 str += "\t\t\t\tcache.append('\\\"').append((String)valueTmp).append('\\\"');\n";
             }
+            str += "\t\t\t\tcount+=1;\n";
             str += "\t\t\t}\n";
             str += "\t\t\telse\n";
             str += "\t\t\t{\n";
             if (strategy != null)
             {
-                str += "\t\t\t\twriteStrategy.getWriter(valueTmp.getClass()).write(valueTmp,cache,"+entityName+");\n";
+                if (strategy.isUseTracker())
+                {
+                    str += "\t\t\t\tString path1 = ((Tracker)$4).getPath(valueTmp);\n";
+                    str += "\t\t\t\tif(path1 != null)\n\t{\n";
+                    str += "\t\t\t\t\tif(writeStrategy.containsTrackerType(valueTmp.getClass()))\n";
+                    str += "\t\t\t\t\t{\n";
+                    str += "\t\t\t\t\t\twriteStrategy.getTrackerType(valueTmp.getClass()).write(valueTmp,cache," + entityName + ",(Tracker)$4);\n";
+                    str += "\t\t\t\t\t}\n";
+                    str += "\t\t\t\t\telse\n";
+                    str += "\t\t\t\t\t{\n";
+                    str += "\t\t\t\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(path1).append('\"').append('}');\n";
+                    str += "\t\t\t\t\t}\n";
+                    str += "\t\t\t\t}\n";
+                    str += "\t\t\t\telse\n";
+                    str += "\t\t\t\t{\n";
+                    str += "\t\tString newPath1 = ((Tracker)$4).getPath(" + entityName + ")+'.\"" + fieldName + "[\"+count+\"]\";\n";
+                    str += "\t\t\t\t\t((Tracker)$4).put(valueTmp,newPath1);\n";
+                    str += "\t\t\t\t\twriteStrategy.getWriter(valueTmp.getClass()).write(valueTmp,cache," + entityName + ",(Tracker)$4);\n";
+                    str += "\t\t\t\t}\n";
+                }
+                else
+                {
+                    str += "\t\t\t\twriteStrategy.getWriter(valueTmp.getClass()).write(valueTmp,cache," + entityName + ",null);\n";
+                }
             }
             else
             {

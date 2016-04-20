@@ -8,7 +8,7 @@ public abstract class WriterAdapter implements JsonWriter
 {
     
     @Override
-    public void write(Object field, StringCache cache, Object entity,Tracker tracker)
+    public void write(Object field, StringCache cache, Object entity, Tracker tracker)
     {
         throw new RuntimeException("没有实现");
     }

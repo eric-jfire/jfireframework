@@ -42,14 +42,14 @@ public class ReturnCustomObjectMethodInfo extends AbstractWriteMethodInfo
                 str += "\t}\n";
                 str += "\telse\n";
                 str += "\t{\n";
-                str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+'.'+" + fieldName + ";\n";
+                str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+\"." + fieldName + "\";\n";
                 str += "\t\t((Tracker)$4).put(" + fieldName + ",newPath);\n";
                 str += "\t\twriter.write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
                 str += "\t}\n";
             }
             else
             {
-                str += "\twriter.write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
+                str += "\twriter.write(" + fieldName + ",cache," + entityName + ",null);\n";
             }
         }
         else

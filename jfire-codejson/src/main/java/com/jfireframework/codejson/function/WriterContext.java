@@ -102,7 +102,16 @@ public class WriterContext
         }
         else
         {
-            getWriter(entity.getClass()).write(entity, cache, null, null);
+            JsonWriter writer = getWriter(entity.getClass());
+            try
+            {
+                writer.write(entity, cache, null, null);
+            }
+            catch (Throwable e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
     }
     
@@ -200,10 +209,11 @@ public class WriterContext
                 CtClass cacheCc = classPool.get(StringCache.class.getName());
                 CtClass trackerCc = classPool.get(Tracker.class.getName());
                 CtMethod method = new CtMethod(CtClass.voidType, "write", new CtClass[] { ObjectCc, cacheCc, ObjectCc, trackerCc }, implClass);
-                logger.trace("{}创建的输出方法是\r{}", implClass.getName(), stringCache.toString());
+                logger.trace("{}创建的输出方法是\r{}\r", implClass.getName(), stringCache.toString());
                 method.setBody(stringCache.toString());
                 implClass.addMethod(method);
                 implClass.rebuildClassFile();
+                // implClass.writeFile();
                 return implClass.toClass(cklas.getClassLoader(), null);
             }
             catch (Exception e)
@@ -311,7 +321,8 @@ public class WriterContext
             implClass.setInterfaces(new CtClass[] { interfaceCtClass });
             CtClass ObjectCc = classPool.get(Object.class.getName());
             CtClass cacheCc = classPool.get(StringCache.class.getName());
-            CtMethod method = new CtMethod(CtClass.voidType, "write", new CtClass[] { ObjectCc, cacheCc, ObjectCc }, implClass);
+            CtClass trackerCc = classPool.get(Tracker.class.getName());
+            CtMethod method = new CtMethod(CtClass.voidType, "write", new CtClass[] { ObjectCc, cacheCc, ObjectCc, trackerCc }, implClass);
             method.setBody(str);
             implClass.addMethod(method);
             implClass.rebuildClassFile();
