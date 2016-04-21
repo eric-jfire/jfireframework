@@ -124,19 +124,22 @@ public class TestStrategy
     {
         WriteStrategy strategy = new WriteStrategy();
         strategy.addFieldStrategy("com.jfireframework.codejson.test.strategy.FunctionData.map", new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            @Override
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 cache.append(((Map) field).size());
             }
         });
         strategy.addTypeStrategy(String.class, new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            @Override
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 cache.append("\"$").append((String) field).append("$\"");
             }
         });
         strategy.addTypeStrategy(Date.class, new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            @Override
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
                 cache.append('"').append(format.format((Date) field)).append('"');
@@ -150,8 +153,10 @@ public class TestStrategy
     public void testFunction2()
     {
         WriteStrategy strategy = new WriteStrategy();
+//        strategy.setUseTracker(true);
         strategy.addTypeStrategy(Date.class, new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            @Override
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
                 cache.append('"').append(format.format((Date) field)).append('"');
@@ -166,7 +171,8 @@ public class TestStrategy
     {
         WriteStrategy strategy = new WriteStrategy();
         strategy.addFieldStrategy("com.jfireframework.codejson.test.strategy.FunctionData2.age", new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            @Override
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 cache.append(20);
             }
@@ -182,7 +188,8 @@ public class TestStrategy
     {
         WriteStrategy strategy = new WriteStrategy();
         strategy.addFieldStrategy("com.jfireframework.codejson.test.simple.Home.person", new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            @Override
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 Person person = (Person) field;
                 cache.append('"').append(person.getName()).append(',').append(person.getAge()).append('"');
@@ -196,7 +203,7 @@ public class TestStrategy
     {
         WriteStrategy strategy = new WriteStrategy();
         strategy.addFieldStrategy("com.jfireframework.codejson.test.strategy.FunctionData3.list", new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 cache.append(((List) field).size());
             }
@@ -205,7 +212,7 @@ public class TestStrategy
         assertEquals("{\"list\":[\"hello1\",\"hello2\"]}", JsonTool.write(new FunctionData3()));
         strategy = new WriteStrategy();
         strategy.addTypeStrategy(String.class, new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 cache.append("\"$").append((String) field).append('"');
             }
@@ -218,7 +225,7 @@ public class TestStrategy
     {
         WriteStrategy strategy = new WriteStrategy();
         strategy.addTypeStrategy(String.class, new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 cache.append('"').append('$').append((String) field).append('"');
             }
@@ -232,7 +239,7 @@ public class TestStrategy
     {
         WriteStrategy strategy = new WriteStrategy();
         strategy.addTypeStrategy(String.class, new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 cache.append('"').append('$').append((String) field).append('"');
             }
@@ -325,7 +332,7 @@ public class TestStrategy
         assertEquals("{\"array\":[1,1,1],\"array1\":[3,7,9]}", strategy.write(new FunctionData14()));
         strategy = new WriteStrategy();
         strategy.addFieldStrategy("com.jfireframework.codejson.test.strategy.FunctionData14.array", new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            public void write(Object field, StringCache cache, Object entity,Tracker tracker)
             {
                 cache.append('"').append(1).append('"');
             }
@@ -333,7 +340,7 @@ public class TestStrategy
         assertEquals("{\"array\":\"1\",\"array1\":[3,7,9]}", strategy.write(new FunctionData14()));
         strategy = new WriteStrategy();
         strategy.addTypeStrategy(Integer.class, new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            public void write(Object field, StringCache cache, Object entity,Tracker tracker)
             {
                 cache.append(1);
             }
@@ -363,6 +370,7 @@ public class TestStrategy
                 strategy.getWriter(Map.class).write(att, cache, entity, tracker);
             }
         });
+        strategy.setUseTracker(true);
         data.setAttributes(new HashMap<String, String>());
         System.out.println(strategy.write(data));
         

@@ -20,13 +20,13 @@ public class ReturnArrayCustomObjectMethodInfo extends AbstractWriteArrayMethodI
         {
             if (strategy.isUseTracker())
             {
-                str += bk + "\t((Tracker)$4).reset(array1);\n";
-                str += bk + "\tString patharray0 = ((Tracker)$4).getPath(array1[i1]);\n";
+                str += bk + "\t_$tracker.reset(array1);\n";
+                str += bk + "\tString patharray0 = _$tracker.getPath(array1[i1]);\n";
                 str += bk + "\tif(patharray0!=null)\n";
                 str += bk + "\t{\n";
                 str += bk + "\t\tif(writeStrategy.containsTrackerType(array1[i1].getClass()))\n";
                 str += bk + "\t\t{\n";
-                str += bk + "\t\t\twriteStrategy.getTrackerType(array1[i1].getClass()).write(array1[i1],cache," + entityName + ",(Tracker)$4);\n";
+                str += bk + "\t\t\twriteStrategy.getTrackerType(array1[i1].getClass()).write(array1[i1],cache," + entityName + ",_$tracker);\n";
                 str += bk + "\t\t}\n";
                 str += bk + "\t\telse\n";
                 str += bk + "\t\t{\n";
@@ -35,9 +35,9 @@ public class ReturnArrayCustomObjectMethodInfo extends AbstractWriteArrayMethodI
                 str += bk + "\t}\n";
                 str += bk + "\telse\n";
                 str += bk + "\t{\n";
-                str += bk + "\t\tpatharray0 = ((Tracker)$4).getPath(array1)+\"[\"+i1+']';\n";
-                str += bk + "\t\t((Tracker)$4).put(array1[i1],patharray0);\n";
-                str += bk + "\t\twriteStrategy.getWriter(array1[i1].getClass()).write(array1[i1],cache," + entityName + ",(Tracker)$4);\n";
+                str += bk + "\t\tpatharray0 = _$tracker.getPath(array1)+\"[\"+i1+']';\n";
+                str += bk + "\t\t_$tracker.put(array1[i1],patharray0);\n";
+                str += bk + "\t\twriteStrategy.getWriter(array1[i1].getClass()).write(array1[i1],cache," + entityName + ",_$tracker);\n";
                 str += bk + "\t}\n";
             }
             else

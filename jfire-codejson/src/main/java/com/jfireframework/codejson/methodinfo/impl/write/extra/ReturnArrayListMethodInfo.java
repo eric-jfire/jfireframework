@@ -3,7 +3,6 @@ package com.jfireframework.codejson.methodinfo.impl.write.extra;
 import java.lang.reflect.Method;
 import com.jfireframework.codejson.function.WriteStrategy;
 import com.jfireframework.codejson.methodinfo.impl.write.AbstractWriteMethodInfo;
-import com.jfireframework.codejson.tracker.Tracker;
 import com.jfireframework.codejson.util.NameTool;
 
 public class ReturnArrayListMethodInfo extends AbstractWriteMethodInfo

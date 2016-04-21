@@ -29,11 +29,11 @@ public class ReturnCustomObjectMethodInfo extends AbstractWriteMethodInfo
                     str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+'.'+\"" + fieldName + "\";\n";
                     str += "\t\t((Tracker)$4).put(" + fieldName + ",newPath);\n";
                     str += "\t}\n";
-                    str += "\twriteStrategy.getWriterByField(\"" + key + "\").write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
+                    str += "\twriter.write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
                 }
                 else
                 {
-                    str += "\twriteStrategy.getWriterByField(\"" + key + "\").write(" + fieldName + ",cache," + entityName + ",null);\n";
+                    str += "\twriter.write(" + fieldName + ",cache," + entityName + ",null);\n";
                     str += "\tcache.append(',');\n";
                     str += "}\n";
                 }
@@ -67,14 +67,16 @@ public class ReturnCustomObjectMethodInfo extends AbstractWriteMethodInfo
                 {
                     str += "\twriter.write(" + fieldName + ",cache," + entityName + ",null);\n";
                 }
+                str += "\tcache.append(',');\n";
+                str += "}\n";
             }
         }
         else
         {
             str += "\tWriterContext.write(" + fieldName + ",cache);\n";
+            str += "\tcache.append(',');\n";
+            str += "}\n";
         }
-        str += "\tcache.append(',');\n";
-        str += "}\n";
     }
     
 }
