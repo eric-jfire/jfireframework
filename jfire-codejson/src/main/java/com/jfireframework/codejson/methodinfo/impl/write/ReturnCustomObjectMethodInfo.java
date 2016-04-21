@@ -28,6 +28,7 @@ public class ReturnCustomObjectMethodInfo extends AbstractWriteMethodInfo
             }
             if (strategy.isUseTracker())
             {
+                str += "\t((Tracker)$4).reset(" + entityName + ");\n";
                 str += "\tString path = ((Tracker)$4).getPath(" + fieldName + ");\n";
                 str += "\tif(path != null)\n\t{\n";
                 str += "\t\tif(writeStrategy.containsTrackerType(" + fieldName + ".getClass()))\n";

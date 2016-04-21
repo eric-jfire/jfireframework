@@ -56,6 +56,7 @@ public class TestStrategy
     public void testClass() throws ParseException
     {
         WriteStrategy strategy = new WriteStrategy();
+        strategy.setUseTracker(true);
         strategy.addTypeStrategy(Date.class, new WriterAdapter() {
             private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
             
@@ -263,7 +264,8 @@ public class TestStrategy
         assertEquals("{\"data\":{\"你好\":\"林斌\"}}", strategy.write(new FunctionData8()));
         strategy = new WriteStrategy();
         strategy.addTypeStrategy(String.class, new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            @Override
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 cache.append("\"$").append((String) field).append('"');
             }
@@ -284,7 +286,8 @@ public class TestStrategy
     {
         WriteStrategy strategy = new WriteStrategy();
         strategy.addFieldStrategy("com.jfireframework.codejson.test.strategy.FunctionData11.list", new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity)
+            @Override
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 List<String> list = (List<String>) field;
                 cache.append('[');

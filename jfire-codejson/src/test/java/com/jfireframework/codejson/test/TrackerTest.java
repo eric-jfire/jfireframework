@@ -21,16 +21,16 @@ public class TrackerTest
         room.setGuy(guy);
         WriteStrategy strategy = new WriteStrategy();
         strategy.setUseTracker(true);
-        strategy.addTrackerType(Guy.class, new WriterAdapter() {
-            @Override
-            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
-            {
-                Guy guy = (Guy) field;
-                String path = tracker.getPath(field);
-                cache.append("{\"$ref\":").append(path).append(",\"我想输出什么都可以\":\"").append(guy.getName()).append("\"}");
-                System.out.println("我想输出什么都可以由用户自己定义");
-            }
-        });
+//        strategy.addTrackerType(Guy.class, new WriterAdapter() {
+//            @Override
+//            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
+//            {
+//                Guy guy = (Guy) field;
+//                String path = tracker.getPath(field);
+//                cache.append("{\"$ref\":").append(path).append(",\"我想输出什么都可以\":\"").append(guy.getName()).append("\"}");
+//                System.out.println("我想输出什么都可以由用户自己定义");
+//            }
+//        });
         System.out.println(strategy.write(guy));
     }
 }

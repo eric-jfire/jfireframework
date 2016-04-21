@@ -1,21 +1,46 @@
 package com.jfireframework.codejson.tracker;
 
-import java.util.HashMap;
-
 public class Tracker
 {
-    private HashMap<Object, Pathinfo> map = new HashMap<>();
+    private Pathinfo[] array = new Pathinfo[10];
+    private int        count = 0;
+    
+    public void reset(Object obj)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            if (array[i].getObj() == obj)
+            {
+                count = i + 1;
+                break;
+            }
+        }
+    }
     
     public void put(Object obj, String path)
     {
-        Pathinfo info = new Pathinfo(obj, path);
-        map.put(obj, info);
+        if (count < array.length)
+        {
+            array[count++] = new Pathinfo(obj, path);
+        }
+        else
+        {
+            Pathinfo[] tmp = new Pathinfo[array.length + 10];
+            System.arraycopy(array, 0, tmp, 0, count);
+            tmp[count++] = new Pathinfo(obj, path);
+        }
     }
     
     public String getPath(Object obj)
     {
-        Pathinfo info = map.get(obj);
-        return info == null ? null : info.getPath();
+        for (int i = 0; i < count; i++)
+        {
+            if (array[i].getObj() == obj)
+            {
+                return array[i].getPath();
+            }
+        }
+        return null;
     }
     
     public static class Pathinfo
