@@ -285,6 +285,7 @@ public class TestStrategy
     public void test12()
     {
         WriteStrategy strategy = new WriteStrategy();
+        strategy.setUseTracker(true);
         strategy.addFieldStrategy("com.jfireframework.codejson.test.strategy.FunctionData11.list", new WriterAdapter() {
             @Override
             public void write(Object field, StringCache cache, Object entity, Tracker tracker)

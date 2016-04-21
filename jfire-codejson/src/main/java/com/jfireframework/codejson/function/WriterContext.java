@@ -180,6 +180,7 @@ public class WriterContext
         {
             StringCache stringCache = new StringCache();
             stringCache.append("{\nStringCache cache = (StringCache)$2;\n");
+            stringCache.append("Tracker _$tracker = (Tracker)$4;\n");
             String entityName = "entity" + System.nanoTime();
             stringCache.append(cklas.getName() + " " + entityName + " =(" + cklas.getName() + " )$1;\n");
             stringCache.append("cache.append('{');\n");

@@ -28,9 +28,12 @@ public abstract class AbstractWriteArrayMethodInfo extends AbstractWriteMethodIn
         {
             if (strategy.isUseTracker())
             {
-                str += "\t((Tracker)$4).reset(" + entityName + ");\n";
-                str += "\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+'.'+\"" + fieldName + "\";\n";
-                str += "\t((Tracker)$4).put(" + fieldName + ",newPath);\n";
+                str += "\tif(((Tracker)$4).getPath(" + fieldName + ")==null)\n";
+                str += "\t{\n";
+                str += "\t\t((Tracker)$4).reset(" + entityName + ");\n";
+                str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+'.'+\"" + fieldName + "\";\n";
+                str += "\t\t((Tracker)$4).put(" + fieldName + ",newPath);\n";
+                str += "\t}\n";
                 str += "\twriteStrategy.getWriterByField(\"" + key + "\").write(" + arrayName + ",cache," + entityName + ",(Tracker)$4);\n";
             }
             else

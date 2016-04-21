@@ -68,7 +68,7 @@ public class ReturnIterableMethodInfo extends AbstractWriteMethodInfo
                     str += "\t\t{\n";
                     str += "\t\t\tif((valueTmp=it.next())!=null)\n";
                     str += "\t\t\t{\n";
-                    str += "\t\t\t\tif(valueTmp instanceof String)\n";
+                    str += "\t\t\t\tif(valueTmp instanceof String || valueTmp instanceof Number || valueTmp instanceof Boolean)\n";
                     str += "\t\t\t\t{\n";
                     if (strategy.getWriter(String.class) instanceof StringWriter)
                     {
