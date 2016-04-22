@@ -17,7 +17,14 @@ public class ReturnArrayWrapperMethodInfo extends AbstractWriteArrayMethodInfo
     {
         if (strategy != null && (strategy.containsStrategyType(rootType) && strategy.getWriter(rootType) instanceof WrapperWriter == false))
         {
-            str += bk + "baseWriter.write(array1[i1],cache," + entityName + ");\n";
+            if (strategy.isUseTracker())
+            {
+                str += bk + "baseWriter.write(array1[i1],cache," + entityName + ",_$tracker);\n";
+            }
+            else
+            {
+                str += bk + "baseWriter.write(array1[i1],cache," + entityName + ",null);\n";
+            }
             str += bk + "cache.append(',');\n";
         }
         else

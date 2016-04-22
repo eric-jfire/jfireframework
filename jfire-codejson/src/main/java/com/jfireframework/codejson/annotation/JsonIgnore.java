@@ -14,10 +14,10 @@ import java.lang.annotation.RetentionPolicy;
 @Inherited
 public @interface JsonIgnore
 {
-	/**
-	 * 代表是否忽略策略配置，强制执行
-	 * 
-	 * @return
-	 */
-	public boolean force() default false;
+    /**
+     * 代表是否忽略策略配置，强制执行
+     * 
+     * @return
+     */
+    public boolean force() default false;
 }

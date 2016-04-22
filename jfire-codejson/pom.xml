@@ -9,9 +9,10 @@
 		<version>1.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>jfire-codejson</artifactId>
+	<version>1.1-SNAPSHOT</version>
 	<name>codejson</name>
 	<url></url>
-	<description>Codejson is one of the best framework for json. The best is the fastest and customization capabilities.
+	<description>Codejson is the best framework for json. The best is the fastest and customization capabilities.
 Can use the same object output according to the different strategies of different content.
 45% speed over Jackson2 serialization</description>
 	<properties>

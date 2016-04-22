@@ -6,6 +6,7 @@ import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.codejson.function.JsonWriter;
 import com.jfireframework.codejson.function.WriteStrategy;
 import com.jfireframework.codejson.function.impl.write.wrapper.StringWriter;
+import com.jfireframework.codejson.tracker.Tracker;
 import java.util.Set;
 
 public class StrategyMapWriter extends WriterAdapter
@@ -25,7 +26,7 @@ public class StrategyMapWriter extends WriterAdapter
     
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public void write(Object field, StringCache cache, Object entity)
+    public void write(Object field, StringCache cache, Object entity, Tracker tracker)
     {
         cache.append('{');
         Set<Entry> set = ((Map) field).entrySet();
@@ -42,14 +43,14 @@ public class StrategyMapWriter extends WriterAdapter
                     }
                     else
                     {
-                        stringWriter.write(each.getKey(), cache, entity);
+                        stringWriter.write(each.getKey(), cache, entity, tracker);
                         cache.append(':');
                     }
                 }
                 else
                 {
                     cache.append('"');
-                    strategy.getWriter(each.getKey().getClass()).write(each.getKey(), cache, entity);
+                    strategy.getWriter(each.getKey().getClass()).write(each.getKey(), cache, entity, tracker);
                     cache.append("\":");
                 }
                 if (each.getValue() instanceof String)
@@ -60,12 +61,12 @@ public class StrategyMapWriter extends WriterAdapter
                     }
                     else
                     {
-                        stringWriter.write(each.getKey(), cache, entity);
+                        stringWriter.write(each.getValue(), cache, entity, tracker);
                     }
                 }
                 else
                 {
-                    strategy.getWriter(each.getValue().getClass()).write(each.getValue(), cache, entity);
+                    strategy.getWriter(each.getValue().getClass()).write(each.getValue(), cache, entity, tracker);
                 }
                 cache.append(',');
             }
