@@ -279,7 +279,7 @@ public class TestStrategy
                 cache.append("\"$").append((String) field).append('"');
             }
         });
-        assertEquals("{\"data\":{\"$你好\":\"$你好\"}}", strategy.write(new FunctionData8()));
+        assertEquals("{\"data\":{\"$你好\":\"$林斌\"}}", strategy.write(new FunctionData8()));
     }
     
     @Test

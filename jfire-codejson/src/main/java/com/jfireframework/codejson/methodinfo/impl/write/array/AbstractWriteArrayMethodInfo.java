@@ -28,11 +28,11 @@ public abstract class AbstractWriteArrayMethodInfo extends AbstractWriteMethodIn
         {
             if (strategy.isUseTracker())
             {
-                str += "\tif(((Tracker)$4).getPath(" + fieldName + ")==null)\n";
+                str += "\tif(_$tracker.getPath(" + fieldName + ")==null)\n";
                 str += "\t{\n";
-                str += "\t\t((Tracker)$4).reset(" + entityName + ");\n";
+                str += "\t\t_$tracker.reset(" + entityName + ");\n";
                 str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+'.'+\"" + fieldName + "\";\n";
-                str += "\t\t((Tracker)$4).put(" + fieldName + ",newPath);\n";
+                str += "\t\t_$tracker.put(" + fieldName + ",newPath);\n";
                 str += "\t}\n";
                 str += "\twriteStrategy.getWriterByField(\"" + key + "\").write(" + arrayName + ",cache," + entityName + ",(Tracker)$4);\n";
             }
@@ -49,7 +49,7 @@ public abstract class AbstractWriteArrayMethodInfo extends AbstractWriteMethodIn
             String nextBk = "\t\t";
             if (strategy != null && strategy.isUseTracker())
             {
-                str += "\t((Tracker)$4).reset(" + entityName + ");\n";
+                str += "\t_$tracker.reset(" + entityName + ");\n";
                 str += "\tString path = ((Tracker)$4).getPath(" + arrayName + ");\n";
                 str += "\tif(path!=null)\n";
                 str += "\t{\n";
@@ -67,7 +67,7 @@ public abstract class AbstractWriteArrayMethodInfo extends AbstractWriteMethodIn
                 str += "\telse\n";
                 str += "\t{\n";
                 str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+'.'+\"" + fieldName + "\";\n";
-                str += "\t\t((Tracker)$4).put(" + arrayName + ",newPath);\n";
+                str += "\t\t_$tracker.put(" + arrayName + ",newPath);\n";
                 bk = "\t\t";
                 nextBk = "\t\t\t";
             }
@@ -86,8 +86,8 @@ public abstract class AbstractWriteArrayMethodInfo extends AbstractWriteMethodIn
                     if (strategy != null && strategy.isUseTracker())
                     {
                         String pathname = "path" + now;
-                        str += nextBk + "((Tracker)$4).reset(" + pre + ");\n";
-                        str += nextBk + "String " + pathname + " = ((Tracker)$4).getPath(" + now + ");\n";
+                        str += nextBk + "_$tracker.reset(" + pre + ");\n";
+                        str += nextBk + "String " + pathname + " = _$tracker.getPath(" + now + ");\n";
                         str += nextBk + "if(" + pathname + "!=null)\n";
                         str += nextBk + "{\n";
                         str += nextBk + "\tif(writeStrategy.containsTrackerType(" + now + ".getClass()))\n";
@@ -101,9 +101,9 @@ public abstract class AbstractWriteArrayMethodInfo extends AbstractWriteMethodIn
                         str += nextBk + "}\n";
                         str += nextBk + "else\n";
                         str += nextBk + "{\n";
-                        str += nextBk + "\t" + pathname + " = ((Tracker)$4).getPath(" + pre + ");\n";
+                        str += nextBk + "\t" + pathname + " = _$tracker.getPath(" + pre + ");\n";
                         str += nextBk + "\t" + pathname + " += \"[\"+i" + (dim - i + 1) + "+']';\n";
-                        str += nextBk + "\t((Tracker)$4).put(" + now + "," + pathname + ");\n";
+                        str += nextBk + "\t_$tracker.put(" + now + "," + pathname + ");\n";
                         nextBk += "\t";
                         // str += nextBk + "}\n";
                     }

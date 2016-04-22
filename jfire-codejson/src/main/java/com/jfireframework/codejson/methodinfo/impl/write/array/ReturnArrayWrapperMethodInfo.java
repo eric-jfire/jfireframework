@@ -23,7 +23,6 @@ public class ReturnArrayWrapperMethodInfo extends AbstractWriteArrayMethodInfo
             }
             else
             {
-                
                 str += bk + "baseWriter.write(array1[i1],cache," + entityName + ",null);\n";
             }
             str += bk + "cache.append(',');\n";

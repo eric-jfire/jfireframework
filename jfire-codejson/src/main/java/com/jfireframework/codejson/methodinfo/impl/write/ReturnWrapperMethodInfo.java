@@ -31,7 +31,7 @@ public class ReturnWrapperMethodInfo extends AbstractWriteMethodInfo
             {
                 str += "\tJsonWriter writer = writeStrategy.getWriter(" + fieldName + ".getClass());\n";
             }
-            str += "\twriter.write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
+            str += "\twriter.write(" + fieldName + ",cache," + entityName + ",_$tracker);\n";
             str += "\tcache.append(',');\n";
             str += "}\n";
         }

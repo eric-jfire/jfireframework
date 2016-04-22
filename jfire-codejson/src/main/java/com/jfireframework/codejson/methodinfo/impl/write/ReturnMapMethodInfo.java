@@ -159,7 +159,7 @@ public class ReturnMapMethodInfo extends AbstractWriteMethodInfo
                     str += "\t\t\t\twriteStrategy.getWriter(entry.getKey().getClass()).write(entry.getKey(),cache," + entityName + ",_$tracker);\n";
                     str += "\t\t\t\tcache.append(\"\\\":\");\n";
                     str += "\t\t\t}\n";
-                    if (strategy.getWriter(String.class) instanceof StringWriter)
+                    if (strategy.getWriter(String.class) instanceof StringWriter == false)
                     {
                         str += "\t\t\twriteStrategy.getWriter(entry.getValue().getClass()).write(entry.getValue(),cache," + entityName + ",null);\n";
                     }
