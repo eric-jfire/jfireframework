@@ -238,6 +238,7 @@ public class TestStrategy
     public void testFunction7()
     {
         WriteStrategy strategy = new WriteStrategy();
+        strategy.setUseTracker(true);
         strategy.addTypeStrategy(String.class, new WriterAdapter() {
             public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
@@ -252,6 +253,7 @@ public class TestStrategy
     public void testFunction8()
     {
         WriteStrategy strategy = new WriteStrategy();
+        strategy.setUseTracker(true);
         assertEquals("{\"maps\":[{\"test\":\"test\"},{\"abc\":\"def\"}]}", strategy.write(new FunctionData6()));
         assertEquals("{\"maps\":[{\"test\":\"test\"},{\"abc\":\"def\"}]}", JsonTool.write(new FunctionData6()));
         

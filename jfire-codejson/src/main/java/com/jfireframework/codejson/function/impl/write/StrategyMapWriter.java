@@ -26,7 +26,7 @@ public class StrategyMapWriter extends WriterAdapter
     
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public void write(Object field, StringCache cache, Object entity,Tracker tracker)
+    public void write(Object field, StringCache cache, Object entity, Tracker tracker)
     {
         cache.append('{');
         Set<Entry> set = ((Map) field).entrySet();
@@ -43,14 +43,14 @@ public class StrategyMapWriter extends WriterAdapter
                     }
                     else
                     {
-                        stringWriter.write(each.getKey(), cache, entity,tracker);
+                        stringWriter.write(each.getKey(), cache, entity, tracker);
                         cache.append(':');
                     }
                 }
                 else
                 {
                     cache.append('"');
-                    strategy.getWriter(each.getKey().getClass()).write(each.getKey(), cache, entity,tracker);
+                    strategy.getWriter(each.getKey().getClass()).write(each.getKey(), cache, entity, tracker);
                     cache.append("\":");
                 }
                 if (each.getValue() instanceof String)
@@ -61,12 +61,12 @@ public class StrategyMapWriter extends WriterAdapter
                     }
                     else
                     {
-                        stringWriter.write(each.getKey(), cache, entity,tracker);
+                        stringWriter.write(each.getValue(), cache, entity, tracker);
                     }
                 }
                 else
                 {
-                    strategy.getWriter(each.getValue().getClass()).write(each.getValue(), cache, entity,tracker);
+                    strategy.getWriter(each.getValue().getClass()).write(each.getValue(), cache, entity, tracker);
                 }
                 cache.append(',');
             }

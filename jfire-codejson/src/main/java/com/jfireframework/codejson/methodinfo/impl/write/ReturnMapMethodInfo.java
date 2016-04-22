@@ -117,7 +117,7 @@ public class ReturnMapMethodInfo extends AbstractWriteMethodInfo
                     str += "\t\t\t\t\t}\n";
                     str += "\t\t\t\t\telse\n";
                     str += "\t\t\t\t\t{\n";
-                    str += "\t\t\t\t\t\tString newPath1 = _$tracker.getPath(" + entityName + ")+'['+entry.getKey().toString()+']';\n";
+                    str += "\t\t\t\t\t\tString newPath1 = _$tracker.getPath(" + entityName + ")+'.'+entry.getKey().toString();\n";
                     str += "\t\t\t\t\t\t_$tracker.put(entry.getValue(),newPath1);\n";
                     str += "\t\t\t\t\t\twriteStrategy.getWriter(entry.getValue().getClass()).write(entry.getValue(),cache," + entityName + ",_$tracker);\n";
                     str += "\t\t\t\t\t}\n";
