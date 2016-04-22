@@ -28,11 +28,11 @@ public abstract class AbstractWriteArrayMethodInfo extends AbstractWriteMethodIn
         {
             if (strategy.isUseTracker())
             {
-                str += "\tif(_$tracker.getPath(" + fieldName + ")==null)\n";
+                str += "\t_$tracker.reset(" + entityName + ");\n";
+                str += "\tif(_$tracker.getPath(" + arrayName + ")==null)\n";
                 str += "\t{\n";
-                str += "\t\t_$tracker.reset(" + entityName + ");\n";
                 str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+'.'+\"" + fieldName + "\";\n";
-                str += "\t\t_$tracker.put(" + fieldName + ",newPath);\n";
+                str += "\t\t_$tracker.put(" + arrayName + ",newPath);\n";
                 str += "\t}\n";
                 str += "\twriteStrategy.getWriterByField(\"" + key + "\").write(" + arrayName + ",cache," + entityName + ",(Tracker)$4);\n";
             }
@@ -105,7 +105,6 @@ public abstract class AbstractWriteArrayMethodInfo extends AbstractWriteMethodIn
                         str += nextBk + "\t" + pathname + " += \"[\"+i" + (dim - i + 1) + "+']';\n";
                         str += nextBk + "\t_$tracker.put(" + now + "," + pathname + ");\n";
                         nextBk += "\t";
-                        // str += nextBk + "}\n";
                     }
                 }
                 else

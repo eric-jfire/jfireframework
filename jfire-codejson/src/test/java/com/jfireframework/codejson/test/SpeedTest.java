@@ -8,10 +8,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.codejson.JsonTool;
+import com.jfireframework.codejson.function.WriteStrategy;
 import com.jfireframework.codejson.test.simple.Home;
 
 public class SpeedTest extends Support
 {
+    
+    @Test
+    public void Test(){
+        WriteStrategy strategy = new WriteStrategy();
+        strategy.setUseTracker(true);
+        strategy.write(data);
+    }
     @Test
     // @Ignore
     public void writeSpeedTest() throws JsonProcessingException
@@ -31,10 +39,14 @@ public class SpeedTest extends Support
         }
         timewatch.end();
         logger.info("fastjson输出耗时：{}", timewatch.getTotal());
+        WriteStrategy strategy = new WriteStrategy();
+        strategy.setUseTracker(true);
+        strategy.write(data);
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-            JsonTool.write(data);
+//            JsonTool.write(data);
+            strategy.write(data);
         }
         timewatch.end();
         logger.info("codejson输出耗时：{}", timewatch.getTotal());

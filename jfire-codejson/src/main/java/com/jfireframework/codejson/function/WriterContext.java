@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.swing.text.html.parser.Entity;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -109,7 +110,6 @@ public class WriterContext
             }
             catch (Throwable e)
             {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -159,7 +159,7 @@ public class WriterContext
     {
         if (cklas.isArray())
         {
-            return buildArrayWriter(cklas);
+            return buildArrayWriter(cklas, strategy);
         }
         else if (Iterable.class.isAssignableFrom(cklas))
         {
@@ -274,7 +274,7 @@ public class WriterContext
         }
     }
     
-    private static Class<?> buildArrayWriter(Class<?> targetClass)
+    private static Class<?> buildArrayWriter(Class<?> targetClass, WriteStrategy strategy)
     {
         Class<?> rootType = targetClass;
         int dim = 0;
@@ -284,42 +284,168 @@ public class WriterContext
             rootType = rootType.getComponentType();
         }
         String rootName = rootType.getName();
-        String str = "{\n\t" + NameTool.buildDimTypeName(rootName, dim) + " array" + dim + " = (" + NameTool.buildDimTypeName(rootName, dim) + ")$1;\n";
-        str += "\tStringCache cache = (StringCache)$2;\n";
-        str += "\tcache.append('[');\n";
-        str += "\tint l" + dim + " = array" + dim + ".length;\n";
-        String bk = "\t";
-        for (int i = dim; i > 1; i--)
+        String str;
+        if (strategy == null)
         {
-            int next = i - 1;
-            str += bk + "for(int i" + i + " = 0;i" + i + "<l" + i + ";i" + i + "++)\n";
+            str = "{\n\t" + NameTool.buildDimTypeName(rootName, dim) + " array" + dim + " = (" + NameTool.buildDimTypeName(rootName, dim) + ")$1;\n";
+            str += "\tStringCache cache = (StringCache)$2;\n";
+            str += "\tcache.append('[');\n";
+            str += "\tint l" + dim + " = array" + dim + ".length;\n";
+            String bk = "\t";
+            for (int i = dim; i > 1; i--)
+            {
+                int next = i - 1;
+                str += bk + "for(int i" + i + " = 0;i" + i + "<l" + i + ";i" + i + "++)\n";
+                str += bk + "{\n";
+                str += bk + "\tif(array" + i + "[i" + i + "] == null){continue;}\n";
+                str += bk + "\tcache.append('[');\n";
+                str += bk + "\t" + NameTool.buildDimTypeName(rootName, next) + " array" + next + " = array" + i + "[i" + i + "];\n";
+                str += bk + "\tint l" + next + " =  array" + next + ".length;\n";
+                bk += "\t";
+            }
+            str += bk + "for(int i1=0;i1<l1;i1++)\n";
             str += bk + "{\n";
-            str += bk + "\tcache.append('[');\n";
-            str += bk + "\t" + NameTool.buildDimTypeName(rootName, next) + " array" + next + " = array" + i + "[i" + i + "];\n";
-            str += bk + "\tint l" + next + " =  array" + next + ".length;\n";
-            bk += "\t";
-        }
-        str += bk + "for(int i1=0;i1<l1;i1++)\n";
-        str += bk + "{\n";
-        str += bk + "\tWriterContext.write(array1[i1],cache);\n";
-        str += bk + "\tcache.append(',');\n";
-        str += bk + "}\n";
-        for (int i = dim; i > 1; i--)
-        {
+            str += bk + "\tif(array1[i1]==null){continue;}\n";
+            str += bk + "\tWriterContext.write(array1[i1],cache);\n";
+            str += bk + "\tcache.append(',');\n";
+            str += bk + "}\n";
+            for (int i = dim; i > 1; i--)
+            {
+                str += bk + "if(cache.isCommaLast()){cache.deleteLast();}\n";
+                str += bk + "cache.append(']');\n";
+                str += bk + "cache.append(',');\n";
+                bk = bk.substring(0, bk.length() - 1);
+                str += bk + "}\n";
+            }
             str += bk + "if(cache.isCommaLast()){cache.deleteLast();}\n";
             str += bk + "cache.append(']');\n";
-            str += bk + "cache.append(',');\n";
-            bk = bk.substring(0, bk.length() - 1);
-            str += bk + "}\n";
+            str += "}";
         }
-        str += bk + "if(cache.isCommaLast()){cache.deleteLast();}\n";
-        str += bk + "cache.append(']');\n";
-        str += "}";
+        else
+        {
+            if (strategy.isUseTracker())
+            {
+                str = "{\n\t" + NameTool.buildDimTypeName(rootName, dim) + " array" + dim + " = (" + NameTool.buildDimTypeName(rootName, dim) + ")$1;\n";
+                str += "\tStringCache cache = (StringCache)$2;\n";
+                str += "\tcache.append('[');\n";
+                str += "\tint l" + dim + " = array" + dim + ".length;\n";
+                String bk = "\t";
+                for (int i = dim; i > 1; i--)
+                {
+                    int next = i - 1;
+                    int pre = i + 1;
+                    str += bk + "for(int i" + i + " = 0;i" + i + "<l" + i + ";i" + i + "++)\n";
+                    str += bk + "{\n";
+                    String nowArrayName = "array" + i + "[i" + i + "]";
+                    String preArrayName = "array" + pre + "[i" + pre + "]";
+                    str += bk + "\tif(" + nowArrayName + " == null){continue;}\n";
+                    if (i == dim)
+                    {
+                        str += bk + "\t_$tracker.reset($1);\n";
+                    }
+                    else
+                    {
+                        str += bk + "\t_$tracker.reset(" + preArrayName + ");\n";
+                    }
+                    str += bk + "\tif(_$tracker.getPath(" + nowArrayName + ")!=null)\n";
+                    str += bk + "\t{\n";
+                    str += bk + "\t\tif(writeStrategy.containsTrackerType(" + nowArrayName + ".getClass())!=null)\n";
+                    str += bk + "\t\t{\n";
+                    str += bk + "\t\t\twriteStrategy.getTrackerType(" + nowArrayName + ".getClass()).write(" + nowArrayName + ",cache,$1,_$tracker);\n";
+                    str += bk + "\t\t}\n";
+                    str += bk + "\t\telse\n";
+                    str += bk + "\t\t{\n";
+                    str += bk + "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(" + nowArrayName + ")).append('\"').append('}');\n";
+                    str += bk + "\t\t}\n";
+                    str += bk + "\t\tcontinue;\n";
+                    str += bk + "\t}\n";
+                    str += bk + "\tcache.append('[');\n";
+                    str += bk + "\tString path" + i + " = _$tracker.getPath(" + preArrayName + ")+'['+i" + i + "+']';\n";
+                    str += bk + "_$tracker.put(" + nowArrayName + ",path" + i + ");\n";
+                    str += bk + "\t" + NameTool.buildDimTypeName(rootName, next) + " array" + next + " = array" + i + "[i" + i + "];\n";
+                    str += bk + "\tint l" + next + " =  array" + next + ".length;\n";
+                    bk += "\t";
+                }
+                str += bk + "for(int i1=0;i1<l1;i1++)\n";
+                str += bk + "{\n";
+                str += bk + "\tif(array1[i1]==null){continue;}\n";
+                if (dim == 1)
+                {
+                    str += bk + "\t_$tracker.reset($1);\n";
+                }
+                else
+                {
+                    str += bk + "\t_$tracker.reset(array2[i2]);\n";
+                }
+                str += bk + "\t_$if(tracker.getPath(array1[i1])!=null)\n";
+                str += bk + "\t{\n";
+                str += bk + "\t\tif(writeStrategy.containsTrackerType(array1[i1].getClass()))\n";
+                str += bk + "\t\t{\n";
+                str += bk + "\t\t\twriteStrategy.getTrackerType(array1[i1].getClass())\n";
+                str += bk + "\t\t}\n";
+                str += bk + "\t\tcontinue;\n";
+                str += bk + "\t}\n";
+                str += bk + "\twriteStrategy.getWriter(array1[i1].getClass()).write(array1[i1],cache,array" + dim + ");\n";
+                str += bk + "\tcache.append(',');\n";
+                str += bk + "}\n";
+                for (int i = dim; i > 1; i--)
+                {
+                    str += bk + "if(cache.isCommaLast()){cache.deleteLast();}\n";
+                    str += bk + "cache.append(']');\n";
+                    str += bk + "cache.append(',');\n";
+                    bk = bk.substring(0, bk.length() - 1);
+                    str += bk + "}\n";
+                }
+                str += bk + "if(cache.isCommaLast()){cache.deleteLast();}\n";
+                str += bk + "cache.append(']');\n";
+                str += "}";
+            }
+            else
+            {
+                str = "{\n\t" + NameTool.buildDimTypeName(rootName, dim) + " array" + dim + " = (" + NameTool.buildDimTypeName(rootName, dim) + ")$1;\n";
+                str += "\tStringCache cache = (StringCache)$2;\n";
+                str += "\tcache.append('[');\n";
+                str += "\tint l" + dim + " = array" + dim + ".length;\n";
+                String bk = "\t";
+                for (int i = dim; i > 1; i--)
+                {
+                    int next = i - 1;
+                    str += bk + "for(int i" + i + " = 0;i" + i + "<l" + i + ";i" + i + "++)\n";
+                    str += bk + "{\n";
+                    str += bk + "\tif(array" + i + "[i" + i + "] == null){continue;}\n";
+                    str += bk + "\tcache.append('[');\n";
+                    str += bk + "\t" + NameTool.buildDimTypeName(rootName, next) + " array" + next + " = array" + i + "[i" + i + "];\n";
+                    str += bk + "\tint l" + next + " =  array" + next + ".length;\n";
+                    bk += "\t";
+                }
+                str += bk + "for(int i1=0;i1<l1;i1++)\n";
+                str += bk + "{\n";
+                str += bk + "\tif(array1[i1]==null){continue;}\n";
+                str += bk + "\twriteStrategy.getWriter(array1[i1].getClass()).write(array1[i1],cache,array" + dim + ");\n";
+                str += bk + "\tcache.append(',');\n";
+                str += bk + "}\n";
+                for (int i = dim; i > 1; i--)
+                {
+                    str += bk + "if(cache.isCommaLast()){cache.deleteLast();}\n";
+                    str += bk + "cache.append(']');\n";
+                    str += bk + "cache.append(',');\n";
+                    bk = bk.substring(0, bk.length() - 1);
+                    str += bk + "}\n";
+                }
+                str += bk + "if(cache.isCommaLast()){cache.deleteLast();}\n";
+                str += bk + "cache.append(']');\n";
+                str += "}";
+            }
+        }
         try
         {
             CtClass implClass = classPool.makeClass("JsonWriter_" + targetClass.getSimpleName() + "_" + System.currentTimeMillis());
-            CtClass interfaceCtClass = classPool.getCtClass(JsonWriter.class.getName());
-            implClass.setInterfaces(new CtClass[] { interfaceCtClass });
+            implClass.setSuperclass(classPool.get(WriterAdapter.class.getName()));
+            if (strategy != null)
+            {
+                implClass.setName("JsonWriter_Strategy_" + targetClass.getSimpleName() + '_' + System.nanoTime());
+                createStrategyConstructor(implClass);
+            }
             CtClass ObjectCc = classPool.get(Object.class.getName());
             CtClass cacheCc = classPool.get(StringCache.class.getName());
             CtClass trackerCc = classPool.get(Tracker.class.getName());

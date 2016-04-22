@@ -23,11 +23,11 @@ public class ReturnCustomObjectMethodInfo extends AbstractWriteMethodInfo
                 str += "\tJsonWriter writer = writeStrategy.getWriterByField(\"" + key + "\");\n";
                 if (strategy.isUseTracker())
                 {
-                    str += "\tif(((Tracker)$4).getPath(" + fieldName + ")==null)\n";
+                    str += "\tif(_$tracker.getPath(" + fieldName + ")==null)\n";
                     str += "\t{\n";
-                    str += "\t\t((Tracker)$4).reset(" + entityName + ");\n";
+                    str += "\t\t_$tracker.reset(" + entityName + ");\n";
                     str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+'.'+\"" + fieldName + "\";\n";
-                    str += "\t\t((Tracker)$4).put(" + fieldName + ",newPath);\n";
+                    str += "\t\t_$tracker.put(" + fieldName + ",newPath);\n";
                     str += "\t}\n";
                     str += "\twriter.write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
                 }
