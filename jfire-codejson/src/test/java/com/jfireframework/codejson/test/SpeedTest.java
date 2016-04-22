@@ -3,6 +3,7 @@ package com.jfireframework.codejson.test;
 import org.junit.Ignore;
 import org.junit.Test;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -40,7 +41,7 @@ public class SpeedTest extends Support
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-            JSON.toJSONString(data);
+            JSON.toJSONString(data,SerializerFeature.DisableCircularReferenceDetect);
         }
         timewatch.end();
         logger.info("fastjson输出耗时：{}", timewatch.getTotal());
