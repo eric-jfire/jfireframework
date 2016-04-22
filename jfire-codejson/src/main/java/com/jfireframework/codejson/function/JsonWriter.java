@@ -12,7 +12,7 @@ public interface JsonWriter
      * @param entity TODO
      * @return
      */
-    public void write(Object field, StringCache cache, Object entity,Tracker tracker);
+    public void write(Object field, StringCache cache, Object entity, Tracker tracker);
     
     public void write(int field, StringCache cache, Object entity);
     

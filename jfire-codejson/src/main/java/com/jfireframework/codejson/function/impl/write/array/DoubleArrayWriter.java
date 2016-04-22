@@ -7,7 +7,7 @@ import com.jfireframework.codejson.tracker.Tracker;
 public class DoubleArrayWriter extends WriterAdapter
 {
     @Override
-    public void write(Object field, StringCache cache, Object entity,Tracker tracker)
+    public void write(Object field, StringCache cache, Object entity, Tracker tracker)
     {
         double[] array = (double[]) field;
         cache.append('[');

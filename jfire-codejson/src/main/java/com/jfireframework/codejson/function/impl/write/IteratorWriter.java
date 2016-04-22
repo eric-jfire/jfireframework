@@ -10,7 +10,7 @@ public class IteratorWriter extends WriterAdapter
     
     @SuppressWarnings("rawtypes")
     @Override
-    public void write(Object field, StringCache cache, Object entity,Tracker tracker)
+    public void write(Object field, StringCache cache, Object entity, Tracker tracker)
     {
         cache.append('[');
         Iterator it = ((Iterable) field).iterator();

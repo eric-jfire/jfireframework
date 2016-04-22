@@ -8,7 +8,7 @@ public class CharArrayWriter extends WriterAdapter
 {
     
     @Override
-    public void write(Object field, StringCache cache, Object entity,Tracker tracker)
+    public void write(Object field, StringCache cache, Object entity, Tracker tracker)
     {
         char[] array = (char[]) field;
         cache.append('[');

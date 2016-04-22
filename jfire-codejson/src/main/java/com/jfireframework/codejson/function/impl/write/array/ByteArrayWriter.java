@@ -7,7 +7,7 @@ import com.jfireframework.codejson.tracker.Tracker;
 public class ByteArrayWriter extends WriterAdapter
 {
     @Override
-    public void write(Object field, StringCache cache, Object entity,Tracker tracker)
+    public void write(Object field, StringCache cache, Object entity, Tracker tracker)
     {
         byte[] array = (byte[]) field;
         cache.append('[');

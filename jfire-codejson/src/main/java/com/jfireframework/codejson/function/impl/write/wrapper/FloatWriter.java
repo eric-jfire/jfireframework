@@ -8,7 +8,7 @@ public class FloatWriter extends WriterAdapter implements WrapperWriter
 {
     
     @Override
-    public void write(Object field, StringCache cache, Object entity,Tracker tracke)
+    public void write(Object field, StringCache cache, Object entity, Tracker tracke)
     {
         cache.append((Float) field);
     }

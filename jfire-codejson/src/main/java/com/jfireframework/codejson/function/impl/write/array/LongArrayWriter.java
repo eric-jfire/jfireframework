@@ -8,7 +8,7 @@ public class LongArrayWriter extends WriterAdapter
 {
     
     @Override
-    public void write(Object field, StringCache cache, Object entity,Tracker tracker)
+    public void write(Object field, StringCache cache, Object entity, Tracker tracker)
     {
         long[] array = (long[]) field;
         cache.append('[');

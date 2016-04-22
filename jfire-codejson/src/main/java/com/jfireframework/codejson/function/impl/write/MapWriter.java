@@ -12,7 +12,7 @@ public class MapWriter extends WriterAdapter
     
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public void write(Object field, StringCache cache, Object entity,Tracker tracker)
+    public void write(Object field, StringCache cache, Object entity, Tracker tracker)
     {
         cache.append('{');
         Set<Entry> set = ((Map) field).entrySet();

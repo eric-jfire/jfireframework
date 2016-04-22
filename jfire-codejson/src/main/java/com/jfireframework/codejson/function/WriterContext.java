@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.swing.text.html.parser.Entity;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -327,6 +326,7 @@ public class WriterContext
             {
                 str = "{\n\t" + NameTool.buildDimTypeName(rootName, dim) + " array" + dim + " = (" + NameTool.buildDimTypeName(rootName, dim) + ")$1;\n";
                 str += "\tStringCache cache = (StringCache)$2;\n";
+                str += "\tTracker _$tracker = (Tracker)$4;\n";
                 str += "\tcache.append('[');\n";
                 str += "\tint l" + dim + " = array" + dim + ".length;\n";
                 String bk = "\t";
@@ -377,15 +377,28 @@ public class WriterContext
                 {
                     str += bk + "\t_$tracker.reset(array2[i2]);\n";
                 }
-                str += bk + "\t_$if(tracker.getPath(array1[i1])!=null)\n";
+                str += bk + "\tif(_$tracker.getPath(array1[i1])!=null)\n";
                 str += bk + "\t{\n";
                 str += bk + "\t\tif(writeStrategy.containsTrackerType(array1[i1].getClass()))\n";
                 str += bk + "\t\t{\n";
-                str += bk + "\t\t\twriteStrategy.getTrackerType(array1[i1].getClass())\n";
+                str += bk + "\t\t\twriteStrategy.getTrackerType(array1[i1].getClass()).write(array1[i1],cache,$1,_$tracker);\n";
+                str += bk + "\t\t}\n";
+                str += bk + "\t\telse\n";
+                str += bk + "\t\t{\n";
+                str += bk + "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(array1[i1])).append('\"').append('}');\n";
                 str += bk + "\t\t}\n";
                 str += bk + "\t\tcontinue;\n";
                 str += bk + "\t}\n";
-                str += bk + "\twriteStrategy.getWriter(array1[i1].getClass()).write(array1[i1],cache,array" + dim + ");\n";
+                if (dim == 1)
+                {
+                    str += bk + "\tString path0 = _$tracker.getPath($1)+'['+i1+']';\n";
+                }
+                else
+                {
+                    str += bk + "\tString path0 = _$tracker.getPath(array2[i2]);\n";
+                }
+                str += bk + "\t_$tracker.put(array1[i1],path0);\n";
+                str += bk + "\twriteStrategy.getWriter(array1[i1].getClass()).write(array1[i1],cache,$1,_$tracker);\n";
                 str += bk + "\tcache.append(',');\n";
                 str += bk + "}\n";
                 for (int i = dim; i > 1; i--)
@@ -421,7 +434,7 @@ public class WriterContext
                 str += bk + "for(int i1=0;i1<l1;i1++)\n";
                 str += bk + "{\n";
                 str += bk + "\tif(array1[i1]==null){continue;}\n";
-                str += bk + "\twriteStrategy.getWriter(array1[i1].getClass()).write(array1[i1],cache,array" + dim + ");\n";
+                str += bk + "\twriteStrategy.getWriter(array1[i1].getClass()).write(array1[i1],cache,$1,null);\n";
                 str += bk + "\tcache.append(',');\n";
                 str += bk + "}\n";
                 for (int i = dim; i > 1; i--)
@@ -450,6 +463,7 @@ public class WriterContext
             CtClass cacheCc = classPool.get(StringCache.class.getName());
             CtClass trackerCc = classPool.get(Tracker.class.getName());
             CtMethod method = new CtMethod(CtClass.voidType, "write", new CtClass[] { ObjectCc, cacheCc, ObjectCc, trackerCc }, implClass);
+            logger.trace("{}创建的输出方法是\r{}\r", implClass.getName(), str);
             method.setBody(str);
             implClass.addMethod(method);
             implClass.rebuildClassFile();

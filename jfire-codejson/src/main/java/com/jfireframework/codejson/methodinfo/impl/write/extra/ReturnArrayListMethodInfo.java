@@ -71,7 +71,7 @@ public class ReturnArrayListMethodInfo extends AbstractWriteMethodInfo
                     str += "\t\tcache.append(\"\\\"" + fieldName + "\\\":\");\n";
                     str += "\t\tif(writeStrategy.containsTrackerType(java.util.ArrayList.class))\n";
                     str += "\t\t{\n";
-                    str += "\t\t\twriteStrategy.getTrackerType(java.util.ArrayList.class).write("+fieldName+",cache," + entityName + ",(Tracker)$4);\n";
+                    str += "\t\t\twriteStrategy.getTrackerType(java.util.ArrayList.class).write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
                     str += "\t\t}\n";
                     str += "\t\telse\n";
                     str += "\t\t{\n";

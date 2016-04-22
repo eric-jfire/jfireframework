@@ -8,7 +8,7 @@ public class IntegerWriter extends WriterAdapter implements WrapperWriter
 {
     
     @Override
-    public void write(Object field, StringCache cache, Object entity,Tracker tracker)
+    public void write(Object field, StringCache cache, Object entity, Tracker tracker)
     {
         cache.append((Integer) field);
     }

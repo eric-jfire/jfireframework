@@ -153,7 +153,7 @@ public class TestStrategy
     public void testFunction2()
     {
         WriteStrategy strategy = new WriteStrategy();
-//        strategy.setUseTracker(true);
+        // strategy.setUseTracker(true);
         strategy.addTypeStrategy(Date.class, new WriterAdapter() {
             @Override
             public void write(Object field, StringCache cache, Object entity, Tracker tracker)
@@ -334,7 +334,7 @@ public class TestStrategy
         assertEquals("{\"array\":[1,1,1],\"array1\":[3,7,9]}", strategy.write(new FunctionData14()));
         strategy = new WriteStrategy();
         strategy.addFieldStrategy("com.jfireframework.codejson.test.strategy.FunctionData14.array", new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity,Tracker tracker)
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 cache.append('"').append(1).append('"');
             }
@@ -342,7 +342,7 @@ public class TestStrategy
         assertEquals("{\"array\":\"1\",\"array1\":[3,7,9]}", strategy.write(new FunctionData14()));
         strategy = new WriteStrategy();
         strategy.addTypeStrategy(Integer.class, new WriterAdapter() {
-            public void write(Object field, StringCache cache, Object entity,Tracker tracker)
+            public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
                 cache.append(1);
             }

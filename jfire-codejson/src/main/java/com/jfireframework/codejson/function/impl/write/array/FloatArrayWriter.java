@@ -7,7 +7,7 @@ import com.jfireframework.codejson.tracker.Tracker;
 public class FloatArrayWriter extends WriterAdapter
 {
     @Override
-    public void write(Object field, StringCache cache, Object entity,Tracker tracker)
+    public void write(Object field, StringCache cache, Object entity, Tracker tracker)
     {
         float[] array = (float[]) field;
         cache.append('[');

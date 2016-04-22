@@ -15,16 +15,21 @@ public class SpeedTest extends Support
 {
     
     @Test
-    public void Test(){
+    public void Test()
+    {
         WriteStrategy strategy = new WriteStrategy();
         strategy.setUseTracker(true);
         strategy.write(data);
     }
+    
     @Test
     // @Ignore
     public void writeSpeedTest() throws JsonProcessingException
     {
         logger.debug("codejson的输出是\n\n{}\n\n", JsonTool.write(data));
+        WriteStrategy strategy = new WriteStrategy();
+        strategy.setUseTracker(true);
+        strategy.write(data);
         ObjectMapper mapper = new ObjectMapper();
         Gson gson = new Gson();
         System.out.println(gson.toJson(data));
@@ -39,14 +44,11 @@ public class SpeedTest extends Support
         }
         timewatch.end();
         logger.info("fastjson输出耗时：{}", timewatch.getTotal());
-        WriteStrategy strategy = new WriteStrategy();
-        strategy.setUseTracker(true);
-        strategy.write(data);
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-//            JsonTool.write(data);
-            strategy.write(data);
+            JsonTool.write(data);
+            // strategy.write(data);
         }
         timewatch.end();
         logger.info("codejson输出耗时：{}", timewatch.getTotal());
