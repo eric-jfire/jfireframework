@@ -23,15 +23,15 @@ public class ReturnMapMethodInfo extends AbstractWriteMethodInfo
                 str += "\tJsonWriter writer = writeStrategy.getWriterByField(\"" + key + "\");\n";
                 if (strategy.isUseTracker())
                 {
-                    str += "\tif(_$tracker.getPath(" + fieldName + ")==null)\n";
+                    str += "\t_$tracker.reset(_$reIndex);\n";
+                    str += "\tint _$index = _$tracker.indexOf(" + fieldName + ");\n";
+                    str += "\tif(_$index == -1)\n";
                     str += "\t{\n";
-                    str += "\t\t_$tracker.reset(" + entityName + ");\n";
-                    str += "\t\tString newPath = _$tracker.getPath(" + entityName + ")+'.'+\"" + fieldName + "\";\n";
-                    str += "\t\t_$tracker.put(" + fieldName + ",newPath);\n";
+                    str += "\t\t_$tracker.put(" + fieldName + ",\"" + fieldName + "\",false);\n";
                     str += "\t}\n";
                     str += "\telse\n";
                     str += "\t{\n";
-                    str += "\t\twriter.write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
+                    str += "\t\twriter.write(" + fieldName + ",cache," + entityName + ",_$tracker);\n";
                     str += "\t}\n";
                     str += "}\n";
                 }
@@ -46,23 +46,22 @@ public class ReturnMapMethodInfo extends AbstractWriteMethodInfo
             {
                 if (strategy.isUseTracker())
                 {
-                    str += "\t((Tracker)$4).reset(" + entityName + ");\n";
-                    str += "\tString path = ((Tracker)$4).getPath(" + fieldName + ");\n";
-                    str += "\tif(path != null)\n\t{\n";
-                    str += "\t\tif(writeStrategy.containsTrackerType(" + fieldName + ".getClass()))\n";
+                    str += "\t_$tracker.reset(_$reIndex);\n";
+                    str += "\tint _$index = _$tracker.indexOf(" + fieldName + ");\n";
+                    str += "\tif(_$index != -1)\n\t{\n";
+                    str += "\t\tJsonWriter writer = writeStrategy.getTrackerType(" + fieldName + ".getClass());\n";
+                    str += "\t\tif(writer != null)\n";
                     str += "\t\t{\n";
-                    str += "\t\t\tJsonWriter writer = writeStrategy.getTrackerType(" + fieldName + ".getClass());\n";
                     str += "\t\t\twriter.write(" + fieldName + ",cache," + entityName + ",_$tracker);\n";
                     str += "\t\t}\n";
                     str += "\t\telse\n";
                     str += "\t\t{\n";
-                    str += "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(path).append('\"').append('}');\n";
+                    str += "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(_$index)).append('\"').append('}');\n";
                     str += "\t\t}\n";
                     str += "\t}\n";
                     str += "\telse\n";
                     str += "\t{\n";
-                    str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+\"." + fieldName + "\";\n";
-                    str += "\t\t((Tracker)$4).put(" + fieldName + ",newPath);\n";
+                    str += "\t\tint _$reIndex1 = _$tracker.put(" + fieldName + ",\"" + fieldName + "\",false);\n";
                     str += "\t\tcache.append(\"\\\"" + fieldName + "\\\":{\");\n";
                     str += "\t\tSet entries = " + fieldName + ".entrySet();\n";
                     str += "\t\tIterator it = entries.iterator();\n";
@@ -72,7 +71,6 @@ public class ReturnMapMethodInfo extends AbstractWriteMethodInfo
                     str += "\t\t\tentry = it.next();\n";
                     str += "\t\t\tif(entry.getKey()!=null && entry.getValue()!=null)\n";
                     str += "\t\t\t{\n";
-                    str += "\t\t\t\t_$tracker.reset(" + entityName + ");\n";
                     str += "\t\t\t\tif(entry.getKey() instanceof String)\n";
                     str += "\t\t\t\t{\n";
                     if (strategy.getWriter(String.class) instanceof StringWriter)
@@ -104,21 +102,23 @@ public class ReturnMapMethodInfo extends AbstractWriteMethodInfo
                     str += "\t\t\t\t}\n";
                     str += "\t\t\t\telse\n";
                     str += "\t\t\t\t{\n";
-                    str += "\t\t\t\t\tif(_$tracker.getPath(entry.getValue())!=null)\n";
+                    str += "\t\t\t\t\t_$tracker.reset(_$reIndex1);\n";
+                    str += "\t\t\t\t\tint _$index1 = _$tracker.indexOf(entry.getValue());\n";
+                    str += "\t\t\t\t\tif(_$index1 != -1)\n";
                     str += "\t\t\t\t\t{\n";
-                    str += "\t\t\t\t\t\tif(writeStrategy.containsTrackerType(entry.getValue().getClass()))\n";
+                    str += "\t\t\t\t\t\t JsonWriter writer = writeStrategy.getTrackerType(entry.getValue().getClass());\n";
+                    str += "\t\t\t\t\t\tif(writer != null)\n";
                     str += "\t\t\t\t\t\t{\n";
-                    str += "\t\t\t\t\t\t\twriteStrategy.getTrackerType(entry.getValue().getClass()).write(entry.getValue(),cache," + entityName + ",_$tracker);\n";
+                    str += "\t\t\t\t\t\t\twriter.write(entry.getValue(),cache," + entityName + ",_$tracker);\n";
                     str += "\t\t\t\t\t\t}\n";
                     str += "\t\t\t\t\t\telse\n";
                     str += "\t\t\t\t\t\t{\n";
-                    str += "\t\t\t\t\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(entry.getValue())).append('\"').append('}');\n";
+                    str += "\t\t\t\t\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(_$index1)).append('\"').append('}');\n";
                     str += "\t\t\t\t\t\t}\n";
                     str += "\t\t\t\t\t}\n";
                     str += "\t\t\t\t\telse\n";
                     str += "\t\t\t\t\t{\n";
-                    str += "\t\t\t\t\t\tString newPath1 = _$tracker.getPath(" + entityName + ")+'.'+entry.getKey().toString();\n";
-                    str += "\t\t\t\t\t\t_$tracker.put(entry.getValue(),newPath1);\n";
+                    str += "\t\t\t\t\t\t_$tracker.put(entry.getValue(),entry.getKey().toString(),false);\n";
                     str += "\t\t\t\t\t\twriteStrategy.getWriter(entry.getValue().getClass()).write(entry.getValue(),cache," + entityName + ",_$tracker);\n";
                     str += "\t\t\t\t\t}\n";
                     str += "\t\t\t\t}\n";

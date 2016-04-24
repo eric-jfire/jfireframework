@@ -27,9 +27,8 @@ public class ReturnIterableMethodInfo extends AbstractWriteMethodInfo
                 str += "\tJsonWriter writer = writeStrategy.getWriterByField(\"" + key + "\");\n";
                 if (strategy.isUseTracker())
                 {
-                    str += "\t((Tracker)$4).reset(" + entityName + ");\n";
-                    str += "\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+\"." + fieldName + "\";\n";
-                    str += "\t((Tracker)$4).put(" + fieldName + ",newPath);\n";
+                    str += "\t_$tracker.reset(_$reIndex);\n";
+                    str += "\t_$tracker.put(" + fieldName + ",\"" + fieldName + "\",false);\n";
                     str += "\twriter.write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
                 }
                 else
@@ -43,23 +42,23 @@ public class ReturnIterableMethodInfo extends AbstractWriteMethodInfo
             {
                 if (strategy.isUseTracker())
                 {
-                    str += "\t((Tracker)$4).reset(" + entityName + ");\n";
-                    str += "\tString path = ((Tracker)$4).getPath(" + fieldName + ");\n";
-                    str += "\tif(path != null)\n";
+                    str += "\t_$tracker.reset(_$reIndex);\n";
+                    str += "\tint _$index = _$tracker.indexOf(" + fieldName + ");\n";
+                    str += "\tif(_$index != -1)\n";
                     str += "\t{\n";
                     str += "\t\tcache.append(\"\\\"" + fieldName + "\\\":\");\n";
-                    str += "\t\tif(writeStrategy.containsTrackerType(" + fieldName + ".getClass()))\n";
+                    str += "\t\tJsonWriter writer = writeStrategy.getTrackerType(" + fieldName + ".getClass());\n";
+                    str += "\t\tif(writer != null)\n";
                     str += "\t\t{\n";
-                    str += "\t\t\twriteStrategy.getTrackerType(" + fieldName + ".getClass()).write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
+                    str += "\t\t\twriter.write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
                     str += "\t\t}\n";
                     str += "\t\telse\n";
                     str += "\t\t{\n";
-                    str += "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(path).append('\"').append('}');\n";
+                    str += "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(_$index)).append('\"').append('}');\n";
                     str += "\t\t}\n";
                     str += "\telse\n";
                     str += "\t{\n";
-                    str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+'.\"" + fieldName + "\";\n";
-                    str += "\t\t((Tracker)$4).put(" + fieldName + ",newPath);\n";
+                    str += "\t\tint _$reIndex1 = _$tracker.put(" + fieldName + ",\"" + fieldName + "\",false);\n";
                     str += "\t\tcache.append(\"\\\"" + fieldName + "\\\":[\");\n";
                     str += "\t\tint count = 0;\n";
                     str += "\t\tIterator it =" + fieldName + ".iterator();\n";
@@ -76,30 +75,31 @@ public class ReturnIterableMethodInfo extends AbstractWriteMethodInfo
                     }
                     else
                     {
-                        str += "\t\t\t\t\twriteStrategy.getWriter(String.class).write((String)valueTmp,cache," + entityName + ");\n";
+                        str += "\t\t\t\t\twriteStrategy.getWriter(String.class).write((String)valueTmp,cache," + entityName + ",_$tracker);\n";
                     }
                     str += "\t\t\t\t\tcount+=1;\n";
                     str += "\t\t\t\t}\n";
                     str += "\t\t\t\telse\n";
                     str += "\t\t\t\t{\n";
-                    str += "\t\t\t\t\tString path1 = ((Tracker)$4).getPath(valueTmp);\n";
-                    str += "\t\t\t\t\tif(path1 != null)\n";
+                    str += "\t\t\t\t\t_$tracker.reset(_$reIndex1);\n";
+                    str += "\t\t\t\t\tint _$index1 = _$tracker.indexOf(valueTmp);\n";
+                    str += "\t\t\t\t\tif(_$index1 != -1)\n";
                     str += "\t\t\t\t\t{\n";
-                    str += "\t\t\t\t\t\tif(writeStrategy.containsTrackerType(valueTmp.getClass()))\n";
+                    str += "\t\t\t\t\t\tJsonWriter writer = writeStrategy.getTrackerType(valueTmp.getClass());\n";
+                    str += "\t\t\t\t\t\tif(writer != null)\n";
                     str += "\t\t\t\t\t\t{\n";
-                    str += "\t\t\t\t\t\t\twriteStrategy.getTrackerType(valueTmp.getClass()).write(valueTmp,cache," + entityName + ",(Tracker)$4);\n";
+                    str += "\t\t\t\t\t\t\twriter.write(valueTmp,cache," + entityName + ",_$tracker);\n";
                     str += "\t\t\t\t\t\t}\n";
                     str += "\t\t\t\t\t\telse\n";
                     str += "\t\t\t\t\t\t{\n";
-                    str += "\t\t\t\t\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(path1).append('\"').append('}');\n";
+                    str += "\t\t\t\t\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(_$index1)).append('\"').append('}');\n";
                     str += "\t\t\t\t\t\t}\n";
                     str += "\t\t\t\t\t\tcount+=1;\n";
                     str += "\t\t\t\t\t}\n";
                     str += "\t\t\t\t\telse\n";
                     str += "\t\t\t\t\t{\n";
-                    str += "\t\t\t\t\t\tString newPath1 = ((Tracker)$4).getPath(" + entityName + ")+'.\"" + fieldName + "[\"+count+\"]\";\n";
-                    str += "\t\t\t\t\t\t((Tracker)$4).put(valueTmp,newPath1);\n";
-                    str += "\t\t\t\t\t\twriteStrategy.getWriter(valueTmp.getClass()).write(valueTmp,cache," + entityName + ",(Tracker)$4);\n";
+                    str += "\t\t\t\t\t\t_$tracker.put(valueTmp,\"[\"+count+\"]\",true);\n";
+                    str += "\t\t\t\t\t\twriteStrategy.getWriter(valueTmp.getClass()).write(valueTmp,cache," + entityName + ",_$tracker);\n";
                     str += "\t\t\t\t\t\tcount+=1;\n";
                     str += "\t\t\t\t\t}\n";
                     str += "\t\t\t\t}\n";
@@ -145,7 +145,6 @@ public class ReturnIterableMethodInfo extends AbstractWriteMethodInfo
         }
         else
         {
-            // 这里是准备用数组的方式进行序列化了
             str += "\tcache.append(\"\\\"" + fieldName + "\\\":[\");\n";
             str += "\tIterator it =" + fieldName + ".iterator();\n";
             str += "\tObject valueTmp = null;\n";

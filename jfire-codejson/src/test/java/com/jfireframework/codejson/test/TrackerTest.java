@@ -25,10 +25,11 @@ public class TrackerTest
             @Override
             public void write(Object field, StringCache cache, Object entity, Tracker tracker)
             {
+                System.out.println("sadasdas");
                 Guy guy = (Guy) field;
-                String path = tracker.getPath(field);
+                String path = tracker.getPath(tracker.indexOf(field));
                 cache.append("{\"$ref\":").append(path).append(",\"我想输出什么都可以\":\"").append(guy.getName()).append("\"}");
-                System.err.println(tracker.getPath(field));
+                System.err.println(path);
             }
         });
         System.out.println(strategy.write(guy));

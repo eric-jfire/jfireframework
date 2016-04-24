@@ -41,15 +41,15 @@ public class SpeedTest extends Support
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-            JSON.toJSONString(data,SerializerFeature.DisableCircularReferenceDetect);
+            JSON.toJSONString(data);
         }
         timewatch.end();
         logger.info("fastjson输出耗时：{}", timewatch.getTotal());
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-            JsonTool.write(data);
-            // strategy.write(data);
+//            JsonTool.write(data);
+             strategy.write(data);
         }
         timewatch.end();
         logger.info("codejson输出耗时：{}", timewatch.getTotal());
@@ -60,13 +60,13 @@ public class SpeedTest extends Support
         }
         timewatch.end();
         logger.info("jackson2输出耗时：{}", timewatch.getTotal());
-        timewatch.start();
-        for (int i = 0; i < count; i++)
-        {
-            gson.toJson(data);
-        }
-        timewatch.end();
-        logger.info("gson输出耗时：{}", timewatch.getTotal());
+//        timewatch.start();
+//        for (int i = 0; i < count; i++)
+//        {
+//            gson.toJson(data);
+//        }
+//        timewatch.end();
+//        logger.info("gson输出耗时：{}", timewatch.getTotal());
     }
     
     @Test

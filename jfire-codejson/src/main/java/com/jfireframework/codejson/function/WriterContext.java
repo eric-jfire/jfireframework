@@ -182,6 +182,10 @@ public class WriterContext
             stringCache.append("Tracker _$tracker = (Tracker)$4;\n");
             String entityName = "entity" + System.nanoTime();
             stringCache.append(cklas.getName() + " " + entityName + " =(" + cklas.getName() + " )$1;\n");
+            if (strategy != null && strategy.isUseTracker())
+            {
+                stringCache.append("int _$reIndex = _$tracker.indexOf($1);\n");
+            }
             stringCache.append("cache.append('{');\n");
             Method[] methods = ReflectUtil.listGetMethod(cklas);
             Arrays.sort(methods, new MethodComparator());
@@ -327,6 +331,7 @@ public class WriterContext
                 str = "{\n\t" + NameTool.buildDimTypeName(rootName, dim) + " array" + dim + " = (" + NameTool.buildDimTypeName(rootName, dim) + ")$1;\n";
                 str += "\tStringCache cache = (StringCache)$2;\n";
                 str += "\tTracker _$tracker = (Tracker)$4;\n";
+                str+="\tint _$reIndex = _$tracker.indexOf($1);\n";
                 str += "\tcache.append('[');\n";
                 str += "\tint l" + dim + " = array" + dim + ".length;\n";
                 String bk = "\t";
@@ -337,31 +342,35 @@ public class WriterContext
                     str += bk + "for(int i" + i + " = 0;i" + i + "<l" + i + ";i" + i + "++)\n";
                     str += bk + "{\n";
                     String nowArrayName = "array" + i + "[i" + i + "]";
+                    String nowIndex = "_$index" + nowArrayName;
                     String preArrayName = "array" + pre + "[i" + pre + "]";
+                    String preIndex = "_$index" + preArrayName;
                     str += bk + "\tif(" + nowArrayName + " == null){continue;}\n";
                     if (i == dim)
                     {
-                        str += bk + "\t_$tracker.reset($1);\n";
+                        str += bk + "\t_$tracker.reset(_$reIndex);\n";
                     }
                     else
                     {
-                        str += bk + "\t_$tracker.reset(" + preArrayName + ");\n";
+                        str += bk + "\t_$tracker.reset(" + preIndex + ");\n";
                     }
-                    str += bk + "\tif(_$tracker.getPath(" + nowArrayName + ")!=null)\n";
+                    str += bk + "\tint " + nowIndex + " = _$tracker.indexOf(" + nowArrayName + ");\n";
+                    str += bk + "\tif(" + nowArrayName + "!= -1)\n";
                     str += bk + "\t{\n";
-                    str += bk + "\t\tif(writeStrategy.containsTrackerType(" + nowArrayName + ".getClass())!=null)\n";
+                    String writerName = "writer_array_" + i;
+                    str += bk + "\t\tJsonWriter " + writerName + " = writeStrategy.getTrackerType(" + nowArrayName + ".getClass());\n";
+                    str += bk + "\t\tif(" + writerName + " != null)\n";
                     str += bk + "\t\t{\n";
-                    str += bk + "\t\t\twriteStrategy.getTrackerType(" + nowArrayName + ".getClass()).write(" + nowArrayName + ",cache,$1,_$tracker);\n";
+                    str += bk + "\t\t\t" + writerName + ".write(" + nowArrayName + ",cache,$1,_$tracker);\n";
                     str += bk + "\t\t}\n";
                     str += bk + "\t\telse\n";
                     str += bk + "\t\t{\n";
-                    str += bk + "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(" + nowArrayName + ")).append('\"').append('}');\n";
+                    str += bk + "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(" + nowIndex + ")).append('\"').append('}');\n";
                     str += bk + "\t\t}\n";
                     str += bk + "\t\tcontinue;\n";
                     str += bk + "\t}\n";
                     str += bk + "\tcache.append('[');\n";
-                    str += bk + "\tString path" + i + " = _$tracker.getPath(" + preArrayName + ")+'['+i" + i + "+']';\n";
-                    str += bk + "_$tracker.put(" + nowArrayName + ",path" + i + ");\n";
+                    str += bk + "_$tracker.put(" + nowArrayName + ",\"[\"+i+" + i + "']',true);\n";
                     str += bk + "\t" + NameTool.buildDimTypeName(rootName, next) + " array" + next + " = array" + i + "[i" + i + "];\n";
                     str += bk + "\tint l" + next + " =  array" + next + ".length;\n";
                     bk += "\t";
@@ -371,33 +380,27 @@ public class WriterContext
                 str += bk + "\tif(array1[i1]==null){continue;}\n";
                 if (dim == 1)
                 {
-                    str += bk + "\t_$tracker.reset($1);\n";
+                    str += bk + "\t_$tracker.reset(_$reIndex);\n";
                 }
                 else
                 {
-                    str += bk + "\t_$tracker.reset(array2[i2]);\n";
+                    str += bk + "\t_$tracker.reset(_$indexarray2[i2]);\n";
                 }
-                str += bk + "\tif(_$tracker.getPath(array1[i1])!=null)\n";
+                str += bk + "\tint _$indexarray0 = _$tracker.indexOf(array1[i1]);\n";
+                str += bk + "\tif(_$indexarray0 != -1)\n";
                 str += bk + "\t{\n";
-                str += bk + "\t\tif(writeStrategy.containsTrackerType(array1[i1].getClass()))\n";
+                str += bk + "\t\tJsonWriter writer_array_0 = writeStrategy.getTrackerType(array1[i1].getClass());\n";
+                str += bk + "\t\tif(writer_array_0 != null)\n";
                 str += bk + "\t\t{\n";
-                str += bk + "\t\t\twriteStrategy.getTrackerType(array1[i1].getClass()).write(array1[i1],cache,$1,_$tracker);\n";
+                str += bk + "\t\t\twriter_array_0.write(array1[i1],cache,$1,_$tracker);\n";
                 str += bk + "\t\t}\n";
                 str += bk + "\t\telse\n";
                 str += bk + "\t\t{\n";
-                str += bk + "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(array1[i1])).append('\"').append('}');\n";
+                str += bk + "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(_$indexarray0)).append('\"').append('}');\n";
                 str += bk + "\t\t}\n";
                 str += bk + "\t\tcontinue;\n";
                 str += bk + "\t}\n";
-                if (dim == 1)
-                {
-                    str += bk + "\tString path0 = _$tracker.getPath($1)+'['+i1+']';\n";
-                }
-                else
-                {
-                    str += bk + "\tString path0 = _$tracker.getPath(array2[i2]);\n";
-                }
-                str += bk + "\t_$tracker.put(array1[i1],path0);\n";
+                str += bk + "\t_$tracker.put(array1[i1],\"[\"+i1+']',true);\n";
                 str += bk + "\twriteStrategy.getWriter(array1[i1].getClass()).write(array1[i1],cache,$1,_$tracker);\n";
                 str += bk + "\tcache.append(',');\n";
                 str += bk + "}\n";

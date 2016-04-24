@@ -23,13 +23,13 @@ public class ReturnCustomObjectMethodInfo extends AbstractWriteMethodInfo
                 str += "\tJsonWriter writer = writeStrategy.getWriterByField(\"" + key + "\");\n";
                 if (strategy.isUseTracker())
                 {
-                    str += "\tif(_$tracker.getPath(" + fieldName + ")==null)\n";
+                    str += "\t_$tracker.reset(_$reIndex);\n";
+                    str += "\tint _$index = _$tracker.indexOf(" + fieldName + ");\n";
+                    str += "\tif(_$index == -1)\n";
                     str += "\t{\n";
-                    str += "\t\t_$tracker.reset(" + entityName + ");\n";
-                    str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+'.'+\"" + fieldName + "\";\n";
-                    str += "\t\t_$tracker.put(" + fieldName + ",newPath);\n";
+                    str += "\t\t_$tracker.put(" + fieldName + ",\""+fieldName+"\",false);\n";
                     str += "\t}\n";
-                    str += "\twriter.write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
+                    str += "\twriter.write(" + fieldName + ",cache," + entityName + ",_$tracker);\n";
                 }
                 else
                 {
@@ -43,24 +43,23 @@ public class ReturnCustomObjectMethodInfo extends AbstractWriteMethodInfo
                 str += "\tJsonWriter writer = writeStrategy.getWriter(" + fieldName + ".getClass());\n";
                 if (strategy.isUseTracker())
                 {
-                    str += "\t((Tracker)$4).reset(" + entityName + ");\n";
-                    str += "\tString path = ((Tracker)$4).getPath(" + fieldName + ");\n";
-                    str += "\tif(path != null)\n\t{\n";
-                    str += "\t\tif(writeStrategy.containsTrackerType(" + fieldName + ".getClass()))\n";
+                    str += "\t_$tracker.reset(_$reIndex);\n";
+                    str += "\tint _$index = _$tracker.indexOf(" + fieldName + ");\n";
+                    str += "\tif(_$index != -1)\n\t{\n";
+                    str += "\t\twriter = writeStrategy.getTrackerType(" + fieldName + ".getClass());\n";
+                    str += "\t\tif(writer != null )\n";
                     str += "\t\t{\n";
-                    str += "\t\t\twriter = writeStrategy.getTrackerType(" + fieldName + ".getClass());\n";
-                    str += "\t\t\twriter.write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
+                    str += "\t\t\twriter.write(" + fieldName + ",cache," + entityName + ",_$tracker);\n";
                     str += "\t\t}\n";
                     str += "\t\telse\n";
                     str += "\t\t{\n";
-                    str += "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(path).append('\"').append('}');\n";
+                    str += "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(_$index)).append('\"').append('}');\n";
                     str += "\t\t}\n";
                     str += "\t}\n";
                     str += "\telse\n";
                     str += "\t{\n";
-                    str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+\"." + fieldName + "\";\n";
-                    str += "\t\t((Tracker)$4).put(" + fieldName + ",newPath);\n";
-                    str += "\t\twriter.write(" + fieldName + ",cache," + entityName + ",(Tracker)$4);\n";
+                    str += "\t\t_$tracker.put(" + fieldName + ",\""+fieldName+"\",false);\n";
+                    str += "\t\twriter.write(" + fieldName + ",cache," + entityName + ",_$tracker);\n";
                     str += "\t}\n";
                 }
                 else

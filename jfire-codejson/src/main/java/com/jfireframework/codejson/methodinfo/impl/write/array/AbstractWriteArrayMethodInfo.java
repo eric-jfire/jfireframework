@@ -28,13 +28,13 @@ public abstract class AbstractWriteArrayMethodInfo extends AbstractWriteMethodIn
         {
             if (strategy.isUseTracker())
             {
-                str += "\t_$tracker.reset(" + entityName + ");\n";
-                str += "\tif(_$tracker.getPath(" + arrayName + ")==null)\n";
+                str += "\t_$tracker.reset(_$reIndex);\n";
+                str += "\tint _$index = _$tracker.indexOf(" + arrayName + ");\n";
+                str += "\tif(_$index == -1)\n";
                 str += "\t{\n";
-                str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+'.'+\"" + fieldName + "\";\n";
-                str += "\t\t_$tracker.put(" + arrayName + ",newPath);\n";
+                str += "\t\t_$tracker.put(" + arrayName + ",\"" + fieldName + "\",false);\n";
                 str += "\t}\n";
-                str += "\twriteStrategy.getWriterByField(\"" + key + "\").write(" + arrayName + ",cache," + entityName + ",(Tracker)$4);\n";
+                str += "\twriteStrategy.getWriterByField(\"" + key + "\").write(" + arrayName + ",cache," + entityName + ",_$tracker);\n";
             }
             else
             {
@@ -49,25 +49,24 @@ public abstract class AbstractWriteArrayMethodInfo extends AbstractWriteMethodIn
             String nextBk = "\t\t";
             if (strategy != null && strategy.isUseTracker())
             {
-                str += "\t_$tracker.reset(" + entityName + ");\n";
-                str += "\tString path = ((Tracker)$4).getPath(" + arrayName + ");\n";
-                str += "\tif(path!=null)\n";
+                str += "\t_$tracker.reset(_$reIndex);\n";
+                str += "\tint _$index = _$tracker.indexOf(" + arrayName + ");\n";
+                str += "\tif(_$index != -1)\n";
                 str += "\t{\n";
-                str += "\t\tif(writeStrategy.containsTrackerType(" + arrayName + ".getClass()))\n";
+                str += "\t\tJsonWriter writer = writeStrategy.getTrackerType(" + arrayName + ".getClass());\n";
+                str += "\t\tif(writer != null)\n";
                 str += "\t\t{\n";
-                str += "\t\t\tJsonWriter writer = writeStrategy.getTrackerType(" + arrayName + ".getClass());\n";
-                str += "\t\t\twriter.write(" + arrayName + ",cache," + entityName + ",(Tracker)$4);\n";
+                str += "\t\t\twriter.write(" + arrayName + ",cache," + entityName + ",_$tracker);\n";
                 str += "\t\t}\n";
                 str += "\t\telse\n";
                 str += "\t\t{\n";
-                str += "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(path).append('\"').append('}');\n";
+                str += "\t\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(_$index)).append('\"').append('}');\n";
                 str += "\t\t}\n";
                 str += "\t\tcache.append(',');\n";
                 str += "\t}\n";
                 str += "\telse\n";
                 str += "\t{\n";
-                str += "\t\tString newPath = ((Tracker)$4).getPath(" + entityName + ")+'.'+\"" + fieldName + "\";\n";
-                str += "\t\t_$tracker.put(" + arrayName + ",newPath);\n";
+                str += "\t\tint _$reIndexarray" + dim + " = _$tracker.put(" + arrayName + ",\"" + fieldName + "\",false);\n";
                 bk = "\t\t";
                 nextBk = "\t\t\t";
             }
@@ -78,32 +77,33 @@ public abstract class AbstractWriteArrayMethodInfo extends AbstractWriteMethodIn
             for (int i = 0; i < dim; i++)
             {
                 String pre = "array" + (dim - i + 1);
+                String preIndex = "_$reIndex" + pre;
                 String now = "array" + (dim - i);
+                String nowIndex = "_$reIndex" + now;
                 String next = "array" + (dim - i - 1);
+                String writerName = "writer" + now;
                 if (i != 0)
                 {
                     str += bk + "if(" + now + " != null)\n" + bk + "{\n";
                     if (strategy != null && strategy.isUseTracker())
                     {
-                        String pathname = "path" + now;
-                        str += nextBk + "_$tracker.reset(" + pre + ");\n";
-                        str += nextBk + "String " + pathname + " = _$tracker.getPath(" + now + ");\n";
-                        str += nextBk + "if(" + pathname + "!=null)\n";
+                        str += nextBk + "_$tracker.reset(" + preIndex + ");\n";
+                        str += nextBk + "int " + nowIndex + " = _$tracker.indexOf(" + now + ");\n";
+                        str += nextBk + "if(" + nowIndex + "!= -1)\n";
                         str += nextBk + "{\n";
-                        str += nextBk + "\tif(writeStrategy.containsTrackerType(" + now + ".getClass()))\n";
+                        str += nextBk + "\tJsonWriter " + writerName + " = writeStrategy.getTrackerType(" + now + ".getClass());\n";
+                        str += nextBk + "\tif(" + writerName + " != null)\n";
                         str += nextBk + "\t{\n";
-                        str += nextBk + "\t\twriteStrategy.getTrackerType(" + now + ".getClass()).write(" + now + ",cache," + entityName + ",(Tracker)$4);\n";
+                        str += nextBk + "\t\t" + writerName + ".write(" + now + ",cache," + entityName + ",_$tracker);\n";
                         str += nextBk + "\t}\n";
                         str += nextBk + "\telse\n";
                         str += nextBk + "\t{\n";
-                        str += nextBk + "\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(" + pathname + ").append('\"').append('}');\n";
+                        str += nextBk + "\t\tcache.append(\"{\\\"$ref\\\":\\\"\").append(_$tracker.getPath(" + nowIndex + ")).append('\"').append('}');\n";
                         str += nextBk + "\t}\n";
                         str += nextBk + "}\n";
                         str += nextBk + "else\n";
                         str += nextBk + "{\n";
-                        str += nextBk + "\t" + pathname + " = _$tracker.getPath(" + pre + ");\n";
-                        str += nextBk + "\t" + pathname + " += \"[\"+i" + (dim - i + 1) + "+']';\n";
-                        str += nextBk + "\t_$tracker.put(" + now + "," + pathname + ");\n";
+                        str += nextBk + "\t_$tracker.put(" + now + ",\"[\"+i" + (dim - i + 1) + "+']',true);\n";
                         nextBk += "\t";
                     }
                 }
@@ -121,7 +121,7 @@ public abstract class AbstractWriteArrayMethodInfo extends AbstractWriteMethodIn
                     str += nextBk + '\t' + NameTool.buildDimTypeName(rootName, dim - i - 1) + " " + next + " = " + now + "[" + index + "];\n";
                 }
                 bk = nextBk + '\t';
-                nextBk = bk + "\t";
+                nextBk = bk + '\t';
             }
             writeOneDim(rootType, bk);
             bk = bk.substring(0, bk.length() - 1);

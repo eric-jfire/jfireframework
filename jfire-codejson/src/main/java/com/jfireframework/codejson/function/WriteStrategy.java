@@ -44,6 +44,12 @@ public class WriteStrategy implements Strategy
                                                             return new StringCache();
                                                         }
                                                     };
+    private ThreadLocal<Tracker>      trackerLocal  = new ThreadLocal<Tracker>() {
+                                                        protected Tracker initialValue()
+                                                        {
+                                                            return new Tracker();
+                                                        }
+                                                    };
     
     public WriteStrategy()
     {
@@ -174,8 +180,9 @@ public class WriteStrategy implements Strategy
         cache.clear();
         if (useTracker)
         {
-            Tracker tracker = new Tracker();
-            tracker.put(entity, "$");
+            Tracker tracker = trackerLocal.get();
+            tracker.clear();
+            tracker.put(entity, "$", false);
             getWriter(entity.getClass()).write(entity, cache, null, tracker);
         }
         else
