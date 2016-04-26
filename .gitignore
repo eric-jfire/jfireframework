@@ -4,3 +4,6 @@ target/
 .settings/
 .classpath
 *.MF
+
+.idea
+*.iml
