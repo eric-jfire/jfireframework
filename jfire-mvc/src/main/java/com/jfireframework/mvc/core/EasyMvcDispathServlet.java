@@ -113,7 +113,7 @@ public class EasyMvcDispathServlet extends HttpServlet
 	{
 		AopUtil.initClassPool();
 		jfireContext.readConfig(configFile);
-		jfireContext.addPackageNames("link.jfire.sql");
+		jfireContext.addPackageNames("com.jfireframework.sql");
 		jfireContext.addSingletonEntity("servletContext", servletContext);
 		addDefaultInterceptors();
 		initTemplate();
@@ -294,7 +294,7 @@ public class EasyMvcDispathServlet extends HttpServlet
 					{
 						long t0 = System.currentTimeMillis();
 						ClassLoader classLoader = new HotwrapClassLoader(monitorFile, reloadPackages);
-						jfireContext = (JfireContext) classLoader.loadClass("link.jfire.core.JfireContextImpl").newInstance();
+						jfireContext = (JfireContext) classLoader.loadClass("com.jfireframework.context.JfireContextImpl").newInstance();
 						jfireContext.addSingletonEntity(ClassLoader.class.getSimpleName(), classLoader);
 						jfireContext.setClassLoader(classLoader);
 						initMvc();
