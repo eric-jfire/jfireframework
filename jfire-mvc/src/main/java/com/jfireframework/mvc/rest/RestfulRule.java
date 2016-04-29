@@ -5,13 +5,24 @@ import com.jfireframework.mvc.core.Action;
 
 public class RestfulRule
 {
+    
+    public static void main(String[] args)
+    {
+        String[] tmp = "user/*/*".split("\\*");
+        for (String each : tmp)
+        {
+            System.out.println(each);
+        }
+    }
+    
     private String[] names;
     private String[] rules;
     private int      lastRuleLength;
     private boolean  endWithAsterisk = false;
     private int      valueLength;
     private Action   action;
-    private String url;
+    private String   url;
+    
     public RestfulRule(String rule)
     {
         url = rule;
@@ -35,12 +46,11 @@ public class RestfulRule
         this.action = action;
     }
     
-    
     public String getUrl()
     {
         return url;
     }
-
+    
     public boolean match(String url)
     {
         int index = 0;
@@ -51,8 +61,8 @@ public class RestfulRule
             {
                 return false;
             }
+            index += rule.length();
         }
-        index += lastRuleLength;
         if (endWithAsterisk)
         {
             if (url.indexOf("/", index) < 0)

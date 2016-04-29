@@ -23,6 +23,9 @@ public class RestTest
         assertEquals("bid", names[1]);
         assertTrue(restfulRule.match("/action/1212/get/2323/set"));
         assertFalse(restfulRule.match("/action/1212/get/2323/set/1212-serer"));
+        restfulRule = RestfulUrlTool.build("/user/{name}/{password}", null);
+        assertTrue(restfulRule.match("/user/121/212"));
+        assertFalse(restfulRule.match("/user/121/212/"));
     }
     
     @Test
@@ -37,6 +40,10 @@ public class RestTest
         values = restfulRule.getObtain("/action/1212/get/2323/set");
         assertEquals("1212", values[0]);
         assertEquals("2323", values[1]);
+        restfulRule = RestfulUrlTool.build("/user/{name}/{password}", null);
+        values = restfulRule.getObtain("/user/121/212");
+        assertEquals("121", values[0]);
+        assertEquals("212", values[1]);
         
     }
 }
