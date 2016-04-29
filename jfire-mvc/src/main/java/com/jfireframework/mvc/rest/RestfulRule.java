@@ -54,14 +54,18 @@ public class RestfulRule
     public boolean match(String url)
     {
         int index = 0;
-        for (String rule : rules)
+        for (int i = 0; i < rules.length; i++)
         {
-            index = url.indexOf(rule, index);
+            index = url.indexOf(rules[i], index);
             if (index < 0)
             {
                 return false;
             }
-            index += rule.length();
+            if (i == 0 && index != 0)
+            {
+                return false;
+            }
+            index += rules[i].length();
         }
         if (endWithAsterisk)
         {
@@ -103,18 +107,18 @@ public class RestfulRule
         int index = 0;
         int i = 0;
         String[] values = new String[valueLength];
-        for (String each : rules)
+        for (int j = 0; j < rules.length; j++)
         {
-            index = url.indexOf(each, pre);
-            if (index == 0)
+            index = url.indexOf(rules[j], pre);
+            if (j == 0)
             {
-                pre += each.length();
+                pre += rules[j].length() + index;
                 continue;
             }
             else
             {
                 values[i++] = url.substring(pre, index);
-                pre = index + each.length();
+                pre = index + rules[j].length();
             }
         }
         if (endWithAsterisk)
