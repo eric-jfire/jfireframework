@@ -1,39 +1,19 @@
 package com.jfireframework.codejson;
 
 import java.lang.reflect.Type;
-import java.util.Deque;
-import java.util.LinkedList;
-import org.omg.CORBA.PRIVATE_MEMBER;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.codejson.function.ReaderContext;
 import com.jfireframework.codejson.function.WriterContext;
-import sun.misc.Unsafe;
 
-@SuppressWarnings("restriction")
 public class JsonTool
 {
-    private static long                       valueOff       = ReflectUtil.getFieldOffset("value", String.class);
-    private static Unsafe                     unsafe         = ReflectUtil.getUnsafe();
-    private static ThreadLocal<StringCache>   cacheLocal     = new ThreadLocal<StringCache>() {
-                                                                 protected StringCache initialValue()
-                                                                 {
-                                                                     return new StringCache(2048);
-                                                                 }
-                                                             };
-    private static ThreadLocal<Deque<String>> keyStackLocal  = new ThreadLocal<Deque<String>>() {
-                                                                 protected Deque<String> initialValue()
-                                                                 {
-                                                                     return new LinkedList<>();
-                                                                 }
-                                                             };
-    private static ThreadLocal<Deque<Json>>   jsonStackLocal = new ThreadLocal<Deque<Json>>() {
-                                                                 protected Deque<Json> initialValue()
-                                                                 {
-                                                                     return new LinkedList<>();
-                                                                 }
-                                                             };
+    private static ThreadLocal<StringCache> cacheLocal = new ThreadLocal<StringCache>() {
+        protected StringCache initialValue()
+        {
+            return new StringCache(2048);
+        }
+    };
     
     public static String write(Object value)
     {
@@ -55,6 +35,10 @@ public class JsonTool
         return (T) ReaderContext.getReader(entityClass).read(entityClass, json);
     }
     
+    private static final int NONE       = 0;
+    private static final int JSONOBJECT = 1;
+    private static final int JSONARRAY  = 2;
+    
     /**
      * 将字符串转换成jsonobject或者是jsonarray
      * 
@@ -63,12 +47,9 @@ public class JsonTool
      */
     public static Json fromString(String str)
     {
-        Deque<Json> jsonStack = jsonStackLocal.get();
-        jsonStack.clear();
-        Deque<String> keyStack = keyStackLocal.get();
-        keyStack.clear();
         JsonObject lastJsonObject = null;
         JsonArray lastJsonArray = null;
+        int nodeState = NONE;
         // 可读信息标志位
         int flag = 0;
         // 当前读取位置
@@ -79,8 +60,6 @@ public class JsonTool
         str.getChars(0, length, array, 0);
         // 是否开始读取字符串
         boolean strStartRead = false;
-        // 当前容器最上层是否是jsonobject，false代表是jsonarray
-        boolean isJsonObject = false;
         String jsonKey = null;
         comment: while (index < length)
         {
@@ -107,16 +86,30 @@ public class JsonTool
                         break;
                     }
                 case '{':
-                    lastJsonObject = new JsonObject();
-                    jsonStack.push(lastJsonObject);
-                    isJsonObject = true;
-                    if (jsonKey != null)
+                    JsonObject tmp = new JsonObject();
+                    switch (nodeState)
                     {
-                        keyStack.push(jsonKey);
-                        jsonKey = null;
-                        // 进入新的json，将计数器设置为0
-                        flag = 0;
+                        case NONE:
+                        {
+                            break;
+                        }
+                        case JSONOBJECT:
+                        {
+                            lastJsonObject.put(jsonKey, tmp);
+                            tmp.setParentNode(lastJsonObject);
+                            jsonKey = null;
+                            flag = 0;
+                            break;
+                        }
+                        case JSONARRAY:
+                        {
+                            lastJsonArray.add(tmp);
+                            tmp.setParentNode(lastJsonArray);
+                            break;
+                        }
                     }
+                    nodeState = JSONOBJECT;
+                    lastJsonObject = tmp;
                     break;
                 case '}':
                     // 如果计数器不为0，那就意味着还有非字符串形式的值尚未读取
@@ -130,39 +123,51 @@ public class JsonTool
                         jsonKey = null;
                         flag = 0;
                     }
-                    if (jsonStack.size() > 1)
+                    if (lastJsonObject.hasParentNode())
                     {
-                        Json json = jsonStack.pop();
-                        Object ahead = jsonStack.peek();
-                        if (ahead instanceof JsonObject)
+                        // Json json = jsonStack.pop();
+                        Json parentNode = lastJsonObject.getParentNode();
+                        if (parentNode instanceof JsonObject)
                         {
-                            lastJsonObject = (JsonObject) ahead;
-                            lastJsonObject.put(keyStack.pop(), json);
-                            isJsonObject = true;
+                            lastJsonObject = (JsonObject) parentNode;
+                            nodeState = JSONOBJECT;
                         }
                         else
                         {
-                            lastJsonArray = (JsonArray) ahead;
-                            lastJsonArray.add(json);
-                            isJsonObject = false;
+                            lastJsonArray = (JsonArray) parentNode;
+                            nodeState = JSONARRAY;
                         }
                     }
                     else
                     {
-                        return (Json) jsonStack.pop();
+                        return (Json) lastJsonObject;
                     }
                     break;
                 case '[':
-                    lastJsonArray = new JsonArray();
-                    jsonStack.push(lastJsonArray);
-                    isJsonObject = false;
-                    if (jsonKey != null)
+                    JsonArray tmp1 = new JsonArray();
+                    switch (nodeState)
                     {
-                        keyStack.push(jsonKey);
-                        jsonKey = null;
-                        flag = index + 1;
-                        break;
+                        case NONE:
+                        {
+                            
+                            break;
+                        }
+                        case JSONOBJECT:
+                        {
+                            lastJsonObject.put(jsonKey, tmp1);
+                            tmp1.setParentNode(lastJsonObject);
+                            jsonKey = null;
+                            break;
+                        }
+                        case JSONARRAY:
+                        {
+                            lastJsonArray.add(tmp1);
+                            tmp1.setParentNode(lastJsonArray);
+                            break;
+                        }
                     }
+                    nodeState = JSONARRAY;
+                    lastJsonArray = tmp1;
                     flag = index + 1;
                     break;
                 case ']':
@@ -175,38 +180,37 @@ public class JsonTool
                         }
                         flag = 0;
                     }
-                    if (jsonStack.size() > 1)
+                    if (lastJsonArray.hasParentNode())
                     {
-                        JsonArray jsonArray = (JsonArray) jsonStack.pop();
-                        Object ahead = jsonStack.peek();
-                        if (ahead instanceof JsonObject)
+                        Json parentNode1 = lastJsonArray.getParentNode();
+                        if (parentNode1 instanceof JsonObject)
                         {
-                            lastJsonObject = (JsonObject) ahead;
-                            lastJsonObject.put(keyStack.pop(), jsonArray);
-                            isJsonObject = true;
+                            lastJsonObject = (JsonObject) parentNode1;
+                            // lastJsonObject.put(keyStack.pop(),
+                            // lastJsonArray);
+                            nodeState = JSONOBJECT;
                         }
                         else
                         {
-                            lastJsonArray = (JsonArray) ahead;
-                            lastJsonArray.add(jsonArray);
-                            isJsonObject = false;
+                            // ((JsonArray) parentNode).add(lastJsonArray);
+                            lastJsonArray = (JsonArray) parentNode1;
+                            nodeState = JSONARRAY;
                         }
                         flag = 0;
                     }
                     else
                     {
-                        return (Json) jsonStack.pop();
+                        return (Json) lastJsonArray;
                     }
                     break;
                 case '"':
                     index++;
                     int end = str.indexOf('"', index);
                     Verify.True(end != -1, "json字符串存在异常");
-                    if (isJsonObject)
+                    if (nodeState == JSONOBJECT)
                     {
                         if (jsonKey == null)
                         {
-                            // jsonKey = str.substring(index, end);
                             jsonKey = new String(array, index, end - index);
                         }
                         else
@@ -215,9 +219,13 @@ public class JsonTool
                             jsonKey = null;
                         }
                     }
-                    else
+                    else if (nodeState == JSONARRAY)
                     {
                         lastJsonArray.add(new String(array, index, end - index));
+                    }
+                    else
+                    {
+                        throw new RuntimeException("错误的json格式");
                     }
                     flag = 0;
                     strStartRead = false;
@@ -241,7 +249,7 @@ public class JsonTool
                     if (flag != 0)
                     {
                         Object value = getNotStrValue(flag, index - 1, array);
-                        if (isJsonObject)
+                        if (nodeState == JSONOBJECT)
                         {
                             if (value != null)
                             {
@@ -250,13 +258,17 @@ public class JsonTool
                             jsonKey = null;
                             flag = 0;
                         }
-                        else
+                        else if (nodeState == JSONARRAY)
                         {
                             if (value != null)
                             {
                                 lastJsonArray.add(value);
                             }
                             flag = index + 1;
+                        }
+                        else
+                        {
+                            throw new RuntimeException("错误的json格式");
                         }
                     }
                     break;

@@ -37,7 +37,8 @@ public class AbstractReadMethodInfo implements ReadMethodInfo
         fieldName = NameTool.getNameFromMethod(method, strategy);
         this.strategy = strategy;
         strategyFieldName = method.getDeclaringClass().getName() + '.' + fieldName;
-        entityName = "((" + method.getDeclaringClass().getName() + ")entity).";
+//        entityName = "((" + method.getDeclaringClass().getName() + ")entity).";
+        entityName = "entity.";
     }
     
     public String getOutput()

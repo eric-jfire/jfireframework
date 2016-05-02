@@ -17,6 +17,7 @@ import com.google.gson.Gson;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.time.Timewatch;
+import com.jfireframework.codejson.Json;
 import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.codejson.function.WriteStrategy;
 import com.jfireframework.codejson.test.Data;
@@ -148,31 +149,35 @@ public class Benchmark
     @Test
     public void smallParse() throws JsonParseException, JsonMappingException, IOException
     {
-        int count = 1000000;
+        int count = 100000;
         String value = JsonTool.write(smallData);
         JsonTool.read(SmallObject.class, value);
         JSON.parseObject(value, SmallObject.class);
         ObjectMapper mapper = new ObjectMapper();
         mapper.readValue(value, SmallObject.class);
+        Json json = JsonTool.fromString(value);
         Timewatch timewatch = new Timewatch();
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-            JSON.parseObject(value, SmallObject.class);
+//            JSON.parseObject(value, SmallObject.class);
+             JSON.parse(value);
         }
         timewatch.end();
         logger.info("fastjson小json反序列化耗时：{}", timewatch.getTotal());
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-            JsonTool.read(SmallObject.class, value);
+//            JsonTool.read(SmallObject.class, json);
+             JsonTool.fromString(value);
         }
         timewatch.end();
         logger.info("codejson小json反序列化耗时：{}", timewatch.getTotal());
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-            JSON.parseObject(value, SmallObject.class);
+            // mapper.readTree(value);
+            mapper.readValue(value, SmallObject.class);
         }
         timewatch.end();
         logger.info("jackson2小json反序列化耗时：{}", timewatch.getTotal());
@@ -193,7 +198,7 @@ public class Benchmark
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-            JSON.toJSONString(bigData,SerializerFeature.DisableCircularReferenceDetect);
+            JSON.toJSONString(bigData, SerializerFeature.DisableCircularReferenceDetect);
         }
         timewatch.end();
         logger.info("fastjson大对象序列化耗时：{}", timewatch.getTotal());
@@ -201,7 +206,7 @@ public class Benchmark
         for (int i = 0; i < count; i++)
         {
             JsonTool.write(bigData);
-//            writeStrategy.write(bigData);
+            // writeStrategy.write(bigData);
         }
         timewatch.end();
         logger.info("codejson大对象序列化耗时：{}", timewatch.getTotal());
@@ -230,14 +235,15 @@ public class Benchmark
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-//            JSON.parseObject(value,BigData.class);
+            // JSON.parseObject(value, BigData.class);
+            JSON.parse(value);
         }
         timewatch.end();
         logger.info("fastjson大json序列化耗时：{}", timewatch.getTotal());
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-//            JsonTool.read(BigData.class, value);
+            // JsonTool.read(BigData.class, value);
             JsonTool.fromString(value);
         }
         timewatch.end();
@@ -245,7 +251,7 @@ public class Benchmark
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-//            mapper.readValue(value, BigData.class);
+            // mapper.readValue(value, BigData.class);
             mapper.readTree(value);
         }
         timewatch.end();

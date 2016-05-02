@@ -158,7 +158,7 @@ public class ReaderContext
             else
             {
                 StringCache stringCache = new StringCache();
-                stringCache.append("{\n" + tmp.getName() + " entity = (" + tmp.getName() + ")(((Class)$1).newInstance());\n");
+                stringCache.append("{\n" + tmp.getName() + " entity = new " + tmp.getName() + "();\n");
                 stringCache.append("JsonObject json = (JsonObject)$2;\n");
                 Method[] methods = ReflectUtil.listSetMethod(tmp);
                 Arrays.sort(methods, new MethodComparator());

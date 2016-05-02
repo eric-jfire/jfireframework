@@ -1,8 +1,15 @@
 package com.jfireframework.codejson.test.benchmark;
 
+import java.io.IOException;
+import com.alibaba.fastjson.JSON;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.ObjectIdMap;
+
 public class SmallObject
 {
-    private int     age;
+    private int     age =12;
     private String  name;
     private String  location;
     private short   s;
@@ -22,7 +29,16 @@ public class SmallObject
     private Boolean f1;
     private Short   g1;
     private Byte    h1;
-    
+    public static void main(String[] args) throws JsonParseException, JsonMappingException, IOException
+    {
+        SmallObject data = new SmallObject();
+        data.setA(12);
+        System.out.println(JSON.toJSONString(data));
+        String value = "{\"age\":0,\"b\":0,\"c\":0,\"d\":0,\"f\":false,\"g\":0,\"h\":0,\"s\":0}";
+        ObjectMapper mapper = new ObjectMapper();
+        SmallObject result = mapper.readValue(value, SmallObject.class);
+        System.out.println(result.getAge());
+    }
     public int getAge()
     {
         return age;
