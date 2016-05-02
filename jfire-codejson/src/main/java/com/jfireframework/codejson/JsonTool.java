@@ -1,7 +1,9 @@
 package com.jfireframework.codejson;
 
 import java.lang.reflect.Type;
-import java.util.Stack;
+import java.util.Deque;
+import java.util.LinkedList;
+import org.omg.CORBA.PRIVATE_MEMBER;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
@@ -12,14 +14,26 @@ import sun.misc.Unsafe;
 @SuppressWarnings("restriction")
 public class JsonTool
 {
-    private static long                     valueOff   = ReflectUtil.getFieldOffset("value", String.class);
-    private static Unsafe                   unsafe     = ReflectUtil.getUnsafe();
-    private static ThreadLocal<StringCache> cacheLocal = new ThreadLocal<StringCache>() {
-                                                           protected StringCache initialValue()
-                                                           {
-                                                               return new StringCache(2048);
-                                                           }
-                                                       };
+    private static long                       valueOff       = ReflectUtil.getFieldOffset("value", String.class);
+    private static Unsafe                     unsafe         = ReflectUtil.getUnsafe();
+    private static ThreadLocal<StringCache>   cacheLocal     = new ThreadLocal<StringCache>() {
+                                                                 protected StringCache initialValue()
+                                                                 {
+                                                                     return new StringCache(2048);
+                                                                 }
+                                                             };
+    private static ThreadLocal<Deque<String>> keyStackLocal  = new ThreadLocal<Deque<String>>() {
+                                                                 protected Deque<String> initialValue()
+                                                                 {
+                                                                     return new LinkedList<>();
+                                                                 }
+                                                             };
+    private static ThreadLocal<Deque<Json>>   jsonStackLocal = new ThreadLocal<Deque<Json>>() {
+                                                                 protected Deque<Json> initialValue()
+                                                                 {
+                                                                     return new LinkedList<>();
+                                                                 }
+                                                             };
     
     public static String write(Object value)
     {
@@ -49,14 +63,20 @@ public class JsonTool
      */
     public static Json fromString(String str)
     {
-        Stack<Json> jsonStack = new Stack<>();
-        Stack<String> keyStack = new Stack<>();
+        Deque<Json> jsonStack = jsonStackLocal.get();
+        jsonStack.clear();
+        Deque<String> keyStack = keyStackLocal.get();
+        keyStack.clear();
+        JsonObject lastJsonObject = null;
+        JsonArray lastJsonArray = null;
         // 可读信息标志位
         int flag = 0;
         // 当前读取位置
         int index = 0;
         int length = str.length();
-        char[] array = (char[]) unsafe.getObject(str, valueOff);
+        // char[] array = (char[]) unsafe.getObject(str, valueOff);
+        char[] array = new char[str.length()];
+        str.getChars(0, length, array, 0);
         // 是否开始读取字符串
         boolean strStartRead = false;
         // 当前容器最上层是否是jsonobject，false代表是jsonarray
@@ -87,7 +107,8 @@ public class JsonTool
                         break;
                     }
                 case '{':
-                    jsonStack.push(new JsonObject());
+                    lastJsonObject = new JsonObject();
+                    jsonStack.push(lastJsonObject);
                     isJsonObject = true;
                     if (jsonKey != null)
                     {
@@ -104,7 +125,7 @@ public class JsonTool
                         Object value = getNotStrValue(flag, index - 1, array);
                         if (value != null)
                         {
-                            ((JsonObject) jsonStack.peek()).put(jsonKey, value);
+                            lastJsonObject.put(jsonKey, value);
                         }
                         jsonKey = null;
                         flag = 0;
@@ -113,14 +134,16 @@ public class JsonTool
                     {
                         Json json = jsonStack.pop();
                         Object ahead = jsonStack.peek();
-                        if (ahead.getClass().equals(JsonObject.class))
+                        if (ahead instanceof JsonObject)
                         {
-                            ((JsonObject) ahead).put(keyStack.pop(), json);
+                            lastJsonObject = (JsonObject) ahead;
+                            lastJsonObject.put(keyStack.pop(), json);
                             isJsonObject = true;
                         }
                         else
                         {
-                            ((JsonArray) ahead).add(json);
+                            lastJsonArray = (JsonArray) ahead;
+                            lastJsonArray.add(json);
                             isJsonObject = false;
                         }
                     }
@@ -130,7 +153,8 @@ public class JsonTool
                     }
                     break;
                 case '[':
-                    jsonStack.push(new JsonArray());
+                    lastJsonArray = new JsonArray();
+                    jsonStack.push(lastJsonArray);
                     isJsonObject = false;
                     if (jsonKey != null)
                     {
@@ -147,7 +171,7 @@ public class JsonTool
                         Object value = getNotStrValue(flag, index - 1, array);
                         if (value != null)
                         {
-                            ((JsonArray) jsonStack.peek()).add(value);
+                            lastJsonArray.add(value);
                         }
                         flag = 0;
                     }
@@ -157,12 +181,14 @@ public class JsonTool
                         Object ahead = jsonStack.peek();
                         if (ahead instanceof JsonObject)
                         {
-                            ((JsonObject) ahead).put(keyStack.pop(), jsonArray);
+                            lastJsonObject = (JsonObject) ahead;
+                            lastJsonObject.put(keyStack.pop(), jsonArray);
                             isJsonObject = true;
                         }
                         else
                         {
-                            ((JsonArray) ahead).add(jsonArray);
+                            lastJsonArray = (JsonArray) ahead;
+                            lastJsonArray.add(jsonArray);
                             isJsonObject = false;
                         }
                         flag = 0;
@@ -180,17 +206,18 @@ public class JsonTool
                     {
                         if (jsonKey == null)
                         {
-                            jsonKey = str.substring(index, end);
+                            // jsonKey = str.substring(index, end);
+                            jsonKey = new String(array, index, end - index);
                         }
                         else
                         {
-                            ((JsonObject) jsonStack.peek()).put(jsonKey, str.substring(index, end));
+                            lastJsonObject.put(jsonKey, new String(array, index, end - index));
                             jsonKey = null;
                         }
                     }
                     else
                     {
-                        ((JsonArray) jsonStack.peek()).add(str.substring(index, end));
+                        lastJsonArray.add(new String(array, index, end - index));
                     }
                     flag = 0;
                     strStartRead = false;
@@ -218,7 +245,7 @@ public class JsonTool
                         {
                             if (value != null)
                             {
-                                ((JsonObject) jsonStack.peek()).put(jsonKey, value);
+                                lastJsonObject.put(jsonKey, value);
                             }
                             jsonKey = null;
                             flag = 0;
@@ -227,7 +254,7 @@ public class JsonTool
                         {
                             if (value != null)
                             {
-                                ((JsonArray) jsonStack.peek()).add(value);
+                                lastJsonArray.add(value);
                             }
                             flag = index + 1;
                         }
