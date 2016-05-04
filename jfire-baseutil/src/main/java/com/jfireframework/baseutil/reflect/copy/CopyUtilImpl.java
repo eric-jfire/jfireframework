@@ -81,12 +81,13 @@ public class CopyUtilImpl<T, D> implements CopyUtil<T, D>
     }
     
     @Override
-    public void copy(T src, D desc)
+    public D copy(T src, D desc)
     {
         for (CopyField each : copyFields)
         {
             each.copy(src, desc);
         }
+        return desc;
     }
     
 }
