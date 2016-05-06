@@ -50,6 +50,7 @@ public class WriteStrategy implements Strategy
                                                             return new Tracker();
                                                         }
                                                     };
+    private boolean                   writeEnumName = true;
     
     public WriteStrategy()
     {
@@ -75,6 +76,16 @@ public class WriteStrategy implements Strategy
         typeStrategy.put(ArrayList.class, new ArrayListWriter());
         typeStrategy.put(Date.class, new DateWriter());
         typeStrategy.put(java.sql.Date.class, new DateWriter());
+    }
+    
+    public boolean isWriteEnumName()
+    {
+        return writeEnumName;
+    }
+    
+    public void setWriteEnumName(boolean writeEnumName)
+    {
+        this.writeEnumName = writeEnumName;
     }
     
     public boolean isUseTracker()

@@ -12,9 +12,13 @@ import org.junit.Test;
 import com.jfireframework.baseutil.reflect.TypeUtil;
 import com.jfireframework.codejson.JsonObject;
 import com.jfireframework.codejson.JsonTool;
+import com.jfireframework.codejson.function.ReadStrategy;
+import com.jfireframework.codejson.function.WriteStrategy;
+import com.jfireframework.codejson.test.strategy.FunData16;
 import com.jfireframework.codejson.test.strategy.FunctionData10;
 import com.jfireframework.codejson.test.strategy.FunctionData13;
 import com.jfireframework.codejson.test.strategy.FunctionData7;
+import com.jfireframework.codejson.test.strategy.TestEnum;
 import com.jfireframework.codejson.util.NameTool;
 
 public class FunctionTest extends Support
@@ -126,5 +130,28 @@ public class FunctionTest extends Support
     public void test3()
     {
         assertEquals("{\"array1\":[\"1212\",\"12112\"],\"array2\":[1,2,3],\"array3\":[true,false],\"array4\":[\"c\",\"d\"],\"array5\":[1,2,3,4,5,7],\"array6\":[1221121231231,212312313],\"array7\":[2.36,5.698],\"array8\":[2323.231,2323.2313123],\"array9\":[100,23]}", JsonTool.write(new FunctionData13()));
+    }
+    
+    @Test
+    public void enumTest()
+    {
+        FunData16 data16 = new FunData16();
+        data16.setTest(TestEnum.PUSH);
+        assertEquals("{\"test\":\"PUSH\"}", JsonTool.write(data16));
+        WriteStrategy strategy = new WriteStrategy();
+        strategy.setWriteEnumName(false);
+        assertEquals("{\"test\":0}", strategy.write(data16));
+        strategy = new WriteStrategy();
+        assertEquals("{\"test\":\"PUSH\"}", strategy.write(data16));
+        FunData16 result = JsonTool.read(FunData16.class, "{\"test\":\"PUSH\"}");
+        assertEquals(TestEnum.PUSH, result.getTest());
+        ReadStrategy readStrategy = new ReadStrategy();
+        result = readStrategy.read(FunData16.class, "{\"test\":\"PUSH\"}");
+        assertEquals(TestEnum.PUSH, result.getTest());
+        readStrategy = new ReadStrategy();
+        readStrategy.setReadEnumName(false);
+        result = readStrategy.read(FunData16.class, "{\"test\":0}");
+        assertEquals(TestEnum.PUSH, result.getTest());
+        
     }
 }

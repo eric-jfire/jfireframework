@@ -10,7 +10,6 @@ public class SetWrapperMethodInfo extends AbstractReadMethodInfo
     {
         super(method, strategy);
         String jsonGetMethodName = "getW" + getParamType().getSimpleName().substring(0, 1).toUpperCase() + getParamType().getSimpleName().substring(1);
-//        str = "if(json.contains(\"" + fieldName + "\"))\n";
         str="";
         if (strategy != null && (strategy.containsStrategyField(strategyFieldName) || strategy.containsStrategyType(getParamType())))
         {

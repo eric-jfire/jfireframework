@@ -11,6 +11,7 @@ import com.jfireframework.codejson.function.WriteStrategy;
 import com.jfireframework.codejson.methodinfo.impl.read.SetBaseMethodInfo;
 import com.jfireframework.codejson.methodinfo.impl.read.SetCollectionMethodInfo;
 import com.jfireframework.codejson.methodinfo.impl.read.SetCustomObjectMethodInfo;
+import com.jfireframework.codejson.methodinfo.impl.read.SetEnumMethodInfo;
 import com.jfireframework.codejson.methodinfo.impl.read.SetMapMethodInfo;
 import com.jfireframework.codejson.methodinfo.impl.read.SetWrapperMethodInfo;
 import com.jfireframework.codejson.methodinfo.impl.read.array.SetBaseArrayMethodInfo;
@@ -19,6 +20,7 @@ import com.jfireframework.codejson.methodinfo.impl.read.array.SetCustomArrayMeth
 import com.jfireframework.codejson.methodinfo.impl.read.array.SetWarpperArrayMethodInfo;
 import com.jfireframework.codejson.methodinfo.impl.write.ReturnBaseMethodInfo;
 import com.jfireframework.codejson.methodinfo.impl.write.ReturnCustomObjectMethodInfo;
+import com.jfireframework.codejson.methodinfo.impl.write.ReturnEnumWriteMethodInfo;
 import com.jfireframework.codejson.methodinfo.impl.write.ReturnIterableMethodInfo;
 import com.jfireframework.codejson.methodinfo.impl.write.ReturnMapMethodInfo;
 import com.jfireframework.codejson.methodinfo.impl.write.ReturnWrapperMethodInfo;
@@ -131,6 +133,10 @@ public class MethodInfoBuilder
         {
             return new ReturnMapMethodInfo(method, strategy, entityName);
         }
+        else if (returnType.isEnum())
+        {
+            return new ReturnEnumWriteMethodInfo(method, strategy, entityName);
+        }
         else
         {
             return new ReturnCustomObjectMethodInfo(method, strategy, entityName);
@@ -173,6 +179,10 @@ public class MethodInfoBuilder
         else if (Map.class.isAssignableFrom(paramType))
         {
             return new SetMapMethodInfo(method, strategy);
+        }
+        else if (paramType.isEnum())
+        {
+            return new SetEnumMethodInfo(method, strategy);
         }
         else
         {
