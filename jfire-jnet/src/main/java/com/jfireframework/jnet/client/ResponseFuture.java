@@ -70,9 +70,12 @@ public class ResponseFuture implements Future<Object>
     public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
     {
         ownerThread = Thread.currentThread();
-        if (dataState == UN_READY)
+        long t0 = System.currentTimeMillis();
+        while (dataState == UN_READY && timeout > 0)
         {
             LockSupport.park(unit.toNanos(timeout));
+            timeout -= System.currentTimeMillis() - t0;
+            t0 = System.currentTimeMillis();
         }
         if (result == NORESULT)
         {

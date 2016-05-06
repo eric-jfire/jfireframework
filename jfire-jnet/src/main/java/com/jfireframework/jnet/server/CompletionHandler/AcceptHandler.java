@@ -10,8 +10,10 @@ import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.channel.ServerChannelInfo;
+import com.jfireframework.jnet.server.CompletionHandler.async.AsyncServerInternalResultAction;
 import com.jfireframework.jnet.server.server.AioServer;
 import com.jfireframework.jnet.server.server.ServerConfig;
+import com.jfireframework.jnet.server.server.WorkMode;
 
 public class AcceptHandler implements CompletionHandler<AsynchronousSocketChannel, Object>
 {
@@ -25,12 +27,24 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
         this.initListener = serverConfig.getInitListener();
         Verify.notNull(initListener, "initListener不能为空");
         this.aioServer = aioServer;
-        ServerInternalResultAction[] actions = new ServerInternalResultAction[serverConfig.getHandlerThreadSize()];
-        for (int i = 0; i < actions.length; i++)
+        if (serverConfig.getWorkMode() == WorkMode.ASYNC_WITHOUT_ORDER)
         {
-            actions[i] = new ServerInternalResultAction();
+            AsyncServerInternalResultAction[] actions = new AsyncServerInternalResultAction[serverConfig.getHandlerThreadSize()];
+            for (int i = 0; i < actions.length; i++)
+            {
+                actions[i] = new AsyncServerInternalResultAction();
+            }
+            disruptor = new Disruptor(serverConfig.getRingArraySize(), serverConfig.getWaitStrategy(), actions, serverConfig.getRingArrayType(), serverConfig.getHandlerThreadSize());
         }
-        disruptor = new Disruptor(serverConfig.getRingArraySize(), serverConfig.getWaitStrategy(), actions, serverConfig.getRingArrayType(), serverConfig.getHandlerThreadSize());
+        else
+        {
+            ServerInternalResultAction[] actions = new ServerInternalResultAction[serverConfig.getHandlerThreadSize()];
+            for (int i = 0; i < actions.length; i++)
+            {
+                actions[i] = new ServerInternalResultAction();
+            }
+            disruptor = new Disruptor(serverConfig.getRingArraySize(), serverConfig.getWaitStrategy(), actions, serverConfig.getRingArrayType(), serverConfig.getHandlerThreadSize());
+        }
     }
     
     public void stop()
@@ -50,7 +64,7 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
             Verify.notNull(channelInfo.getFrameDecodec(), "没有设置framedecodec");
             Verify.notNull(channelInfo.getHandlers(), "没有设置Datahandler");
             ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelInfo, disruptor);
-//            logger.debug("开启一个新通道{}", channelInfo.getRemoteAddress());
+            // logger.debug("开启一个新通道{}", channelInfo.getRemoteAddress());
             readCompletionHandler.startReadWait();
             aioServer.getServerSocketChannel().accept(null, this);
         }

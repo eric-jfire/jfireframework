@@ -21,6 +21,7 @@ public class ServerConfig
     private int                 socketThreadSize  = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
     private int                 handlerThreadSize = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
     private int                 ringArrayType     = Disruptor.SimpleMult;
+    private WorkMode            workMode;
     
     public ChannelInitListener getInitListener()
     {
@@ -101,6 +102,17 @@ public class ServerConfig
     public ServerConfig setRingArrayType(int ringArrayTpe)
     {
         this.ringArrayType = ringArrayTpe;
+        return this;
+    }
+    
+    public WorkMode getWorkMode()
+    {
+        return workMode;
+    }
+    
+    public ServerConfig setWorkMode(WorkMode workMode)
+    {
+        this.workMode = workMode;
         return this;
     }
     

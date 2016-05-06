@@ -2,7 +2,6 @@ package com.jfireframework.socket.test;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
@@ -20,16 +19,17 @@ import com.jfireframework.jnet.server.server.AioServer;
 import com.jfireframework.jnet.server.server.ServerConfig;
 import com.jfireframework.jnet.server.server.WorkMode;
 
-public class EchoTest
+public class AsyncEchoTest
 {
-    private int threadCount = 16;
-    private int sendCount   = 100000;
+    private int threadCount = 1;
+    private int sendCount   = 10;
     private int arraylength = 1024;
+    
     @Test
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setWorkMode(WorkMode.SYNC);
+        config.setWorkMode(WorkMode.ASYNC_WITHOUT_ORDER);
         config.setRingArraySize(2);
         config.setSocketThreadSize(8);
         config.setInitListener(new ChannelInitListener() {
