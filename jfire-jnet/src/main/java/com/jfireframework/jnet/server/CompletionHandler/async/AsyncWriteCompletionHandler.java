@@ -5,37 +5,34 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
+import com.jfireframework.baseutil.concurrent.MPSCLinkedQueue;
 import com.jfireframework.baseutil.disruptor.CpuCachePadingValue;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.ServerChannelInfo;
+import sun.misc.Unsafe;
 
 public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, ByteBuf<?>>
 {
-    private final AsyncReadCompletionHandler       readCompletionHandler;
-    private final ServerChannelInfo                channelInfo;
-    private volatile long                          cursor    = 0;
-    protected final int                            resultArrayLengthMask;
-    private static final int                       UN_WRITE  = 0;
-    private static final int                       WRITING   = 1;
-    private AtomicInteger                          status    = new AtomicInteger(UN_WRITE);
-    private final AtomicReferenceArray<ByteBuf<?>> bufArray;
-    private final CpuCachePadingValue              preCursor = new CpuCachePadingValue();
+    private final AsyncReadCompletionHandler  readCompletionHandler;
+    private final ServerChannelInfo           channelInfo;
+    private volatile long                     cursor   = 0;
+    private final static long                 _cursor  = ReflectUtil.getFieldOffset("cursor", AsyncWriteCompletionHandler.class);
+    private final static Unsafe               unsafe   = ReflectUtil.getUnsafe();
+    private static final int                  UN_WRITE = 0;
+    private static final int                  WRITING  = 1;
+    private AtomicInteger                     status   = new AtomicInteger(UN_WRITE);
+    private final MPSCLinkedQueue<ByteBuf<?>> bufqueue = new MPSCLinkedQueue<ByteBuf<?>>();
     
     public AsyncWriteCompletionHandler(AsyncReadCompletionHandler readCompletionHandler, ServerChannelInfo channelInfo)
     {
         this.readCompletionHandler = readCompletionHandler;
         this.channelInfo = channelInfo;
-        int resultArrayLength = channelInfo.getEntryArraySize();
-        Verify.True(resultArrayLength > 1, "数组的大小必须大于1");
-        Verify.True(Integer.bitCount(resultArrayLength) == 1, "数组的大小必须是2的次方幂");
-        bufArray = new AtomicReferenceArray<>(resultArrayLength);
-        resultArrayLengthMask = resultArrayLength - 1;
     }
     
     public void putResult(ByteBuf<?> obj)
     {
-        long point = preCursor.next();
-        bufArray.set((int) (point & resultArrayLengthMask), obj);
+        bufqueue.add(obj);
     }
     
     public void askToWrite()
@@ -43,10 +40,13 @@ public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, B
         int s = status.get();
         if (s == UN_WRITE)
         {
-            if (status.compareAndSet(UN_WRITE, WRITING))
+            if (bufqueue.isEmpty() == false)
             {
-                ByteBuf<?> buf = bufArray.get((int) (cursor & resultArrayLengthMask));
-                channelInfo.getChannel().write(buf.nioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+                if (status.compareAndSet(UN_WRITE, WRITING))
+                {
+                    ByteBuf<?> buf = bufqueue.poll();
+                    channelInfo.getChannel().write(buf.nioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+                }
             }
         }
     }
@@ -69,27 +69,33 @@ public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, B
             }
             else
             {
+                // unsafe.putOrderedLong(this, _cursor, cursor + 1);
                 cursor += 1;
                 readCompletionHandler.reStartRead();
-                if (readCompletionHandler.isAvailable(cursor))
+                if (bufqueue.isEmpty() == false)
                 {
-                    ByteBuf<?> nextBuf = bufArray.get((int) (cursor & resultArrayLengthMask));
-                    channelInfo.getChannel().write(nextBuf.nioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+                    ByteBuf<?> nextBuf = bufqueue.poll();
+                    channelInfo.getChannel().write(nextBuf.nioBuffer(), 10, TimeUnit.SECONDS, nextBuf, this);
                 }
                 else
                 {
-                    while (shouldStopWrite() == false)
+                    status.set(UN_WRITE);
+                    if (bufqueue.isEmpty() == false)
                     {
-                        if (readCompletionHandler.isAvailable(cursor))
+                        if (status.compareAndSet(UN_WRITE, WRITING))
                         {
-                            if (status.compareAndSet(UN_WRITE, WRITING))
-                            {
-                                ByteBuf<?> nextBuf = bufArray.get((int) (cursor & resultArrayLengthMask));
-                                channelInfo.getChannel().write(nextBuf.nioBuffer(), 10, TimeUnit.SECONDS, buf, this);
-                            }
+                            ByteBuf<?> nextBuf = bufqueue.poll();
+                            channelInfo.getChannel().write(nextBuf.nioBuffer(), 10, TimeUnit.SECONDS, nextBuf, this);
+                        }
+                        else
+                        {
+                            ;
                         }
                     }
-                    
+                    else
+                    {
+                        ;
+                    }
                 }
                 // 这一步最无关紧要，也不太可能引起异常，放到最后一步执行，这样也避免下面异常捕获的时候出现释放两次的情况
                 buf.release();
@@ -97,20 +103,10 @@ public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, B
         }
         catch (Exception e)
         {
+            e.printStackTrace();
             buf.release();
             readCompletionHandler.catchThrowable(e);
         }
-    }
-    
-    private boolean shouldStopWrite()
-    {
-        int s = status.get();
-        if (s == UN_WRITE)
-        {
-            return true;
-        }
-        status.set(UN_WRITE);
-        return false;
     }
     
     @Override

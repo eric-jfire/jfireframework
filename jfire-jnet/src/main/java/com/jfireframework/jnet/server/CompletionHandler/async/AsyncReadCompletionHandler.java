@@ -32,7 +32,7 @@ public class AsyncReadCompletionHandler implements CompletionHandler<Integer, Se
     public final static int                   IN_READ        = 1;
     public final static int                   OUT_OF_READ    = 2;
     private AtomicInteger                     readState      = new AtomicInteger(IN_READ);
-    private volatile long                     cursor;
+    private long                              cursor;
     private long                              wrapPoint      = 0;
     private final AsyncWriteCompletionHandler writeCompletionHandler;
     // 读取超时时间
@@ -213,16 +213,12 @@ public class AsyncReadCompletionHandler implements CompletionHandler<Integer, Se
             result.setWriteCompletionHandler(writeCompletionHandler);
             result.setIndex(0);
             disruptor.publish(result);
+            cursor += 1;
             if (ioBuf.remainRead() == 0)
             {
                 return CONTINUE_READ;
             }
         }
-    }
-    
-    public boolean isAvailable(long cursor)
-    {
-        return cursor < this.cursor;
     }
     
     /**

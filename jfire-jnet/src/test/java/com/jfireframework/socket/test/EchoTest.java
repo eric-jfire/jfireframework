@@ -7,6 +7,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
+import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.jnet.client.AioClient;
 import com.jfireframework.jnet.common.channel.ChannelInfo;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
@@ -22,16 +23,20 @@ import com.jfireframework.jnet.server.server.WorkMode;
 
 public class EchoTest
 {
-    private int threadCount = 16;
+    private int threadCount = 4;
     private int sendCount   = 100000;
     private int arraylength = 1024;
+    
     @Test
     public void test() throws Throwable
     {
+        Timewatch timewatch = new Timewatch();
+        timewatch.start();
         ServerConfig config = new ServerConfig();
-        config.setWorkMode(WorkMode.SYNC);
-        config.setRingArraySize(2);
-        config.setSocketThreadSize(8);
+        config.setWorkMode(WorkMode.ASYNC_WITHOUT_ORDER);
+        config.setRingArraySize(1024 * 4);
+        config.setSocketThreadSize(4);
+        config.setHandlerThreadSize(8);
         config.setInitListener(new ChannelInitListener() {
             
             @Override
@@ -45,6 +50,8 @@ public class EchoTest
         config.setPort(8554);
         AioServer aioServer = new AioServer(config);
         aioServer.start();
+        timewatch.end();
+        System.out.println(timewatch.getTotal());
         Thread[] threads = new Thread[threadCount];
         for (int i = 0; i < threads.length; i++)
         {
@@ -155,7 +162,14 @@ public class EchoTest
             // System.out.println(i);
         }
         Future<?> future = client.connect().write("987654321");
-        Assert.assertEquals("987654321", (String) future.get(20, TimeUnit.SECONDS));
+        try
+        {
+            Assert.assertEquals("987654321", (String) future.get(20, TimeUnit.SECONDS));
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
         // System.out.println("完成");
         // TimeUnit.SECONDS.sleep(1000);
         client.close();
