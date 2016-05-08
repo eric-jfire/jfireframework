@@ -1,5 +1,6 @@
 package com.jfireframework.baseutil.disruptor;
 
+import java.util.concurrent.atomic.AtomicLong;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArrayStopException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -10,18 +11,17 @@ import com.jfireframework.baseutil.simplelog.Logger;
  * 并且处理器之间可以形成前后的依赖关系
  * 
  * @author 林斌
- *         
+ * 
  */
 public abstract class AbstractSharedEntryAction implements SharedEntryAction
 {
     // 当前准备处理的序号
-    private volatile long             cursor       = 0;
-    protected Logger                  logger       = ConsoleLogFactory.getLogger();
+    private AtomicLong                cursor = new AtomicLong(0);
+    protected Logger                  logger = ConsoleLogFactory.getLogger();
     protected RingArray               ringArray;
-    protected Disruptor               disruptor;
     private final SharedEntryAction[] preActions;
-    private volatile int              getRingArray = 0;
-                                                   
+    private volatile int              canRun = 0;
+    
     public AbstractSharedEntryAction(SharedEntryAction... preActions)
     {
         this.preActions = preActions;
@@ -30,19 +30,20 @@ public abstract class AbstractSharedEntryAction implements SharedEntryAction
     @Override
     public void run()
     {
-        while (getRingArray == 0)
+        while (canRun == 0)
         {
             continue;
         }
         Entry entry;
         while (true)
         {
-            if (ringArray.isAvailable(cursor) == false)
+            long _cursor = cursor.get();
+            if (ringArray.isAvailable(_cursor) == false)
             {
                 try
                 {
                     logger.debug("等待序号:{}", cursor);
-                    ringArray.waitFor(cursor);
+                    ringArray.waitFor(_cursor);
                 }
                 catch (RingArrayStopException e)
                 {
@@ -50,12 +51,15 @@ public abstract class AbstractSharedEntryAction implements SharedEntryAction
                     break;
                 }
             }
-            entry = ringArray.entryAt(cursor);
-            for (SharedEntryAction eachPre : preActions)
+            entry = ringArray.entryAt(_cursor);
+            if (preActions.length > 0)
             {
-                while (eachPre.cursor() <= cursor)
+                for (SharedEntryAction eachPre : preActions)
                 {
-                
+                    while (eachPre.cursor() <= _cursor)
+                    {
+                        
+                    }
                 }
             }
             try
@@ -65,17 +69,17 @@ public abstract class AbstractSharedEntryAction implements SharedEntryAction
             catch (Exception e)
             {
                 logger.error("出现异常", e);
-                disruptor.stop();
+                ringArray.stop();
                 break;
             }
-            cursor += 1;
+            cursor.lazySet(_cursor + 1);
         }
     }
     
     @Override
     public long cursor()
     {
-        return cursor;
+        return cursor.get();
     }
     
     public abstract void doJob(Entry entry);
@@ -84,20 +88,7 @@ public abstract class AbstractSharedEntryAction implements SharedEntryAction
     {
         this.ringArray = ringArray;
         // 这样是为了保证可见性
-        getRingArray = 1;
+        canRun = 1;
     }
     
-    public void publish(Object data)
-    {
-        ringArray.publish(data);
-    }
-    
-    @Override
-    public void setDisruptor(Disruptor disruptor)
-    {
-        this.disruptor = disruptor;
-        ringArray = disruptor.getRingArray();
-        // 这样是为了保证可见性
-        getRingArray = 1;
-    }
 }

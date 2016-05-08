@@ -1,7 +1,7 @@
 package com.jfireframework.baseutil.disruptor.ringarray;
 
 import java.util.concurrent.locks.LockSupport;
-import com.jfireframework.baseutil.disruptor.CpuCachePadingValue;
+import com.jfireframework.baseutil.disruptor.Sequence;
 import com.jfireframework.baseutil.disruptor.Entry;
 import com.jfireframework.baseutil.disruptor.EntryAction;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
@@ -10,7 +10,7 @@ import com.jfireframework.baseutil.verify.Verify;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
-public abstract class AbstractRingArray implements RingArray
+public abstract class AbstractMultRingArray implements RingArray
 {
     protected final WaitStrategy  waitStrategy;
     protected final EntryAction[] actions;
@@ -19,15 +19,15 @@ public abstract class AbstractRingArray implements RingArray
     protected final int           flagShift;
     protected final int           size;
     protected final int           sizeMask;
-    protected volatile long       wrapPoint;
-    protected volatile int        state  = 0;
+    protected final Sequence      cachedWrapPoint = new Sequence(Sequence.INIT_VALUE);
+    protected volatile int        state           = 0;
     // 代表下一个可以增加的位置
-    protected CpuCachePadingValue add    = new CpuCachePadingValue();
-    protected static Unsafe       unsafe = ReflectUtil.getUnsafe();
-    protected static int          STOPED = 1;
+    protected final Sequence      cursor          = new Sequence(Sequence.INIT_VALUE);
+    protected static Unsafe       unsafe          = ReflectUtil.getUnsafe();
+    protected static int          STOPED          = 1;
     protected static long         base;
     protected static int          shift;
-                                  
+    
     static
     {
         base = unsafe.arrayBaseOffset(Entry[].class);
@@ -46,7 +46,7 @@ public abstract class AbstractRingArray implements RingArray
         }
     }
     
-    public AbstractRingArray(int size, WaitStrategy waitStrategy, EntryAction[] actions)
+    public AbstractMultRingArray(int size, WaitStrategy waitStrategy, EntryAction[] actions)
     {
         Verify.True(size > 1, "数组的大小必须大于1");
         Verify.True(Integer.bitCount(size) == 1, "数组的大小必须是2的次方幂");
@@ -56,10 +56,14 @@ public abstract class AbstractRingArray implements RingArray
             entries[i] = new Entry();
         }
         this.actions = actions;
+        for (EntryAction each : actions)
+        {
+            each.setRingArray(this);
+        }
         this.size = size;
         sizeMask = size - 1;
         this.waitStrategy = waitStrategy;
-        wrapPoint = size - 1;
+        cachedWrapPoint.set(size);
         flagShift = Integer.numberOfTrailingZeros(size);
     }
     
@@ -67,18 +71,22 @@ public abstract class AbstractRingArray implements RingArray
     public long next()
     {
         long next = getNext();
-        do
+        long wrapPoint = cachedWrapPoint.value();
+        if (next >= wrapPoint)
         {
-            if (next >= wrapPoint)
+            wrapPoint = getMin() + size;
+            while (next >= wrapPoint)
             {
                 LockSupport.parkNanos(1);
                 wrapPoint = getMin() + size;
             }
-            else
-            {
-                return next;
-            }
-        } while (true);
+            cachedWrapPoint.set(wrapPoint);
+            return next;
+        }
+        else
+        {
+            return next;
+        }
     }
     
     protected abstract long getNext();
@@ -99,7 +107,8 @@ public abstract class AbstractRingArray implements RingArray
     @Override
     public Entry entryAt(long cursor)
     {
-        return (Entry) unsafe.getObjectVolatile(entries, base + ((cursor & sizeMask) << shift));
+        // 不需要使用volatile读取。因为数组里的元素是不会变的
+        return (Entry) unsafe.getObject(entries, base + ((cursor & sizeMask) << shift));
     }
     
     @Override
@@ -121,7 +130,7 @@ public abstract class AbstractRingArray implements RingArray
     @Override
     public long cursor()
     {
-        return add.getPoint();
+        return cursor.value();
     }
     
     @Override

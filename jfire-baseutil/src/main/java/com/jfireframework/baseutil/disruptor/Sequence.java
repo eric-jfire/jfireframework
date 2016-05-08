@@ -12,7 +12,7 @@ class LeftPad
 
 class RealValue extends LeftPad
 {
-    protected volatile long point = -1; // 前后都有7个元素填充，可以保证该核心变量独自在一个缓存行中
+    protected volatile long value = -1; // 前后都有7个元素填充，可以保证该核心变量独自在一个缓存行中
 }
 
 class RightPad extends RealValue
@@ -21,19 +21,27 @@ class RightPad extends RealValue
 }
 
 @SuppressWarnings("restriction")
-public class CpuCachePadingValue extends RightPad
+/**
+ * 一个经过了缓存行填充后的序号。
+ * 
+ * @author Administrator
+ *
+ */
+public class Sequence extends RightPad
 {
     
-    private static long   offset = ReflectUtil.getFieldOffset("point", RealValue.class);
-    private static Unsafe unsafe = ReflectUtil.getUnsafe();
-                                 
-    public CpuCachePadingValue()
+    private static long      offset     = ReflectUtil.getFieldOffset("value", RealValue.class);
+    private static Unsafe    unsafe     = ReflectUtil.getUnsafe();
+    public static final long INIT_VALUE = -1;
+    
+    public Sequence()
     {
+        this(INIT_VALUE);
     }
     
-    public CpuCachePadingValue(long initValue)
+    public Sequence(long initValue)
     {
-        point = initValue;
+        value = initValue;
     }
     
     /**
@@ -45,7 +53,7 @@ public class CpuCachePadingValue extends RightPad
     {
         while (true)
         {
-            long now = point;
+            long now = value;
             long next = now + 1;
             if (unsafe.compareAndSwapLong(this, offset, now, next))
             {
@@ -54,9 +62,14 @@ public class CpuCachePadingValue extends RightPad
         }
     }
     
+    public void orderedSet(long value)
+    {
+        unsafe.putOrderedLong(this, offset, value);
+    }
+    
     public void set(long point)
     {
-        this.point = point;
+        this.value = point;
     }
     
     public boolean tryCasSet(long now, long target)
@@ -78,9 +91,9 @@ public class CpuCachePadingValue extends RightPad
         }
     }
     
-    public long getPoint()
+    public long value()
     {
-        return point;
+        return value;
     }
     
     /**
@@ -90,6 +103,6 @@ public class CpuCachePadingValue extends RightPad
      */
     protected long nouse()
     {
-        return p1 + p2 + p3 + p4 + p5 + p6 + p7 + point + p9 + p10 + p11 + p12 + p13 + p14 + p15;
+        return p1 + p2 + p3 + p4 + p5 + p6 + p7 + value + p9 + p10 + p11 + p12 + p13 + p14 + p15;
     }
 }

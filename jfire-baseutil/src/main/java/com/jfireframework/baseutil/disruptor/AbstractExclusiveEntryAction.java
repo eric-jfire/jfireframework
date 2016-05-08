@@ -1,5 +1,6 @@
 package com.jfireframework.baseutil.disruptor;
 
+import java.util.concurrent.atomic.AtomicLong;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArrayStopException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -10,33 +11,33 @@ import com.jfireframework.baseutil.simplelog.Logger;
  * 抽象的独占entry处理器。独占处理器只允许一个entry被一个处理器取得并消费
  * 
  * @author 林斌
- *         
+ * 
  */
 public abstract class AbstractExclusiveEntryAction implements ExclusiveEntryAction
 {
     // 当前准备处理的序号
-    private volatile long cursor       = 0;
-    protected Logger      logger       = ConsoleLogFactory.getLogger();
-    protected RingArray   ringArray;
-    protected Disruptor   disruptor;
-    private volatile int  getRingArray = 0;
-                                       
+    private AtomicLong   cursor = new AtomicLong(0);
+    protected Logger     logger = ConsoleLogFactory.getLogger();
+    protected RingArray  ringArray;
+    private volatile int canRun = 0;
+    
     @Override
     public void run()
     {
-        while (getRingArray == 0)
+        while (canRun == 0)
         {
             continue;
         }
         Entry entry;
         while (true)
         {
-            if (ringArray.isAvailable(cursor) == false)
+            long _cursor = cursor.get();
+            if (ringArray.isAvailable(_cursor) == false)
             {
                 try
                 {
                     logger.debug("等待序号:{}", cursor);
-                    ringArray.waitFor(cursor);
+                    ringArray.waitFor(_cursor);
                 }
                 catch (RingArrayStopException e)
                 {
@@ -44,10 +45,10 @@ public abstract class AbstractExclusiveEntryAction implements ExclusiveEntryActi
                     break;
                 }
             }
-            entry = ringArray.entryAt(cursor);
+            entry = ringArray.entryAt(_cursor);
             if (entry.take() == false)
             {
-                cursor += 1;
+                cursor.lazySet(_cursor + 1);
                 continue;
             }
             try
@@ -57,31 +58,24 @@ public abstract class AbstractExclusiveEntryAction implements ExclusiveEntryActi
             catch (Exception e)
             {
                 logger.error("出现异常", e);
-                disruptor.stop();
+                ringArray.stop();
                 break;
             }
-            cursor += 1;
+            cursor.lazySet(_cursor + 1);
         }
     }
     
     public abstract void doJob(Entry entry);
     
+    public void setRingArray(RingArray ringArray)
+    {
+        this.ringArray = ringArray;
+        canRun = 1;
+    }
+    
     public long cursor()
     {
-        return cursor;
+        return cursor.get();
     }
     
-    @Override
-    public void setDisruptor(Disruptor disruptor)
-    {
-        this.disruptor = disruptor;
-        ringArray = disruptor.getRingArray();
-        // 这样是为了保证可见性
-        getRingArray = 1;
-    }
-    
-    public void publish(Object data)
-    {
-        ringArray.publish(data);
-    }
 }

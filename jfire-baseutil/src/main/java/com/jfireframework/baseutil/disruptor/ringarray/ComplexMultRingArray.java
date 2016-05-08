@@ -5,12 +5,12 @@ import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
-public class ComplexMultRingArray extends AbstractRingArray
+public class ComplexMultRingArray extends AbstractMultRingArray
 {
     
     private final static int intShift;
     private final int[]      availableFlags;
-                             
+    
     static
     {
         int scale = Unsafe.ARRAY_INT_INDEX_SCALE;
@@ -40,7 +40,8 @@ public class ComplexMultRingArray extends AbstractRingArray
     
     public void publish(long cursor)
     {
-        unsafe.putIntVolatile(availableFlags, Unsafe.ARRAY_INT_BASE_OFFSET + ((cursor & sizeMask) << intShift), (int) (cursor >>> flagShift));
+        // 下一步可能会使用volatile写入。所以这里只要使用ordered的写入方式，放入store-store屏障来保证上写不会重排序即可
+        unsafe.putOrderedInt(availableFlags, Unsafe.ARRAY_INT_BASE_OFFSET + ((cursor & sizeMask) << intShift), (int) (cursor >>> flagShift));
         waitStrategy.signallBlockwaiting();
     }
     
@@ -59,7 +60,7 @@ public class ComplexMultRingArray extends AbstractRingArray
     @Override
     protected long getNext()
     {
-        return add.next();
+        return cursor.next();
     }
     
 }

@@ -33,7 +33,7 @@ public class EchoTest
         Timewatch timewatch = new Timewatch();
         timewatch.start();
         ServerConfig config = new ServerConfig();
-        config.setWorkMode(WorkMode.ASYNC_WITHOUT_ORDER);
+        config.setWorkMode(WorkMode.SYNC);
         config.setRingArraySize(1024 * 4);
         config.setSocketThreadSize(4);
         config.setHandlerThreadSize(8);
