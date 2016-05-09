@@ -4,6 +4,7 @@ import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.disruptor.Sequence;
 import com.jfireframework.baseutil.disruptor.Entry;
 import com.jfireframework.baseutil.disruptor.EntryAction;
+import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategyStopException;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
@@ -20,13 +21,11 @@ public abstract class AbstractMultRingArray implements RingArray
     protected final int           size;
     protected final int           sizeMask;
     protected final Sequence      cachedWrapPoint = new Sequence(Sequence.INIT_VALUE);
-    protected volatile int        state           = 0;
     // 代表下一个可以增加的位置
     protected final Sequence      cursor          = new Sequence(Sequence.INIT_VALUE);
-    protected static Unsafe       unsafe          = ReflectUtil.getUnsafe();
-    protected static int          STOPED          = 1;
-    protected static long         base;
-    protected static int          shift;
+    protected static final Unsafe unsafe          = ReflectUtil.getUnsafe();
+    protected static final long   base;
+    protected static final int    shift;
     
     static
     {
@@ -114,17 +113,10 @@ public abstract class AbstractMultRingArray implements RingArray
     @Override
     public void publish(Object data)
     {
-        if (state != STOPED)
-        {
-            long cursor = next();
-            Entry entry = entryAt(cursor);
-            entry.setNewData(data);
-            publish(cursor);
-        }
-        else
-        {
-            throw RingArrayStopException.instance;
-        }
+        long cursor = next();
+        Entry entry = entryAt(cursor);
+        entry.setNewData(data);
+        publish(cursor);
     }
     
     @Override
@@ -134,7 +126,7 @@ public abstract class AbstractMultRingArray implements RingArray
     }
     
     @Override
-    public void waitFor(long cursor) throws RingArrayStopException
+    public void waitFor(long cursor) throws WaitStrategyStopException
     {
         waitStrategy.waitFor(cursor, this);
     }
@@ -142,14 +134,7 @@ public abstract class AbstractMultRingArray implements RingArray
     @Override
     public void stop()
     {
-        state = STOPED;
-        waitStrategy.signallBlockwaiting();
-    }
-    
-    @Override
-    public boolean stoped()
-    {
-        return state == STOPED;
+        waitStrategy.stopRunOrWait();
     }
     
 }

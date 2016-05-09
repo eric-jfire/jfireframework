@@ -1,9 +1,8 @@
 package com.jfireframework.baseutil.disruptor.waitstrategy;
 
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
-import com.jfireframework.baseutil.disruptor.ringarray.RingArrayStopException;
 
-public class CirculationWaitStrategy implements WaitStrategy
+public class CirculationWaitStrategy extends AbstractWaitStrategy
 {
     private final int count;
     
@@ -13,23 +12,21 @@ public class CirculationWaitStrategy implements WaitStrategy
     }
     
     @Override
-    public void waitFor(long next, RingArray ringArray) throws RingArrayStopException
+    public void waitFor(long next, RingArray ringArray) throws WaitStrategyStopException
     {
         while (ringArray.isAvailable(next) == false)
         {
-            if (ringArray.stoped())
-            {
-                throw RingArrayStopException.instance;
-            }
+            detectStopException();
             for (int i = 0; i < count; i++)
+            {
                 ;
+            }
         }
     }
     
     @Override
     public void signallBlockwaiting()
     {
-        // TODO Auto-generated method stub
         
     }
     

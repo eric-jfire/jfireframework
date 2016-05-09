@@ -1,19 +1,15 @@
 package com.jfireframework.baseutil.disruptor.waitstrategy;
 
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
-import com.jfireframework.baseutil.disruptor.ringarray.RingArrayStopException;
 
-public class YieldStrategy implements WaitStrategy
+public class YieldStrategy extends AbstractWaitStrategy
 {
     @Override
-    public void waitFor(long next, RingArray array) throws RingArrayStopException
+    public void waitFor(long next, RingArray array) throws WaitStrategyStopException
     {
         while (array.isAvailable(next) == false)
         {
-            if (array.stoped())
-            {
-                throw RingArrayStopException.instance;
-            }
+            detectStopException();
             Thread.yield();
         }
     }

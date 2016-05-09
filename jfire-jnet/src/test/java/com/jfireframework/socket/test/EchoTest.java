@@ -25,7 +25,7 @@ public class EchoTest
 {
     private int threadCount = 4;
     private int sendCount   = 100000;
-    private int arraylength = 1024;
+    private int arraylength = 1024*4;
     
     @Test
     public void test() throws Throwable

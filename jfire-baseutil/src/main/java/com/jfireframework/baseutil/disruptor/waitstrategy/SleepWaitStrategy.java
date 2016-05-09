@@ -2,9 +2,8 @@ package com.jfireframework.baseutil.disruptor.waitstrategy;
 
 import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
-import com.jfireframework.baseutil.disruptor.ringarray.RingArrayStopException;
 
-public class SleepWaitStrategy implements WaitStrategy
+public class SleepWaitStrategy extends AbstractWaitStrategy
 {
     private final long sleepNanos;
     
@@ -14,14 +13,11 @@ public class SleepWaitStrategy implements WaitStrategy
     }
     
     @Override
-    public void waitFor(long next, RingArray array) throws RingArrayStopException
+    public void waitFor(long next, RingArray array) throws WaitStrategyStopException
     {
         while (array.isAvailable(next) == false)
         {
-            if (array.stoped())
-            {
-                throw RingArrayStopException.instance;
-            }
+            detectStopException();
             LockSupport.parkNanos(sleepNanos);
         }
     }

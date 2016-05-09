@@ -2,7 +2,7 @@ package com.jfireframework.baseutil.disruptor;
 
 import java.util.concurrent.atomic.AtomicLong;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
-import com.jfireframework.baseutil.disruptor.ringarray.RingArrayStopException;
+import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategyStopException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 
@@ -45,7 +45,7 @@ public abstract class AbstractSharedEntryAction implements SharedEntryAction
                     logger.debug("等待序号:{}", cursor);
                     ringArray.waitFor(_cursor);
                 }
-                catch (RingArrayStopException e)
+                catch (WaitStrategyStopException e)
                 {
                     logger.error("停止");
                     break;

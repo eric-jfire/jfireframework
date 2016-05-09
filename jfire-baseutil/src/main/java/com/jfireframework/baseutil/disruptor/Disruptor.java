@@ -81,11 +81,6 @@ public class Disruptor
         ringArray.stop();
     }
     
-    public boolean stoped()
-    {
-        return ringArray.stoped();
-    }
-    
     public RingArray getRingArray()
     {
         return ringArray;
