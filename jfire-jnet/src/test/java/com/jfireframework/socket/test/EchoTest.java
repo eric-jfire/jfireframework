@@ -23,7 +23,7 @@ import com.jfireframework.jnet.server.server.WorkMode;
 public class EchoTest
 {
 	private int	threadCount	= 1;
-	private int	sendCount	= 100000;
+	private int	sendCount	= 10;
 	private int	arraylength	= 1024 * 4;
 	
 	@Test
