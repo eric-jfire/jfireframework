@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.disruptor.Disruptor;
+import com.jfireframework.baseutil.disruptor.Sequence;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
@@ -31,7 +32,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     public final static long             _readState     = ReflectUtil.getFieldOffset("readState", ReadCompletionHandler.class);
     public final static int              IN_READ        = 1;
     public final static int              OUT_OF_READ    = 2;
-    private volatile long                cursor;
+    private final Sequence               sequence       = new Sequence(0);
     private long                         wrapPoint      = 0;
     private final WriteCompletionHandler writeCompletionHandler;
     // 读取超时时间
@@ -172,6 +173,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     {
         while (true)
         {
+            long cursor = sequence.value();
             testcursor: if (cursor >= wrapPoint)
             {
                 wrapPoint = writeCompletionHandler.cursor() + channelInfo.getEntryArraySize();
@@ -211,7 +213,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             {
                 result.init(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
             }
-            cursor += 1;
+            sequence.set(cursor + 1);
             for (int i = 0; i < handlers.length;)
             {
                 intermediateResult = handlers[i].handle(intermediateResult, result);
@@ -245,7 +247,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     
     public boolean isAvailable(long cursor)
     {
-        return cursor < this.cursor;
+        return cursor < sequence.value();
     }
     
     /**

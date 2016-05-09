@@ -34,8 +34,8 @@ public class EchoTest
         ServerConfig config = new ServerConfig();
         config.setWorkMode(WorkMode.SYNC);
         config.setRingArraySize(1024 * 4);
-        config.setSocketThreadSize(4);
-        config.setHandlerThreadSize(8);
+        config.setSocketThreadSize(6);
+        config.setHandlerThreadSize(2);
         config.setInitListener(new ChannelInitListener() {
             
             @Override
