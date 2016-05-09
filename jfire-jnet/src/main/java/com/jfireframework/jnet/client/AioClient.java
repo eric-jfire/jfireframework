@@ -31,10 +31,10 @@ public class AioClient
     private AsynchronousChannelGroup  channelGroup;
     private DataHandler[]             writeHandlers;
     private ChannelInitListener       initListener;
-    private boolean                   async          = false;
+    private final boolean             async;
     private ClientInternalResult      internalResult = new ClientInternalResult();
     
-    public void setAsync(boolean async)
+    public AioClient(boolean async)
     {
         this.async = async;
     }
@@ -144,6 +144,7 @@ public class AioClient
                 }
                 
             }
+            
             if (data instanceof ByteBuf<?>)
             {
                 Future<?> result = clientChannelInfo.addFuture();

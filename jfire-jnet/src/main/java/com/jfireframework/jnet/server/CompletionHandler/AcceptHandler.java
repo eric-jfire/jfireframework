@@ -69,7 +69,7 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
             if (workMode == WorkMode.ASYNC_WITHOUT_ORDER)
             {
                 AsyncReadCompletionHandler readCompletionHandler = new AsyncReadCompletionHandler(channelInfo, disruptor);
-                readCompletionHandler.startReadWait();
+                readCompletionHandler.readAndWait();
             }
             else
             {

@@ -2,7 +2,6 @@ package com.jfireframework.socket.test;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
@@ -25,7 +24,7 @@ public class EchoTest
 {
     private int threadCount = 4;
     private int sendCount   = 100000;
-    private int arraylength = 1024*4;
+    private int arraylength = 1024 * 4;
     
     @Test
     public void test() throws Throwable
@@ -84,7 +83,7 @@ public class EchoTest
     
     public void connecttest() throws Throwable
     {
-        AioClient client = new AioClient();
+        AioClient client = new AioClient(false);
         client.setAddress("127.0.0.1");
         client.setPort(8554);
         client.setWriteHandlers(new DataHandler() {

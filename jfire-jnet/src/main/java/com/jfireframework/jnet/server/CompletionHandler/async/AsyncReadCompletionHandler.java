@@ -126,7 +126,7 @@ public class AsyncReadCompletionHandler implements CompletionHandler<Integer, Se
                 int result = frameAndHandle();
                 if (result == CONTINUE_READ)
                 {
-                    startReadWait();
+                    readAndWait();
                     return;
                 }
                 else if (result == FREE_OF_READ)
@@ -136,7 +136,7 @@ public class AsyncReadCompletionHandler implements CompletionHandler<Integer, Se
             }
             catch (LessThanProtocolException e)
             {
-                startReadWait();
+                readAndWait();
                 return;
             }
             catch (BufNotEnoughException e)
@@ -224,7 +224,7 @@ public class AsyncReadCompletionHandler implements CompletionHandler<Integer, Se
     /**
      * 开始空闲读取等待，并且将倒数计时状态重置为false
      */
-    public void startReadWait()
+    public void readAndWait()
     {
         startCountdown = false;
         channelInfo.getChannel().read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, channelInfo, this);

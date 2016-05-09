@@ -39,7 +39,7 @@ public class NewServerTest
         });
         AioServer aioServer = new AioServer(serverConfig);
         aioServer.start();
-        AioClient aioClient = new AioClient();
+        AioClient aioClient = new AioClient(false);
         aioClient.setAddress("127.0.0.1").setPort(81);
         aioClient.setWriteHandlers(new DataHandler() {
             

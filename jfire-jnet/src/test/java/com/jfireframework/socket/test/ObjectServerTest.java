@@ -57,8 +57,7 @@ public class ObjectServerTest
         });
         AioServer aioServer = new AioServer(serverConfig);
         aioServer.start();
-        AioClient aioClient = new AioClient();
-        aioClient.setAsync(true);
+        AioClient aioClient = new AioClient(true);
         aioClient.setPort(81).setAddress("127.0.0.1");
         aioClient.setWriteHandlers(new DataHandler() {
             

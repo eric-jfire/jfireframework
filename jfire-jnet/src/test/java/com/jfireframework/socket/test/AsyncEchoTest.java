@@ -77,7 +77,7 @@ public class AsyncEchoTest
     
     public void connecttest() throws Throwable
     {
-        AioClient client = new AioClient();
+        AioClient client = new AioClient(false);
         client.setAddress("127.0.0.1");
         client.setPort(8554);
         client.setWriteHandlers(new DataHandler() {

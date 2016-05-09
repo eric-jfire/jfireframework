@@ -27,9 +27,6 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     private final DataHandler[]          handlers;
     private final DirectByteBuf          ioBuf          = DirectByteBuf.allocate(100);
     private final ServerChannelInfo      channelInfo;
-    public final static int              CONTINUE_READ  = 1;
-    // 暂时不监听监听当前通道上的数据
-    public final static int              FREE_OF_READ   = 2;
     private volatile int                 readState      = IN_READ;
     public final static long             _readState     = ReflectUtil.getFieldOffset("readState", ReadCompletionHandler.class);
     public final static int              IN_READ        = 1;
@@ -122,12 +119,12 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             try
             {
                 int result = frameAndHandle();
-                if (result == CONTINUE_READ)
+                if (result == IN_READ)
                 {
                     startReadWait();
                     return;
                 }
-                else if (result == FREE_OF_READ)
+                else if (result == OUT_OF_READ)
                 {
                     return;
                 }
@@ -194,15 +191,15 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
                     }
                     else
                     {
-                        return FREE_OF_READ;
+                        return OUT_OF_READ;
                     }
                 }
-                return FREE_OF_READ;
+                return OUT_OF_READ;
             }
             Object intermediateResult = frameDecodec.decodec(ioBuf);
             if (intermediateResult == null)
             {
-                return CONTINUE_READ;
+                return IN_READ;
             }
             ServerInternalResult result = (ServerInternalResult) channelInfo.getResult(cursor);
             if (result == null)
@@ -241,7 +238,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             }
             if (ioBuf.remainRead() == 0)
             {
-                return CONTINUE_READ;
+                return IN_READ;
             }
         }
     }

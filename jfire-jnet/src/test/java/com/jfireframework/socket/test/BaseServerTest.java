@@ -34,7 +34,7 @@ public class BaseServerTest
         AioServer aioServer = new AioServer(config);
         // 启动服务端
         aioServer.start();
-        AioClient aioClient = new AioClient();
+        AioClient aioClient = new AioClient(false);
         aioClient.setAddress("127.0.0.1").setPort(81);
         aioClient.setWriteHandlers(new DataHandler() {
             
