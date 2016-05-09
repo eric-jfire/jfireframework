@@ -297,4 +297,9 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     {
         disruptor.publish(result);
     }
+    
+    public long cursor()
+    {
+        return sequence.value();
+    }
 }

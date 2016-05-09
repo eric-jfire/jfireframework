@@ -10,8 +10,9 @@ import com.jfireframework.jnet.common.result.ServerInternalResult;
 @Resource
 public class WriteCompletionHandler implements CompletionHandler<Integer, ServerInternalResult>
 {
-    private volatile long         cursor = 0;
+    private volatile long         cursor    = 0;
     private ReadCompletionHandler readCompletionHandler;
+    private long                  wrapPoint = 0;
     
     public WriteCompletionHandler(ReadCompletionHandler readCompletionHandler)
     {
@@ -39,6 +40,10 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, Server
             {
                 ServerChannelInfo channelInfo = result.getChannelInfo();
                 long version = cursor + 1;
+                if (version >= wrapPoint)
+                {
+                    wrapPoint = readCompletionHandler.cursor();
+                }
                 /**
                  * 这里必须进行可用性判断。如果不检测的话，会拿取到未正确初始化的数据导致进行了错误处理
                  * 具体错误是这样的：
@@ -46,8 +51,9 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, Server
                  * undone前一步，这样可写判断就可以通过。
                  * 通过之后在获取bytebuffer写出前，读取线程就可能在处理这个数据，导致数据的紊乱或者别的问题
                  */
-                if (readCompletionHandler.isAvailable(version))
+                if (version < wrapPoint)
                 {
+                    System.out.println(version + "," + wrapPoint);
                     // 可用的情况下，必然能够拿到数据。所以不需要为空判断
                     ServerInternalResult next = (ServerInternalResult) channelInfo.getResult(version);
                     // 由于写操作的序号没有前进，这个方法中的写无需cas，可以直接赋值
@@ -71,7 +77,8 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, Server
                 {
                     cursor = version;
                     readCompletionHandler.reStartRead();
-                    if (readCompletionHandler.isAvailable(version))
+                    wrapPoint = readCompletionHandler.cursor();
+                    if (version < wrapPoint)
                     {
                         ServerInternalResult next = (ServerInternalResult) channelInfo.getResult(version);
                         next.write(version);
