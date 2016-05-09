@@ -16,7 +16,7 @@ public class StringUtil
     private static final char[]             DIGITS_LOWER = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
     private static long                     strOffset;
     private static Unsafe                   unsafe       = ReflectUtil.getUnsafe();
-                                                         
+    
     static
     {
         try
@@ -36,25 +36,25 @@ public class StringUtil
      */
     public static String toHexString(byte[] src)
     {
-        StringCache cache = new StringCache();
-        for (byte b : src)
+        char[] result = new char[src.length * 2];
+        for (int i = 0; i < src.length; i++)
         {
-            cache.append(DIGITS_LOWER[(b & 0xf0) >>> 4]);
-            cache.append(DIGITS_LOWER[b & 0x0f]);
+            result[i * 2] = DIGITS_LOWER[(src[i] & 0xf0) >>> 4];
+            result[i * 2 + 1] = DIGITS_LOWER[src[i] & 0x0f];
         }
-        return cache.toString();
+        return new String(result);
     }
     
     public static String toHexString(byte[] src, int off, int length)
     {
-        StringCache cache = new StringCache(length);
+        char[] result = new char[length * 2];
         length = off + length;
         for (int i = off; i < length; i++)
         {
-            cache.append(DIGITS_LOWER[(src[i] & 0xf0) >>> 4]);
-            cache.append(DIGITS_LOWER[src[i] & 0x0f]);
+            result[i * 2] = DIGITS_LOWER[(src[i] & 0xf0) >>> 4];
+            result[i * 2 + 1] = DIGITS_LOWER[src[i] & 0x0f];
         }
-        return cache.toString();
+        return new String(result);
     }
     
     /**
