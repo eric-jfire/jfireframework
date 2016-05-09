@@ -5,9 +5,9 @@ import java.nio.channels.CompletionHandler;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
+import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.baseutil.disruptor.Sequence;
-import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.common.channel.ServerChannelInfo;
@@ -17,19 +17,15 @@ import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.ServerInternalResult;
-import sun.misc.Unsafe;
 
-@SuppressWarnings("restriction")
 public class ReadCompletionHandler implements CompletionHandler<Integer, ServerChannelInfo>
 {
-    private static final Unsafe          unsafe         = ReflectUtil.getUnsafe();
     private static final Logger          logger         = ConsoleLogFactory.getLogger();
     private final FrameDecodec           frameDecodec;
     private final DataHandler[]          handlers;
     private final DirectByteBuf          ioBuf          = DirectByteBuf.allocate(100);
     private final ServerChannelInfo      channelInfo;
-    private volatile int                 readState      = IN_READ;
-    public final static long             _readState     = ReflectUtil.getFieldOffset("readState", ReadCompletionHandler.class);
+    private final CpuCachePadingInt      readState      = new CpuCachePadingInt(IN_READ);
     public final static int              IN_READ        = 1;
     public final static int              OUT_OF_READ    = 2;
     private final Sequence               sequence       = new Sequence(0);
@@ -159,9 +155,9 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     
     public void reStartRead()
     {
-        if (readState == OUT_OF_READ)
+        if (readState.value() == OUT_OF_READ)
         {
-            if (unsafe.compareAndSwapInt(this, _readState, OUT_OF_READ, IN_READ))
+            if (readState.compareAndSwap(OUT_OF_READ, IN_READ))
             {
                 // logger.trace("恢复读取，当前读取{}", cursor - 1);
                 doRead();
@@ -182,12 +178,12 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
                     break testcursor;
                 }
                 // 在设置之前，可能写线程已经将所有的数据都写出完毕了并且写线程结束运行。此时就不会有人来唤醒读取线程了
-                readState = OUT_OF_READ;
+                readState.set(OUT_OF_READ);
                 // 设置之后必须进行尝试
                 wrapPoint = writeCompletionHandler.cursor() + channelInfo.getEntryArraySize();
                 if (cursor < wrapPoint)
                 {
-                    if (unsafe.compareAndSwapInt(this, _readState, OUT_OF_READ, IN_READ))
+                    if (readState.compareAndSwap(OUT_OF_READ, IN_READ))
                     {
                         break testcursor;
                     }

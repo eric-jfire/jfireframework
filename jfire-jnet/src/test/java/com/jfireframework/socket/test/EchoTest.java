@@ -22,19 +22,17 @@ import com.jfireframework.jnet.server.server.WorkMode;
 
 public class EchoTest
 {
-    private int threadCount = 4;
-    private int sendCount   = 100000;
+    private int threadCount = 16;
+    private int sendCount   = 200000;
     private int arraylength = 1024 * 4;
     
     @Test
     public void test() throws Throwable
     {
-        Timewatch timewatch = new Timewatch();
-        timewatch.start();
         ServerConfig config = new ServerConfig();
         config.setWorkMode(WorkMode.SYNC);
         config.setRingArraySize(1024 * 4);
-        config.setSocketThreadSize(6);
+        config.setSocketThreadSize(8);
         config.setHandlerThreadSize(2);
         config.setInitListener(new ChannelInitListener() {
             
@@ -49,8 +47,6 @@ public class EchoTest
         config.setPort(8554);
         AioServer aioServer = new AioServer(config);
         aioServer.start();
-        timewatch.end();
-        System.out.println(timewatch.getTotal());
         Thread[] threads = new Thread[threadCount];
         for (int i = 0; i < threads.length; i++)
         {
@@ -72,11 +68,14 @@ public class EchoTest
             }, "测试线程" + i);
             threads[i].start();
         }
+        Timewatch timewatch = new Timewatch();
+        timewatch.start();
         for (int i = 0; i < threads.length; i++)
         {
             threads[i].join();
         }
-        System.out.println("运行完毕");
+        timewatch.end();
+        System.out.println("运行完毕:" + timewatch.getTotal());
         // Thread.sleep(1000);
         // client.close(new EndOfStreamException());
     }
