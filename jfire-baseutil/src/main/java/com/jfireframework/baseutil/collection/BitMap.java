@@ -1,0 +1,72 @@
+package com.jfireframework.baseutil.collection;
+
+public class BitMap
+{
+    private byte[] array = new byte[1];
+    
+    public int max()
+    {
+        int head = ((array.length - 1) << 3) - 1;
+        byte value = array[array.length - 1];
+        switch (value)
+        {
+            case (byte) 0xff:
+                return head + 8;
+            case (byte) 0xfe:
+                return head + 7;
+            case (byte) 0xfc:
+                return head + 6;
+            case (byte) 0xf8:
+                return head + 5;
+            case (byte) 0xf0:
+                return head + 4;
+            case (byte) 0xe0:
+                return head + 3;
+            case (byte) 0xc0:
+                return head + 2;
+            case (byte) 0x80:
+                return head + 1;
+            default:
+                throw new RuntimeException("error");
+        }
+    }
+    
+    public boolean get(int i)
+    {
+        int wordIndex = (i+1) >>> 3;
+        if (wordIndex >= array.length)
+        {
+            return false;
+        }
+        byte value = (byte) (0x80 >>> (i & 7));
+        return (array[wordIndex] & value) != 0;
+    }
+    
+    public void set(int i)
+    {
+        int wordIndex = (i+1) >>> 3;
+        byte value = (byte) (0x80 >>> (i & 7));
+        if (wordIndex >= array.length)
+        {
+            byte[] tmp = new byte[wordIndex + 1];
+            System.arraycopy(array, 0, tmp, 0, array.length);
+            array = tmp;
+        }
+        array[wordIndex] |= value;
+    }
+    
+    public void clear(int i)
+    {
+        i += 1;
+        int wordIndex = i >>> 3;
+        byte value = (byte) (1 << (i & 7));
+        if (wordIndex >= array.length)
+        {
+            byte[] tmp = new byte[wordIndex + 1];
+            System.arraycopy(array, 0, tmp, 0, array.length);
+            array = tmp;
+        }
+        array[wordIndex] &= ~value;
+    }
+    
+}
