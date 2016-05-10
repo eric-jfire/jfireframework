@@ -6,6 +6,7 @@ import java.net.NetworkInterface;
 import java.text.SimpleDateFormat;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.code.RandomString;
 
 public class SimpleUid
 {
@@ -25,7 +26,15 @@ public class SimpleUid
             SimpleDateFormat format = new SimpleDateFormat("yyyy-mm-dd");
             base = format.parse("2016-01-01").getTime();
             // 本机mac地址的hash 32个bit
-            int _maxHash = StringUtil.toHexString(NetworkInterface.getByInetAddress(InetAddress.getLocalHost()).getHardwareAddress()).hashCode();
+            int _maxHash;
+            try
+            {
+                _maxHash = StringUtil.toHexString(NetworkInterface.getByInetAddress(InetAddress.getLocalHost()).getHardwareAddress()).hashCode();
+            }
+            catch (Exception e)
+            {
+                _maxHash = RandomString.randomString(5).hashCode();
+            }
             internal[0] = (byte) (pid >>> 8);
             internal[1] = (byte) pid;
             internal[2] = (byte) (_maxHash >>> 16);

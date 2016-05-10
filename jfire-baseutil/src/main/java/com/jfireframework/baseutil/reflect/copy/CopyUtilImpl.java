@@ -23,7 +23,7 @@ public class CopyUtilImpl<T, D> implements CopyUtil<T, D>
         List<CopyField> copyFields = new ArrayList<CopyField>();
         for (Field each : desFields)
         {
-            if (Modifier.isStatic(each.getType().getModifiers()) || Modifier.isFinal(each.getType().getModifiers()))
+            if (Modifier.isStatic(each.getModifiers()) || Modifier.isFinal(each.getModifiers()))
             {
                 continue;
             }
