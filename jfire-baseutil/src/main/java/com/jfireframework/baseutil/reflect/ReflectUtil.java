@@ -22,7 +22,7 @@ public class ReflectUtil
     // 该属性是method.invoke的实际执行者
     protected static Field  methodAccessor;
     private static Unsafe   unsafe;
-                            
+    
     static
     {
         try
@@ -64,7 +64,7 @@ public class ReflectUtil
             Verify.False(Modifier.isStatic(field.getModifiers()), "属性{}.{}是静态属性,不应该使用该方法,请检查{}", field.getDeclaringClass(), field.getName(), CodeLocation.getCodeLocation(2));
             return unsafe.objectFieldOffset(field);
         }
-        catch (NoSuchFieldException | SecurityException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -98,7 +98,7 @@ public class ReflectUtil
      */
     public static Field[] getAllFields(Class<?> entityClass)
     {
-        LightSet<Field> set = new LightSet<>();
+        LightSet<Field> set = new LightSet<Field>();
         while (entityClass.equals(Object.class) == false)
         {
             Field[] fields = entityClass.getDeclaredFields();
@@ -126,7 +126,7 @@ public class ReflectUtil
      */
     public static Method[] getAllMehtods(Class<?> entityClass)
     {
-        LightSet<Method> set = new LightSet<>();
+        LightSet<Method> set = new LightSet<Method>();
         while (entityClass.equals(Object.class) == false)
         {
             Method[] methods = entityClass.getDeclaredMethods();
@@ -202,8 +202,7 @@ public class ReflectUtil
     
     /**
      * 给定一个字符串参数和初始类型rootType。将字符串转换成调用方法的字符串。比如一个类User有name属性。给定字符串user.name。
-     * 会返回字符串.getUser()。并且同时返回最后方法的返回类型
-     * 数组0为方法调用字符串，数组1是返回类型
+     * 会返回字符串.getUser()。并且同时返回最后方法的返回类型 数组0为方法调用字符串，数组1是返回类型
      * 
      * @param name
      * @param rootType
@@ -288,8 +287,7 @@ public class ReflectUtil
     }
     
     /**
-     * 根据给定的对象类型和字符串,返回对于该属性的获取字符串.
-     * 比如name是user.name就会生成一个字符串".getName()"
+     * 根据给定的对象类型和字符串,返回对于该属性的获取字符串. 比如name是user.name就会生成一个字符串".getName()"
      * 并且也可以识别数组,以及boolean变量时变成is
      * 
      * @param name
@@ -311,8 +309,8 @@ public class ReflectUtil
      */
     public static Method[] listGetMethod(Class<?> ckass)
     {
-        Set<MethodInfo> set = new HashSet<>();
-        LightSet<Method> methods = new LightSet<>();
+        Set<MethodInfo> set = new HashSet<MethodInfo>();
+        LightSet<Method> methods = new LightSet<Method>();
         do
         {
             for (Method each : ckass.getDeclaredMethods())
@@ -343,8 +341,8 @@ public class ReflectUtil
      */
     public static Method[] listSetMethod(Class<?> ckass)
     {
-        Set<MethodInfo> set = new HashSet<>();
-        LightSet<Method> methods = new LightSet<>();
+        Set<MethodInfo> set = new HashSet<MethodInfo>();
+        LightSet<Method> methods = new LightSet<Method>();
         do
         {
             for (Method each : ckass.getDeclaredMethods())
@@ -389,7 +387,7 @@ public class ReflectUtil
                 return target.getDeclaredMethod("get" + tmpName);
             }
         }
-        catch (NoSuchMethodException | SecurityException e)
+        catch (Exception e)
         {
             return null;
         }
@@ -410,7 +408,7 @@ public class ReflectUtil
         {
             return target.getDeclaredMethod("set" + tmpName, field.getType());
         }
-        catch (NoSuchMethodException | SecurityException e)
+        catch (Exception e)
         {
             return null;
         }
@@ -434,7 +432,7 @@ public class ReflectUtil
                 Method method = ckass.getDeclaredMethod(name);
                 return method;
             }
-            catch (NoSuchMethodException | SecurityException e)
+            catch (Exception e)
             {
                 e.printStackTrace();
                 ckass = ckass.getSuperclass();
@@ -452,7 +450,7 @@ class MethodInfo
 {
     private String     methodName;
     private Class<?>[] paramTypes;
-                       
+    
     public MethodInfo(Method method)
     {
         methodName = method.getName();

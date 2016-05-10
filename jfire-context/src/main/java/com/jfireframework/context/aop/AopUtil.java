@@ -40,7 +40,7 @@ public class AopUtil
     private static CtClass   txManagerCtClass;
     private static CtClass   acManagerCtClass;
     private static Logger    logger    = ConsoleLogFactory.getLogger();
-                                       
+    
     static
     {
         initClassPool();
@@ -199,7 +199,7 @@ public class AopUtil
              * aop增强,采用的是将增强类作为目标类的属性注入到目标类中.所以在开始增强前,需要确定注入属性的名称.
              * 由于一个增强类中的多个EnhanceAnnoInfo的属性名是相同的,所以在这里进行注入并且去重
              */
-            HashSet<String> enHanceNameSet = new HashSet<>();
+            HashSet<String> enHanceNameSet = new HashSet<String>();
             for (EnhanceAnnoInfo info : bean.getEnHanceAnnos())
             {
                 if (enHanceNameSet.contains(info.getEnhanceFieldName()) == false)
@@ -209,7 +209,7 @@ public class AopUtil
                 }
             }
         }
-        LightSet<EnhanceAnnoInfo> set = new LightSet<>();
+        LightSet<EnhanceAnnoInfo> set = new LightSet<EnhanceAnnoInfo>();
         for (CtMethod each : childCc.getDeclaredMethods())
         {
             // 针对每一个方法,取出该方法对应的所有增强,并且进行排序
@@ -538,8 +538,7 @@ public class AopUtil
     }
     
     /**
-     * 将一个方法进行拷贝操作，该方法依附于cc。
-     * 该拷贝操作会拷贝原方法上的注解信息
+     * 将一个方法进行拷贝操作，该方法依附于cc。 该拷贝操作会拷贝原方法上的注解信息
      * 
      * @param targetMethod
      * @param cc
@@ -565,7 +564,7 @@ public class AopUtil
      */
     public static CtMethod[] getAllMethods(CtClass cc) throws NotFoundException
     {
-        LightSet<CtMethod> set = new LightSet<>();
+        LightSet<CtMethod> set = new LightSet<CtMethod>();
         while (cc.getSimpleName().equals("Object") == false)
         {
             CtMethod[] methods = cc.getDeclaredMethods();
@@ -612,7 +611,7 @@ public class AopUtil
         try
         {
             CtClass ctClass = classPool.get(method.getDeclaringClass().getName());
-            LightSet<CtClass> set = new LightSet<>();
+            LightSet<CtClass> set = new LightSet<CtClass>();
             for (Class<?> each : method.getParameterTypes())
             {
                 set.add(classPool.get(each.getName()));
@@ -628,7 +627,7 @@ public class AopUtil
             }
             catch (Exception e)
             {
-                throw e;
+                throw new RuntimeException(e);
             }
         }
         catch (NotFoundException e)

@@ -7,7 +7,7 @@ import java.util.Date;
 
 public class FunctionData12
 {
-    private ArrayList<Date> list = new ArrayList<>();
+    private ArrayList<Date> list = new ArrayList<Date>();
     
     public FunctionData12()
     {

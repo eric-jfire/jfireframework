@@ -66,14 +66,7 @@ public class Person
     public void autoClose()
     {
         String name = "12";
-        switch (name)
-        {
-            case "1":
-                break;
-            case "12":
-                System.out.println("自动关闭");
-                break;
-        }
+        System.out.println("自动关闭");
     }
     
 }

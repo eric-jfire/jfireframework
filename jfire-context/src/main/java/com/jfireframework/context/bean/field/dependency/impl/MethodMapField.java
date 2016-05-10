@@ -1,7 +1,6 @@
 package com.jfireframework.context.bean.field.dependency.impl;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.verify.Verify;
@@ -45,7 +44,7 @@ public class MethodMapField extends AbstractDependencyField
                 entryKey = methods[i].invoke(entryValue, param);
                 map.put(entryKey, entryValue);
             }
-            catch (IllegalArgumentException | InvocationTargetException e)
+            catch (Exception e)
             {
                 throw new RuntimeException(e);
             }

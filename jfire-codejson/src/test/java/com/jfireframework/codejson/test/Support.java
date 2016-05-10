@@ -35,11 +35,11 @@ public class Support
         NestData nestData = new NestData();
         nestData.setName("dsadas");
         data.setNestData(nestData);
-        ArrayList<String> list = new ArrayList<>();
+        ArrayList<String> list = new ArrayList<String>();
         list.add("husdasdad");
         list.add("siudsan");
         data.setList(list);
-        ArrayList<NestData> nestDatas = new ArrayList<>();
+        ArrayList<NestData> nestDatas = new ArrayList<NestData>();
         nestData = new NestData();
         nestData.setName("sdasda");
         nestData.setAge(13);
@@ -50,7 +50,7 @@ public class Support
         nestDatas.add(nestData);
         data.setDatas(nestDatas);
         data.setNolist(new ArrayList<String>());
-        HashMap<String, String> map = new HashMap<>();
+        HashMap<String, String> map = new HashMap<String, String>();
         map.put("恁大", "dasdasd");
         map.put("dsada", "你好");
         data.setMap(map);
@@ -70,10 +70,10 @@ public class Support
         tmp.setName("daasdadasd");
         nestDatas2[1] = tmp;
         data.setNestDatas(nestDatas2);
-        HashMap<Date, NestData> map2 = new HashMap<>();
+        HashMap<Date, NestData> map2 = new HashMap<Date, NestData>();
         map2.put(new Date(), tmp);
         @SuppressWarnings("unchecked")
-        ArrayList<String>[] lists = new ArrayList[] { new ArrayList<>(), new ArrayList<>() };
+        ArrayList<String>[] lists = new ArrayList[] { new ArrayList<String>(), new ArrayList<String>() };
         lists[0].add("dasdasda");
         lists[0].add("dasdasdasdasdasd");
         lists[1].add("1212121dasdasdasdasdasd");

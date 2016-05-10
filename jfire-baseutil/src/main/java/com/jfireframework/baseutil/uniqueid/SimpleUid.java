@@ -3,9 +3,6 @@ package com.jfireframework.baseutil.uniqueid;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.StringUtil;
@@ -35,7 +32,7 @@ public class SimpleUid
             internal[3] = (byte) (_maxHash >>> 8);
             internal[4] = (byte) (_maxHash);
         }
-        catch (ParseException | SocketException | UnknownHostException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }

@@ -43,8 +43,8 @@ public class LongData
 	                                        546864648867.466d };
 	private Float[]                    q1   = new Float[] { 46486.2f, 49849.2f, 646854.6f };
 	private int[][]                    w    = new int[][] { { 1, 2 }, { 3, 4, 5 } };
-	private List<BaseData>             list = new ArrayList<>();
-	private HashMap<Integer, BaseData> map  = new HashMap<>();
+	private List<BaseData>             list = new ArrayList<BaseData>();
+	private HashMap<Integer, BaseData> map  = new HashMap<Integer,BaseData>();
 	private Object                     j2   = new int[] { 1, 2, 4, 5 };
 	private Object                     k2   = new boolean[] { true, false, true, false, false, false, true };
 	private Object                     l2   = new char[] { 'a', 'v', 'q', 'j', 'h', 'e', 'f' };

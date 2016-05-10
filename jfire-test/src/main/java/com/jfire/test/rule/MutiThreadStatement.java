@@ -10,10 +10,10 @@ import org.junit.runners.model.Statement;
 
 public class MutiThreadStatement extends Statement
 {
-    private int                 repaetTimes;
-    private int                 threadNums;
-    private Statement           statement;
-    private ExecutorService     pool;
+    private int             repaetTimes;
+    private int             threadNums;
+    private Statement       statement;
+    private ExecutorService pool;
     
     public MutiThreadStatement(int repaetTimes, int threadNums, Statement statement)
     {
@@ -25,7 +25,7 @@ public class MutiThreadStatement extends Statement
     
     public void evaluate() throws Throwable
     {
-        List<Future<Void>> set = new LinkedList<>();
+        List<Future<Void>> set = new LinkedList<Future<Void>>();
         for (int i = 0; i < threadNums; i++)
         {
             Future<Void> future = pool.submit(new Callable<Void>() {

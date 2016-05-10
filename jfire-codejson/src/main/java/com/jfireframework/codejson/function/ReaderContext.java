@@ -2,7 +2,6 @@ package com.jfireframework.codejson.function;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -54,7 +53,7 @@ public class ReaderContext
 {
     private static Map<Type, JsonReader> readerMap  = new ConcurrentHashMap<Type, JsonReader>();
     private static ClassPool             classPool  = ClassPool.getDefault();
-    private static Set<Class<?>>         wrapperSet = new HashSet<>();
+    private static Set<Class<?>>         wrapperSet = new HashSet<Class<?>>();
     private static Logger                logger     = ConsoleLogFactory.getLogger();
     static
     {
@@ -118,7 +117,7 @@ public class ReaderContext
             {
                 reader = (JsonReader) createReader(ckass, null).newInstance();
             }
-            catch (InstantiationException | IllegalAccessException e)
+            catch (Exception e)
             {
                 throw new RuntimeException(e);
             }
@@ -133,7 +132,7 @@ public class ReaderContext
         {
             return (JsonReader) createReader(ckass, readStrategy).getConstructor(ReadStrategy.class).newInstance(readStrategy);
         }
-        catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -482,7 +481,7 @@ public class ReaderContext
                 return false;
             }
         }
-        catch (NoSuchFieldException | SecurityException e)
+        catch (Exception e)
         {
             return false;
         }

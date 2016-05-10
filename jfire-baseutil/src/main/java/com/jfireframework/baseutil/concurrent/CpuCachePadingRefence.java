@@ -8,7 +8,7 @@ public class CpuCachePadingRefence<T>
     // 前后都有7个元素填充，可以保证该核心变量独自在一个缓存行中
     protected volatile T                                                            refence;
     protected long                                                                  p9, p10, p11, p12, p13, p14, p15;
-    private static final UnsafeReferenceFieldUpdater<CpuCachePadingRefence, Object> updater = new UnsafeReferenceFieldUpdater<>(CpuCachePadingRefence.class, "refence");
+    private static final UnsafeReferenceFieldUpdater<CpuCachePadingRefence, Object> updater = new UnsafeReferenceFieldUpdater<CpuCachePadingRefence, Object>(CpuCachePadingRefence.class, "refence");
     
     public CpuCachePadingRefence(T refence)
     {

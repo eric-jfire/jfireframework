@@ -15,12 +15,12 @@ public class CopyUtilImpl<T, D> implements CopyUtil<T, D>
     {
         Field[] srcFields = ReflectUtil.getAllFields(src);
         Field[] desFields = ReflectUtil.getAllFields(des);
-        HashMap<String, Field> fieldMap = new HashMap<>();
+        HashMap<String, Field> fieldMap = new HashMap<String, Field>();
         for (Field each : srcFields)
         {
             fieldMap.put(each.getName(), each);
         }
-        List<CopyField> copyFields = new ArrayList<>();
+        List<CopyField> copyFields = new ArrayList<CopyField>();
         for (Field each : desFields)
         {
             if (Modifier.isStatic(each.getType().getModifiers()) || Modifier.isFinal(each.getType().getModifiers()))

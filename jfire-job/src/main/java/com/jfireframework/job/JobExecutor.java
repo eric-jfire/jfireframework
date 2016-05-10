@@ -25,7 +25,7 @@ public class JobExecutor
                 return new Thread(r, "jfire-job-thread-" + (count++));
             }
         });
-        executorService = new ExecutorCompletionService<>(pool);
+        executorService = new ExecutorCompletionService<Void>(pool);
         this.size = size;
     }
     

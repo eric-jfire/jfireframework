@@ -1,11 +1,6 @@
 package com.jfireframework.baseutil.encrypt;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -13,13 +8,13 @@ import javax.crypto.spec.SecretKeySpec;
  * DES 加解密工具类，注意，该类是非线程安全的
  * 
  * @author linbin
- *         
+ * 
  */
 public class DesUtil implements EnDecrpt
 {
     private Cipher decryptCipher;
     private Cipher encrptCipher;
-                   
+    
     /**
      * 设置des加密使用的密钥
      * 
@@ -35,7 +30,7 @@ public class DesUtil implements EnDecrpt
             decryptCipher = Cipher.getInstance("DES");
             decryptCipher.init(Cipher.DECRYPT_MODE, deskey);
         }
-        catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -72,7 +67,7 @@ public class DesUtil implements EnDecrpt
         {
             return decryptCipher.doFinal(src);
         }
-        catch (IllegalBlockSizeException | BadPaddingException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }

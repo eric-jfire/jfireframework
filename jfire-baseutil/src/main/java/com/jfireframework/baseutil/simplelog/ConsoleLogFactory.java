@@ -7,15 +7,15 @@ import java.util.Properties;
 
 public class ConsoleLogFactory
 {
-    private static Map<String, Integer> levelMap    = new HashMap<>();
-    private static Map<String, Boolean> locationMap = new HashMap<>();
+    private static Map<String, Integer> levelMap    = new HashMap<String, Integer>();
+    private static Map<String, Boolean> locationMap = new HashMap<String, Boolean>();
     public final static int             TRACE       = 1;
     public final static int             DEBUG       = 2;
     public final static int             INFO        = 3;
     public final static int             WARN        = 4;
     public final static int             ERROR       = 5;
     private static int                  rootLevel   = ERROR;
-                                                    
+    
     static
     {
         Properties properties = new Properties();

@@ -33,7 +33,7 @@ import com.jfireframework.codejson.methodinfo.impl.write.extra.ReturnArrayListMe
 
 public class MethodInfoBuilder
 {
-    public static Set<Class<?>> wrapperSet = new HashSet<>();
+    public static Set<Class<?>> wrapperSet = new HashSet<Class<?>>();
     
     static
     {

@@ -17,7 +17,7 @@ import com.jfireframework.job.trigger.impl.AbstractTrigger;
  */
 public class JobManager
 {
-    private BlockingQueue<Trigger> triggers    = new PriorityBlockingQueue<>(100, new TimeComparator());
+    private BlockingQueue<Trigger> triggers    = new PriorityBlockingQueue<Trigger>(100, new TimeComparator());
     private JobExecutor            jobExecutor = new JobExecutor(Runtime.getRuntime().availableProcessors() * 2);
     private Lock                   lock        = new ReentrantLock();
     private Condition              toEndTime   = lock.newCondition();

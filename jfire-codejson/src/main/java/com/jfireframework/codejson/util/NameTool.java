@@ -41,7 +41,7 @@ public class NameTool
                     return fieldName;
                 }
             }
-            catch (NoSuchFieldException | SecurityException e)
+            catch (Exception e)
             {
                 return fieldName;
             }

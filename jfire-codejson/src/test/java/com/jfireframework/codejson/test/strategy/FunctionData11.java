@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class FunctionData11
 {
-    private ArrayList<String> list = new ArrayList<>();
+    private ArrayList<String> list = new ArrayList<String>();
     
     public FunctionData11()
     {

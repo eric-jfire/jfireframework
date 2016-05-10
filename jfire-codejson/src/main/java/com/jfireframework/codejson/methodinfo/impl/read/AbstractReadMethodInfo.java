@@ -14,7 +14,7 @@ public class AbstractReadMethodInfo implements ReadMethodInfo
     protected String               entityName;
     protected String               strategyFieldName;
     protected String               fieldName;
-    protected static Set<Class<?>> wrapperSet = new HashSet<>();
+    protected static Set<Class<?>> wrapperSet = new HashSet<Class<?>>();
     protected ReadStrategy         strategy;
     static
     {
@@ -37,7 +37,8 @@ public class AbstractReadMethodInfo implements ReadMethodInfo
         fieldName = NameTool.getNameFromMethod(method, strategy);
         this.strategy = strategy;
         strategyFieldName = method.getDeclaringClass().getName() + '.' + fieldName;
-//        entityName = "((" + method.getDeclaringClass().getName() + ")entity).";
+        // entityName = "((" + method.getDeclaringClass().getName() +
+        // ")entity).";
         entityName = "entity.";
     }
     

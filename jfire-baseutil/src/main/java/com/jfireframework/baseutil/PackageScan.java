@@ -15,14 +15,12 @@ import com.jfireframework.baseutil.collection.set.LightSet;
  * 包扫描类，可以扫描某个路径下所有的class
  * 
  * @author 林斌（windfire@zailanghua.com）
- *         
+ * 
  */
 public class PackageScan
 {
     /**
-     * 根据给定的包名，返回包下面所有的类的全限定名
-     * 支持过滤语法，过滤语法以：开始。
-     * 规则有：
+     * 根据给定的包名，返回包下面所有的类的全限定名 支持过滤语法，过滤语法以：开始。 规则有：
      * （1）以“in~”开头，代表必须包含后面的包名.返回的字符串数组中的字符串均包含后面的包名
      * （2）以“out~”开头，代表不包含后面的包名。返回的字符串数组中的字符串均不包含后面的包名
      * 
@@ -37,7 +35,7 @@ public class PackageScan
             filterNames = packageName.split(":")[1];
             packageName = packageName.split(":")[0];
         }
-        LightSet<String> classNames = new LightSet<>();
+        LightSet<String> classNames = new LightSet<String>();
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         String resourceName = packageName.replaceAll("\\.", "/");
         URL url = loader.getResource(resourceName);
@@ -165,8 +163,7 @@ public class PackageScan
     }
     
     /**
-     * 进行过滤。过滤规则参照调用方法。
-     * 字符串匹配规则参照StringUtil的Match方法
+     * 进行过滤。过滤规则参照调用方法。 字符串匹配规则参照StringUtil的Match方法
      * 
      * @param filterNames
      * @param classNames

@@ -20,7 +20,7 @@ public final class UnsafeReferenceFieldUpdater<T, V>
             Verify.True(Modifier.isVolatile(field.getModifiers()), "属性必须是volatile修饰");
             offset = ReflectUtil.getFieldOffset(fieldName, holderType);
         }
-        catch (NoSuchFieldException | SecurityException e)
+        catch (NoSuchFieldException e)
         {
             throw new RuntimeException(e);
         }

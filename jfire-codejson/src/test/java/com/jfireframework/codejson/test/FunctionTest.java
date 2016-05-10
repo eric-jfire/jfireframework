@@ -66,13 +66,13 @@ public class FunctionTest extends Support
     @Test
     public void typeTest()
     {
-        ArrayList<String> list = new ArrayList<>();
+        ArrayList<String> list = new ArrayList<String>();
         list.add("sdadasd");
         list.add("sdadsasda");
         String value = JsonTool.write(list);
         ArrayList<String> result = (ArrayList<String>) JsonTool.read(new TypeUtil<ArrayList<String>>() {}.getType(), value);
         assertTrue(list.equals(result));
-        ArrayList<NestData> arrayList = new ArrayList<>();
+        ArrayList<NestData> arrayList = new ArrayList<NestData>();
         NestData cdata = new NestData();
         cdata.setAge(1212);
         cdata.setName("sdasdas");
@@ -85,13 +85,13 @@ public class FunctionTest extends Support
         System.out.println(value);
         ArrayList<NestData> result1 = JsonTool.read(new TypeUtil<ArrayList<NestData>>() {}.getType(), value);
         assertTrue(arrayList.equals(result1));
-        ArrayList<Data> list2 = new ArrayList<>();
+        ArrayList<Data> list2 = new ArrayList<Data>();
         list2.add(data);
         list2.add(data);
         value = JsonTool.toString(list2);
         ArrayList<Data> result3 = JsonTool.read(new TypeUtil<ArrayList<Data>>() {}.getType(), value);
         assertTrue(list2.get(0).equal(result3.get(0)) && list2.get(1).equal(result3.get(1)));
-        HashMap<String, Data> map = new HashMap<>();
+        HashMap<String, Data> map = new HashMap<String, Data>();
         map.put("12wq", data);
         map.put("xczc", data);
         value = JsonTool.write(map);

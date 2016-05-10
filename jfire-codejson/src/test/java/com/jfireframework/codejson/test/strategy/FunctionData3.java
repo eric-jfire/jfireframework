@@ -5,7 +5,7 @@ import java.util.List;
 
 public class FunctionData3
 {
-    private List<String> list = new ArrayList<>();
+    private List<String> list = new ArrayList<String>();
     
     public FunctionData3()
     {

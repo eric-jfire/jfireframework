@@ -11,11 +11,11 @@ public class Host
 {
     @Resource
     @MapKey("getOrder")
-    private Map<Integer, Order> map  = new HashMap<>();
-                                     
+    private Map<Integer, Order> map  = new HashMap<Integer, Order>();
+    
     @Resource
-    private Map<String, Order>  map2 = new HashMap<>();
-                                     
+    private Map<String, Order>  map2 = new HashMap<String, Order>();
+    
     public Map<Integer, Order> getMap()
     {
         return map;

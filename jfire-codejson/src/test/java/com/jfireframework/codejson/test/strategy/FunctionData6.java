@@ -9,10 +9,10 @@ public class FunctionData6
     
     public FunctionData6()
     {
-        Map<String, String> m = new HashMap<>();
+        Map<String, String> m = new HashMap<String,String>();
         m.put("test", "test");
         maps[0] = m;
-        m = new HashMap<>();
+        m = new HashMap<String,String>();
         m.put("abc", "def");
         maps[1] = m;
     }

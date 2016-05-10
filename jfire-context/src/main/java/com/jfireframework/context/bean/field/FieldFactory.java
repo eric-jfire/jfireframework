@@ -55,7 +55,7 @@ public class FieldFactory
     public static DependencyField[] buildDependencyField(Bean bean, Map<String, Bean> beanNameMap, BeanConfig beanConfig)
     {
         Field[] fields = ReflectUtil.getAllFields(bean.getType());
-        LightSet<DependencyField> set = new LightSet<>();
+        LightSet<DependencyField> set = new LightSet<DependencyField>();
         Map<String, String> dependencyMap = null;
         if (beanConfig != null)
         {
@@ -181,19 +181,23 @@ public class FieldFactory
                 Bean dependencyBean = beanNameMap.get(value);
                 Verify.exist(dependencyBean, "属性{}.{}进行map注入，配置信息{}中指定的bean{}不存在", field.getDeclaringClass(), field.getName(), dependencyStr, value);
                 beans[i] = dependencyBean;
-                switch (keyClass.getSimpleName())
+                String _simpleName = keyClass.getSimpleName();
+                if (_simpleName.equals("Integer"))
                 {
-                    case "Integer":
-                        keys[i] = Integer.valueOf(key);
-                        break;
-                    case "String":
-                        keys[i] = key;
-                        break;
-                    case "Long":
-                        keys[i] = Long.valueOf(key);
-                        break;
-                    default:
-                        break;
+                    keys[i] = Integer.valueOf(key);
+                    
+                }
+                else if (_simpleName.equals("String"))
+                {
+                    keys[i] = key;
+                }
+                else if (_simpleName.equals("Long"))
+                {
+                    keys[i] = Long.valueOf(key);
+                }
+                else
+                {
+                    throw new RuntimeException("不识别的类型");
                 }
             }
             return new ValueMapField(field, beans, keys);
@@ -202,7 +206,7 @@ public class FieldFactory
         {
             dependencyStr = dependencyStr.substring(9);
             Verify.True(keyClass.equals(String.class), "只用Resource注解进行map注入时，key就是注入的bean的名称，所以要求key是String类型。请检查{}.{}", field.getDeclaringClass(), field.getName());
-            LightSet<Bean> beans = new LightSet<>();
+            LightSet<Bean> beans = new LightSet<Bean>();
             for (String each : dependencyStr.split(","))
             {
                 beans.add(beanNameMap.get(each));
@@ -235,7 +239,7 @@ public class FieldFactory
     private static DependencyField buildListOrLightsetFieldByAnno(Field field, Map<String, Bean> beanNameMap)
     {
         Class<?> beanInterface = (Class<?>) ((java.lang.reflect.ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-        LightSet<Bean> tmp = new LightSet<>();
+        LightSet<Bean> tmp = new LightSet<Bean>();
         for (Bean each : beanNameMap.values())
         {
             if (beanInterface.isAssignableFrom(each.getOriginType()))
@@ -267,7 +271,7 @@ public class FieldFactory
         Verify.matchType(types[1], Class.class, "map依赖字段，要求value必须指明类型，而当前类型是{}", types[1]);
         Class<?> keyClass = (Class<?>) (types[0]);
         Class<?> valueClass = (Class<?>) (types[1]);
-        LightSet<Bean> tmp = new LightSet<>();
+        LightSet<Bean> tmp = new LightSet<Bean>();
         for (Bean each : beanNameMap.values())
         {
             if (valueClass.isAssignableFrom(each.getOriginType()))
@@ -369,7 +373,7 @@ public class FieldFactory
                     method = target.getDeclaredMethod(methodName);
                     break;
                 }
-                catch (NoSuchMethodException | SecurityException e)
+                catch (Exception e)
                 {
                     target = target.getSuperclass();
                     continue;
@@ -393,7 +397,7 @@ public class FieldFactory
     {
         Map<String, String> map = beanConfig.getParamMap();
         Field[] fields = ReflectUtil.getAllFields(bean.getType());
-        LightSet<ParamField> set = new LightSet<>();
+        LightSet<ParamField> set = new LightSet<ParamField>();
         for (Field field : fields)
         {
             if (map.containsKey(field.getName()))

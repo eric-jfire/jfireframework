@@ -183,7 +183,7 @@ public class MPSCLinkedQueue<E> implements Queue<E>
         private E                                                            value;
         private volatile MPSCNode<E>                                         next;
         @SuppressWarnings("rawtypes")
-        private static final UnsafeReferenceFieldUpdater<MPSCNode, MPSCNode> nextUpdater = new UnsafeReferenceFieldUpdater<>(MPSCNode.class, "next");
+        private static final UnsafeReferenceFieldUpdater<MPSCNode, MPSCNode> nextUpdater = new UnsafeReferenceFieldUpdater<MPSCNode, MPSCNode>(MPSCNode.class, "next");
         
         public MPSCNode(E value)
         {

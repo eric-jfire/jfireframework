@@ -9,10 +9,10 @@ import com.jfireframework.codejson.JsonTool;
 
 public class ReadStrategy implements Strategy
 {
-    private Map<Type, JsonReader>   typeStrategy  = new HashMap<>();
-    private Map<String, JsonReader> fieldStrategy = new HashMap<>();
-    private Set<String>             ignoreFields  = new HashSet<>();
-    private Map<String, String>     renameFields  = new HashMap<>();
+    private Map<Type, JsonReader>   typeStrategy  = new HashMap<Type, JsonReader>();
+    private Map<String, JsonReader> fieldStrategy = new HashMap<String, JsonReader>();
+    private Set<String>             ignoreFields  = new HashSet<String>();
+    private Map<String, String>     renameFields  = new HashMap<String, String>();
     private JsonReader              reader;
     private boolean                 readEnumName  = true;
     

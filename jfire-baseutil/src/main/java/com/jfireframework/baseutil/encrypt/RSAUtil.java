@@ -1,7 +1,6 @@
 package com.jfireframework.baseutil.encrypt;
 
 import java.io.IOException;
-import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -11,33 +10,29 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import com.jfireframework.baseutil.StringUtil;
 
 /**
  * rsa加解密工具类，注意，该类是非线程安全的
  * 
  * @author 林斌（windfire@zailanghua.com）
- *         
+ * 
  */
 public class RSAUtil implements EnDecrpt
 {
     
     private static final String SIGN_ALGORITHMS = "NONEwithRSA";
-                                                
+    
     private PublicKey           publicKey;
     private PrivateKey          privateKey;
     private Cipher              decryptCipher;
     private Cipher              encrptCipher;
     private Signature           sign;
     private Signature           check;
-                                
+    
     /**
      * 设置rsa加密所需要的公钥
      */
@@ -76,7 +71,7 @@ public class RSAUtil implements EnDecrpt
             sign = Signature.getInstance(SIGN_ALGORITHMS);
             sign.initSign(privateKey);
         }
-        catch (InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -95,7 +90,7 @@ public class RSAUtil implements EnDecrpt
         {
             return encrptCipher.doFinal(src);
         }
-        catch (IllegalBlockSizeException | BadPaddingException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -108,7 +103,7 @@ public class RSAUtil implements EnDecrpt
         {
             return decryptCipher.doFinal(src);
         }
-        catch (IllegalBlockSizeException | BadPaddingException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }

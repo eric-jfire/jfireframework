@@ -9,11 +9,11 @@ public class FunctionData5
     
     public FunctionData5()
     {
-        List<String> list = new ArrayList<>();
+        List<String> list = new ArrayList<String>();
         list.add("dsads");
         list.add("dsadssdsasdas");
         listArrays[0] = list;
-        list = new ArrayList<>();
+        list = new ArrayList<String>();
         list.add("ds1212s");
         list.add("d121212dsasdas");
         listArrays[1] = list;

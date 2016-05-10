@@ -10,14 +10,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * buffer缓存池
  * 
  * @author Administrator
- *         
+ * 
  */
 public class ByteBufferPool
 {
-    private static ConcurrentHashMap<Integer, Queue<ByteBuffer>> bufferPool   = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<Integer, Queue<ByteBuffer>> bufferPool   = new ConcurrentHashMap<Integer, Queue<ByteBuffer>>();
     private static int[]                                         sizeStandard = new int[] { 1024, 2048, 3 * 1024, 4 * 1024, 10 * 1024, 20 * 1024, 50 * 1024, 100 * 1024, 1000 * 1024, 1500 * 1024, 2000 * 1024, 2500 * 1024, 3000 * 1024, 4000 * 1024, 5000 * 1024, 6000 * 1024, 7000 * 1024, 8000 * 1024 };
     private static int                                           sizeSum      = sizeStandard.length;
-                                                                              
+    
     static
     {
         for (int i = 0; i < sizeSum; i++)
@@ -54,8 +54,7 @@ public class ByteBufferPool
     }
     
     /**
-     * 将一个正在进行写操作的buffer扩大容量到新的size。
-     * 新的buffer的position位置与原buffer相同
+     * 将一个正在进行写操作的buffer扩大容量到新的size。 新的buffer的position位置与原buffer相同
      * 
      * @param size
      * @param src
@@ -130,7 +129,7 @@ public class ByteBufferPool
      */
     public static HashMap<String, String> getCacheStatus()
     {
-        HashMap<String, String> cacheStatus = new HashMap<>();
+        HashMap<String, String> cacheStatus = new HashMap<String, String>();
         for (int i = 0; i < sizeSum; i++)
         {
             if (bufferPool.get(sizeStandard[i]).size() > 0)

@@ -9,8 +9,8 @@ import java.util.Map;
 public class FunctionData
 {
     private Map<String, String> map  = new HashMap<String, String>();
-    private Map<String, String> map2 = new HashMap<>();
-    private Map<Integer, Date>  map3 = new HashMap<>();
+    private Map<String, String> map2 = new HashMap<String, String>();
+    private Map<Integer, Date>  map3 = new HashMap<Integer, Date>();
     
     public FunctionData()
     {

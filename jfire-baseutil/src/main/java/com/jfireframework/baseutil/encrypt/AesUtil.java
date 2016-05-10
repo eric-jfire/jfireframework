@@ -1,11 +1,6 @@
 package com.jfireframework.baseutil.encrypt;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -13,13 +8,13 @@ import javax.crypto.spec.SecretKeySpec;
  * aes加解密工具类，注意，该类为非线程安全
  * 
  * @author linbin
- *         
+ * 
  */
 public class AesUtil implements EnDecrpt
 {
     private Cipher decryptCipher;
     private Cipher encrptCipher;
-                   
+    
     public AesUtil(byte[] key)
     {
         if (key.length == 16)
@@ -32,7 +27,7 @@ public class AesUtil implements EnDecrpt
                 decryptCipher = Cipher.getInstance("AES");
                 decryptCipher.init(Cipher.DECRYPT_MODE, aeskey);
             }
-            catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e)
+            catch (Exception e)
             {
                 throw new RuntimeException(e);
             }
@@ -62,7 +57,7 @@ public class AesUtil implements EnDecrpt
         {
             return encrptCipher.doFinal(src);
         }
-        catch (IllegalBlockSizeException | BadPaddingException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -75,7 +70,7 @@ public class AesUtil implements EnDecrpt
         {
             return decryptCipher.doFinal(src);
         }
-        catch (IllegalBlockSizeException | BadPaddingException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }

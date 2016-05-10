@@ -2,7 +2,6 @@ package com.jfireframework.codejson.function;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -123,7 +122,7 @@ public class WriterContext
             {
                 writer = (JsonWriter) createWriter(ckass, null).newInstance();
             }
-            catch (InstantiationException | IllegalAccessException e)
+            catch (Exception e)
             {
                 throw new RuntimeException(e);
             }
@@ -142,7 +141,7 @@ public class WriterContext
             Constructor<?> constructor = result.getConstructor(WriteStrategy.class);
             return (JsonWriter) constructor.newInstance(strategy);
         }
-        catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -271,7 +270,7 @@ public class WriterContext
                 return false;
             }
         }
-        catch (NoSuchFieldException | SecurityException e)
+        catch (Exception e)
         {
             return false;
         }
@@ -331,7 +330,7 @@ public class WriterContext
                 str = "{\n\t" + NameTool.buildDimTypeName(rootName, dim) + " array" + dim + " = (" + NameTool.buildDimTypeName(rootName, dim) + ")$1;\n";
                 str += "\tStringCache cache = (StringCache)$2;\n";
                 str += "\tTracker _$tracker = (Tracker)$4;\n";
-                str+="\tint _$reIndex = _$tracker.indexOf($1);\n";
+                str += "\tint _$reIndex = _$tracker.indexOf($1);\n";
                 str += "\tcache.append('[');\n";
                 str += "\tint l" + dim + " = array" + dim + ".length;\n";
                 String bk = "\t";

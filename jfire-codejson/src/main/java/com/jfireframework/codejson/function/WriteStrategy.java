@@ -31,11 +31,11 @@ import com.jfireframework.codejson.tracker.Tracker;
 
 public class WriteStrategy implements Strategy
 {
-    private Map<Class<?>, JsonWriter> trackerType   = new HashMap<>();
-    private Map<Class<?>, JsonWriter> typeStrategy  = new HashMap<>();
-    private Map<String, JsonWriter>   fieldStrategy = new HashMap<>();
-    private Set<String>               ignoreFields  = new HashSet<>();
-    private Map<String, String>       renameFields  = new HashMap<>();
+    private Map<Class<?>, JsonWriter> trackerType   = new HashMap<Class<?>, JsonWriter>();
+    private Map<Class<?>, JsonWriter> typeStrategy  = new HashMap<Class<?>, JsonWriter>();
+    private Map<String, JsonWriter>   fieldStrategy = new HashMap<String, JsonWriter>();
+    private Set<String>               ignoreFields  = new HashSet<String>();
+    private Map<String, String>       renameFields  = new HashMap<String, String>();
     private JsonWriter                writer;
     private boolean                   useTracker    = false;
     private ThreadLocal<StringCache>  cacheLocal    = new ThreadLocal<StringCache>() {

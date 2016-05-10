@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import com.alibaba.fastjson.JSON;
@@ -13,14 +12,12 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.codejson.Json;
 import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.codejson.function.WriteStrategy;
-import com.jfireframework.codejson.test.Data;
 import com.jfireframework.codejson.test.NestData;
 
 public class Benchmark
@@ -67,11 +64,11 @@ public class Benchmark
         NestData nestData = new NestData();
         nestData.setName("dsadas");
         bigData.setNestData(nestData);
-        ArrayList<String> list = new ArrayList<>();
+        ArrayList<String> list = new ArrayList<String>();
         list.add("husdasdad");
         list.add("siudsan");
         bigData.setList(list);
-        ArrayList<NestData> nestDatas = new ArrayList<>();
+        ArrayList<NestData> nestDatas = new ArrayList<NestData>();
         nestData = new NestData();
         nestData.setName("sdasda");
         nestData.setAge(13);
@@ -82,7 +79,7 @@ public class Benchmark
         nestDatas.add(nestData);
         bigData.setDatas(nestDatas);
         bigData.setNolist(new ArrayList<String>());
-        HashMap<String, String> map = new HashMap<>();
+        HashMap<String, String> map = new HashMap<String, String>();
         map.put("恁大", "dasdasd");
         map.put("dsada", "你好");
         bigData.setMap(map);
@@ -102,10 +99,10 @@ public class Benchmark
         tmp.setName("daasdadasd");
         nestDatas2[1] = tmp;
         bigData.setNestDatas(nestDatas2);
-        HashMap<Date, NestData> map2 = new HashMap<>();
+        HashMap<Date, NestData> map2 = new HashMap<Date, NestData>();
         map2.put(new Date(), tmp);
         @SuppressWarnings("unchecked")
-        ArrayList<String>[] lists = new ArrayList[] { new ArrayList<>(), new ArrayList<>() };
+        ArrayList<String>[] lists = new ArrayList[] { new ArrayList<String>(), new ArrayList<String>() };
         lists[0].add("dasdasda");
         lists[0].add("dasdasdasdasdasd");
         lists[1].add("1212121dasdasdasdasdasd");
@@ -160,16 +157,16 @@ public class Benchmark
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-//            JSON.parseObject(value, SmallObject.class);
-             JSON.parse(value);
+            // JSON.parseObject(value, SmallObject.class);
+            JSON.parse(value);
         }
         timewatch.end();
         logger.info("fastjson小json反序列化耗时：{}", timewatch.getTotal());
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-//            JsonTool.read(SmallObject.class, json);
-             JsonTool.fromString(value);
+            // JsonTool.read(SmallObject.class, json);
+            JsonTool.fromString(value);
         }
         timewatch.end();
         logger.info("codejson小json反序列化耗时：{}", timewatch.getTotal());
