@@ -14,6 +14,17 @@ public class ReadStrategy implements Strategy
     private Set<String>             ignoreFields  = new HashSet<>();
     private Map<String, String>     renameFields  = new HashMap<>();
     private JsonReader              reader;
+    private boolean                 readEnumName  = true;
+    
+    public boolean isReadEnumName()
+    {
+        return readEnumName;
+    }
+    
+    public void setReadEnumName(boolean readEnumName)
+    {
+        this.readEnumName = readEnumName;
+    }
     
     @Override
     public String getRename(String fieldName)

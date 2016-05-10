@@ -5,6 +5,7 @@ import java.util.HashMap;
 public class JsonObject extends HashMap<String, Object> implements Json
 {
     private static final long serialVersionUID = 1L;
+    private Json              parentNode;
     
     public Object get(String key)
     {
@@ -53,17 +54,35 @@ public class JsonObject extends HashMap<String, Object> implements Json
     
     public Float getWFloat(String key)
     {
-        return ((Double) get(key)).floatValue();
+        Double value = ((Double) get(key));
+        if (value != null)
+        {
+            return value.floatValue();
+        }
+        else
+        {
+            return null;
+        }
     }
     
     public Byte getWByte(String key)
     {
-        return ((Long) get(key)).byteValue();
+        Long value = ((Long) get(key));
+        if (value == null)
+        {
+            return null;
+        }
+        return value.byteValue();
     }
     
     public Short getWShort(String key)
     {
-        return ((Long) get(key)).shortValue();
+        Long value = ((Long) get(key));
+        if (value == null)
+        {
+            return null;
+        }
+        return value.shortValue();
     }
     
     public Character getWCharacter(String key)
@@ -109,5 +128,23 @@ public class JsonObject extends HashMap<String, Object> implements Json
     public short getShort(String key)
     {
         return ((Long) get(key)).shortValue();
+    }
+    
+    @Override
+    public void setParentNode(Json json)
+    {
+        this.parentNode = json;
+    }
+    
+    @Override
+    public Json getParentNode()
+    {
+        return parentNode;
+    }
+    
+    @Override
+    public boolean hasParentNode()
+    {
+        return parentNode != null;
     }
 }

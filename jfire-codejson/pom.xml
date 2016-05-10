@@ -50,7 +50,7 @@ Can use the same object output according to the different strategies of differen
 		<dependency>
 			<groupId>com.alibaba</groupId>
 			<artifactId>fastjson</artifactId>
-			<version>1.2.1</version>
+			<version>1.2.10</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

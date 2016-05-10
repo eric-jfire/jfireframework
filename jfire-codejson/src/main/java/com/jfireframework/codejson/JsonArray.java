@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 public class JsonArray extends ArrayList<Object> implements Json
 {
+    private Json              parentNode;
     /**
      * 
      */
@@ -102,6 +103,24 @@ public class JsonArray extends ArrayList<Object> implements Json
     public double getDouble(int index)
     {
         return ((Double) get(index)).doubleValue();
+    }
+    
+    @Override
+    public void setParentNode(Json json)
+    {
+        this.parentNode = json;
+    }
+    
+    @Override
+    public Json getParentNode()
+    {
+        return parentNode;
+    }
+    
+    @Override
+    public boolean hasParentNode()
+    {
+        return parentNode != null;
     }
     
 }
