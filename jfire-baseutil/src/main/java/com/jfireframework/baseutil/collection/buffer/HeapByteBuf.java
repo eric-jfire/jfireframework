@@ -31,6 +31,7 @@ public class HeapByteBuf extends ByteBuf<byte[]>
     
     protected void _expend(int size)
     {
+        cachedNioBuffer = null;
         HeapByteBufPool.getInstance().expend(this, size);
         this.capacity = memory.length;
     }

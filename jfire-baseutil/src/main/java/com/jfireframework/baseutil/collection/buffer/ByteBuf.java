@@ -23,7 +23,7 @@ public abstract class ByteBuf<T>
     protected static final char[] DIGITS_LOWER = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
     protected String              releaseInfo;
     protected boolean             traceFlag    = false;
-    protected ByteBuffer          cachedByteBuffer;
+    protected ByteBuffer          cachedNioBuffer;
     
     public ByteBuf<?> maskRead()
     {
@@ -93,6 +93,7 @@ public abstract class ByteBuf<T>
         }
         memHost.offer(memory);
         memory = null;
+        cachedNioBuffer = null;
     }
     
     public void release()
@@ -123,11 +124,11 @@ public abstract class ByteBuf<T>
      */
     public ByteBuffer cachedNioBuffer()
     {
-        if (cachedByteBuffer == null)
+        if (cachedNioBuffer == null)
         {
-            cachedByteBuffer = nioBuffer();
+            cachedNioBuffer = nioBuffer();
         }
-        return cachedByteBuffer;
+        return cachedNioBuffer;
     }
     
     /**

@@ -17,7 +17,9 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
     private static final int        retryPermit  = 2;
     private final ServerChannelInfo channelInfo;
     private final int               batchMode;
+    // 如果客户端可以持续不断的向服务端发送消息，则适合批量写出这种模式
     public static final int         batch_write  = 1;
+    // 单次写这种适合客户端要和服务器一问一答的形式。并且客户端需要根据服务器的反馈来进行下一次发出。这种情况下，是不会存在批量写的问题。因为没有批量的数据要处理
     public static final int         single_write = 0;
     
     public WriteCompletionHandler(ReadCompletionHandler readCompletionHandler, ServerChannelInfo channelInfo, int batchmode)
@@ -203,6 +205,8 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
     @Override
     public void failed(Throwable exc, ByteBuf<?> buf)
     {
+        System.err.println("发生错误");
+        exc.printStackTrace();
         buf.release();
         readCompletionHandler.catchThrowable(exc);
     }
