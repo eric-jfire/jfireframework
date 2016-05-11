@@ -4,6 +4,23 @@ public class BitMap
 {
     private byte[] array = new byte[1];
     
+    private void setArray(byte[] array)
+    {
+        this.array = array;
+    }
+    
+    public static BitMap valueOf(byte[] array)
+    {
+        BitMap bitMap = new BitMap();
+        bitMap.setArray(array);
+        return bitMap;
+    }
+    
+    /**
+     * 获取当前bitmap中最大的数字
+     * 
+     * @return
+     */
     public int max()
     {
         int head = ((array.length - 1) << 3) - 1;
@@ -33,7 +50,7 @@ public class BitMap
     
     public boolean get(int i)
     {
-        int wordIndex = (i+1) >>> 3;
+        int wordIndex = i >>> 3;
         if (wordIndex >= array.length)
         {
             return false;
@@ -44,7 +61,7 @@ public class BitMap
     
     public void set(int i)
     {
-        int wordIndex = (i+1) >>> 3;
+        int wordIndex = i >>> 3;
         byte value = (byte) (0x80 >>> (i & 7));
         if (wordIndex >= array.length)
         {
@@ -69,4 +86,29 @@ public class BitMap
         array[wordIndex] &= ~value;
     }
     
+    public int nextSetBit(int fromIndex)
+    {
+        int max = array.length * 8;
+        for (int i = fromIndex; i < max; i++)
+        {
+            if (get(i))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
+    public int nextClearBit(int fromIndex)
+    {
+        int max = array.length * 8;
+        for (int i = fromIndex; i < max; i++)
+        {
+            if (get(i) == false)
+            {
+                return i;
+            }
+        }
+        return max;
+    }
 }
