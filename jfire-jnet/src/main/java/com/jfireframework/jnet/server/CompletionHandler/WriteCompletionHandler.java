@@ -34,7 +34,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
     @Override
     public void completed(Integer writeTotal, ByteBuf<?> buf)
     {
-        if (batchMode == 0)
+        if (batchMode == single_write)
         {
             try
             {
@@ -51,24 +51,19 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
                     while (true)
                     {
                         /**
-                         * 这里必须进行可用性判断。如果不检测的话，会拿取到未正确初始化的数据导致进行了错误处理 具体错误是这样的：
-                         * 拿到一个本来不可写的数据，但是读取线程已经准备重新初始化这个result了，
-                         * 但是只是初始化到flowState=
-                         * undone前一步，这样可写判断就可以通过。
-                         * 通过之后在获取bytebuffer写出前，读取线程就可能在处理这个数据，导致数据的紊乱或者别的问题
+                         * 首先需要判断下一个要写入的序号是不是小于已经读取的序号。只有小于的情况下才能提取数据进行写出操作
                          */
                         if (version < wrapPoint)
                         {
-                            // 可用的情况下，必然能够拿到数据。所以不需要为空判断
                             ServerInternalResult next = (ServerInternalResult) channelInfo.getResult(version);
-                            // 由于写操作的序号没有前进，这个方法中的写无需cas，可以直接赋值
+                            // 由于写操作的序号没有前进，此时可以调用tryWrite来尝试直接获得写出许可，只要数据被处理完毕。
                             if (next.tryWrite(version))
                             {
                                 cursor = version;
                                 // 重启读取必须在更新了cursor之后，否则因为没有下一个可以容纳的空间，一重启读取又进入了等待读取状态。
                                 // 由于上一步更新了cursor，所以下面的操作都存在并发的可能性，那么重启读取要保证只能被一个线程真正激发一次。否则就会造成多重读取异常。这依靠方法内的cas完成。
                                 readCompletionHandler.reStartRead();
-                                // next已经在上面的tryWrite被抢占了写入权限，这里可以直接写出而不需要担心
+                                // 该结果已经在上面的操作中被获得了写出许可，因此这里可以直接将数据写出。
                                 next.directWrite();
                             }
                             else
@@ -93,6 +88,8 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
                     cursor = version;
                     readCompletionHandler.reStartRead();
                     wrapPoint = readCompletionHandler.cursor();
+                    // 一定要尝试写下一个。
+                    // 否则的话，因为写完成器的版本号没有更新，而其他线程尝试失败，写完成又不写下一个的话，就会导致数据没有线程要写出，进而活锁。
                     if (version < wrapPoint)
                     {
                         ServerInternalResult next = (ServerInternalResult) channelInfo.getResult(version);
@@ -124,18 +121,9 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
                     int tryCount = 0;
                     while (true)
                     {
-                        /**
-                         * 这里必须进行可用性判断。如果不检测的话，会拿取到未正确初始化的数据导致进行了错误处理 具体错误是这样的：
-                         * 拿到一个本来不可写的数据，但是读取线程已经准备重新初始化这个result了，
-                         * 但是只是初始化到flowState=
-                         * undone前一步，这样可写判断就可以通过。
-                         * 通过之后在获取bytebuffer写出前，读取线程就可能在处理这个数据，导致数据的紊乱或者别的问题
-                         */
                         if (version < wrapPoint)
                         {
-                            // 可用的情况下，必然能够拿到数据。所以不需要为空判断
                             ServerInternalResult next = (ServerInternalResult) channelInfo.getResult(version);
-                            // 由于写操作的序号没有前进，这个方法中的写无需cas，可以直接赋值
                             if (next.tryWrite(version))
                             {
                                 ByteBuf<?> composi = (ByteBuf<?>) next.getData();
@@ -167,10 +155,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
                                     }
                                 }
                                 cursor = version;
-                                // 重启读取必须在更新了cursor之后，否则因为没有下一个可以容纳的空间，一重启读取又进入了等待读取状态。
-                                // 由于上一步更新了cursor，所以下面的操作都存在并发的可能性，那么重启读取要保证只能被一个线程真正激发一次。否则就会造成多重读取异常。这依靠方法内的cas完成。
                                 readCompletionHandler.reStartRead();
-                                // next已经在上面的tryWrite被抢占了写入权限，这里可以直接写出而不需要担心
                                 channelInfo.getChannel().write(composi.nioBuffer(), 10, TimeUnit.SECONDS, composi, this);
                             }
                             else

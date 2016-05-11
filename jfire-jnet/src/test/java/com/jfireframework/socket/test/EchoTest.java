@@ -1,9 +1,11 @@
 package com.jfireframework.socket.test;
 
+import java.util.BitSet;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.Assert;
 import org.junit.Test;
+import com.jfireframework.baseutil.collection.BitMap;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.time.Timewatch;
