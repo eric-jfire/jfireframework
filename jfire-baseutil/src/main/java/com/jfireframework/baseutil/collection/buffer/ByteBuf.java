@@ -23,6 +23,7 @@ public abstract class ByteBuf<T>
     protected static final char[] DIGITS_LOWER = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
     protected String              releaseInfo;
     protected boolean             traceFlag    = false;
+    protected ByteBuffer          cachedByteBuffer;
     
     public ByteBuf<?> maskRead()
     {
@@ -108,15 +109,26 @@ public abstract class ByteBuf<T>
     
     /**
      * 返回该ByteBuf的ByteBuffer视图。该视图的position为readIndex，limit为writeIndex。
-     * 视图当前处于可读状态
-     * 注意:
-     * 该视图与ByteBuf共享存储。
-     * 双方操作的修改是互相可见的。
+     * 视图当前处于可读状态 注意: 该视图与ByteBuf共享存储。 双方操作的修改是互相可见的。
      * 但是ByteBuffer中的position和limit与ByteBuf中的readIndex和writeIndex互相不干扰。
      * 
      * @return
      */
     public abstract ByteBuffer nioBuffer();
+    
+    /**
+     * 得到缓存的NioBufer。请注意，该buffer的位置与ByteBuf的位置不一定吻合
+     * 
+     * @return
+     */
+    public ByteBuffer cachedNioBuffer()
+    {
+        if (cachedByteBuffer == null)
+        {
+            cachedByteBuffer = nioBuffer();
+        }
+        return cachedByteBuffer;
+    }
     
     /**
      * 将buffer的内容放入数组中,该操作会改变buffer的position位置
@@ -302,8 +314,7 @@ public abstract class ByteBuf<T>
     protected abstract void _get(byte[] content, int off, int length);
     
     /**
-     * 从当前位置开始，读取长度为length的字节，以charset编码转化为string并返回。
-     * cache的start位置前进length长度
+     * 从当前位置开始，读取长度为length的字节，以charset编码转化为string并返回。 cache的start位置前进length长度
      * 
      * @param charset
      * @param length
@@ -313,8 +324,7 @@ public abstract class ByteBuf<T>
     public abstract String toString(Charset charset, int length);
     
     /**
-     * 从当前位置开始，读取剩下的所有字节，按照charset组装成string并返回
-     * 此时cache中无可读字节
+     * 从当前位置开始，读取剩下的所有字节，按照charset组装成string并返回 此时cache中无可读字节
      * 
      * @param charset
      * @return

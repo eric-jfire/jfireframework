@@ -66,12 +66,12 @@ public class ServerInternalResult extends AbstractInternalResult
     {
         flowState = DONE;
     }
+    
     /**
      * 确认当前的版本是否等于写出完成器的序号，流程是否处理完毕，写出许可是否处于未获得状态。
      * 如果都满足，则cas方式获得写出许可。注意，这里使用的是带版本号的cas。
      * 
-     * 这个方法的并发比较复杂，下面会分点来进行详细讲述。
-     * 为什么采用writePermission这样的形式？
+     * 这个方法的并发比较复杂，下面会分点来进行详细讲述。 为什么采用writePermission这样的形式？
      * 这个方法可能会被两个线程同时调用。第一个是异步模式下的处理器线程或者是同步模式下的读取线程，第二个就是写出线程。假设两个线程同时通过了第一个if判断。
      * 此时线程2失去了cpu时间。则线程1不断的往下执行。在执行完毕后，成功写出，就会增加WriteCompletionHandler这个类里的序号。
      * 由于整个Channel中，result对象是由数组存储，并且是循环复用的。那么会出现一个情况就是线程2在很久之后（这里的很久，在cpu时间中可能也就只有毫秒级别），重新获得时间片。
@@ -91,7 +91,7 @@ public class ServerInternalResult extends AbstractInternalResult
         {
             return;
         }
-        channelInfo.socketChannel().write(((ByteBuf<?>) data).nioBuffer(), 10, TimeUnit.SECONDS, (ByteBuf<?>) data, writeCompletionHandler);
+        channelInfo.socketChannel().write(((ByteBuf<?>) data).cachedNioBuffer(), 10, TimeUnit.SECONDS, (ByteBuf<?>) data, writeCompletionHandler);
     }
     
     private boolean casState(long expectedVersion)
@@ -118,7 +118,7 @@ public class ServerInternalResult extends AbstractInternalResult
     
     public void directWrite()
     {
-        channelInfo.socketChannel().write(((ByteBuf<?>) data).nioBuffer(), 10, TimeUnit.SECONDS, (ByteBuf<?>) data, writeCompletionHandler);
+        channelInfo.socketChannel().write(((ByteBuf<?>) data).cachedNioBuffer(), 10, TimeUnit.SECONDS, (ByteBuf<?>) data, writeCompletionHandler);
     }
     
     public ServerChannelInfo getChannelInfo()

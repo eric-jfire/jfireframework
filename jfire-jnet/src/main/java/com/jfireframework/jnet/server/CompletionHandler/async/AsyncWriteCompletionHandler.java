@@ -1,5 +1,6 @@
 package com.jfireframework.jnet.server.CompletionHandler.async;
 
+import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -45,7 +46,7 @@ public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, B
                 if (status.compareAndSet(UN_WRITE, WRITING))
                 {
                     ByteBuf<?> buf = bufqueue.poll();
-                    channelInfo.getChannel().write(buf.nioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+                    channelInfo.getChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
                 }
             }
         }
@@ -61,10 +62,10 @@ public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, B
     {
         try
         {
-            buf.addReadIndex(writeTotal);
-            if (buf.remainRead() > 0)
+            ByteBuffer buffer = buf.cachedNioBuffer();
+            if (buffer.hasRemaining())
             {
-                channelInfo.getChannel().write(buf.nioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+                channelInfo.getChannel().write(buffer, 10, TimeUnit.SECONDS, buf, this);
                 return;
             }
             else
@@ -75,7 +76,7 @@ public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, B
                 if (bufqueue.isEmpty() == false)
                 {
                     ByteBuf<?> nextBuf = bufqueue.poll();
-                    channelInfo.getChannel().write(nextBuf.nioBuffer(), 10, TimeUnit.SECONDS, nextBuf, this);
+                    channelInfo.getChannel().write(nextBuf.cachedNioBuffer(), 10, TimeUnit.SECONDS, nextBuf, this);
                 }
                 else
                 {
@@ -85,7 +86,7 @@ public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, B
                         if (status.compareAndSet(UN_WRITE, WRITING))
                         {
                             ByteBuf<?> nextBuf = bufqueue.poll();
-                            channelInfo.getChannel().write(nextBuf.nioBuffer(), 10, TimeUnit.SECONDS, nextBuf, this);
+                            channelInfo.getChannel().write(nextBuf.cachedNioBuffer(), 10, TimeUnit.SECONDS, nextBuf, this);
                         }
                         else
                         {

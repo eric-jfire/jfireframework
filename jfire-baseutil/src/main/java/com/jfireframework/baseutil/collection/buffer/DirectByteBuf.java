@@ -144,6 +144,7 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
     @Override
     protected void _expend(int size)
     {
+        cachedByteBuffer = null;
         DirectByteBufPool.getInstance().expend(this, size);
         this.capacity = memory.capacity();
     }

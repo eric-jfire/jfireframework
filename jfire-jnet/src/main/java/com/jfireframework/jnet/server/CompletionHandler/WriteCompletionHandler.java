@@ -1,5 +1,6 @@
 package com.jfireframework.jnet.server.CompletionHandler;
 
+import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Resource;
@@ -38,10 +39,10 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
         {
             try
             {
-                buf.addReadIndex(writeTotal);
-                if (buf.remainRead() > 0)
+                ByteBuffer buffer = buf.cachedNioBuffer();
+                if (buffer.hasRemaining())
                 {
-                    channelInfo.getChannel().write(buf.nioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+                    channelInfo.getChannel().write(buffer, 10, TimeUnit.SECONDS, buf, this);
                     return;
                 }
                 else
@@ -109,10 +110,10 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
         {
             try
             {
-                buf.addReadIndex(writeTotal);
-                if (buf.remainRead() > 0)
+                ByteBuffer buffer = buf.cachedNioBuffer();
+                if (buffer.hasRemaining())
                 {
-                    channelInfo.getChannel().write(buf.nioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+                    channelInfo.getChannel().write(buffer, 10, TimeUnit.SECONDS, buf, this);
                     return;
                 }
                 else
@@ -139,6 +140,8 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
                                             break;
                                         }
                                         composi.put((ByteBuf<?>) next.getData());
+                                        // 这边要进行释放，否则的话就没有线程操作会来释放的
+                                        ((ByteBuf<?>) next.getData()).release();
                                     }
                                     else
                                     {
@@ -156,7 +159,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
                                 }
                                 cursor = version;
                                 readCompletionHandler.reStartRead();
-                                channelInfo.getChannel().write(composi.nioBuffer(), 10, TimeUnit.SECONDS, composi, this);
+                                channelInfo.getChannel().write(composi.cachedNioBuffer(), 10, TimeUnit.SECONDS, composi, this);
                             }
                             else
                             {
