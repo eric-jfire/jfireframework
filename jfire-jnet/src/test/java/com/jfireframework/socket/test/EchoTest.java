@@ -24,68 +24,71 @@ import com.jfireframework.jnet.server.server.WorkMode;
 
 public class EchoTest
 {
-    private int threadCount = 4;
-    private int sendCount   = 100000;
-    private int arraylength = 1024 * 4;
+    private int    threadCount = 30;
+    private int    sendCount   = 200000;
+    private int    arraylength = 1024 * 4;
+    private String ip          = "192.168.10.51";
     
     @Test
     public void test() throws Throwable
     {
-        ServerConfig config = new ServerConfig();
-        config.setWorkMode(WorkMode.SYNC);
-        config.setRingArraySize(1024 * 4);
-        config.setSocketThreadSize(8);
-        config.setHandlerThreadSize(2);
-        config.setInitListener(new ChannelInitListener() {
-            
-            @Override
-            public void channelInit(ChannelInfo serverChannelInfo)
+        // ServerConfig config = new ServerConfig();
+        // config.setWorkMode(WorkMode.ASYNC_WITH_ORDER);
+        // config.setRingArraySize(32);
+        // config.setSocketThreadSize(2);
+        // config.setHandlerThreadSize(1);
+        // config.setInitListener(new ChannelInitListener() {
+        //
+        // @Override
+        // public void channelInit(ChannelInfo serverChannelInfo)
+        // {
+        // serverChannelInfo.setResultArrayLength(arraylength);
+        // serverChannelInfo.setFrameDecodec(new
+        // TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
+        // serverChannelInfo.setHandlers(new EchoHandler());
+        // }
+        // });
+        // config.setPort(8554);
+        // AioServer aioServer = new AioServer(config);
+        // aioServer.start();
+        for (int index = 1; index <= threadCount; index++)
+        {
+            Thread[] threads = new Thread[index];
+            for (int i = 0; i < threads.length; i++)
             {
-                serverChannelInfo.setResultArrayLength(arraylength);
-                serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
-                serverChannelInfo.setHandlers(new EchoHandler(), new EchoHandler2(), new LengthPreHandler(0, 4));
+                threads[i] = new Thread(new Runnable() {
+                    
+                    @Override
+                    public void run()
+                    {
+                        try
+                        {
+                            connecttest();
+                        }
+                        catch (Throwable e)
+                        {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    }
+                }, "测试线程" + i);
+                threads[i].start();
             }
-        });
-        config.setPort(8554);
-        AioServer aioServer = new AioServer(config);
-        aioServer.start();
-        Thread[] threads = new Thread[threadCount];
-        for (int i = 0; i < threads.length; i++)
-        {
-            threads[i] = new Thread(new Runnable() {
-                
-                @Override
-                public void run()
-                {
-                    try
-                    {
-                        connecttest();
-                    }
-                    catch (Throwable e)
-                    {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                }
-            }, "测试线程" + i);
-            threads[i].start();
+            Timewatch timewatch = new Timewatch();
+            timewatch.start();
+            for (int i = 0; i < threads.length; i++)
+            {
+                threads[i].join();
+            }
+            timewatch.end();
+            System.out.println("线程数量：" + index + ",运行完毕:" + timewatch.getTotal());
         }
-        Timewatch timewatch = new Timewatch();
-        timewatch.start();
-        for (int i = 0; i < threads.length; i++)
-        {
-            threads[i].join();
-        }
-        timewatch.end();
-        System.out.println("运行完毕:" + timewatch.getTotal());
-        // Thread.sleep(1000);
-        // client.close(new EndOfStreamException());
     }
     
     public void connecttest() throws Throwable
     {
         AioClient client = new AioClient(false);
-        client.setAddress("127.0.0.1");
+        client.setAddress(ip);
         client.setPort(8554);
         client.setWriteHandlers(new DataHandler() {
             
@@ -120,20 +123,7 @@ public class EchoTest
                         // System.out.println("收到数据");
                         ByteBuf<?> buf = (ByteBuf<?>) data;
                         String value = null;
-                        buf.maskRead();
-                        // System.out.println(buf.readIndex(0).hexString());
-                        buf.resetRead();
-                        try
-                        {
-                            value = buf.readString();
-                        }
-                        catch (Exception e)
-                        {
-                            buf.readIndex(0);
-                            System.out.println(buf.hexString());
-                            // System.out.println(buf.toString());
-                            // e.printStackTrace();
-                        }
+                        value = buf.readString();
                         buf.release();
                         return value;
                     }
@@ -152,14 +142,12 @@ public class EchoTest
         {
             try
             {
-                client.connect().write("123456");
+                client.connect().write("123445654686213546133846163468461351686168666161631686156");
             }
             catch (Exception e)
             {
-                System.out.println(Thread.currentThread().getName() + "," + i);
-                e.printStackTrace();
+//                System.out.println(Thread.currentThread().getName() + "," + i);
             }
-            // System.out.println(i);
         }
         Future<?> future = client.connect().write("987654321");
         try

@@ -55,7 +55,7 @@ public class LoggerImpl implements Logger
         {
             if (location)
             {
-                System.out.println(head + " " + StringUtil.format(msg, Arrays.copyOf(params, params.length - 1)) + "    " + CodeLocation.getCodeLocation(3));
+                System.out.println(head + " " + StringUtil.format(msg, Arrays.copyOf(params, params.length - 1)) + "    " + CodeLocation.getCodeLocation(4));
             }
             else
             {

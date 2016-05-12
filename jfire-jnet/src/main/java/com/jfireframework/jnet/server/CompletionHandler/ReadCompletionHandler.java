@@ -17,6 +17,7 @@ import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.ServerInternalResult;
+import com.jfireframework.jnet.server.server.WorkMode;
 
 public class ReadCompletionHandler implements CompletionHandler<Integer, ServerChannelInfo>
 {
@@ -41,9 +42,11 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     // 启动读取超时的计数
     private boolean                      startCountdown = false;
     private final Disruptor              disruptor;
+    private final WorkMode               workMode;
     
-    public ReadCompletionHandler(ServerChannelInfo channelInfo, Disruptor disruptor)
+    public ReadCompletionHandler(ServerChannelInfo channelInfo, Disruptor disruptor, WorkMode workMode)
     {
+        this.workMode = workMode;
         this.disruptor = disruptor;
         this.channelInfo = channelInfo;
         frameDecodec = channelInfo.getFrameDecodec();
@@ -210,30 +213,69 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
                 result.init(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
             }
             sequence.set(cursor + 1);
-            for (int i = 0; i < handlers.length;)
+            switch (workMode)
             {
-                intermediateResult = handlers[i].handle(intermediateResult, result);
-                if (intermediateResult == DataHandler.skipToWorkRing)
+                case MIX:
                 {
+                    for (int i = 0; i < handlers.length;)
+                    {
+                        intermediateResult = handlers[i].handle(intermediateResult, result);
+                        if (intermediateResult == DataHandler.skipToWorkRing)
+                        {
+                            break;
+                        }
+                        if (i == result.getIndex())
+                        {
+                            i++;
+                            result.setIndex(i);
+                        }
+                        else
+                        {
+                            i = result.getIndex();
+                        }
+                    }
+                    if (intermediateResult instanceof ByteBuf<?>)
+                    {
+                        result.setData(intermediateResult);
+                        long version = result.version();
+                        result.flowDone();
+                        result.write(version);
+                    }
                     break;
                 }
-                if (i == result.getIndex())
+                case SYNC:
                 {
-                    i++;
-                    result.setIndex(i);
+                    for (int i = 0; i < handlers.length;)
+                    {
+                        intermediateResult = handlers[i].handle(intermediateResult, result);
+                        if (i == result.getIndex())
+                        {
+                            i++;
+                            result.setIndex(i);
+                        }
+                        else
+                        {
+                            i = result.getIndex();
+                        }
+                    }
+                    if (intermediateResult instanceof ByteBuf<?>)
+                    {
+                        result.setData(intermediateResult);
+                        long version = result.version();
+                        result.flowDone();
+                        result.write(version);
+                    }
+                    break;
                 }
-                else
+                case ASYNC_WITH_ORDER:
                 {
-                    i = result.getIndex();
+                    disruptor.publish(result);
+                    break;
                 }
+                default:
+                    throw new RuntimeException("error");
             }
-            if (intermediateResult instanceof ByteBuf<?>)
-            {
-                result.setData(intermediateResult);
-                long version = result.version();
-                result.flowDone();
-                result.write(version);
-            }
+            
             if (ioBuf.remainRead() == 0)
             {
                 return IN_READ;
@@ -290,7 +332,8 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
      */
     private long getRemainTime()
     {
-        return endReadTime - lastReadTime;
+        long time = endReadTime - lastReadTime;
+        return time;
     }
     
     public void turnToWorkDisruptor(ServerInternalResult result)

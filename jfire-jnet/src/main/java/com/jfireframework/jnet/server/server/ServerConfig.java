@@ -21,7 +21,7 @@ public class ServerConfig
     private int                 socketThreadSize  = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
     private int                 handlerThreadSize = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
     private int                 ringArrayType     = Disruptor.SimpleMult;
-    private WorkMode            workMode;
+    private WorkMode            workMode          = WorkMode.SYNC;
     
     public ChannelInitListener getInitListener()
     {

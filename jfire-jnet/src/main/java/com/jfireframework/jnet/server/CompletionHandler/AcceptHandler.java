@@ -73,7 +73,7 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
             }
             else
             {
-                ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelInfo, disruptor);
+                ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelInfo, disruptor, workMode);
                 // logger.debug("开启一个新通道{}", channelInfo.getRemoteAddress());
                 readCompletionHandler.startReadWait();
             }
