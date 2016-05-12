@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
+import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.AbstractClientChannelInfo;
 import com.jfireframework.jnet.common.channel.AsyncClientChannelInfo;
@@ -144,7 +145,6 @@ public class AioClient
                 }
                 
             }
-            
             if (data instanceof ByteBuf<?>)
             {
                 Future<?> result = clientChannelInfo.addFuture();

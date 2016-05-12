@@ -1,11 +1,9 @@
 package com.jfireframework.socket.test;
 
-import java.util.BitSet;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.Assert;
 import org.junit.Test;
-import com.jfireframework.baseutil.collection.BitMap;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.time.Timewatch;
@@ -24,33 +22,32 @@ import com.jfireframework.jnet.server.server.WorkMode;
 
 public class EchoTest
 {
-    private int    threadCount = 30;
+    private int    threadCount = 3;
     private int    sendCount   = 200000;
     private int    arraylength = 1024 * 4;
-    private String ip          = "192.168.10.51";
+    private String ip          = "127.0.0.1";
     
     @Test
     public void test() throws Throwable
     {
-        // ServerConfig config = new ServerConfig();
-        // config.setWorkMode(WorkMode.ASYNC_WITH_ORDER);
-        // config.setRingArraySize(32);
-        // config.setSocketThreadSize(2);
-        // config.setHandlerThreadSize(1);
-        // config.setInitListener(new ChannelInitListener() {
-        //
-        // @Override
-        // public void channelInit(ChannelInfo serverChannelInfo)
-        // {
-        // serverChannelInfo.setResultArrayLength(arraylength);
-        // serverChannelInfo.setFrameDecodec(new
-        // TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
-        // serverChannelInfo.setHandlers(new EchoHandler());
-        // }
-        // });
-        // config.setPort(8554);
-        // AioServer aioServer = new AioServer(config);
-        // aioServer.start();
+        ServerConfig config = new ServerConfig();
+        config.setWorkMode(WorkMode.ASYNC_WITH_ORDER);
+        config.setRingArraySize(16);
+        config.setSocketThreadSize(6);
+        config.setHandlerThreadSize(4);
+        config.setInitListener(new ChannelInitListener() {
+            
+            @Override
+            public void channelInit(ChannelInfo serverChannelInfo)
+            {
+                serverChannelInfo.setResultArrayLength(arraylength);
+                serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
+                serverChannelInfo.setHandlers(new EchoHandler());
+            }
+        });
+        config.setPort(8554);
+        AioServer aioServer = new AioServer(config);
+        aioServer.start();
         for (int index = 1; index <= threadCount; index++)
         {
             Thread[] threads = new Thread[index];
@@ -158,8 +155,6 @@ public class EchoTest
         {
             e.printStackTrace();
         }
-        // System.out.println("完成");
-        // TimeUnit.SECONDS.sleep(1000);
         client.close();
     }
 }
