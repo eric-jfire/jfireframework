@@ -6,6 +6,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
+import com.jfireframework.baseutil.disruptor.Disruptor;
+import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.jnet.client.AioClient;
 import com.jfireframework.jnet.common.channel.ChannelInfo;
@@ -23,7 +25,7 @@ import com.jfireframework.jnet.server.server.WorkMode;
 public class EchoTest
 {
     private int    threadCount = 3;
-    private int    sendCount   = 200000;
+    private int    sendCount   = 20000;
     private int    arraylength = 1024 * 4;
     private String ip          = "127.0.0.1";
     
@@ -32,7 +34,8 @@ public class EchoTest
     {
         ServerConfig config = new ServerConfig();
         config.setWorkMode(WorkMode.ASYNC_WITH_ORDER);
-        config.setRingArraySize(16);
+        config.setRingArrayType(Disruptor.ComplexMult);
+        config.setRingArraySize(8);
         config.setSocketThreadSize(6);
         config.setHandlerThreadSize(4);
         config.setInitListener(new ChannelInitListener() {

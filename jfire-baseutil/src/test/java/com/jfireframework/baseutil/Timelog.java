@@ -19,4 +19,8 @@ public class Timelog
     {
         return end - start;
     }
+    public static void main(String[] args)
+    {
+        System.out.println(Integer.MAX_VALUE-1024*1024*1024);
+    }
 }
