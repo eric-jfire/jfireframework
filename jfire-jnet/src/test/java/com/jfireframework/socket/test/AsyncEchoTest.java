@@ -30,7 +30,6 @@ public class AsyncEchoTest
     {
         ServerConfig config = new ServerConfig();
         config.setWorkMode(WorkMode.ASYNC_WITHOUT_ORDER);
-        config.setRingArraySize(2);
         config.setSocketThreadSize(8);
         config.setInitListener(new ChannelInitListener() {
             

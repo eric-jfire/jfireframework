@@ -4,7 +4,6 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
-import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
@@ -15,14 +14,15 @@ import com.jfireframework.jnet.server.CompletionHandler.async.AsyncServerInterna
 import com.jfireframework.jnet.server.server.AioServer;
 import com.jfireframework.jnet.server.server.ServerConfig;
 import com.jfireframework.jnet.server.server.WorkMode;
+import com.jfireframework.jnet.util.QueuedResultCenter;
 
 public class AcceptHandler implements CompletionHandler<AsynchronousSocketChannel, Object>
 {
-    private AioServer           aioServer;
-    private Logger              logger = ConsoleLogFactory.getLogger();
-    private ChannelInitListener initListener;
-    private Disruptor           disruptor;
-    private final WorkMode      workMode;
+    private AioServer                aioServer;
+    private Logger                   logger = ConsoleLogFactory.getLogger();
+    private ChannelInitListener      initListener;
+    private final WorkMode           workMode;
+    private final QueuedResultCenter queuedResultCenter;
     
     public AcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
@@ -32,27 +32,22 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
         workMode = serverConfig.getWorkMode();
         if (workMode == WorkMode.ASYNC_WITHOUT_ORDER)
         {
-            AsyncServerInternalResultAction[] actions = new AsyncServerInternalResultAction[serverConfig.getHandlerThreadSize()];
+            AsyncServerInternalResultAction[] actions = new AsyncServerInternalResultAction[serverConfig.getAsyncThreadSize()];
             for (int i = 0; i < actions.length; i++)
             {
                 actions[i] = new AsyncServerInternalResultAction();
             }
-            disruptor = new Disruptor(serverConfig.getRingArraySize(), serverConfig.getWaitStrategy(), actions, serverConfig.getRingArrayType(), serverConfig.getHandlerThreadSize());
+            queuedResultCenter = null;
         }
         else
         {
-            ServerInternalResultAction[] actions = new ServerInternalResultAction[serverConfig.getHandlerThreadSize()];
-            for (int i = 0; i < actions.length; i++)
-            {
-                actions[i] = new ServerInternalResultAction();
-            }
-            disruptor = new Disruptor(serverConfig.getRingArraySize(), serverConfig.getWaitStrategy(), actions, serverConfig.getRingArrayType(), serverConfig.getHandlerThreadSize());
+            queuedResultCenter = new QueuedResultCenter(serverConfig.getAsyncThreadSize());
         }
     }
     
     public void stop()
     {
-        disruptor.stop();
+        queuedResultCenter.stop();
     }
     
     @Override
@@ -68,14 +63,13 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
             Verify.notNull(channelInfo.getHandlers(), "没有设置Datahandler");
             if (workMode == WorkMode.ASYNC_WITHOUT_ORDER)
             {
-                AsyncReadCompletionHandler readCompletionHandler = new AsyncReadCompletionHandler(channelInfo, disruptor);
+                AsyncReadCompletionHandler readCompletionHandler = new AsyncReadCompletionHandler(channelInfo, null);
                 readCompletionHandler.readAndWait();
             }
             else
             {
-                ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelInfo, disruptor, workMode);
-                // logger.debug("开启一个新通道{}", channelInfo.getRemoteAddress());
-                readCompletionHandler.startReadWait();
+                ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelInfo, workMode, queuedResultCenter.getResults());
+                readCompletionHandler.readAndWait();
             }
             aioServer.getServerSocketChannel().accept(null, this);
         }

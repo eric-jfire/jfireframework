@@ -6,8 +6,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
-import com.jfireframework.baseutil.disruptor.Disruptor;
-import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.jnet.client.AioClient;
 import com.jfireframework.jnet.common.channel.ChannelInfo;
@@ -24,20 +22,18 @@ import com.jfireframework.jnet.server.server.WorkMode;
 
 public class EchoTest
 {
-    private int    threadCount = 3;
-    private int    sendCount   = 20000;
-    private int    arraylength = 1024 * 4;
-    private String ip          = "127.0.0.1";
+    private int    threadCount = 10;
+    private int    sendCount   = 200000;
+    private int    arraylength = 1024;
+    private String ip          = "192.168.10.51";
     
     @Test
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setWorkMode(WorkMode.ASYNC_WITH_ORDER);
-        config.setRingArrayType(Disruptor.ComplexMult);
-        config.setRingArraySize(8);
+        config.setWorkMode(WorkMode.SYNC);
         config.setSocketThreadSize(6);
-        config.setHandlerThreadSize(4);
+        config.setAsyncThreadSize(4);
         config.setInitListener(new ChannelInitListener() {
             
             @Override
@@ -142,11 +138,10 @@ public class EchoTest
         {
             try
             {
-                client.connect().write("123445654686213546133846163468461351686168666161631686156");
+                client.connect().write("123456");
             }
             catch (Exception e)
             {
-//                System.out.println(Thread.currentThread().getName() + "," + i);
             }
         }
         Future<?> future = client.connect().write("987654321");

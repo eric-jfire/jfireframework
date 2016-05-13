@@ -2,15 +2,14 @@ package com.jfireframework.jnet.server.CompletionHandler;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
-import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.baseutil.disruptor.Sequence;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.baseutil.time.NanoTimewatch;
 import com.jfireframework.jnet.common.channel.ServerChannelInfo;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 import com.jfireframework.jnet.common.exception.BufNotEnoughException;
@@ -22,33 +21,33 @@ import com.jfireframework.jnet.server.server.WorkMode;
 
 public class ReadCompletionHandler implements CompletionHandler<Integer, ServerChannelInfo>
 {
-    private static final Logger          logger         = ConsoleLogFactory.getLogger();
-    private final FrameDecodec           frameDecodec;
-    private final DataHandler[]          handlers;
-    private final DirectByteBuf          ioBuf          = DirectByteBuf.allocate(100);
-    private final ServerChannelInfo      channelInfo;
-    private final CpuCachePadingInt      readState      = new CpuCachePadingInt(IN_READ);
-    public final static int              IN_READ        = 1;
-    public final static int              OUT_OF_READ    = 2;
-    private final Sequence               sequence       = new Sequence(0);
-    private long                         wrapPoint      = 0;
-    private final WriteCompletionHandler writeCompletionHandler;
+    private static final Logger                             logger         = ConsoleLogFactory.getLogger();
+    private final FrameDecodec                              frameDecodec;
+    private final DataHandler[]                             handlers;
+    private final DirectByteBuf                             ioBuf          = DirectByteBuf.allocate(100);
+    private final ServerChannelInfo                         channelInfo;
+    private final CpuCachePadingInt                         readState      = new CpuCachePadingInt(IN_READ);
+    public final static int                                 IN_READ        = 1;
+    public final static int                                 OUT_OF_READ    = 2;
+    private final Sequence                                  sequence       = new Sequence(0);
+    private long                                            wrapPoint      = 0;
+    private final WriteCompletionHandler                    writeCompletionHandler;
     // 读取超时时间
-    private final long                   readTimeout;
-    private final long                   waitTimeout;
+    private final long                                      readTimeout;
+    private final long                                      waitTimeout;
     // 最后一次读取时间
-    private long                         lastReadTime;
+    private long                                            lastReadTime;
     // 本次读取的截止时间
-    private long                         endReadTime;
+    private long                                            endReadTime;
     // 启动读取超时的计数
-    private boolean                      startCountdown = false;
-    private final Disruptor              disruptor;
-    private final WorkMode               workMode;
+    private boolean                                         startCountdown = false;
+    private final WorkMode                                  workMode;
+    private final LinkedTransferQueue<ServerInternalResult> queue;
     
-    public ReadCompletionHandler(ServerChannelInfo channelInfo, Disruptor disruptor, WorkMode workMode)
+    public ReadCompletionHandler(ServerChannelInfo channelInfo, WorkMode workMode, LinkedTransferQueue<ServerInternalResult> queue)
     {
+        this.queue = queue;
         this.workMode = workMode;
-        this.disruptor = disruptor;
         this.channelInfo = channelInfo;
         frameDecodec = channelInfo.getFrameDecodec();
         handlers = channelInfo.getHandlers();
@@ -122,7 +121,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
                 int result = frameAndHandle();
                 if (result == IN_READ)
                 {
-                    startReadWait();
+                    readAndWait();
                     return;
                 }
                 else if (result == OUT_OF_READ)
@@ -132,7 +131,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             }
             catch (LessThanProtocolException e)
             {
-                startReadWait();
+                readAndWait();
                 return;
             }
             catch (BufNotEnoughException e)
@@ -159,7 +158,8 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     
     public void reStartRead()
     {
-        if (readState.value() == OUT_OF_READ)
+        int state = readState.value();
+        if (state == OUT_OF_READ)
         {
             if (readState.compareAndSwap(OUT_OF_READ, IN_READ))
             {
@@ -270,13 +270,12 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
                 }
                 case ASYNC_WITH_ORDER:
                 {
-                    disruptor.publish(result);
+                    queue.add(result);
                     break;
                 }
                 default:
                     throw new RuntimeException("error");
             }
-            
             if (ioBuf.remainRead() == 0)
             {
                 return IN_READ;
@@ -292,7 +291,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     /**
      * 开始空闲读取等待，并且将倒数计时状态重置为false
      */
-    public void startReadWait()
+    public void readAndWait()
     {
         startCountdown = false;
         channelInfo.getChannel().read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, channelInfo, this);
@@ -339,7 +338,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     
     public void turnToWorkDisruptor(ServerInternalResult result)
     {
-        disruptor.publish(result);
+        queue.add(result);
     }
     
     public long cursor()

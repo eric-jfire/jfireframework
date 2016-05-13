@@ -1,6 +1,5 @@
 package com.jfireframework.jnet.server.server;
 
-import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.baseutil.disruptor.waitstrategy.BlockWaitStrategy;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
@@ -16,12 +15,10 @@ public class ServerConfig
     private ChannelInitListener initListener;
     // 服务器的启动端口
     private int                 port;
-    private WaitStrategy        waitStrategy      = new BlockWaitStrategy();
-    private int                 ringArraySize     = 1048576;                                                                                                 // 2的20次方
-    private int                 socketThreadSize  = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
-    private int                 handlerThreadSize = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
-    private int                 ringArrayType     = Disruptor.SimpleMult;
-    private WorkMode            workMode          = WorkMode.SYNC;
+    private WaitStrategy        waitStrategy     = new BlockWaitStrategy();
+    private int                 socketThreadSize = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
+    private int                 asyncThreadSize  = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
+    private WorkMode            workMode         = WorkMode.SYNC;
     
     public ChannelInitListener getInitListener()
     {
@@ -56,18 +53,6 @@ public class ServerConfig
     public ServerConfig setWaitStrategy(WaitStrategy waitStrategy)
     {
         this.waitStrategy = waitStrategy;
-        
-        return this;
-    }
-    
-    public int getRingArraySize()
-    {
-        return ringArraySize;
-    }
-    
-    public ServerConfig setRingArraySize(int ringArraySize)
-    {
-        this.ringArraySize = ringArraySize;
         return this;
     }
     
@@ -83,28 +68,6 @@ public class ServerConfig
         return this;
     }
     
-    public int getHandlerThreadSize()
-    {
-        return handlerThreadSize;
-    }
-    
-    public ServerConfig setHandlerThreadSize(int handlerThreadSize)
-    {
-        this.handlerThreadSize = handlerThreadSize;
-        return this;
-    }
-    
-    public int getRingArrayType()
-    {
-        return ringArrayType;
-    }
-    
-    public ServerConfig setRingArrayType(int ringArrayTpe)
-    {
-        this.ringArrayType = ringArrayTpe;
-        return this;
-    }
-    
     public WorkMode getWorkMode()
     {
         return workMode;
@@ -113,6 +76,17 @@ public class ServerConfig
     public ServerConfig setWorkMode(WorkMode workMode)
     {
         this.workMode = workMode;
+        return this;
+    }
+    
+    public int getAsyncThreadSize()
+    {
+        return asyncThreadSize;
+    }
+    
+    public ServerConfig setAsyncThreadSize(int asyncThreadSize)
+    {
+        this.asyncThreadSize = asyncThreadSize;
         return this;
     }
     

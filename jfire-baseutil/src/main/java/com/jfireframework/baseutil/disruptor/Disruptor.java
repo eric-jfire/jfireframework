@@ -81,6 +81,21 @@ public class Disruptor
         ringArray.stop();
     }
     
+    public long next()
+    {
+        return ringArray.next();
+    }
+    
+    public Entry entryAt(long cursor)
+    {
+        return ringArray.entryAt(cursor);
+    }
+    
+    public void publish(long cursor)
+    {
+        ringArray.publish(cursor);
+    }
+    
     public RingArray getRingArray()
     {
         return ringArray;

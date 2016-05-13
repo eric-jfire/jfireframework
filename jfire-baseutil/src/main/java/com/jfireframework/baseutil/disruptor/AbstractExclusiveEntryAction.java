@@ -48,7 +48,7 @@ public abstract class AbstractExclusiveEntryAction implements ExclusiveEntryActi
             entry = ringArray.entryAt(_cursor);
             if (entry.take() == false)
             {
-                cursor.lazySet(_cursor + 1);
+                cursor.set(_cursor + 1);
                 continue;
             }
             try
@@ -61,7 +61,7 @@ public abstract class AbstractExclusiveEntryAction implements ExclusiveEntryActi
                 ringArray.stop();
                 break;
             }
-            cursor.lazySet(_cursor + 1);
+            cursor.set(_cursor + 1);
         }
     }
     
