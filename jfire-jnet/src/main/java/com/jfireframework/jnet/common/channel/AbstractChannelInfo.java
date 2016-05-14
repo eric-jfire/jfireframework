@@ -117,13 +117,19 @@ public abstract class AbstractChannelInfo implements ChannelInfo
     
     public Object getResult(long cursor)
     {
+        return unsafe.getObject(resultArray, base + ((cursor & resultArrayLengthMask) << scale));
+    }
+    
+    public Object getResultVolatile(long cursor)
+    {
         return unsafe.getObjectVolatile(resultArray, base + ((cursor & resultArrayLengthMask) << scale));
     }
     
-    public void putResult(Object obj, long cursor)
+    public void putResultVolatile(Object obj, long cursor)
     {
         unsafe.putObjectVolatile(resultArray, base + ((cursor & resultArrayLengthMask) << scale), obj);
     }
+    
     
     public void setReadTimeout(long readTimeout)
     {

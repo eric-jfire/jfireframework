@@ -35,7 +35,9 @@ public interface ChannelInfo
     
     public Object getResult(long cursor);
     
-    public void putResult(Object obj, long cursor);
+    public Object getResultVolatile(long cursor);
+    
+    public void putResultVolatile(Object obj, long cursor);
     
     public void setReadTimeout(long readTimeout);
     

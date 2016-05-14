@@ -204,15 +204,15 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
                 return IN_READ;
             }
             ServerInternalResult result = (ServerInternalResult) channelInfo.getResult(cursor);
-            if (result == null)
-            {
-                result = new ServerInternalResult(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
-                channelInfo.putResult(result, cursor);
-            }
-            else
-            {
+//            if (result == null)
+//            {
+//                result = new ServerInternalResult(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
+//                channelInfo.putResultVolatile(result, cursor);
+//            }
+//            else
+//            {
                 result.init(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
-            }
+//            }
             sequence.set(cursor + 1);
             switch (workMode)
             {

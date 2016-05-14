@@ -11,7 +11,7 @@ public class FutureClientChannelInfo extends AbstractClientChannelInfo
     public void signal(Object obj, long cursor)
     {
         // 可以考虑一种很难出现的情况就是服务端收到一个请求的时候发送了两个响应。这样就会导致读取到不合适位置的future
-        ResponseFuture future = (ResponseFuture) getResult(cursor);
+        ResponseFuture future = (ResponseFuture) getResultVolatile(cursor);
         future.ready(obj, null);
         // 这个调用，否则添加的线程（调用addFuture方法的线程）被唤醒后，仍然会再次进入等待
         readCompleter.setCursor(cursor + 1);
@@ -23,7 +23,7 @@ public class FutureClientChannelInfo extends AbstractClientChannelInfo
         ResponseFuture future;
         while (cursor < writeCursor)
         {
-            future = (ResponseFuture) getResult(cursor);
+            future = (ResponseFuture) getResultVolatile(cursor);
             future.ready(null, e);
             cursor += 1;
         }
@@ -49,7 +49,7 @@ public class FutureClientChannelInfo extends AbstractClientChannelInfo
         }
         // 客户端每一个future都代表一个结果，不可以被复用。因为外部环境需要保留所有的result
         ResponseFuture future = new ResponseFuture();
-        putResult(future, writeCursor);
+        putResultVolatile(future, writeCursor);
         writeCursor += 1;
         return future;
     }

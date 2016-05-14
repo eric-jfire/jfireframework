@@ -96,7 +96,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
             // 否则的话，因为写完成器的版本号没有更新，而其他线程尝试失败，写完成又不写下一个的话，就会导致数据没有线程要写出，进而活锁。
             if (nextCursor < wrapPoint)
             {
-                ServerInternalResult next = (ServerInternalResult) channelInfo.getResult(nextCursor);
+                ServerInternalResult next = (ServerInternalResult) channelInfo.getResultVolatile(nextCursor);
                 next.write(nextCursor);
             }
         }
@@ -128,7 +128,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
             {
                 if (nextCursor < wrapPoint)
                 {
-                    ServerInternalResult next = (ServerInternalResult) channelInfo.getResult(nextCursor);
+                    ServerInternalResult next = (ServerInternalResult) channelInfo.getResultVolatile(nextCursor);
                     if (next.tryWrite(nextCursor))
                     {
                         CompositeByteBuf compositeByteBuf = new CompositeByteBuf();
@@ -138,7 +138,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
                             nextCursor += 1;
                             if (nextCursor < wrapPoint)
                             {
-                                next = (ServerInternalResult) channelInfo.getResult(nextCursor);
+                                next = (ServerInternalResult) channelInfo.getResultVolatile(nextCursor);
                                 if (next.tryWrite(nextCursor) == false)
                                 {
                                     nextCursor -= 1;
@@ -186,7 +186,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
             wrapPoint = readCompletionHandler.cursor();
             if (nextCursor < wrapPoint)
             {
-                ServerInternalResult next = (ServerInternalResult) channelInfo.getResult(nextCursor);
+                ServerInternalResult next = (ServerInternalResult) channelInfo.getResultVolatile(nextCursor);
                 next.write(nextCursor);
             }
         }
