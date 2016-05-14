@@ -13,9 +13,9 @@ import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
-import com.jfireframework.jnet.common.result.InternalResult;
-import com.jfireframework.jnet.server.server.AioServer;
-import com.jfireframework.jnet.server.server.ServerConfig;
+import com.jfireframework.jnet.common.result.InternalTask;
+import com.jfireframework.jnet.server.AioServer;
+import com.jfireframework.jnet.server.util.ServerConfig;
 
 public class NewServerTest
 {
@@ -44,7 +44,7 @@ public class NewServerTest
         aioClient.setWriteHandlers(new DataHandler() {
             
             @Override
-            public Object handle(Object data, InternalResult client)
+            public Object handle(Object data, InternalTask client)
             {
                 String val = (String) data;
                 ByteBuf<?> buf = HeapByteBufPool.getInstance().get(10);
@@ -54,7 +54,7 @@ public class NewServerTest
             }
             
             @Override
-            public Object catchException(Object data, InternalResult result)
+            public Object catchException(Object data, InternalTask result)
             {
                 // TODO Auto-generated method stub
                 return null;
@@ -69,7 +69,7 @@ public class NewServerTest
                 channelInfo.setHandlers(new DataHandler() {
                     
                     @Override
-                    public Object handle(Object data, InternalResult client)
+                    public Object handle(Object data, InternalTask client)
                     {
                         ByteBuf<?> val = (ByteBuf<?>) data;
                         System.out.println(val);
@@ -80,7 +80,7 @@ public class NewServerTest
                     }
                     
                     @Override
-                    public Object catchException(Object data, InternalResult result)
+                    public Object catchException(Object data, InternalTask result)
                     {
                         // TODO Auto-generated method stub
                         return null;

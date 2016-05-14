@@ -1,6 +1,6 @@
 package com.jfireframework.jnet.common.channel;
 
-import com.jfireframework.jnet.common.result.ServerInternalResult;
+import com.jfireframework.jnet.common.result.ServerInternalTask;
 
 public class ServerChannelInfo extends AbstractChannelInfo
 {
@@ -10,7 +10,7 @@ public class ServerChannelInfo extends AbstractChannelInfo
         super.setResultArrayLength(resultArrayLength);
         for (int i = 0; i < resultArrayLength; i++)
         {
-            resultArray[i] = new ServerInternalResult(0, null, null, null, null, i);
+            resultArray[i] = new ServerInternalTask();
         }
     }
 }

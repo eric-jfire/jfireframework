@@ -9,29 +9,26 @@ import com.jfireframework.baseutil.collection.buffer.CompositeByteBuf;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.common.channel.ServerChannelInfo;
-import com.jfireframework.jnet.common.result.ServerInternalResult;
+import com.jfireframework.jnet.common.result.ServerInternalTask;
+import com.jfireframework.jnet.server.util.WriteMode;
 
 @Resource
 public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBuf<?>>
 {
-    private volatile long               cursor                      = 0;
-    private ReadCompletionHandler       readCompletionHandler;
-    private long                        wrapPoint                   = 0;
-    private static final int            retryPermit                 = 2;
-    private final ServerChannelInfo     channelInfo;
-    private final int                   batchMode;
-    // 如果客户端可以持续不断的向服务端发送消息，则适合批量写出这种模式
-    public static final int             batch_write                 = 1;
-    // 单次写这种适合客户端要和服务器一问一答的形式。并且客户端需要根据服务器的反馈来进行下一次发出。这种情况下，是不会存在批量写的问题。因为没有批量的数据要处理
-    public static final int             single_write                = 0;
-    private BatchWriteCompletionHandler batchWriteCompletionHandler = new BatchWriteCompletionHandler();
-    private static final Logger         logger                      = ConsoleLogFactory.getLogger();
+    private volatile long                     cursor                      = 0;
+    private ReadCompletionHandler             readCompletionHandler;
+    private long                              wrapPoint                   = 0;
+    private static final int                  retryPermit                 = 2;
+    private final ServerChannelInfo           channelInfo;
+    private final WriteMode                   writeMode;
+    private final BatchWriteCompletionHandler batchWriteCompletionHandler = new BatchWriteCompletionHandler();
+    private static final Logger               logger                      = ConsoleLogFactory.getLogger();
     
-    public WriteCompletionHandler(ReadCompletionHandler readCompletionHandler, ServerChannelInfo channelInfo, int batchmode)
+    public WriteCompletionHandler(ReadCompletionHandler readCompletionHandler, ServerChannelInfo channelInfo, WriteMode writeMode)
     {
         this.readCompletionHandler = readCompletionHandler;
         this.channelInfo = channelInfo;
-        this.batchMode = batchmode;
+        this.writeMode = writeMode;
     }
     
     public long cursor()
@@ -59,7 +56,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
                  */
                 if (nextCursor < wrapPoint)
                 {
-                    ServerInternalResult next = (ServerInternalResult) channelInfo.getResult(nextCursor);
+                    ServerInternalTask next = (ServerInternalTask) channelInfo.getResult(nextCursor);
                     // 由于写操作的序号没有前进，此时可以调用tryWrite来尝试直接获得写出许可，只要数据被处理完毕。
                     if (next.tryWrite(nextCursor))
                     {
@@ -96,7 +93,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
             // 否则的话，因为写完成器的版本号没有更新，而其他线程尝试失败，写完成又不写下一个的话，就会导致数据没有线程要写出，进而活锁。
             if (nextCursor < wrapPoint)
             {
-                ServerInternalResult next = (ServerInternalResult) channelInfo.getResultVolatile(nextCursor);
+                ServerInternalTask next = (ServerInternalTask) channelInfo.getResultVolatile(nextCursor);
                 next.write(nextCursor);
             }
         }
@@ -128,7 +125,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
             {
                 if (nextCursor < wrapPoint)
                 {
-                    ServerInternalResult next = (ServerInternalResult) channelInfo.getResultVolatile(nextCursor);
+                    ServerInternalTask next = (ServerInternalTask) channelInfo.getResult(nextCursor);
                     if (next.tryWrite(nextCursor))
                     {
                         CompositeByteBuf compositeByteBuf = new CompositeByteBuf();
@@ -138,7 +135,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
                             nextCursor += 1;
                             if (nextCursor < wrapPoint)
                             {
-                                next = (ServerInternalResult) channelInfo.getResultVolatile(nextCursor);
+                                next = (ServerInternalTask) channelInfo.getResult(nextCursor);
                                 if (next.tryWrite(nextCursor) == false)
                                 {
                                     nextCursor -= 1;
@@ -186,7 +183,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
             wrapPoint = readCompletionHandler.cursor();
             if (nextCursor < wrapPoint)
             {
-                ServerInternalResult next = (ServerInternalResult) channelInfo.getResultVolatile(nextCursor);
+                ServerInternalTask next = (ServerInternalTask) channelInfo.getResultVolatile(nextCursor);
                 next.write(nextCursor);
             }
         }
@@ -199,7 +196,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
     @Override
     public void completed(Integer writeTotal, ByteBuf<?> buf)
     {
-        if (batchMode == single_write)
+        if (writeMode == WriteMode.SINGLE_WRITE)
         {
             doSingleWrite(writeTotal, buf);
         }

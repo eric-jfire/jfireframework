@@ -16,8 +16,8 @@ import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.AsyncServerInternalResult;
-import com.jfireframework.jnet.common.result.InternalResult;
-import com.jfireframework.jnet.common.result.ServerInternalResult;
+import com.jfireframework.jnet.common.result.InternalTask;
+import com.jfireframework.jnet.common.result.ServerInternalTask;
 
 public class AsyncReadCompletionHandler implements CompletionHandler<Integer, ServerChannelInfo>
 {
@@ -87,7 +87,7 @@ public class AsyncReadCompletionHandler implements CompletionHandler<Integer, Se
     {
         try
         {
-            InternalResult result = new AsyncServerInternalResult();
+            InternalTask result = new AsyncServerInternalResult();
             result.setData(exc);
             result.setIndex(0);
             Object intermediateResult = exc;
@@ -268,7 +268,7 @@ public class AsyncReadCompletionHandler implements CompletionHandler<Integer, Se
         return endReadTime - lastReadTime;
     }
     
-    public void turnToWorkDisruptor(ServerInternalResult result)
+    public void turnToWorkDisruptor(ServerInternalTask result)
     {
         disruptor.publish(result);
     }

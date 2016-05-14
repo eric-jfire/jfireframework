@@ -1,7 +1,7 @@
 package com.jfireframework.jnet.common.handler;
 
 import com.jfireframework.jnet.common.exception.JnetException;
-import com.jfireframework.jnet.common.result.InternalResult;
+import com.jfireframework.jnet.common.result.InternalTask;
 
 public interface DataHandler
 {
@@ -14,7 +14,7 @@ public interface DataHandler
 	 * @param entry
 	 * @throws Exception
 	 */
-	public Object handle(Object data, InternalResult result) throws JnetException;
+	public Object handle(Object data, InternalTask result) throws JnetException;
 	
 	/**
 	 * 通道发生异常是，处理链上的该方法会被调用
@@ -23,6 +23,6 @@ public interface DataHandler
 	 * @param result
 	 * @return
 	 */
-	public Object catchException(Object data, InternalResult result);
+	public Object catchException(Object data, InternalTask result);
 	
 }

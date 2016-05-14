@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.server;
+package com.jfireframework.jnet.server;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
+import com.jfireframework.jnet.server.util.ServerConfig;
 
 public class AioServer
 {

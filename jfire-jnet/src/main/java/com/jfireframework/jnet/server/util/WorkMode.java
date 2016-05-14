@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.server;
+package com.jfireframework.jnet.server.util;
 
 public enum WorkMode
 {

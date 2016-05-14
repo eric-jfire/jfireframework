@@ -1,18 +1,18 @@
-package com.jfireframework.jnet.util;
+package com.jfireframework.jnet.server.util;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedTransferQueue;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.jnet.common.handler.DataHandler;
-import com.jfireframework.jnet.common.result.ServerInternalResult;
+import com.jfireframework.jnet.common.result.ServerInternalTask;
 
-public class QueuedResultCenter
+public class AsyncTaskCenter
 {
-    private final LinkedTransferQueue<ServerInternalResult> results = new LinkedTransferQueue<>();
-    private volatile boolean                                stoped  = false;
+    private final LinkedTransferQueue<ServerInternalTask> tasks  = new LinkedTransferQueue<>();
+    private volatile boolean                              stoped = false;
     
-    public QueuedResultCenter(int threadSize)
+    public AsyncTaskCenter(int threadSize)
     {
         ExecutorService pool = Executors.newFixedThreadPool(threadSize);
         for (int i = 0; i < threadSize; i++)
@@ -21,9 +21,9 @@ public class QueuedResultCenter
         }
     }
     
-    public LinkedTransferQueue<ServerInternalResult> getResults()
+    public void addTask(ServerInternalTask task)
     {
-        return results;
+        tasks.add(task);
     }
     
     public void stop()
@@ -45,37 +45,37 @@ public class QueuedResultCenter
                     {
                         break;
                     }
-                    ServerInternalResult result = results.take();
+                    ServerInternalTask task = tasks.take();
                     try
                     {
-                        if (result.getChannelInfo().isOpen() == false)
+                        if (task.getChannelInfo().isOpen() == false)
                         {
                             return;
                         }
                         // 储存中间结果
-                        Object intermediateResult = result.getData();
-                        DataHandler[] handlers = result.getChannelInfo().getHandlers();
-                        for (int i = result.getIndex(); i < handlers.length;)
+                        Object intermediateResult = task.getData();
+                        DataHandler[] handlers = task.getChannelInfo().getHandlers();
+                        for (int i = task.getIndex(); i < handlers.length;)
                         {
-                            intermediateResult = handlers[i].handle(intermediateResult, result);
-                            if (i == result.getIndex())
+                            intermediateResult = handlers[i].handle(intermediateResult, task);
+                            if (i == task.getIndex())
                             {
                                 i++;
-                                result.setIndex(i);
+                                task.setIndex(i);
                             }
                             else
                             {
-                                i = result.getIndex();
+                                i = task.getIndex();
                             }
                         }
                         if (intermediateResult instanceof ByteBuf<?>)
                         {
-                            result.setData(intermediateResult);
-                            long version = result.version();
-                            result.flowDone();
-                            if (result.getChannelInfo().isOpen())
+                            task.setData(intermediateResult);
+                            long version = task.version();
+                            task.flowDone();
+                            if (task.getChannelInfo().isOpen())
                             {
-                                result.write(version);
+                                task.write(version);
                             }
                         }
                         else
@@ -85,7 +85,7 @@ public class QueuedResultCenter
                     }
                     catch (Exception e)
                     {
-                        result.getReadCompletionHandler().catchThrowable(e);
+                        task.getReadCompletionHandler().catchThrowable(e);
                     }
                 }
                 catch (Exception e)

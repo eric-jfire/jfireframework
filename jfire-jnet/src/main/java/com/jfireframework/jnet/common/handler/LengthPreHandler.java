@@ -2,7 +2,7 @@ package com.jfireframework.jnet.common.handler;
 
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.jnet.common.exception.JnetException;
-import com.jfireframework.jnet.common.result.InternalResult;
+import com.jfireframework.jnet.common.result.InternalTask;
 
 public class LengthPreHandler implements DataHandler
 {
@@ -18,7 +18,7 @@ public class LengthPreHandler implements DataHandler
 	}
 	
 	@Override
-	public Object handle(Object data, InternalResult result) throws JnetException
+	public Object handle(Object data, InternalTask result) throws JnetException
 	{
 		if (data instanceof ByteBuf)
 		{
@@ -47,7 +47,7 @@ public class LengthPreHandler implements DataHandler
 	}
 	
 	@Override
-	public Object catchException(Object data, InternalResult result)
+	public Object catchException(Object data, InternalTask result)
 	{
 		return data;
 	}

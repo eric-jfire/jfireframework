@@ -15,25 +15,25 @@ import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoderB
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
-import com.jfireframework.jnet.common.result.InternalResult;
-import com.jfireframework.jnet.server.server.AioServer;
-import com.jfireframework.jnet.server.server.ServerConfig;
-import com.jfireframework.jnet.server.server.WorkMode;
+import com.jfireframework.jnet.common.result.InternalTask;
+import com.jfireframework.jnet.server.AioServer;
+import com.jfireframework.jnet.server.util.ServerConfig;
+import com.jfireframework.jnet.server.util.WorkMode;
 
 public class EchoTest
 {
     private int    threadCount = 10;
-    private int    sendCount   = 200000;
+    private int    sendCount   = 100000;
     private int    arraylength = 1024;
-    private String ip          = "192.168.10.51";
+    private String ip          = "127.0.0.1";
     
     @Test
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setWorkMode(WorkMode.SYNC);
-        config.setSocketThreadSize(6);
-        config.setAsyncThreadSize(4);
+        config.setWorkMode(WorkMode.ASYNC_WITH_ORDER);
+        config.setSocketThreadSize(10);
+        config.setAsyncThreadSize(1);
         config.setInitListener(new ChannelInitListener() {
             
             @Override
@@ -89,7 +89,7 @@ public class EchoTest
         client.setWriteHandlers(new DataHandler() {
             
             @Override
-            public Object handle(Object data, InternalResult result) throws JnetException
+            public Object handle(Object data, InternalTask result) throws JnetException
             {
                 ByteBuf<?> buf = DirectByteBuf.allocate(100);
                 buf.addWriteIndex(4);
@@ -98,7 +98,7 @@ public class EchoTest
             }
             
             @Override
-            public Object catchException(Object data, InternalResult result)
+            public Object catchException(Object data, InternalTask result)
             {
                 // ((Throwable) data).printStackTrace();
                 return data;
@@ -114,7 +114,7 @@ public class EchoTest
                 channelInfo.setHandlers(new DataHandler() {
                     
                     @Override
-                    public Object handle(Object data, InternalResult result) throws JnetException
+                    public Object handle(Object data, InternalTask result) throws JnetException
                     {
                         // System.out.println("收到数据");
                         ByteBuf<?> buf = (ByteBuf<?>) data;
@@ -125,7 +125,7 @@ public class EchoTest
                     }
                     
                     @Override
-                    public Object catchException(Object data, InternalResult result)
+                    public Object catchException(Object data, InternalTask result)
                     {
                         // System.err.println("客户端");
                         // ((Throwable) data).printStackTrace();

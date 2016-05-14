@@ -9,45 +9,58 @@ import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.channel.ServerChannelInfo;
+import com.jfireframework.jnet.server.AioServer;
 import com.jfireframework.jnet.server.CompletionHandler.async.AsyncReadCompletionHandler;
 import com.jfireframework.jnet.server.CompletionHandler.async.AsyncServerInternalResultAction;
-import com.jfireframework.jnet.server.server.AioServer;
-import com.jfireframework.jnet.server.server.ServerConfig;
-import com.jfireframework.jnet.server.server.WorkMode;
-import com.jfireframework.jnet.util.QueuedResultCenter;
+import com.jfireframework.jnet.server.util.AsyncTaskCenter;
+import com.jfireframework.jnet.server.util.ServerConfig;
+import com.jfireframework.jnet.server.util.WorkMode;
+import com.jfireframework.jnet.server.util.WriteMode;
 
 public class AcceptHandler implements CompletionHandler<AsynchronousSocketChannel, Object>
 {
-    private AioServer                aioServer;
-    private Logger                   logger = ConsoleLogFactory.getLogger();
-    private ChannelInitListener      initListener;
-    private final WorkMode           workMode;
-    private final QueuedResultCenter queuedResultCenter;
+    private AioServer             aioServer;
+    private Logger                logger = ConsoleLogFactory.getLogger();
+    private ChannelInitListener   initListener;
+    private final WorkMode        workMode;
+    private final WriteMode       writeMode;
+    private final AsyncTaskCenter asyncTaskCenter;
     
     public AcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
         this.initListener = serverConfig.getInitListener();
         Verify.notNull(initListener, "initListener不能为空");
         this.aioServer = aioServer;
+        writeMode = serverConfig.getWriteMode();
         workMode = serverConfig.getWorkMode();
-        if (workMode == WorkMode.ASYNC_WITHOUT_ORDER)
+        switch (workMode)
         {
-            AsyncServerInternalResultAction[] actions = new AsyncServerInternalResultAction[serverConfig.getAsyncThreadSize()];
-            for (int i = 0; i < actions.length; i++)
-            {
-                actions[i] = new AsyncServerInternalResultAction();
-            }
-            queuedResultCenter = null;
-        }
-        else
-        {
-            queuedResultCenter = new QueuedResultCenter(serverConfig.getAsyncThreadSize());
+            case ASYNC_WITHOUT_ORDER:
+                AsyncServerInternalResultAction[] actions = new AsyncServerInternalResultAction[serverConfig.getAsyncThreadSize()];
+                for (int i = 0; i < actions.length; i++)
+                {
+                    actions[i] = new AsyncServerInternalResultAction();
+                }
+                asyncTaskCenter = null;
+                break;
+            case SYNC:
+                asyncTaskCenter = null;
+                break;
+            case ASYNC_WITH_ORDER:
+                asyncTaskCenter = new AsyncTaskCenter(serverConfig.getAsyncThreadSize());
+                break;
+            case MIX:
+                asyncTaskCenter = new AsyncTaskCenter(serverConfig.getAsyncThreadSize());
+                break;
+            default:
+                asyncTaskCenter = null;
+                break;
         }
     }
     
     public void stop()
     {
-        queuedResultCenter.stop();
+        asyncTaskCenter.stop();
     }
     
     @Override
@@ -61,15 +74,18 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
             Verify.notNull(channelInfo.getResultArray(), "没有设置entryArraySize");
             Verify.notNull(channelInfo.getFrameDecodec(), "没有设置framedecodec");
             Verify.notNull(channelInfo.getHandlers(), "没有设置Datahandler");
-            if (workMode == WorkMode.ASYNC_WITHOUT_ORDER)
+            switch (workMode)
             {
-                AsyncReadCompletionHandler readCompletionHandler = new AsyncReadCompletionHandler(channelInfo, null);
-                readCompletionHandler.readAndWait();
-            }
-            else
-            {
-                ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelInfo, workMode, queuedResultCenter.getResults());
-                readCompletionHandler.readAndWait();
+                case ASYNC_WITHOUT_ORDER:
+                {
+                    AsyncReadCompletionHandler readCompletionHandler = new AsyncReadCompletionHandler(channelInfo, null);
+                    readCompletionHandler.readAndWait();
+                    break;
+                }
+                default:
+                    ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelInfo, workMode, asyncTaskCenter, writeMode);
+                    readCompletionHandler.readAndWait();
+                    break;
             }
             aioServer.getServerSocketChannel().accept(null, this);
         }

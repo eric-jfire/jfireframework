@@ -2,7 +2,6 @@ package com.jfireframework.jnet.server.CompletionHandler;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
-import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
@@ -16,44 +15,46 @@ import com.jfireframework.jnet.common.exception.BufNotEnoughException;
 import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
-import com.jfireframework.jnet.common.result.ServerInternalResult;
-import com.jfireframework.jnet.server.server.WorkMode;
+import com.jfireframework.jnet.common.result.ServerInternalTask;
+import com.jfireframework.jnet.server.util.AsyncTaskCenter;
+import com.jfireframework.jnet.server.util.WorkMode;
+import com.jfireframework.jnet.server.util.WriteMode;
 
 public class ReadCompletionHandler implements CompletionHandler<Integer, ServerChannelInfo>
 {
-    private static final Logger                             logger         = ConsoleLogFactory.getLogger();
-    private final FrameDecodec                              frameDecodec;
-    private final DataHandler[]                             handlers;
-    private final DirectByteBuf                             ioBuf          = DirectByteBuf.allocate(100);
-    private final ServerChannelInfo                         channelInfo;
-    private final CpuCachePadingInt                         readState      = new CpuCachePadingInt(IN_READ);
-    public final static int                                 IN_READ        = 1;
-    public final static int                                 OUT_OF_READ    = 2;
-    private final Sequence                                  sequence       = new Sequence(0);
-    private long                                            wrapPoint      = 0;
-    private final WriteCompletionHandler                    writeCompletionHandler;
+    private static final Logger          logger         = ConsoleLogFactory.getLogger();
+    private final FrameDecodec           frameDecodec;
+    private final DataHandler[]          handlers;
+    private final DirectByteBuf          ioBuf          = DirectByteBuf.allocate(100);
+    private final ServerChannelInfo      channelInfo;
+    private final CpuCachePadingInt      readState      = new CpuCachePadingInt(IN_READ);
+    public final static int              IN_READ        = 1;
+    public final static int              OUT_OF_READ    = 2;
+    private final Sequence               sequence       = new Sequence(0);
+    private long                         wrapPoint      = 0;
+    private final WriteCompletionHandler writeCompletionHandler;
     // 读取超时时间
-    private final long                                      readTimeout;
-    private final long                                      waitTimeout;
+    private final long                   readTimeout;
+    private final long                   waitTimeout;
     // 最后一次读取时间
-    private long                                            lastReadTime;
+    private long                         lastReadTime;
     // 本次读取的截止时间
-    private long                                            endReadTime;
+    private long                         endReadTime;
     // 启动读取超时的计数
-    private boolean                                         startCountdown = false;
-    private final WorkMode                                  workMode;
-    private final LinkedTransferQueue<ServerInternalResult> queue;
+    private boolean                      startCountdown = false;
+    private final WorkMode               workMode;
+    private final AsyncTaskCenter        asyncTaskCenter;
     
-    public ReadCompletionHandler(ServerChannelInfo channelInfo, WorkMode workMode, LinkedTransferQueue<ServerInternalResult> queue)
+    public ReadCompletionHandler(ServerChannelInfo channelInfo, WorkMode workMode, AsyncTaskCenter asyncTaskCenter, WriteMode writeMode)
     {
-        this.queue = queue;
+        this.asyncTaskCenter = asyncTaskCenter;
         this.workMode = workMode;
         this.channelInfo = channelInfo;
         frameDecodec = channelInfo.getFrameDecodec();
         handlers = channelInfo.getHandlers();
         readTimeout = channelInfo.getReadTimeout();
         waitTimeout = channelInfo.getWaitTimeout();
-        writeCompletionHandler = new WriteCompletionHandler(this, channelInfo, WriteCompletionHandler.batch_write);
+        writeCompletionHandler = new WriteCompletionHandler(this, channelInfo, writeMode);
     }
     
     @Override
@@ -84,7 +85,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     {
         try
         {
-            ServerInternalResult result = new ServerInternalResult(-1, exc, channelInfo, this, writeCompletionHandler, 0);
+            ServerInternalTask result = new ServerInternalTask(-1, exc, channelInfo, this, writeCompletionHandler, 0);
             Object intermediateResult = exc;
             try
             {
@@ -203,16 +204,8 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             {
                 return IN_READ;
             }
-            ServerInternalResult result = (ServerInternalResult) channelInfo.getResult(cursor);
-//            if (result == null)
-//            {
-//                result = new ServerInternalResult(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
-//                channelInfo.putResultVolatile(result, cursor);
-//            }
-//            else
-//            {
-                result.init(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
-//            }
+            ServerInternalTask task = (ServerInternalTask) channelInfo.getResult(cursor);
+            task.init(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
             sequence.set(cursor + 1);
             switch (workMode)
             {
@@ -220,27 +213,27 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
                 {
                     for (int i = 0; i < handlers.length;)
                     {
-                        intermediateResult = handlers[i].handle(intermediateResult, result);
+                        intermediateResult = handlers[i].handle(intermediateResult, task);
                         if (intermediateResult == DataHandler.skipToWorkRing)
                         {
                             break;
                         }
-                        if (i == result.getIndex())
+                        if (i == task.getIndex())
                         {
                             i++;
-                            result.setIndex(i);
+                            task.setIndex(i);
                         }
                         else
                         {
-                            i = result.getIndex();
+                            i = task.getIndex();
                         }
                     }
                     if (intermediateResult instanceof ByteBuf<?>)
                     {
-                        result.setData(intermediateResult);
-                        long version = result.version();
-                        result.flowDone();
-                        result.write(version);
+                        task.setData(intermediateResult);
+                        long version = task.version();
+                        task.flowDone();
+                        task.write(version);
                     }
                     break;
                 }
@@ -248,29 +241,29 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
                 {
                     for (int i = 0; i < handlers.length;)
                     {
-                        intermediateResult = handlers[i].handle(intermediateResult, result);
-                        if (i == result.getIndex())
+                        intermediateResult = handlers[i].handle(intermediateResult, task);
+                        if (i == task.getIndex())
                         {
                             i++;
-                            result.setIndex(i);
+                            task.setIndex(i);
                         }
                         else
                         {
-                            i = result.getIndex();
+                            i = task.getIndex();
                         }
                     }
                     if (intermediateResult instanceof ByteBuf<?>)
                     {
-                        result.setData(intermediateResult);
-                        long version = result.version();
-                        result.flowDone();
-                        result.write(version);
+                        task.setData(intermediateResult);
+                        long version = task.version();
+                        task.flowDone();
+                        task.write(version);
                     }
                     break;
                 }
                 case ASYNC_WITH_ORDER:
                 {
-                    queue.add(result);
+                    asyncTaskCenter.addTask(task);
                     break;
                 }
                 default:
@@ -336,9 +329,9 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
         return time;
     }
     
-    public void turnToWorkDisruptor(ServerInternalResult result)
+    public void handleAsync(ServerInternalTask task)
     {
-        queue.add(result);
+        asyncTaskCenter.addTask(task);
     }
     
     public long cursor()

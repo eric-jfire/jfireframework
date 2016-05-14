@@ -12,9 +12,9 @@ import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.decodec.LineBasedFrameDecodec;
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
-import com.jfireframework.jnet.common.result.InternalResult;
-import com.jfireframework.jnet.server.server.AioServer;
-import com.jfireframework.jnet.server.server.ServerConfig;
+import com.jfireframework.jnet.common.result.InternalTask;
+import com.jfireframework.jnet.server.AioServer;
+import com.jfireframework.jnet.server.util.ServerConfig;
 
 public class BaseServerTest
 {
@@ -39,7 +39,7 @@ public class BaseServerTest
         aioClient.setWriteHandlers(new DataHandler() {
             
             @Override
-            public Object handle(Object data, InternalResult result) throws JnetException
+            public Object handle(Object data, InternalTask result) throws JnetException
             {
                 String value = (String) data;
                 ByteBuf<?> buf = DirectByteBufPool.getInstance().get(100);
@@ -50,7 +50,7 @@ public class BaseServerTest
             }
             
             @Override
-            public Object catchException(Object data, InternalResult result)
+            public Object catchException(Object data, InternalTask result)
             {
                 // TODO Auto-generated method stub
                 return null;
@@ -66,7 +66,7 @@ public class BaseServerTest
                 channelInfo.setHandlers(new DataHandler() {
                     
                     @Override
-                    public Object handle(Object data, InternalResult result) throws JnetException
+                    public Object handle(Object data, InternalTask result) throws JnetException
                     {
                         System.out.println("收到数据");
                         ByteBuf<?> buf = (ByteBuf<?>) data;
@@ -76,7 +76,7 @@ public class BaseServerTest
                     }
                     
                     @Override
-                    public Object catchException(Object data, InternalResult result)
+                    public Object catchException(Object data, InternalTask result)
                     {
                         Throwable e = (Throwable) data;
                         e.printStackTrace();
@@ -115,7 +115,7 @@ class myInitListener implements ChannelInitListener
             
             // data是上一个处理器传递过来的数据，返回值是要给下一个处理器的数据。如果是最开头的处理器，则data就是包解码器解码出来的一个完整报文
             @Override
-            public Object handle(Object data, InternalResult result) throws JnetException
+            public Object handle(Object data, InternalTask result) throws JnetException
             {
                 ByteBuf<?> buf = (ByteBuf<?>) data;
                 System.out.println("收到消息:" + buf.readString());
@@ -124,7 +124,7 @@ class myInitListener implements ChannelInitListener
             }
             
             @Override
-            public Object catchException(Object data, InternalResult result)
+            public Object catchException(Object data, InternalTask result)
             {
                 Throwable e = (Throwable) data;
                 e.printStackTrace();
@@ -133,7 +133,7 @@ class myInitListener implements ChannelInitListener
         }, new DataHandler() {
             
             @Override
-            public Object handle(Object data, InternalResult result) throws JnetException
+            public Object handle(Object data, InternalTask result) throws JnetException
             {
                 // 这里的data就是上一个处理器返回的数据了。处理器之间的顺序就是在代码中他们初始化的顺序
                 String value = (String) data;
@@ -147,7 +147,7 @@ class myInitListener implements ChannelInitListener
             }
             
             @Override
-            public Object catchException(Object data, InternalResult result)
+            public Object catchException(Object data, InternalTask result)
             {
                 // TODO Auto-generated method stub
                 return null;

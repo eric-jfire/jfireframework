@@ -2,7 +2,7 @@ package com.jfireframework.jnet.common.result;
 
 import com.jfireframework.jnet.common.channel.ChannelInfo;
 
-public abstract class AbstractInternalResult implements InternalResult
+public abstract class AbstractInternalTask implements InternalTask
 {
 	protected Object		data;
 	protected int			index;

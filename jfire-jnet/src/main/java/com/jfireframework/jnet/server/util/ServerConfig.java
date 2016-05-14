@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.server;
+package com.jfireframework.jnet.server.util;
 
 import com.jfireframework.baseutil.disruptor.waitstrategy.BlockWaitStrategy;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
@@ -19,6 +19,18 @@ public class ServerConfig
     private int                 socketThreadSize = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
     private int                 asyncThreadSize  = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
     private WorkMode            workMode         = WorkMode.SYNC;
+    private WriteMode           writeMode        = WriteMode.BATCH_WRITE;
+    
+    public WriteMode getWriteMode()
+    {
+        return writeMode;
+    }
+    
+    public ServerConfig setWriteMode(WriteMode writeMode)
+    {
+        this.writeMode = writeMode;
+        return this;
+    }
     
     public ChannelInitListener getInitListener()
     {

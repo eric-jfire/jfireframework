@@ -3,7 +3,7 @@ package com.jfireframework.jnet.common.result;
 import com.jfireframework.jnet.common.channel.AbstractClientChannelInfo;
 import com.jfireframework.jnet.common.channel.FutureClientChannelInfo;
 
-public class ClientInternalResult extends AbstractInternalResult
+public class ClientInternalResult extends AbstractInternalTask
 {
     private AbstractClientChannelInfo channelInfo;
     

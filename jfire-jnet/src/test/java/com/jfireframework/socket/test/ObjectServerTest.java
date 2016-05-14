@@ -12,9 +12,9 @@ import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
-import com.jfireframework.jnet.common.result.InternalResult;
-import com.jfireframework.jnet.server.server.AioServer;
-import com.jfireframework.jnet.server.server.ServerConfig;
+import com.jfireframework.jnet.common.result.InternalTask;
+import com.jfireframework.jnet.server.AioServer;
+import com.jfireframework.jnet.server.util.ServerConfig;
 
 public class ObjectServerTest
 {
@@ -36,7 +36,7 @@ public class ObjectServerTest
                 serverChannelInfo.setHandlers(new DataHandler() {
                     
                     @Override
-                    public Object handle(Object data, InternalResult result) throws JnetException
+                    public Object handle(Object data, InternalTask result) throws JnetException
                     {
                         ByteBuf<?> buf = (ByteBuf<?>) data;
                         Person person = new Person(buf.readString(), buf.readInt(), buf.readFloat());
@@ -47,7 +47,7 @@ public class ObjectServerTest
                     }
                     
                     @Override
-                    public Object catchException(Object data, InternalResult result)
+                    public Object catchException(Object data, InternalTask result)
                     {
                         // TODO Auto-generated method stub
                         return null;
@@ -62,7 +62,7 @@ public class ObjectServerTest
         aioClient.setWriteHandlers(new DataHandler() {
             
             @Override
-            public Object handle(Object data, InternalResult client)
+            public Object handle(Object data, InternalTask client)
             {
                 if (data instanceof Person)
                 {
@@ -81,7 +81,7 @@ public class ObjectServerTest
             }
             
             @Override
-            public Object catchException(Object data, InternalResult result)
+            public Object catchException(Object data, InternalTask result)
             {
                 // TODO Auto-generated method stub
                 return null;
@@ -96,7 +96,7 @@ public class ObjectServerTest
                 channelInfo.setHandlers(new DataHandler() {
                     
                     @Override
-                    public Object handle(Object data, InternalResult result) throws JnetException
+                    public Object handle(Object data, InternalTask result) throws JnetException
                     {
                         ByteBuf<?> buf = (ByteBuf<?>) data;
                         if (buf.remainRead() == 0)
@@ -109,7 +109,7 @@ public class ObjectServerTest
                     }
                     
                     @Override
-                    public Object catchException(Object data, InternalResult result)
+                    public Object catchException(Object data, InternalTask result)
                     {
                         // TODO Auto-generated method stub
                         return null;

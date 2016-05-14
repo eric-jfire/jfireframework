@@ -14,10 +14,10 @@ import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoderB
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
-import com.jfireframework.jnet.common.result.InternalResult;
-import com.jfireframework.jnet.server.server.AioServer;
-import com.jfireframework.jnet.server.server.ServerConfig;
-import com.jfireframework.jnet.server.server.WorkMode;
+import com.jfireframework.jnet.common.result.InternalTask;
+import com.jfireframework.jnet.server.AioServer;
+import com.jfireframework.jnet.server.util.ServerConfig;
+import com.jfireframework.jnet.server.util.WorkMode;
 
 public class AsyncEchoTest
 {
@@ -82,7 +82,7 @@ public class AsyncEchoTest
         client.setWriteHandlers(new DataHandler() {
             
             @Override
-            public Object handle(Object data, InternalResult result) throws JnetException
+            public Object handle(Object data, InternalTask result) throws JnetException
             {
                 ByteBuf<?> buf = DirectByteBuf.allocate(100);
                 buf.addWriteIndex(4);
@@ -91,7 +91,7 @@ public class AsyncEchoTest
             }
             
             @Override
-            public Object catchException(Object data, InternalResult result)
+            public Object catchException(Object data, InternalTask result)
             {
                 // ((Throwable) data).printStackTrace();
                 return data;
@@ -107,7 +107,7 @@ public class AsyncEchoTest
                 channelInfo.setHandlers(new DataHandler() {
                     
                     @Override
-                    public Object handle(Object data, InternalResult result) throws JnetException
+                    public Object handle(Object data, InternalTask result) throws JnetException
                     {
                         // System.out.println("收到数据");
                         ByteBuf<?> buf = (ByteBuf<?>) data;
@@ -131,7 +131,7 @@ public class AsyncEchoTest
                     }
                     
                     @Override
-                    public Object catchException(Object data, InternalResult result)
+                    public Object catchException(Object data, InternalTask result)
                     {
                         // System.err.println("客户端");
                         // ((Throwable) data).printStackTrace();

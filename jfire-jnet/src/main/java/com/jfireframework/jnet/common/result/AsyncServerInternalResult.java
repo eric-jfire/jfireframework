@@ -3,7 +3,7 @@ package com.jfireframework.jnet.common.result;
 import com.jfireframework.jnet.server.CompletionHandler.async.AsyncReadCompletionHandler;
 import com.jfireframework.jnet.server.CompletionHandler.async.AsyncWriteCompletionHandler;
 
-public class AsyncServerInternalResult extends AbstractInternalResult
+public class AsyncServerInternalResult extends AbstractInternalTask
 {
     private AsyncReadCompletionHandler  readCompletionHandler;
     private AsyncWriteCompletionHandler writeCompletionHandler;
