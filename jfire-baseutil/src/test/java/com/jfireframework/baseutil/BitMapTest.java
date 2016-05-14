@@ -34,4 +34,13 @@ public class BitMapTest
         bitMap.set(120);
         Assert.assertEquals(120, bitMap.max());
     }
+    
+    @Test
+    public void test2()
+    {
+        BitMap bitMap = new BitMap();
+        bitMap.set(50);
+        bitMap.clear(50);
+        System.out.println(bitMap.max());
+    }
 }

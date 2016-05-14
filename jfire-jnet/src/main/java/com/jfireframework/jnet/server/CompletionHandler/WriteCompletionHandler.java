@@ -183,7 +183,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
             wrapPoint = readCompletionHandler.cursor();
             if (nextCursor < wrapPoint)
             {
-                ServerInternalTask next = (ServerInternalTask) channelInfo.getResultVolatile(nextCursor);
+                ServerInternalTask next = (ServerInternalTask) channelInfo.getResult(nextCursor);
                 next.write(nextCursor);
             }
         }

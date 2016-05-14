@@ -23,29 +23,39 @@ public class BitMap
      */
     public int max()
     {
-        int head = ((array.length - 1) << 3) - 1;
-        byte value = array[array.length - 1];
-        switch (value)
+        int flag = array.length - 1;
+        while (flag > -1)
         {
-            case (byte) 0xff:
-                return head + 8;
-            case (byte) 0xfe:
-                return head + 7;
-            case (byte) 0xfc:
-                return head + 6;
-            case (byte) 0xf8:
-                return head + 5;
-            case (byte) 0xf0:
-                return head + 4;
-            case (byte) 0xe0:
-                return head + 3;
-            case (byte) 0xc0:
-                return head + 2;
-            case (byte) 0x80:
-                return head + 1;
-            default:
-                throw new RuntimeException("error");
+            int head = (flag << 3) - 1;
+            byte value = array[flag];
+            if (value == 0)
+            {
+                flag -= 1;
+                continue;
+            }
+            switch (value)
+            {
+                case (byte) 0xff:
+                    return head + 8;
+                case (byte) 0xfe:
+                    return head + 7;
+                case (byte) 0xfc:
+                    return head + 6;
+                case (byte) 0xf8:
+                    return head + 5;
+                case (byte) 0xf0:
+                    return head + 4;
+                case (byte) 0xe0:
+                    return head + 3;
+                case (byte) 0xc0:
+                    return head + 2;
+                case (byte) 0x80:
+                    return head + 1;
+                default:
+                    throw new RuntimeException("error");
+            }
         }
+        return 0;
     }
     
     public boolean get(int i)
@@ -74,9 +84,8 @@ public class BitMap
     
     public void clear(int i)
     {
-        i += 1;
         int wordIndex = i >>> 3;
-        byte value = (byte) (1 << (i & 7));
+        byte value = (byte) (0x80 >>> (i & 7));
         if (wordIndex >= array.length)
         {
             byte[] tmp = new byte[wordIndex + 1];
