@@ -5,7 +5,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
-import com.jfireframework.jnet.common.channel.AbstractClientChannelInfo;
+import com.jfireframework.jnet.common.channel.impl.AbstractClientChannel;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 import com.jfireframework.jnet.common.exception.BufNotEnoughException;
 import com.jfireframework.jnet.common.exception.EndOfStreamException;
@@ -14,27 +14,27 @@ import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.ClientInternalResult;
 
-public class ClientReadCompleter implements CompletionHandler<Integer, AbstractClientChannelInfo>
+public class ClientReadCompleter implements CompletionHandler<Integer, AbstractClientChannel>
 {
-    private AsynchronousSocketChannel       socketChannel;
-    private DataHandler[]                   handlers;
-    private FrameDecodec                    frameDecodec;
-    private volatile long                   cursor         = 0;
-    private final DirectByteBuf             ioBuf          = DirectByteBuf.allocate(100);
-    private final AbstractClientChannelInfo channelInfo;
-    protected long                          readTimeout;
-    protected long                          waitTimeout;
+    private AsynchronousSocketChannel   socketChannel;
+    private DataHandler[]               handlers;
+    private FrameDecodec                frameDecodec;
+    private volatile long               cursor         = 0;
+    private final DirectByteBuf         ioBuf          = DirectByteBuf.allocate(100);
+    private final AbstractClientChannel channelInfo;
+    protected long                      readTimeout;
+    protected long                      waitTimeout;
     // private static final Logger logger = ConsoleLogFactory.getLogger();
-    private ClientInternalResult            internalResult = new ClientInternalResult();
+    private ClientInternalResult        internalResult = new ClientInternalResult();
     
-    public ClientReadCompleter(AioClient aioClient, AbstractClientChannelInfo channelInfo)
+    public ClientReadCompleter(AioClient aioClient, AbstractClientChannel channelInfo)
     {
         this.channelInfo = channelInfo;
         readTimeout = channelInfo.getReadTimeout();
         waitTimeout = channelInfo.getWaitTimeout();
         frameDecodec = channelInfo.getFrameDecodec();
         handlers = channelInfo.getHandlers();
-        socketChannel = channelInfo.socketChannel();
+        socketChannel = channelInfo.getSocketChannel();
         channelInfo.setReadCompleter(this);
     }
     
@@ -49,7 +49,7 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
     }
     
     @Override
-    public void completed(Integer result, AbstractClientChannelInfo channelInfo)
+    public void completed(Integer result, AbstractClientChannel channelInfo)
     {
         if (result == -1)
         {
@@ -115,7 +115,7 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
     }
     
     @Override
-    public void failed(Throwable exc, AbstractClientChannelInfo channelInfo)
+    public void failed(Throwable exc, AbstractClientChannel channelInfo)
     {
         catchThrowable(exc);
     }

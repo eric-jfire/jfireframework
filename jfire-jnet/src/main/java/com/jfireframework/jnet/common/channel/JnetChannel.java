@@ -4,7 +4,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 import com.jfireframework.jnet.common.handler.DataHandler;
 
-public interface ChannelInfo
+public interface JnetChannel
 {
     public void setFrameDecodec(FrameDecodec frameDecodec);
     
@@ -16,28 +16,26 @@ public interface ChannelInfo
     
     public void setChannel(AsynchronousSocketChannel socketChannel);
     
-    public AsynchronousSocketChannel getChannel();
+    public AsynchronousSocketChannel getSocketChannel();
     
     /**
      * 注意，方法的内部实现需要保证通道实际上只会被关闭一次，也就是通过一个volatile的标志位，cas的关闭
      */
     public void closeChannel();
     
-    public AsynchronousSocketChannel socketChannel();
-    
     public boolean isOpen();
     
-    public void setResultArrayLength(int entrySize);
+    public void setDataArrayLength(int size);
     
-    public Object[] getResultArray();
+    public Object[] getDataArray();
     
-    public int getEntryArraySize();
+    public int getDataArraySize();
     
-    public Object getResult(long cursor);
+    public Object getData(long cursor);
     
-    public Object getResultVolatile(long cursor);
+    public Object getDataVolatile(long cursor);
     
-    public void putResultVolatile(Object obj, long cursor);
+    public void putDataVolatile(Object obj, long cursor);
     
     public void setReadTimeout(long readTimeout);
     

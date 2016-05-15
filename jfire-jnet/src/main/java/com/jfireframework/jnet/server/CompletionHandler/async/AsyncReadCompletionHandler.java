@@ -9,7 +9,7 @@ import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.jnet.common.channel.ServerChannelInfo;
+import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 import com.jfireframework.jnet.common.exception.BufNotEnoughException;
 import com.jfireframework.jnet.common.exception.LessThanProtocolException;
@@ -19,13 +19,13 @@ import com.jfireframework.jnet.common.result.AsyncServerInternalResult;
 import com.jfireframework.jnet.common.result.InternalTask;
 import com.jfireframework.jnet.common.result.ServerInternalTask;
 
-public class AsyncReadCompletionHandler implements CompletionHandler<Integer, ServerChannelInfo>
+public class AsyncReadCompletionHandler implements CompletionHandler<Integer, ServerChannel>
 {
     private static final Logger               logger         = ConsoleLogFactory.getLogger();
     private final FrameDecodec                frameDecodec;
     private final DataHandler[]               handlers;
     private final DirectByteBuf               ioBuf          = DirectByteBuf.allocate(100);
-    private final ServerChannelInfo           channelInfo;
+    private final ServerChannel           channelInfo;
     public final static int                   CONTINUE_READ  = 1;
     // 暂时不监听监听当前通道上的数据
     public final static int                   FREE_OF_READ   = 2;
@@ -47,7 +47,7 @@ public class AsyncReadCompletionHandler implements CompletionHandler<Integer, Se
     private final Disruptor                   disruptor;
     private final int                         capacity;
     
-    public AsyncReadCompletionHandler(ServerChannelInfo channelInfo, Disruptor disruptor)
+    public AsyncReadCompletionHandler(ServerChannel channelInfo, Disruptor disruptor)
     {
         this.disruptor = disruptor;
         this.channelInfo = channelInfo;
@@ -56,11 +56,11 @@ public class AsyncReadCompletionHandler implements CompletionHandler<Integer, Se
         readTimeout = channelInfo.getReadTimeout();
         waitTimeout = channelInfo.getWaitTimeout();
         writeCompletionHandler = new AsyncWriteCompletionHandler(this, channelInfo);
-        capacity = channelInfo.getEntryArraySize();
+        capacity = channelInfo.getDataArraySize();
     }
     
     @Override
-    public void completed(Integer read, ServerChannelInfo channelInfo)
+    public void completed(Integer read, ServerChannel channelInfo)
     {
         if (read == -1)
         {
@@ -72,7 +72,7 @@ public class AsyncReadCompletionHandler implements CompletionHandler<Integer, Se
     }
     
     @Override
-    public void failed(Throwable exc, ServerChannelInfo channelInfo)
+    public void failed(Throwable exc, ServerChannel channelInfo)
     {
         catchThrowable(exc);
         ioBuf.release();
@@ -227,7 +227,7 @@ public class AsyncReadCompletionHandler implements CompletionHandler<Integer, Se
     public void readAndWait()
     {
         startCountdown = false;
-        channelInfo.getChannel().read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, channelInfo, this);
+        channelInfo.getSocketChannel().read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, channelInfo, this);
     }
     
     /**
@@ -254,7 +254,7 @@ public class AsyncReadCompletionHandler implements CompletionHandler<Integer, Se
             endReadTime = lastReadTime + readTimeout;
             startCountdown = true;
         }
-        channelInfo.getChannel().read(getWriteBuffer(), getRemainTime(), TimeUnit.MILLISECONDS, channelInfo, this);
+        channelInfo.getSocketChannel().read(getWriteBuffer(), getRemainTime(), TimeUnit.MILLISECONDS, channelInfo, this);
         lastReadTime = System.currentTimeMillis();
     }
     

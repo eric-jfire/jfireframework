@@ -1,10 +1,10 @@
 package com.jfireframework.jnet.common.result;
 
-import com.jfireframework.jnet.common.channel.ChannelInfo;
+import com.jfireframework.jnet.common.channel.JnetChannel;
 
 public interface InternalTask
 {
-    public void setChannelInfo(ChannelInfo channelInfo);
+    public void setChannelInfo(JnetChannel jnetChannel);
     
     /**
      * 获取当前中间结果的暂存数据。

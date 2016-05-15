@@ -1,13 +1,13 @@
-package com.jfireframework.jnet.common.channel;
+package com.jfireframework.jnet.common.channel.impl;
 
 import com.jfireframework.jnet.common.result.ServerInternalTask;
 
-public class ServerChannelInfo extends AbstractChannelInfo
+public class ServerChannel extends AbstractChannel
 {
     @Override
-    public void setResultArrayLength(int resultArrayLength)
+    public void setDataArrayLength(int resultArrayLength)
     {
-        super.setResultArrayLength(resultArrayLength);
+        super.setDataArrayLength(resultArrayLength);
         for (int i = 0; i < resultArrayLength; i++)
         {
             resultArray[i] = new ServerInternalTask();

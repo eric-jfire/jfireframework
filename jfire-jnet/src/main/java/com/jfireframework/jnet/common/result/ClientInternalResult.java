@@ -1,20 +1,20 @@
 package com.jfireframework.jnet.common.result;
 
-import com.jfireframework.jnet.common.channel.AbstractClientChannelInfo;
-import com.jfireframework.jnet.common.channel.FutureClientChannelInfo;
+import com.jfireframework.jnet.common.channel.impl.AbstractClientChannel;
+import com.jfireframework.jnet.common.channel.impl.FutureClientChannelInfo;
 
 public class ClientInternalResult extends AbstractInternalTask
 {
-    private AbstractClientChannelInfo channelInfo;
+    private AbstractClientChannel channelInfo;
     
-    public void init(Object data, AbstractClientChannelInfo channelInfo, int index)
+    public void init(Object data, AbstractClientChannel channelInfo, int index)
     {
         this.channelInfo = channelInfo;
         this.data = data;
         this.index = index;
     }
     
-    public AbstractClientChannelInfo getChannelInfo()
+    public AbstractClientChannel getChannelInfo()
     {
         return channelInfo;
     }

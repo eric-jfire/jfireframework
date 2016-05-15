@@ -22,9 +22,7 @@ public class EchoHandler implements DataHandler
     @Override
     public Object catchException(Object data, InternalTask result)
     {
-        Throwable e = (Throwable) data;
-        e.printStackTrace();
-        return data;
+        return null;
     }
     
 }

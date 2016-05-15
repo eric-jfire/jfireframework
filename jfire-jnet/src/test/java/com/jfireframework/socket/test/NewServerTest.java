@@ -8,7 +8,7 @@ import com.jfireframework.baseutil.collection.buffer.HeapByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.common.channel.ChannelInfo;
+import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.handler.DataHandler;
@@ -29,9 +29,9 @@ public class NewServerTest
         serverConfig.setInitListener(new ChannelInitListener() {
             
             @Override
-            public void channelInit(ChannelInfo serverChannelInfo)
+            public void channelInit(JnetChannel serverChannelInfo)
             {
-                serverChannelInfo.setResultArrayLength(128);
+                serverChannelInfo.setDataArrayLength(128);
                 serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
                 serverChannelInfo.setHandlers(new Loghandler(), new EchoHandler(), new LengthPreHandler(0, 4));
             }
@@ -63,10 +63,10 @@ public class NewServerTest
         aioClient.setInitListener(new ChannelInitListener() {
             
             @Override
-            public void channelInit(ChannelInfo channelInfo)
+            public void channelInit(JnetChannel jnetChannel)
             {
-                channelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
-                channelInfo.setHandlers(new DataHandler() {
+                jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
+                jnetChannel.setHandlers(new DataHandler() {
                     
                     @Override
                     public Object handle(Object data, InternalTask client)
@@ -86,7 +86,7 @@ public class NewServerTest
                         return null;
                     }
                 });
-                channelInfo.setResultArrayLength(128);
+                jnetChannel.setDataArrayLength(128);
             }
         });
         aioClient.connect();

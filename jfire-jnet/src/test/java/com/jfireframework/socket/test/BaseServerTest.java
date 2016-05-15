@@ -7,7 +7,7 @@ import com.jfireframework.baseutil.collection.buffer.DirectByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.common.channel.ChannelInfo;
+import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.decodec.LineBasedFrameDecodec;
 import com.jfireframework.jnet.common.exception.JnetException;
@@ -59,11 +59,11 @@ public class BaseServerTest
         aioClient.setInitListener(new ChannelInitListener() {
             
             @Override
-            public void channelInit(ChannelInfo channelInfo)
+            public void channelInit(JnetChannel jnetChannel)
             {
-                channelInfo.setResultArrayLength(128);
-                channelInfo.setFrameDecodec(new LineBasedFrameDecodec(1000));
-                channelInfo.setHandlers(new DataHandler() {
+                jnetChannel.setDataArrayLength(128);
+                jnetChannel.setFrameDecodec(new LineBasedFrameDecodec(1000));
+                jnetChannel.setHandlers(new DataHandler() {
                     
                     @Override
                     public Object handle(Object data, InternalTask result) throws JnetException
@@ -99,9 +99,9 @@ class myInitListener implements ChannelInitListener
     
     // 当通道被建立的时候触发
     @Override
-    public void channelInit(ChannelInfo serverChannelInfo)
+    public void channelInit(JnetChannel serverChannelInfo)
     {
-        serverChannelInfo.setResultArrayLength(128);
+        serverChannelInfo.setDataArrayLength(128);
         serverChannelInfo.setFrameDecodec(new LineBasedFrameDecodec(1000));
         // 可以设置通道的读取超时时长。默认为3000毫秒
         serverChannelInfo.setReadTimeout(3000);

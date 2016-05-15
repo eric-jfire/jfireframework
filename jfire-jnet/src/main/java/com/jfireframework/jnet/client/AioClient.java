@@ -8,12 +8,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
-import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.baseutil.verify.Verify;
-import com.jfireframework.jnet.common.channel.AbstractClientChannelInfo;
-import com.jfireframework.jnet.common.channel.AsyncClientChannelInfo;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
-import com.jfireframework.jnet.common.channel.FutureClientChannelInfo;
+import com.jfireframework.jnet.common.channel.impl.AbstractClientChannel;
+import com.jfireframework.jnet.common.channel.impl.AsyncClientChannelInfo;
+import com.jfireframework.jnet.common.channel.impl.FutureClientChannelInfo;
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.ClientInternalResult;
@@ -26,14 +25,14 @@ import com.jfireframework.jnet.common.result.ClientInternalResult;
  */
 public class AioClient
 {
-    private AbstractClientChannelInfo clientChannelInfo;
-    private String                    address;
-    private int                       port;
-    private AsynchronousChannelGroup  channelGroup;
-    private DataHandler[]             writeHandlers;
-    private ChannelInitListener       initListener;
-    private final boolean             async;
-    private ClientInternalResult      internalResult = new ClientInternalResult();
+    private AbstractClientChannel    clientChannel;
+    private String                   address;
+    private int                      port;
+    private AsynchronousChannelGroup channelGroup;
+    private DataHandler[]            writeHandlers;
+    private ChannelInitListener      initListener;
+    private final boolean            async;
+    private ClientInternalResult     internalResult = new ClientInternalResult();
     
     public AioClient(boolean async)
     {
@@ -76,24 +75,24 @@ public class AioClient
     
     public AioClient connect() throws Throwable
     {
-        if (clientChannelInfo == null || clientChannelInfo.isOpen() == false)
+        if (clientChannel == null || clientChannel.isOpen() == false)
         {
             AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(channelGroup);
             socketChannel.connect(new InetSocketAddress(address, port)).get(30, TimeUnit.SECONDS);
             if (async == true)
             {
-                clientChannelInfo = new AsyncClientChannelInfo();
+                clientChannel = new AsyncClientChannelInfo();
             }
             else
             {
-                clientChannelInfo = new FutureClientChannelInfo();
+                clientChannel = new FutureClientChannelInfo();
             }
-            clientChannelInfo.setChannel(socketChannel);
-            initListener.channelInit(clientChannelInfo);
-            Verify.notNull(clientChannelInfo.getResultArray(), "没有设置entryArraySize");
-            Verify.notNull(clientChannelInfo.getFrameDecodec(), "没有设置framedecodec");
-            Verify.notNull(clientChannelInfo.getHandlers(), "没有设置Datahandler");
-            ClientReadCompleter clientReadCompleter = new ClientReadCompleter(this, clientChannelInfo);
+            clientChannel.setChannel(socketChannel);
+            initListener.channelInit(clientChannel);
+            Verify.notNull(clientChannel.getDataArray(), "没有设置entryArraySize");
+            Verify.notNull(clientChannel.getFrameDecodec(), "没有设置framedecodec");
+            Verify.notNull(clientChannel.getHandlers(), "没有设置Datahandler");
+            ClientReadCompleter clientReadCompleter = new ClientReadCompleter(this, clientChannel);
             clientReadCompleter.readAndWait();
         }
         return this;
@@ -126,11 +125,11 @@ public class AioClient
     {
         try
         {
-            if (clientChannelInfo == null || clientChannelInfo.isOpen() == false)
+            if (clientChannel == null || clientChannel.isOpen() == false)
             {
                 throw new InterruptedException("链接已经中断，请重新链接后再发送信息");
             }
-            internalResult.init(data, clientChannelInfo, index);
+            internalResult.init(data, clientChannel, index);
             for (int i = index; i < writeHandlers.length;)
             {
                 data = writeHandlers[i].handle(data, internalResult);
@@ -147,24 +146,24 @@ public class AioClient
             }
             if (data instanceof ByteBuf<?>)
             {
-                Future<?> result = clientChannelInfo.addFuture();
+                Future<?> result = clientChannel.addFuture();
                 ByteBuffer buffer = ((ByteBuf<?>) data).nioBuffer();
                 while (buffer.hasRemaining())
                 {
-                    clientChannelInfo.socketChannel().write(buffer).get();
+                    clientChannel.getSocketChannel().write(buffer).get();
                 }
                 ((ByteBuf<?>) data).release();
                 return result;
             }
             else
             {
-                return AbstractClientChannelInfo.NORESULT;
+                return AbstractClientChannel.NORESULT;
             }
         }
         catch (Exception e)
         {
             Object tmp = e;
-            internalResult.init(e, clientChannelInfo, 0);
+            internalResult.init(e, clientChannel, 0);
             for (DataHandler each : writeHandlers)
             {
                 tmp = each.catchException(tmp, internalResult);
@@ -183,7 +182,7 @@ public class AioClient
     
     public void close()
     {
-        clientChannelInfo.socketChannel();
+        clientChannel.closeChannel();
     }
     
 }

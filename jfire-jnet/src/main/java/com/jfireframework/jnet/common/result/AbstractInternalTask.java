@@ -1,12 +1,12 @@
 package com.jfireframework.jnet.common.result;
 
-import com.jfireframework.jnet.common.channel.ChannelInfo;
+import com.jfireframework.jnet.common.channel.JnetChannel;
 
 public abstract class AbstractInternalTask implements InternalTask
 {
 	protected Object		data;
 	protected int			index;
-	protected ChannelInfo	channelInfo;
+	protected JnetChannel	jnetChannel;
 	
 	public Object getData()
 	{
@@ -28,20 +28,20 @@ public abstract class AbstractInternalTask implements InternalTask
 		this.index = index;
 	}
 	
-	public ChannelInfo getChannelInfo()
+	public JnetChannel getChannelInfo()
 	{
-		return channelInfo;
+		return jnetChannel;
 	}
 	
-	public void setChannelInfo(ChannelInfo channelInfo)
+	public void setChannelInfo(JnetChannel jnetChannel)
 	{
-		this.channelInfo = channelInfo;
+		this.jnetChannel = jnetChannel;
 	}
 	
 	@Override
 	public void closeChannel()
 	{
-		channelInfo.closeChannel();
+		jnetChannel.closeChannel();
 	}
 	
 }

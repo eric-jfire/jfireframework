@@ -1,22 +1,22 @@
-package com.jfireframework.jnet.common.channel;
+package com.jfireframework.jnet.common.channel.impl;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
-public abstract class AbstractChannelInfo implements ChannelInfo
+public abstract class AbstractChannel implements JnetChannel
 {
-    protected static final Unsafe       unsafe      = ReflectUtil.getUnsafe();
     public final static int             OPEN        = 1;
     public final static int             CLOSE       = 2;
     // 消息通道的打开状态
-    protected volatile int              openState   = OPEN;
-    protected static final long         _openState  = ReflectUtil.getFieldOffset("openState", AbstractChannelInfo.class);
+    protected AtomicInteger             openState   = new AtomicInteger(OPEN);
     protected AsynchronousSocketChannel socketChannel;
     protected FrameDecodec              frameDecodec;
     protected DataHandler[]             handlers;
@@ -29,6 +29,7 @@ public abstract class AbstractChannelInfo implements ChannelInfo
     protected final static int          scale;
     protected String                    remoteAddress;
     protected String                    localAddress;
+    protected static final Unsafe       unsafe      = ReflectUtil.getUnsafe();
     static
     {
         base = unsafe.arrayBaseOffset(Object[].class);
@@ -46,16 +47,19 @@ public abstract class AbstractChannelInfo implements ChannelInfo
         }
     }
     
+    @Override
     public void setHandlers(DataHandler... handlers)
     {
         this.handlers = handlers;
     }
     
+    @Override
     public DataHandler[] getHandlers()
     {
         return handlers;
     }
     
+    @Override
     public void setFrameDecodec(FrameDecodec frameDecodec)
     {
         this.frameDecodec = frameDecodec;
@@ -74,28 +78,25 @@ public abstract class AbstractChannelInfo implements ChannelInfo
     }
     
     @Override
-    public AsynchronousSocketChannel getChannel()
+    public AsynchronousSocketChannel getSocketChannel()
     {
         return socketChannel;
     }
     
-    public AsynchronousSocketChannel socketChannel()
-    {
-        return socketChannel;
-    }
-    
+    @Override
     public boolean isOpen()
     {
-        return openState == OPEN;
+        return openState.get() == OPEN;
     }
     
+    @Override
     public void closeChannel()
     {
-        if (openState == CLOSE)
+        if (openState.get() == CLOSE)
         {
             return;
         }
-        if (unsafe.compareAndSwapInt(this, _openState, OPEN, CLOSE))
+        if (openState.compareAndSet(OPEN, CLOSE))
         {
             try
             {
@@ -107,7 +108,8 @@ public abstract class AbstractChannelInfo implements ChannelInfo
         }
     }
     
-    public void setResultArrayLength(int resultArrayLength)
+    @Override
+    public void setDataArrayLength(int resultArrayLength)
     {
         Verify.True(resultArrayLength > 1, "数组的大小必须大于1");
         Verify.True(Integer.bitCount(resultArrayLength) == 1, "数组的大小必须是2的次方幂");
@@ -115,47 +117,55 @@ public abstract class AbstractChannelInfo implements ChannelInfo
         resultArrayLengthMask = resultArrayLength - 1;
     }
     
-    public Object getResult(long cursor)
+    @Override
+    public Object getData(long cursor)
     {
         return unsafe.getObject(resultArray, base + ((cursor & resultArrayLengthMask) << scale));
     }
     
-    public Object getResultVolatile(long cursor)
+    @Override
+    public Object getDataVolatile(long cursor)
     {
         return unsafe.getObjectVolatile(resultArray, base + ((cursor & resultArrayLengthMask) << scale));
     }
     
-    public void putResultVolatile(Object obj, long cursor)
+    @Override
+    public void putDataVolatile(Object obj, long cursor)
     {
         unsafe.putObjectVolatile(resultArray, base + ((cursor & resultArrayLengthMask) << scale), obj);
     }
     
-    
+    @Override
     public void setReadTimeout(long readTimeout)
     {
         this.readTimeout = readTimeout;
     }
     
+    @Override
     public void setWaitTimeout(long waitTimeout)
     {
         this.waitTimeout = waitTimeout;
     }
     
+    @Override
     public long getReadTimeout()
     {
         return readTimeout;
     }
     
+    @Override
     public long getWaitTimeout()
     {
         return waitTimeout;
     }
     
-    public int getEntryArraySize()
+    @Override
+    public int getDataArraySize()
     {
         return resultArray.length;
     }
     
+    @Override
     public String getLocalAddress()
     {
         if (localAddress == null)
@@ -171,6 +181,7 @@ public abstract class AbstractChannelInfo implements ChannelInfo
         return localAddress;
     }
     
+    @Override
     public String getRemoteAddress()
     {
         if (remoteAddress == null)
@@ -186,7 +197,7 @@ public abstract class AbstractChannelInfo implements ChannelInfo
         return remoteAddress;
     }
     
-    public Object[] getResultArray()
+    public Object[] getDataArray()
     {
         return resultArray;
     }

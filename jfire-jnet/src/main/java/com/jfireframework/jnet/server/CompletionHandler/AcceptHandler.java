@@ -8,7 +8,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
-import com.jfireframework.jnet.common.channel.ServerChannelInfo;
+import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.AioServer;
 import com.jfireframework.jnet.server.CompletionHandler.async.AsyncReadCompletionHandler;
 import com.jfireframework.jnet.server.CompletionHandler.async.AsyncServerInternalResultAction;
@@ -60,7 +60,10 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
     
     public void stop()
     {
-        asyncTaskCenter.stop();
+        if (asyncTaskCenter != null)
+        {
+            asyncTaskCenter.stop();
+        }
     }
     
     @Override
@@ -68,10 +71,10 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
     {
         try
         {
-            ServerChannelInfo channelInfo = new ServerChannelInfo();
+            ServerChannel channelInfo = new ServerChannel();
             channelInfo.setChannel(socketChannel);
             initListener.channelInit(channelInfo);
-            Verify.notNull(channelInfo.getResultArray(), "没有设置entryArraySize");
+            Verify.notNull(channelInfo.getDataArray(), "没有设置entryArraySize");
             Verify.notNull(channelInfo.getFrameDecodec(), "没有设置framedecodec");
             Verify.notNull(channelInfo.getHandlers(), "没有设置Datahandler");
             switch (workMode)

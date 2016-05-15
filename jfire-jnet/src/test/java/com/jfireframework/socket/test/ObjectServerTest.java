@@ -6,7 +6,7 @@ import com.jfireframework.baseutil.collection.buffer.DirectByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.common.channel.ChannelInfo;
+import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.exception.JnetException;
@@ -29,9 +29,9 @@ public class ObjectServerTest
         serverConfig.setInitListener(new ChannelInitListener() {
             
             @Override
-            public void channelInit(ChannelInfo serverChannelInfo)
+            public void channelInit(JnetChannel serverChannelInfo)
             {
-                serverChannelInfo.setResultArrayLength(128);
+                serverChannelInfo.setDataArrayLength(128);
                 serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
                 serverChannelInfo.setHandlers(new DataHandler() {
                     
@@ -90,10 +90,10 @@ public class ObjectServerTest
         aioClient.setInitListener(new ChannelInitListener() {
             
             @Override
-            public void channelInit(ChannelInfo channelInfo)
+            public void channelInit(JnetChannel jnetChannel)
             {
-                channelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
-                channelInfo.setHandlers(new DataHandler() {
+                jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
+                jnetChannel.setHandlers(new DataHandler() {
                     
                     @Override
                     public Object handle(Object data, InternalTask result) throws JnetException
@@ -115,7 +115,7 @@ public class ObjectServerTest
                         return null;
                     }
                 });
-                channelInfo.setResultArrayLength(128);
+                jnetChannel.setDataArrayLength(128);
             }
         });
         aioClient.connect();

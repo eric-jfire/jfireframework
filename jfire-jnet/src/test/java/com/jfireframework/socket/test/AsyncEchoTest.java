@@ -7,7 +7,7 @@ import org.junit.Test;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.common.channel.ChannelInfo;
+import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoderByHeap;
@@ -34,9 +34,9 @@ public class AsyncEchoTest
         config.setInitListener(new ChannelInitListener() {
             
             @Override
-            public void channelInit(ChannelInfo serverChannelInfo)
+            public void channelInit(JnetChannel serverChannelInfo)
             {
-                serverChannelInfo.setResultArrayLength(arraylength);
+                serverChannelInfo.setDataArrayLength(arraylength);
                 serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
                 serverChannelInfo.setHandlers(new EchoHandler(), new EchoHandler2(), new LengthPreHandler(0, 4));
             }
@@ -100,11 +100,11 @@ public class AsyncEchoTest
         client.setInitListener(new ChannelInitListener() {
             
             @Override
-            public void channelInit(ChannelInfo channelInfo)
+            public void channelInit(JnetChannel jnetChannel)
             {
-                channelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoderByHeap(0, 4, 4, 500));
-                channelInfo.setResultArrayLength(arraylength);
-                channelInfo.setHandlers(new DataHandler() {
+                jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoderByHeap(0, 4, 4, 500));
+                jnetChannel.setDataArrayLength(arraylength);
+                jnetChannel.setHandlers(new DataHandler() {
                     
                     @Override
                     public Object handle(Object data, InternalTask result) throws JnetException

@@ -9,7 +9,7 @@ import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.disruptor.Sequence;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.jnet.common.channel.ServerChannelInfo;
+import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 import com.jfireframework.jnet.common.exception.BufNotEnoughException;
 import com.jfireframework.jnet.common.exception.LessThanProtocolException;
@@ -20,13 +20,13 @@ import com.jfireframework.jnet.server.util.AsyncTaskCenter;
 import com.jfireframework.jnet.server.util.WorkMode;
 import com.jfireframework.jnet.server.util.WriteMode;
 
-public class ReadCompletionHandler implements CompletionHandler<Integer, ServerChannelInfo>
+public class ReadCompletionHandler implements CompletionHandler<Integer, ServerChannel>
 {
     private static final Logger          logger         = ConsoleLogFactory.getLogger();
     private final FrameDecodec           frameDecodec;
     private final DataHandler[]          handlers;
     private final DirectByteBuf          ioBuf          = DirectByteBuf.allocate(100);
-    private final ServerChannelInfo      channelInfo;
+    private final ServerChannel      channelInfo;
     private final CpuCachePadingInt      readState      = new CpuCachePadingInt(IN_READ);
     public final static int              IN_READ        = 1;
     public final static int              OUT_OF_READ    = 2;
@@ -45,7 +45,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     private final WorkMode               workMode;
     private final AsyncTaskCenter        asyncTaskCenter;
     
-    public ReadCompletionHandler(ServerChannelInfo channelInfo, WorkMode workMode, AsyncTaskCenter asyncTaskCenter, WriteMode writeMode)
+    public ReadCompletionHandler(ServerChannel channelInfo, WorkMode workMode, AsyncTaskCenter asyncTaskCenter, WriteMode writeMode)
     {
         this.asyncTaskCenter = asyncTaskCenter;
         this.workMode = workMode;
@@ -58,7 +58,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     }
     
     @Override
-    public void completed(Integer read, ServerChannelInfo channelInfo)
+    public void completed(Integer read, ServerChannel channelInfo)
     {
         if (read == -1)
         {
@@ -70,7 +70,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     }
     
     @Override
-    public void failed(Throwable exc, ServerChannelInfo channelInfo)
+    public void failed(Throwable exc, ServerChannel channelInfo)
     {
         catchThrowable(exc);
         ioBuf.release();
@@ -177,7 +177,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             long cursor = sequence.value();
             testcursor: if (cursor >= wrapPoint)
             {
-                wrapPoint = writeCompletionHandler.cursor() + channelInfo.getEntryArraySize();
+                wrapPoint = writeCompletionHandler.cursor() + channelInfo.getDataArraySize();
                 if (cursor < wrapPoint)
                 {
                     break testcursor;
@@ -185,7 +185,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
                 // 在设置之前，可能写线程已经将所有的数据都写出完毕了并且写线程结束运行。此时就不会有人来唤醒读取线程了
                 readState.set(OUT_OF_READ);
                 // 设置之后必须进行尝试
-                wrapPoint = writeCompletionHandler.cursor() + channelInfo.getEntryArraySize();
+                wrapPoint = writeCompletionHandler.cursor() + channelInfo.getDataArraySize();
                 if (cursor < wrapPoint)
                 {
                     if (readState.compareAndSwap(OUT_OF_READ, IN_READ))
@@ -204,7 +204,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             {
                 return IN_READ;
             }
-            ServerInternalTask task = (ServerInternalTask) channelInfo.getResult(cursor);
+            ServerInternalTask task = (ServerInternalTask) channelInfo.getData(cursor);
             task.init(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
             sequence.set(cursor + 1);
             switch (workMode)
@@ -287,7 +287,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     public void readAndWait()
     {
         startCountdown = false;
-        channelInfo.getChannel().read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, channelInfo, this);
+        channelInfo.getSocketChannel().read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, channelInfo, this);
     }
     
     /**
@@ -314,7 +314,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             endReadTime = lastReadTime + readTimeout;
             startCountdown = true;
         }
-        channelInfo.getChannel().read(getWriteBuffer(), getRemainTime(), TimeUnit.MILLISECONDS, channelInfo, this);
+        channelInfo.getSocketChannel().read(getWriteBuffer(), getRemainTime(), TimeUnit.MILLISECONDS, channelInfo, this);
         lastReadTime = System.currentTimeMillis();
     }
     

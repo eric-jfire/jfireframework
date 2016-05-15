@@ -10,13 +10,13 @@ import com.jfireframework.baseutil.concurrent.MPSCLinkedQueue;
 import com.jfireframework.baseutil.disruptor.Sequence;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
-import com.jfireframework.jnet.common.channel.ServerChannelInfo;
+import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import sun.misc.Unsafe;
 
 public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, ByteBuf<?>>
 {
     private final AsyncReadCompletionHandler  readCompletionHandler;
-    private final ServerChannelInfo           channelInfo;
+    private final ServerChannel           channelInfo;
     private volatile long                     cursor   = 0;
     private final static long                 _cursor  = ReflectUtil.getFieldOffset("cursor", AsyncWriteCompletionHandler.class);
     private final static Unsafe               unsafe   = ReflectUtil.getUnsafe();
@@ -25,7 +25,7 @@ public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, B
     private AtomicInteger                     status   = new AtomicInteger(UN_WRITE);
     private final MPSCLinkedQueue<ByteBuf<?>> bufqueue = new MPSCLinkedQueue<ByteBuf<?>>();
     
-    public AsyncWriteCompletionHandler(AsyncReadCompletionHandler readCompletionHandler, ServerChannelInfo channelInfo)
+    public AsyncWriteCompletionHandler(AsyncReadCompletionHandler readCompletionHandler, ServerChannel channelInfo)
     {
         this.readCompletionHandler = readCompletionHandler;
         this.channelInfo = channelInfo;
@@ -46,7 +46,7 @@ public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, B
                 if (status.compareAndSet(UN_WRITE, WRITING))
                 {
                     ByteBuf<?> buf = bufqueue.poll();
-                    channelInfo.getChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+                    channelInfo.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
                 }
             }
         }
@@ -65,7 +65,7 @@ public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, B
             ByteBuffer buffer = buf.cachedNioBuffer();
             if (buffer.hasRemaining())
             {
-                channelInfo.getChannel().write(buffer, 10, TimeUnit.SECONDS, buf, this);
+                channelInfo.getSocketChannel().write(buffer, 10, TimeUnit.SECONDS, buf, this);
                 return;
             }
             else
@@ -76,7 +76,7 @@ public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, B
                 if (bufqueue.isEmpty() == false)
                 {
                     ByteBuf<?> nextBuf = bufqueue.poll();
-                    channelInfo.getChannel().write(nextBuf.cachedNioBuffer(), 10, TimeUnit.SECONDS, nextBuf, this);
+                    channelInfo.getSocketChannel().write(nextBuf.cachedNioBuffer(), 10, TimeUnit.SECONDS, nextBuf, this);
                 }
                 else
                 {
@@ -86,7 +86,7 @@ public class AsyncWriteCompletionHandler implements CompletionHandler<Integer, B
                         if (status.compareAndSet(UN_WRITE, WRITING))
                         {
                             ByteBuf<?> nextBuf = bufqueue.poll();
-                            channelInfo.getChannel().write(nextBuf.cachedNioBuffer(), 10, TimeUnit.SECONDS, nextBuf, this);
+                            channelInfo.getSocketChannel().write(nextBuf.cachedNioBuffer(), 10, TimeUnit.SECONDS, nextBuf, this);
                         }
                         else
                         {

@@ -8,7 +8,7 @@ import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.CompositeByteBuf;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.jnet.common.channel.ServerChannelInfo;
+import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.common.result.ServerInternalTask;
 import com.jfireframework.jnet.server.util.WriteMode;
 
@@ -19,12 +19,12 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
     private ReadCompletionHandler             readCompletionHandler;
     private long                              wrapPoint                   = 0;
     private static final int                  retryPermit                 = 2;
-    private final ServerChannelInfo           channelInfo;
+    private final ServerChannel           channelInfo;
     private final WriteMode                   writeMode;
     private final BatchWriteCompletionHandler batchWriteCompletionHandler = new BatchWriteCompletionHandler();
     private static final Logger               logger                      = ConsoleLogFactory.getLogger();
     
-    public WriteCompletionHandler(ReadCompletionHandler readCompletionHandler, ServerChannelInfo channelInfo, WriteMode writeMode)
+    public WriteCompletionHandler(ReadCompletionHandler readCompletionHandler, ServerChannel channelInfo, WriteMode writeMode)
     {
         this.readCompletionHandler = readCompletionHandler;
         this.channelInfo = channelInfo;
@@ -41,7 +41,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
         ByteBuffer buffer = buf.cachedNioBuffer();
         if (buffer.hasRemaining())
         {
-            channelInfo.getChannel().write(buffer, 10, TimeUnit.SECONDS, buf, this);
+            channelInfo.getSocketChannel().write(buffer, 10, TimeUnit.SECONDS, buf, this);
             return;
         }
         buf.release();
@@ -56,7 +56,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
                  */
                 if (nextCursor < wrapPoint)
                 {
-                    ServerInternalTask next = (ServerInternalTask) channelInfo.getResult(nextCursor);
+                    ServerInternalTask next = (ServerInternalTask) channelInfo.getData(nextCursor);
                     // 由于写操作的序号没有前进，此时可以调用tryWrite来尝试直接获得写出许可，只要数据被处理完毕。
                     if (next.tryWrite(nextCursor))
                     {
@@ -93,7 +93,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
             // 否则的话，因为写完成器的版本号没有更新，而其他线程尝试失败，写完成又不写下一个的话，就会导致数据没有线程要写出，进而活锁。
             if (nextCursor < wrapPoint)
             {
-                ServerInternalTask next = (ServerInternalTask) channelInfo.getResultVolatile(nextCursor);
+                ServerInternalTask next = (ServerInternalTask) channelInfo.getDataVolatile(nextCursor);
                 next.write(nextCursor);
             }
         }
@@ -108,7 +108,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
         ByteBuffer buffer = buf.cachedNioBuffer();
         if (buffer.hasRemaining())
         {
-            channelInfo.getChannel().write(buffer, 10, TimeUnit.SECONDS, buf, this);
+            channelInfo.getSocketChannel().write(buffer, 10, TimeUnit.SECONDS, buf, this);
             return;
         }
         buf.release();
@@ -125,7 +125,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
             {
                 if (nextCursor < wrapPoint)
                 {
-                    ServerInternalTask next = (ServerInternalTask) channelInfo.getResult(nextCursor);
+                    ServerInternalTask next = (ServerInternalTask) channelInfo.getData(nextCursor);
                     if (next.tryWrite(nextCursor))
                     {
                         CompositeByteBuf compositeByteBuf = new CompositeByteBuf();
@@ -135,7 +135,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
                             nextCursor += 1;
                             if (nextCursor < wrapPoint)
                             {
-                                next = (ServerInternalTask) channelInfo.getResult(nextCursor);
+                                next = (ServerInternalTask) channelInfo.getData(nextCursor);
                                 if (next.tryWrite(nextCursor) == false)
                                 {
                                     nextCursor -= 1;
@@ -158,7 +158,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
                             }
                         }
                         cursor = nextCursor;
-                        channelInfo.getChannel().write(compositeByteBuf.nioBuffers(), 0, compositeByteBuf.nioBuffers().length, 10, TimeUnit.SECONDS, compositeByteBuf, batchWriteCompletionHandler);
+                        channelInfo.getSocketChannel().write(compositeByteBuf.nioBuffers(), 0, compositeByteBuf.nioBuffers().length, 10, TimeUnit.SECONDS, compositeByteBuf, batchWriteCompletionHandler);
                     }
                     else
                     {
@@ -183,7 +183,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
             wrapPoint = readCompletionHandler.cursor();
             if (nextCursor < wrapPoint)
             {
-                ServerInternalTask next = (ServerInternalTask) channelInfo.getResult(nextCursor);
+                ServerInternalTask next = (ServerInternalTask) channelInfo.getData(nextCursor);
                 next.write(nextCursor);
             }
         }
@@ -236,7 +236,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, ByteBu
             }
             else
             {
-                channelInfo.getChannel().write(buffers, index, buffers.length - index, 10, TimeUnit.SECONDS, composeteByteBuf, this);
+                channelInfo.getSocketChannel().write(buffers, index, buffers.length - index, 10, TimeUnit.SECONDS, composeteByteBuf, this);
             }
         }
         

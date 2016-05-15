@@ -3,7 +3,7 @@ package com.jfireframework.jnet.common.result;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.concurrent.UnsafeReferenceFieldUpdater;
-import com.jfireframework.jnet.common.channel.ServerChannelInfo;
+import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.CompletionHandler.ReadCompletionHandler;
 import com.jfireframework.jnet.server.CompletionHandler.WriteCompletionHandler;
 
@@ -32,27 +32,27 @@ public class ServerInternalTask extends AbstractInternalTask
         }
     }
     
-    public static final boolean                                                UNDONE    = false;
-    public static final boolean                                                DONE      = true;
-    private volatile boolean                                                   taskState = UNDONE;
-    private volatile WritePermission                                           writePermission;
+    public static final boolean                                              UNDONE    = false;
+    public static final boolean                                              DONE      = true;
+    private volatile boolean                                                 taskState = UNDONE;
+    private volatile WritePermission                                         writePermission;
     private UnsafeReferenceFieldUpdater<ServerInternalTask, WritePermission> updater   = new UnsafeReferenceFieldUpdater<>(ServerInternalTask.class, "writePermission");
-    private ServerChannelInfo                                                  channelInfo;
-    private WriteCompletionHandler                                             writeCompletionHandler;
-    private ReadCompletionHandler                                              readCompletionHandler;
+    private ServerChannel                                                    channel;
+    private WriteCompletionHandler                                           writeCompletionHandler;
+    private ReadCompletionHandler                                            readCompletionHandler;
     
     public ServerInternalTask()
     {
     }
     
-    public ServerInternalTask(long version, Object data, ServerChannelInfo channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, int index)
+    public ServerInternalTask(long version, Object data, ServerChannel channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, int index)
     {
         init(version, data, channelInfo, readCompletionHandler, writeCompletionHandler, index);
     }
     
-    public void init(long version, Object data, ServerChannelInfo channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, int index)
+    public void init(long version, Object data, ServerChannel channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, int index)
     {
-        this.channelInfo = channelInfo;
+        this.channel = channelInfo;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         this.index = index;
@@ -98,7 +98,7 @@ public class ServerInternalTask extends AbstractInternalTask
         {
             return;
         }
-        channelInfo.socketChannel().write(((ByteBuf<?>) data).cachedNioBuffer(), 10, TimeUnit.SECONDS, (ByteBuf<?>) data, writeCompletionHandler);
+        channel.getSocketChannel().write(((ByteBuf<?>) data).cachedNioBuffer(), 10, TimeUnit.SECONDS, (ByteBuf<?>) data, writeCompletionHandler);
     }
     
     private boolean casState(long expectedVersion)
@@ -125,12 +125,12 @@ public class ServerInternalTask extends AbstractInternalTask
     
     public void directWrite()
     {
-        channelInfo.socketChannel().write(((ByteBuf<?>) data).cachedNioBuffer(), 10, TimeUnit.SECONDS, (ByteBuf<?>) data, writeCompletionHandler);
+        channel.getSocketChannel().write(((ByteBuf<?>) data).cachedNioBuffer(), 10, TimeUnit.SECONDS, (ByteBuf<?>) data, writeCompletionHandler);
     }
     
-    public ServerChannelInfo getChannelInfo()
+    public ServerChannel getChannelInfo()
     {
-        return channelInfo;
+        return channel;
     }
     
     public ReadCompletionHandler getReadCompletionHandler()

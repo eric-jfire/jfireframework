@@ -8,7 +8,7 @@ import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.common.channel.ChannelInfo;
+import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoderByHeap;
@@ -31,15 +31,15 @@ public class EchoTest
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setWorkMode(WorkMode.ASYNC_WITH_ORDER);
+        config.setWorkMode(WorkMode.SYNC);
         config.setSocketThreadSize(10);
         config.setAsyncThreadSize(1);
         config.setInitListener(new ChannelInitListener() {
             
             @Override
-            public void channelInit(ChannelInfo serverChannelInfo)
+            public void channelInit(JnetChannel serverChannelInfo)
             {
-                serverChannelInfo.setResultArrayLength(arraylength);
+                serverChannelInfo.setDataArrayLength(arraylength);
                 serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
                 serverChannelInfo.setHandlers(new EchoHandler());
             }
@@ -107,11 +107,11 @@ public class EchoTest
         client.setInitListener(new ChannelInitListener() {
             
             @Override
-            public void channelInit(ChannelInfo channelInfo)
+            public void channelInit(JnetChannel jnetChannel)
             {
-                channelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoderByHeap(0, 4, 4, 500));
-                channelInfo.setResultArrayLength(arraylength);
-                channelInfo.setHandlers(new DataHandler() {
+                jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoderByHeap(0, 4, 4, 500));
+                jnetChannel.setDataArrayLength(arraylength);
+                jnetChannel.setHandlers(new DataHandler() {
                     
                     @Override
                     public Object handle(Object data, InternalTask result) throws JnetException
