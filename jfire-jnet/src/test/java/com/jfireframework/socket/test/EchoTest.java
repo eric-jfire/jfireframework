@@ -31,7 +31,7 @@ public class EchoTest
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setWorkMode(WorkMode.SYNC);
+        config.setWorkMode(WorkMode.SYNC_WITH_ORDER);
         config.setSocketThreadSize(10);
         config.setAsyncThreadSize(1);
         config.setInitListener(new ChannelInitListener() {

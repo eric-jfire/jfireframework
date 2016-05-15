@@ -6,18 +6,19 @@ import java.util.concurrent.LinkedTransferQueue;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.ServerInternalTask;
+import com.jfireframework.jnet.server.CompletionHandler.UnOrderedWriteCompletionHandler;
 
 public class AsyncTaskCenter
 {
     private final LinkedTransferQueue<ServerInternalTask> tasks  = new LinkedTransferQueue<>();
     private volatile boolean                              stoped = false;
     
-    public AsyncTaskCenter(int threadSize)
+    public AsyncTaskCenter(int threadSize, WorkMode workMode)
     {
         ExecutorService pool = Executors.newFixedThreadPool(threadSize);
         for (int i = 0; i < threadSize; i++)
         {
-            pool.submit(new ResultHandler());
+            pool.submit(new TaskHandler(workMode));
         }
     }
     
@@ -31,8 +32,14 @@ public class AsyncTaskCenter
         stoped = true;
     }
     
-    class ResultHandler implements Runnable
+    class TaskHandler implements Runnable
     {
+        private final WorkMode workMode;
+        
+        public TaskHandler(WorkMode workMode)
+        {
+            this.workMode = workMode;
+        }
         
         @Override
         public void run()
@@ -70,12 +77,20 @@ public class AsyncTaskCenter
                         }
                         if (intermediateResult instanceof ByteBuf<?>)
                         {
-                            task.setData(intermediateResult);
-                            long version = task.version();
-                            task.flowDone();
-                            if (task.getChannelInfo().isOpen())
+                            if (workMode == WorkMode.ASYNC_WITHOUT_ORDER)
                             {
-                                task.write(version);
+                                UnOrderedWriteCompletionHandler writeCompletionHandler = (UnOrderedWriteCompletionHandler) task.getWriteCompletionHandler();
+                                writeCompletionHandler.askToWrite((ByteBuf<?>) intermediateResult);
+                            }
+                            else
+                            {
+                                task.setData(intermediateResult);
+                                long version = task.version();
+                                task.flowDone();
+                                if (task.getChannelInfo().isOpen())
+                                {
+                                    task.write(version);
+                                }
                             }
                         }
                         else
@@ -85,6 +100,7 @@ public class AsyncTaskCenter
                     }
                     catch (Exception e)
                     {
+                        e.printStackTrace();
                         task.getReadCompletionHandler().catchThrowable(e);
                     }
                 }

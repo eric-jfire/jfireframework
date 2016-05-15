@@ -10,8 +10,6 @@ import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.AioServer;
-import com.jfireframework.jnet.server.CompletionHandler.async.AsyncReadCompletionHandler;
-import com.jfireframework.jnet.server.CompletionHandler.async.AsyncServerInternalResultAction;
 import com.jfireframework.jnet.server.util.AsyncTaskCenter;
 import com.jfireframework.jnet.server.util.ServerConfig;
 import com.jfireframework.jnet.server.util.WorkMode;
@@ -25,32 +23,29 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
     private final WorkMode        workMode;
     private final WriteMode       writeMode;
     private final AsyncTaskCenter asyncTaskCenter;
+    private final int             maxBatchWriteNum;
     
     public AcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
         this.initListener = serverConfig.getInitListener();
         Verify.notNull(initListener, "initListener不能为空");
         this.aioServer = aioServer;
+        maxBatchWriteNum = serverConfig.getMaxBatchWriteNum();
         writeMode = serverConfig.getWriteMode();
         workMode = serverConfig.getWorkMode();
         switch (workMode)
         {
-            case ASYNC_WITHOUT_ORDER:
-                AsyncServerInternalResultAction[] actions = new AsyncServerInternalResultAction[serverConfig.getAsyncThreadSize()];
-                for (int i = 0; i < actions.length; i++)
-                {
-                    actions[i] = new AsyncServerInternalResultAction();
-                }
-                asyncTaskCenter = null;
-                break;
-            case SYNC:
+            case SYNC_WITH_ORDER:
                 asyncTaskCenter = null;
                 break;
             case ASYNC_WITH_ORDER:
-                asyncTaskCenter = new AsyncTaskCenter(serverConfig.getAsyncThreadSize());
+                asyncTaskCenter = new AsyncTaskCenter(serverConfig.getAsyncThreadSize(), workMode);
                 break;
-            case MIX:
-                asyncTaskCenter = new AsyncTaskCenter(serverConfig.getAsyncThreadSize());
+            case MIX_WITH_ORDER:
+                asyncTaskCenter = new AsyncTaskCenter(serverConfig.getAsyncThreadSize(), workMode);
+                break;
+            case ASYNC_WITHOUT_ORDER:
+                asyncTaskCenter = new AsyncTaskCenter(serverConfig.getAsyncThreadSize(), workMode);
                 break;
             default:
                 asyncTaskCenter = null;
@@ -77,19 +72,8 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
             Verify.notNull(channelInfo.getDataArray(), "没有设置entryArraySize");
             Verify.notNull(channelInfo.getFrameDecodec(), "没有设置framedecodec");
             Verify.notNull(channelInfo.getHandlers(), "没有设置Datahandler");
-            switch (workMode)
-            {
-                case ASYNC_WITHOUT_ORDER:
-                {
-                    AsyncReadCompletionHandler readCompletionHandler = new AsyncReadCompletionHandler(channelInfo, null);
-                    readCompletionHandler.readAndWait();
-                    break;
-                }
-                default:
-                    ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelInfo, workMode, asyncTaskCenter, writeMode);
-                    readCompletionHandler.readAndWait();
-                    break;
-            }
+            ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelInfo, workMode, asyncTaskCenter, writeMode, maxBatchWriteNum);
+            readCompletionHandler.readAndWait();
             aioServer.getServerSocketChannel().accept(null, this);
         }
         catch (Exception e)

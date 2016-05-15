@@ -26,7 +26,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     private final FrameDecodec           frameDecodec;
     private final DataHandler[]          handlers;
     private final DirectByteBuf          ioBuf          = DirectByteBuf.allocate(100);
-    private final ServerChannel      channelInfo;
+    private final ServerChannel          channelInfo;
     private final CpuCachePadingInt      readState      = new CpuCachePadingInt(IN_READ);
     public final static int              IN_READ        = 1;
     public final static int              OUT_OF_READ    = 2;
@@ -44,17 +44,26 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     private boolean                      startCountdown = false;
     private final WorkMode               workMode;
     private final AsyncTaskCenter        asyncTaskCenter;
+    private final int                    capacity;
     
-    public ReadCompletionHandler(ServerChannel channelInfo, WorkMode workMode, AsyncTaskCenter asyncTaskCenter, WriteMode writeMode)
+    public ReadCompletionHandler(ServerChannel channelInfo, WorkMode workMode, AsyncTaskCenter asyncTaskCenter, WriteMode writeMode, int maxBatchWriteNum)
     {
         this.asyncTaskCenter = asyncTaskCenter;
         this.workMode = workMode;
         this.channelInfo = channelInfo;
+        capacity = channelInfo.getDataArraySize();
         frameDecodec = channelInfo.getFrameDecodec();
         handlers = channelInfo.getHandlers();
         readTimeout = channelInfo.getReadTimeout();
         waitTimeout = channelInfo.getWaitTimeout();
-        writeCompletionHandler = new WriteCompletionHandler(this, channelInfo, writeMode);
+        if (workMode == WorkMode.ASYNC_WITHOUT_ORDER)
+        {
+            writeCompletionHandler = new UnOrderedWriteCompletionHandler(this, channelInfo, maxBatchWriteNum);
+        }
+        else
+        {
+            writeCompletionHandler = new OrderedWriteCompletionHandler(this, channelInfo, writeMode, maxBatchWriteNum);
+        }
     }
     
     @Override
@@ -177,7 +186,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             long cursor = sequence.value();
             testcursor: if (cursor >= wrapPoint)
             {
-                wrapPoint = writeCompletionHandler.cursor() + channelInfo.getDataArraySize();
+                wrapPoint = writeCompletionHandler.cursor() + capacity;
                 if (cursor < wrapPoint)
                 {
                     break testcursor;
@@ -185,7 +194,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
                 // 在设置之前，可能写线程已经将所有的数据都写出完毕了并且写线程结束运行。此时就不会有人来唤醒读取线程了
                 readState.set(OUT_OF_READ);
                 // 设置之后必须进行尝试
-                wrapPoint = writeCompletionHandler.cursor() + channelInfo.getDataArraySize();
+                wrapPoint = writeCompletionHandler.cursor() + capacity;
                 if (cursor < wrapPoint)
                 {
                     if (readState.compareAndSwap(OUT_OF_READ, IN_READ))
@@ -204,74 +213,88 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             {
                 return IN_READ;
             }
-            ServerInternalTask task = (ServerInternalTask) channelInfo.getData(cursor);
-            task.init(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
-            sequence.set(cursor + 1);
-            switch (workMode)
+            if (workMode == WorkMode.ASYNC_WITHOUT_ORDER)
             {
-                case MIX:
+                ServerInternalTask task = new ServerInternalTask();
+                task.init(-1, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
+                asyncTaskCenter.addTask(task);
+                sequence.set(cursor + 1);
+                if (ioBuf.remainRead() == 0)
                 {
-                    for (int i = 0; i < handlers.length;)
-                    {
-                        intermediateResult = handlers[i].handle(intermediateResult, task);
-                        if (intermediateResult == DataHandler.skipToWorkRing)
-                        {
-                            break;
-                        }
-                        if (i == task.getIndex())
-                        {
-                            i++;
-                            task.setIndex(i);
-                        }
-                        else
-                        {
-                            i = task.getIndex();
-                        }
-                    }
-                    if (intermediateResult instanceof ByteBuf<?>)
-                    {
-                        task.setData(intermediateResult);
-                        long version = task.version();
-                        task.flowDone();
-                        task.write(version);
-                    }
-                    break;
+                    return IN_READ;
                 }
-                case SYNC:
-                {
-                    for (int i = 0; i < handlers.length;)
-                    {
-                        intermediateResult = handlers[i].handle(intermediateResult, task);
-                        if (i == task.getIndex())
-                        {
-                            i++;
-                            task.setIndex(i);
-                        }
-                        else
-                        {
-                            i = task.getIndex();
-                        }
-                    }
-                    if (intermediateResult instanceof ByteBuf<?>)
-                    {
-                        task.setData(intermediateResult);
-                        long version = task.version();
-                        task.flowDone();
-                        task.write(version);
-                    }
-                    break;
-                }
-                case ASYNC_WITH_ORDER:
-                {
-                    asyncTaskCenter.addTask(task);
-                    break;
-                }
-                default:
-                    throw new RuntimeException("error");
             }
-            if (ioBuf.remainRead() == 0)
+            else
             {
-                return IN_READ;
+                ServerInternalTask task = (ServerInternalTask) channelInfo.getData(cursor);
+                task.init(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
+                sequence.set(cursor + 1);
+                switch (workMode)
+                {
+                    case MIX_WITH_ORDER:
+                    {
+                        for (int i = 0; i < handlers.length;)
+                        {
+                            intermediateResult = handlers[i].handle(intermediateResult, task);
+                            if (intermediateResult == DataHandler.skipToWorkRing)
+                            {
+                                break;
+                            }
+                            if (i == task.getIndex())
+                            {
+                                i++;
+                                task.setIndex(i);
+                            }
+                            else
+                            {
+                                i = task.getIndex();
+                            }
+                        }
+                        if (intermediateResult instanceof ByteBuf<?>)
+                        {
+                            task.setData(intermediateResult);
+                            long version = task.version();
+                            task.flowDone();
+                            task.write(version);
+                        }
+                        break;
+                    }
+                    case SYNC_WITH_ORDER:
+                    {
+                        for (int i = 0; i < handlers.length;)
+                        {
+                            intermediateResult = handlers[i].handle(intermediateResult, task);
+                            if (i == task.getIndex())
+                            {
+                                i++;
+                                task.setIndex(i);
+                            }
+                            else
+                            {
+                                i = task.getIndex();
+                            }
+                        }
+                        if (intermediateResult instanceof ByteBuf<?>)
+                        {
+                            task.setData(intermediateResult);
+                            long version = task.version();
+                            task.flowDone();
+                            task.write(version);
+                        }
+                        break;
+                    }
+                    case ASYNC_WITH_ORDER:
+                    {
+                        asyncTaskCenter.addTask(task);
+                        break;
+                    }
+                    default:
+                        throw new RuntimeException("error");
+                }
+                if (ioBuf.remainRead() == 0)
+                {
+                    return IN_READ;
+                }
             }
         }
     }

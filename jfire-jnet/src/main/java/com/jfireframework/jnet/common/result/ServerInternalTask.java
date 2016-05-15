@@ -32,29 +32,29 @@ public class ServerInternalTask extends AbstractInternalTask
         }
     }
     
-    public static final boolean                                              UNDONE    = false;
-    public static final boolean                                              DONE      = true;
-    private volatile boolean                                                 taskState = UNDONE;
-    private volatile WritePermission                                         writePermission;
-    private UnsafeReferenceFieldUpdater<ServerInternalTask, WritePermission> updater   = new UnsafeReferenceFieldUpdater<>(ServerInternalTask.class, "writePermission");
-    private ServerChannel                                                    channel;
-    private WriteCompletionHandler                                           writeCompletionHandler;
-    private ReadCompletionHandler                                            readCompletionHandler;
+    public static final boolean                                                           UNDONE    = false;
+    public static final boolean                                                           DONE      = true;
+    private volatile boolean                                                              taskState = UNDONE;
+    private volatile WritePermission                                                      writePermission;
+    private static final UnsafeReferenceFieldUpdater<ServerInternalTask, WritePermission> updater   = new UnsafeReferenceFieldUpdater<>(ServerInternalTask.class, "writePermission");
+    private ServerChannel                                                                 channel;
+    private WriteCompletionHandler                                                        writeCompletionHandler;
+    private ReadCompletionHandler                                                         readCompletionHandler;
     
     public ServerInternalTask()
     {
     }
     
-    public ServerInternalTask(long version, Object data, ServerChannel channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, int index)
+    public ServerInternalTask(long version, Object data, ServerChannel channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler orderedWriteCompletionHandler, int index)
     {
-        init(version, data, channelInfo, readCompletionHandler, writeCompletionHandler, index);
+        init(version, data, channelInfo, readCompletionHandler, orderedWriteCompletionHandler, index);
     }
     
-    public void init(long version, Object data, ServerChannel channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, int index)
+    public void init(long version, Object data, ServerChannel channelInfo, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler orderedWriteCompletionHandler, int index)
     {
         this.channel = channelInfo;
         this.readCompletionHandler = readCompletionHandler;
-        this.writeCompletionHandler = writeCompletionHandler;
+        this.writeCompletionHandler = orderedWriteCompletionHandler;
         this.index = index;
         this.data = data;
         updater.orderSet(this, WritePermission.valueOf(WritePermission.UN_take, version));
@@ -137,4 +137,15 @@ public class ServerInternalTask extends AbstractInternalTask
     {
         return readCompletionHandler;
     }
+    
+    public WriteCompletionHandler getWriteCompletionHandler()
+    {
+        return writeCompletionHandler;
+    }
+    
+    public void setWriteCompletionHandler(WriteCompletionHandler writeCompletionHandler)
+    {
+        this.writeCompletionHandler = writeCompletionHandler;
+    }
+    
 }

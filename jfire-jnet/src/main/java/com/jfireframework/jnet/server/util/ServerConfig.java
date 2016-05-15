@@ -18,8 +18,9 @@ public class ServerConfig
     private WaitStrategy        waitStrategy     = new BlockWaitStrategy();
     private int                 socketThreadSize = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
     private int                 asyncThreadSize  = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
-    private WorkMode            workMode         = WorkMode.SYNC;
+    private WorkMode            workMode         = WorkMode.SYNC_WITH_ORDER;
     private WriteMode           writeMode        = WriteMode.BATCH_WRITE;
+    private int                 maxBatchWriteNum = 10;
     
     public WriteMode getWriteMode()
     {
@@ -99,6 +100,17 @@ public class ServerConfig
     public ServerConfig setAsyncThreadSize(int asyncThreadSize)
     {
         this.asyncThreadSize = asyncThreadSize;
+        return this;
+    }
+    
+    public int getMaxBatchWriteNum()
+    {
+        return maxBatchWriteNum;
+    }
+    
+    public ServerConfig setMaxBatchWriteNum(int maxBatchWriteNum)
+    {
+        this.maxBatchWriteNum = maxBatchWriteNum;
         return this;
     }
     
