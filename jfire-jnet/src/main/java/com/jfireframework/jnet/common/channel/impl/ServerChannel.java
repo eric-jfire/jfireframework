@@ -5,10 +5,10 @@ import com.jfireframework.jnet.common.result.ServerInternalTask;
 public class ServerChannel extends AbstractChannel
 {
     @Override
-    public void setDataArrayLength(int resultArrayLength)
+    public void setCapacity(int capacity)
     {
-        super.setDataArrayLength(resultArrayLength);
-        for (int i = 0; i < resultArrayLength; i++)
+        super.setCapacity(capacity);
+        for (int i = 0; i < capacity; i++)
         {
             resultArray[i] = new ServerInternalTask();
         }

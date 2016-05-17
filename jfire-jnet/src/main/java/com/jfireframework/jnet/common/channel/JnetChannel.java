@@ -6,6 +6,11 @@ import com.jfireframework.jnet.common.handler.DataHandler;
 
 public interface JnetChannel
 {
+    
+    public void setCapacity(int capacity);
+    
+    public int capacity();
+    
     public void setFrameDecodec(FrameDecodec frameDecodec);
     
     public void setHandlers(DataHandler... handlers);
@@ -25,11 +30,7 @@ public interface JnetChannel
     
     public boolean isOpen();
     
-    public void setDataArrayLength(int size);
-    
     public Object[] getDataArray();
-    
-    public int getDataArraySize();
     
     public Object getData(long cursor);
     

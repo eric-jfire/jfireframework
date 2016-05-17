@@ -77,7 +77,6 @@ public class ServerConfig
     public ServerConfig setSocketThreadSize(int socketThreadSize)
     {
         this.socketThreadSize = socketThreadSize;
-        
         return this;
     }
     

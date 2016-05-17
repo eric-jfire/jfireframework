@@ -36,7 +36,7 @@ public class AsyncEchoTest
             @Override
             public void channelInit(JnetChannel serverChannelInfo)
             {
-                serverChannelInfo.setDataArrayLength(arraylength);
+                serverChannelInfo.setCapacity(arraylength);
                 serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
                 serverChannelInfo.setHandlers(new EchoHandler(), new EchoHandler2(), new LengthPreHandler(0, 4));
             }
@@ -103,7 +103,7 @@ public class AsyncEchoTest
             public void channelInit(JnetChannel jnetChannel)
             {
                 jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoderByHeap(0, 4, 4, 500));
-                jnetChannel.setDataArrayLength(arraylength);
+                jnetChannel.setCapacity(arraylength);
                 jnetChannel.setHandlers(new DataHandler() {
                     
                     @Override

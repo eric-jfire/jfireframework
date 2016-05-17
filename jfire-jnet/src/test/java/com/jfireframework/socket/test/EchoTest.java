@@ -22,31 +22,31 @@ import com.jfireframework.jnet.server.util.WorkMode;
 
 public class EchoTest
 {
-    private int    threadCount = 10;
+    private int    threadCount = 30;
     private int    sendCount   = 100000;
     private int    arraylength = 1024;
-    private String ip          = "127.0.0.1";
+    private String ip          = "192.168.10.51";
     
     @Test
     public void test() throws Throwable
     {
-        ServerConfig config = new ServerConfig();
-        config.setWorkMode(WorkMode.SYNC_WITH_ORDER);
-        config.setSocketThreadSize(10);
-        config.setAsyncThreadSize(1);
-        config.setInitListener(new ChannelInitListener() {
-            
-            @Override
-            public void channelInit(JnetChannel serverChannelInfo)
-            {
-                serverChannelInfo.setDataArrayLength(arraylength);
-                serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
-                serverChannelInfo.setHandlers(new EchoHandler());
-            }
-        });
-        config.setPort(8554);
-        AioServer aioServer = new AioServer(config);
-        aioServer.start();
+//        ServerConfig config = new ServerConfig();
+//        config.setWorkMode(WorkMode.SYNC_WITH_ORDER);
+//        config.setSocketThreadSize(10);
+//        config.setAsyncThreadSize(1);
+//        config.setInitListener(new ChannelInitListener() {
+//            
+//            @Override
+//            public void channelInit(JnetChannel serverChannelInfo)
+//            {
+//                serverChannelInfo.setCapacity(arraylength);
+//                serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
+//                serverChannelInfo.setHandlers(new EchoHandler());
+//            }
+//        });
+//        config.setPort(8554);
+//        AioServer aioServer = new AioServer(config);
+//        aioServer.start();
         for (int index = 1; index <= threadCount; index++)
         {
             Thread[] threads = new Thread[index];
@@ -110,7 +110,7 @@ public class EchoTest
             public void channelInit(JnetChannel jnetChannel)
             {
                 jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoderByHeap(0, 4, 4, 500));
-                jnetChannel.setDataArrayLength(arraylength);
+                jnetChannel.setCapacity(arraylength);
                 jnetChannel.setHandlers(new DataHandler() {
                     
                     @Override

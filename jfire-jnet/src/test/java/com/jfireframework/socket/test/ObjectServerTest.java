@@ -31,7 +31,7 @@ public class ObjectServerTest
             @Override
             public void channelInit(JnetChannel serverChannelInfo)
             {
-                serverChannelInfo.setDataArrayLength(128);
+                serverChannelInfo.setCapacity(128);
                 serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 1000));
                 serverChannelInfo.setHandlers(new DataHandler() {
                     
@@ -115,7 +115,7 @@ public class ObjectServerTest
                         return null;
                     }
                 });
-                jnetChannel.setDataArrayLength(128);
+                jnetChannel.setCapacity(128);
             }
         });
         aioClient.connect();

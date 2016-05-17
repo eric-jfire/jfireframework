@@ -26,7 +26,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     private final FrameDecodec           frameDecodec;
     private final DataHandler[]          handlers;
     private final DirectByteBuf          ioBuf          = DirectByteBuf.allocate(100);
-    private final ServerChannel          channelInfo;
+    private final ServerChannel          serverChannel;
     private final CpuCachePadingInt      readState      = new CpuCachePadingInt(IN_READ);
     public final static int              IN_READ        = 1;
     public final static int              OUT_OF_READ    = 2;
@@ -46,23 +46,23 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     private final AsyncTaskCenter        asyncTaskCenter;
     private final int                    capacity;
     
-    public ReadCompletionHandler(ServerChannel channelInfo, WorkMode workMode, AsyncTaskCenter asyncTaskCenter, WriteMode writeMode, int maxBatchWriteNum)
+    public ReadCompletionHandler(ServerChannel serverChannel, WorkMode workMode, AsyncTaskCenter asyncTaskCenter, WriteMode writeMode, int maxBatchWriteNum)
     {
         this.asyncTaskCenter = asyncTaskCenter;
         this.workMode = workMode;
-        this.channelInfo = channelInfo;
-        capacity = channelInfo.getDataArraySize();
-        frameDecodec = channelInfo.getFrameDecodec();
-        handlers = channelInfo.getHandlers();
-        readTimeout = channelInfo.getReadTimeout();
-        waitTimeout = channelInfo.getWaitTimeout();
+        this.serverChannel = serverChannel;
+        capacity = serverChannel.capacity();
+        frameDecodec = serverChannel.getFrameDecodec();
+        handlers = serverChannel.getHandlers();
+        readTimeout = serverChannel.getReadTimeout();
+        waitTimeout = serverChannel.getWaitTimeout();
         if (workMode == WorkMode.ASYNC_WITHOUT_ORDER)
         {
-            writeCompletionHandler = new UnOrderedWriteCompletionHandler(this, channelInfo, maxBatchWriteNum);
+            writeCompletionHandler = new UnOrderedWriteCompletionHandler(this, serverChannel, maxBatchWriteNum);
         }
         else
         {
-            writeCompletionHandler = new OrderedWriteCompletionHandler(this, channelInfo, writeMode, maxBatchWriteNum);
+            writeCompletionHandler = new OrderedWriteCompletionHandler(this, serverChannel, writeMode, maxBatchWriteNum);
         }
     }
     
@@ -94,7 +94,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     {
         try
         {
-            ServerInternalTask result = new ServerInternalTask(-1, exc, channelInfo, this, writeCompletionHandler, 0);
+            ServerInternalTask result = new ServerInternalTask(-1, exc, serverChannel, this, writeCompletionHandler, 0);
             Object intermediateResult = exc;
             try
             {
@@ -112,7 +112,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
         {
             logger.error("关闭通道异常", e);
         }
-        channelInfo.closeChannel();
+        serverChannel.closeChannel();
         /**
          * 这个方法里不能去释放iobuf。因为这个方法有可能是异步处理的时候被调用，这样通道还没有关闭的情况下就先释放了iobuf，
          * 然后关闭通道又释放一次就会造成错误
@@ -216,7 +216,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             if (workMode == WorkMode.ASYNC_WITHOUT_ORDER)
             {
                 ServerInternalTask task = new ServerInternalTask();
-                task.init(-1, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
+                task.init(-1, intermediateResult, serverChannel, this, writeCompletionHandler, 0);
                 asyncTaskCenter.addTask(task);
                 sequence.set(cursor + 1);
                 if (ioBuf.remainRead() == 0)
@@ -226,8 +226,8 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             }
             else
             {
-                ServerInternalTask task = (ServerInternalTask) channelInfo.getData(cursor);
-                task.init(cursor, intermediateResult, channelInfo, this, writeCompletionHandler, 0);
+                ServerInternalTask task = (ServerInternalTask) serverChannel.getData(cursor);
+                task.init(cursor, intermediateResult, serverChannel, this, writeCompletionHandler, 0);
                 sequence.set(cursor + 1);
                 switch (workMode)
                 {
@@ -310,7 +310,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     public void readAndWait()
     {
         startCountdown = false;
-        channelInfo.getSocketChannel().read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, channelInfo, this);
+        serverChannel.getSocketChannel().read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, serverChannel, this);
     }
     
     /**
@@ -337,7 +337,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             endReadTime = lastReadTime + readTimeout;
             startCountdown = true;
         }
-        channelInfo.getSocketChannel().read(getWriteBuffer(), getRemainTime(), TimeUnit.MILLISECONDS, channelInfo, this);
+        serverChannel.getSocketChannel().read(getWriteBuffer(), getRemainTime(), TimeUnit.MILLISECONDS, serverChannel, this);
         lastReadTime = System.currentTimeMillis();
     }
     

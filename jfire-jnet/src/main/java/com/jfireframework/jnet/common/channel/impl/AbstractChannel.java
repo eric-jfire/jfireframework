@@ -30,6 +30,7 @@ public abstract class AbstractChannel implements JnetChannel
     protected String                    remoteAddress;
     protected String                    localAddress;
     protected static final Unsafe       unsafe      = ReflectUtil.getUnsafe();
+    protected int                       capacity    = 0;
     static
     {
         base = unsafe.arrayBaseOffset(Object[].class);
@@ -109,12 +110,13 @@ public abstract class AbstractChannel implements JnetChannel
     }
     
     @Override
-    public void setDataArrayLength(int resultArrayLength)
+    public void setCapacity(int capacity)
     {
-        Verify.True(resultArrayLength > 1, "数组的大小必须大于1");
-        Verify.True(Integer.bitCount(resultArrayLength) == 1, "数组的大小必须是2的次方幂");
-        resultArray = new Object[resultArrayLength];
-        resultArrayLengthMask = resultArrayLength - 1;
+        this.capacity = capacity;
+        Verify.True(capacity > 1, "数组的大小必须大于1");
+        Verify.True(Integer.bitCount(capacity) == 1, "数组的大小必须是2的次方幂");
+        resultArray = new Object[capacity];
+        resultArrayLengthMask = capacity - 1;
     }
     
     @Override
@@ -159,10 +161,9 @@ public abstract class AbstractChannel implements JnetChannel
         return waitTimeout;
     }
     
-    @Override
-    public int getDataArraySize()
+    public int capacity()
     {
-        return resultArray.length;
+        return capacity;
     }
     
     @Override

@@ -8,8 +8,8 @@ import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
+import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoderByHeap;
 import com.jfireframework.jnet.common.exception.JnetException;
@@ -22,10 +22,10 @@ import com.jfireframework.jnet.server.util.WorkMode;
 
 public class SingleSpeedTest
 {
-    private int    threadCount = 10;
-    private int    sendCount   = 100000;
-    private int    arraylength = 1024;
-    private String ip          = "127.0.0.1";
+    private int    threadCount = 50;
+    private int    sendCount   = 1000000;
+    private int    arraylength = 8;
+    private String ip          = "192.168.10.51";
     
     @Test
     public void test() throws Throwable
@@ -39,7 +39,7 @@ public class SingleSpeedTest
             @Override
             public void channelInit(JnetChannel serverChannelInfo)
             {
-                serverChannelInfo.setDataArrayLength(arraylength);
+                serverChannelInfo.setCapacity(arraylength);
                 serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
                 serverChannelInfo.setHandlers(new EchoHandler());
             }
@@ -107,7 +107,7 @@ public class SingleSpeedTest
             public void channelInit(JnetChannel jnetChannel)
             {
                 jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoderByHeap(0, 4, 4, 500));
-                jnetChannel.setDataArrayLength(arraylength);
+                jnetChannel.setCapacity(arraylength);
                 jnetChannel.setHandlers(new DataHandler() {
                     
                     @Override
