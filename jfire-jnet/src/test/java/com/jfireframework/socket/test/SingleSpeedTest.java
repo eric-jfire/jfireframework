@@ -1,5 +1,6 @@
 package com.jfireframework.socket.test;
 
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.Assert;
@@ -23,8 +24,8 @@ import com.jfireframework.jnet.server.util.WorkMode;
 public class SingleSpeedTest
 {
     private int    threadCount = 50;
-    private int    sendCount   = 1000000;
-    private int    arraylength = 8;
+    private int    sendCount   = 3000000;
+    private int    arraylength = 1024;
     private String ip          = "192.168.10.51";
     
     @Test
@@ -48,6 +49,7 @@ public class SingleSpeedTest
         AioServer aioServer = new AioServer(config);
         aioServer.start();
         Thread[] threads = new Thread[threadCount];
+        final CyclicBarrier barrier = new CyclicBarrier(threadCount);
         for (int i = 0; i < threads.length; i++)
         {
             threads[i] = new Thread(new Runnable() {
@@ -57,6 +59,7 @@ public class SingleSpeedTest
                 {
                     try
                     {
+                        barrier.await();
                         connecttest();
                     }
                     catch (Throwable e)

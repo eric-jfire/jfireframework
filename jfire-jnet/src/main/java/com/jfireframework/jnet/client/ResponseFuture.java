@@ -69,13 +69,18 @@ public class ResponseFuture implements Future<Object>
     @Override
     public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
     {
+        timeout = unit.toNanos(timeout);
         ownerThread = Thread.currentThread();
-        long t0 = System.currentTimeMillis();
+        long t0 = System.nanoTime();
         while (dataState == UN_READY && timeout > 0)
         {
-            LockSupport.park(unit.toNanos(timeout));
-            timeout -= System.currentTimeMillis() - t0;
-            t0 = System.currentTimeMillis();
+            LockSupport.parkNanos(timeout);
+            timeout -= System.nanoTime() - t0;
+            t0 = System.nanoTime();
+        }
+        if (dataState == UN_READY)
+        {
+            throw new TimeoutException("等待时间已到达");
         }
         if (result == NORESULT)
         {

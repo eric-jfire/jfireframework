@@ -47,8 +47,8 @@ public class FutureClientChannelInfo extends AbstractClientChannel
     {
         while (writeCursor >= wrapPoint)
         {
-            wrapPoint = readCompleter.cursor() + resultArray.length;
-            if (wrapPoint < wrapPoint)
+            wrapPoint = readCompleter.cursor() + capacity;
+            if (writeCursor < wrapPoint)
             {
                 break;
             }
@@ -56,7 +56,7 @@ public class FutureClientChannelInfo extends AbstractClientChannel
             writeThread = Thread.currentThread();
             needUnpark = true;
             // 在设置needUnpark之后进行检查，以避免数据其实都已经被读取而没有线程可以unpark该线程
-            wrapPoint = readCompleter.cursor() + resultArray.length;
+            wrapPoint = readCompleter.cursor() + capacity;
             if (writeCursor >= wrapPoint)
             {
                 LockSupport.park();
