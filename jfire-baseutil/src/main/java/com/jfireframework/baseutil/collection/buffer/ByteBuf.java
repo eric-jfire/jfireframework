@@ -25,13 +25,13 @@ public abstract class ByteBuf<T>
     protected boolean             traceFlag    = false;
     protected ByteBuffer          cachedNioBuffer;
     
-    public ByteBuf<?> maskRead()
+    public ByteBuf<T> maskRead()
     {
         maskRead = readIndex;
         return this;
     }
     
-    public ByteBuf<?> resetRead()
+    public ByteBuf<T> resetRead()
     {
         readIndex = maskRead;
         return this;
@@ -65,13 +65,13 @@ public abstract class ByteBuf<T>
         return writeIndex;
     }
     
-    public ByteBuf<?> maskWrite()
+    public ByteBuf<T> maskWrite()
     {
         maskWrite = writeIndex;
         return this;
     }
     
-    public ByteBuf<?> resetWrite()
+    public ByteBuf<T> resetWrite()
     {
         writeIndex = maskWrite;
         return this;
@@ -158,7 +158,7 @@ public abstract class ByteBuf<T>
      * 
      * @param b
      */
-    public ByteBuf<?> put(byte b)
+    public ByteBuf<T> put(byte b)
     {
         int newCount = writeIndex + 1;
         ensureCapacity(newCount);
@@ -349,7 +349,7 @@ public abstract class ByteBuf<T>
      * @param byteBuf
      * @return
      */
-    public ByteBuf<T> put(ByteBuf<?> byteBuf)
+    public ByteBuf<T> put(ByteBuf<T> byteBuf)
     {
         return put(byteBuf, byteBuf.remainRead());
     }
@@ -361,7 +361,7 @@ public abstract class ByteBuf<T>
      * @param length
      * @return
      */
-    public ByteBuf<T> put(ByteBuf<?> byteBuf, int length)
+    public ByteBuf<T> put(ByteBuf<T> byteBuf, int length)
     {
         int newWriteIndex = writeIndex + length;
         ensureCapacity(newWriteIndex);
@@ -384,7 +384,7 @@ public abstract class ByteBuf<T>
      * @param i
      * @return
      */
-    public ByteBuf<?> writeInt(int i)
+    public ByteBuf<T> writeInt(int i)
     {
         int newWriteIndex = writeIndex + 4;
         ensureCapacity(newWriteIndex);
@@ -393,7 +393,7 @@ public abstract class ByteBuf<T>
         return this;
     }
     
-    public ByteBuf<?> writeInt(int index, int i)
+    public ByteBuf<T> writeInt(int index, int i)
     {
         _writeInt(index, i);
         return this;
@@ -401,7 +401,7 @@ public abstract class ByteBuf<T>
     
     protected abstract void _writeInt(int index, int i);
     
-    public ByteBuf<?> writeShort(short s)
+    public ByteBuf<T> writeShort(short s)
     {
         int newWriteIndex = writeIndex + 2;
         ensureCapacity(newWriteIndex);
@@ -410,7 +410,7 @@ public abstract class ByteBuf<T>
         return this;
     }
     
-    public ByteBuf<?> writeShort(int index, short s)
+    public ByteBuf<T> writeShort(int index, short s)
     {
         _writeShort(index, s);
         return this;
@@ -418,7 +418,7 @@ public abstract class ByteBuf<T>
     
     protected abstract void _writeShort(int index, short s);
     
-    public ByteBuf<?> writeLong(long l)
+    public ByteBuf<T> writeLong(long l)
     {
         int newWriteIndex = writeIndex + 8;
         ensureCapacity(newWriteIndex);
@@ -427,7 +427,7 @@ public abstract class ByteBuf<T>
         return this;
     }
     
-    public ByteBuf<?> writeMutableLengthLong(long num)
+    public ByteBuf<T> writeMutableLengthLong(long num)
     {
         ensureCapacity(writeIndex + 9);
         if (num >= -112 && num <= 127)
@@ -476,7 +476,7 @@ public abstract class ByteBuf<T>
         }
     }
     
-    public ByteBuf<?> writeLong(int index, long l)
+    public ByteBuf<T> writeLong(int index, long l)
     {
         _writeLong(index, l);
         return this;
@@ -484,27 +484,27 @@ public abstract class ByteBuf<T>
     
     protected abstract void _writeLong(int index, long l);
     
-    public ByteBuf<?> writeFloat(float f)
+    public ByteBuf<T> writeFloat(float f)
     {
         return writeInt(Float.floatToRawIntBits(f));
     }
     
-    public ByteBuf<?> writeFloat(int index, float f)
+    public ByteBuf<T> writeFloat(int index, float f)
     {
         return writeInt(index, Float.floatToRawIntBits(f));
     }
     
-    public ByteBuf<?> writeDouble(double d)
+    public ByteBuf<T> writeDouble(double d)
     {
         return writeLong(Double.doubleToRawLongBits(d));
     }
     
-    public ByteBuf<?> writeDouble(int index, double d)
+    public ByteBuf<T> writeDouble(int index, double d)
     {
         return writeLong(index, Double.doubleToRawLongBits(d));
     }
     
-    public ByteBuf<?> writeChar(char c)
+    public ByteBuf<T> writeChar(char c)
     {
         int newWriteIndex = writeIndex + 2;
         ensureCapacity(newWriteIndex);
@@ -513,7 +513,7 @@ public abstract class ByteBuf<T>
         return this;
     }
     
-    public ByteBuf<?> writeChar(int index, char c)
+    public ByteBuf<T> writeChar(int index, char c)
     {
         _writeChar(index, c);
         return this;
@@ -521,7 +521,7 @@ public abstract class ByteBuf<T>
     
     protected abstract void _writeChar(int index, char c);
     
-    public ByteBuf<?> writeBoolean(boolean b)
+    public ByteBuf<T> writeBoolean(boolean b)
     {
         int newWriteIndex = writeIndex + 1;
         ensureCapacity(newWriteIndex);
@@ -634,7 +634,7 @@ public abstract class ByteBuf<T>
      * @param byteCache
      * @return
      */
-    public ByteBuf<?> putByteCache(ByteCache byteCache)
+    public ByteBuf<T> putByteCache(ByteCache byteCache)
     {
         put(byteCache.getDirectArray(), byteCache.getReadindex(), byteCache.getWriteIndex());
         return this;
@@ -646,13 +646,13 @@ public abstract class ByteBuf<T>
      * @param byteCache
      * @return
      */
-    public ByteBuf<?> get(ByteCache byteCache)
+    public ByteBuf<T> get(ByteCache byteCache)
     {
         byteCache.putByteBuffer(nioBuffer());
         return this;
     }
     
-    public ByteBuf<?> writeIntArray(int[] array)
+    public ByteBuf<T> writeIntArray(int[] array)
     {
         writeInt(array.length);
         for (int i : array)
@@ -683,7 +683,7 @@ public abstract class ByteBuf<T>
         return tmp;
     }
     
-    public ByteBuf<?> writeLongArray(long[] array)
+    public ByteBuf<T> writeLongArray(long[] array)
     {
         writeInt(array.length);
         for (long i : array)
@@ -724,7 +724,7 @@ public abstract class ByteBuf<T>
         return tmp;
     }
     
-    public ByteBuf<?> writeFloatArray(float[] array)
+    public ByteBuf<T> writeFloatArray(float[] array)
     {
         writeInt(array.length);
         for (float each : array)
@@ -750,7 +750,7 @@ public abstract class ByteBuf<T>
         return tmp;
     }
     
-    public ByteBuf<?> writeDoubleArray(double[] array)
+    public ByteBuf<T> writeDoubleArray(double[] array)
     {
         writeInt(array.length);
         for (double each : array)
@@ -776,7 +776,7 @@ public abstract class ByteBuf<T>
         return tmp;
     }
     
-    public ByteBuf<?> writeShortArray(short[] array)
+    public ByteBuf<T> writeShortArray(short[] array)
     {
         writeInt(array.length);
         for (short each : array)
@@ -802,7 +802,7 @@ public abstract class ByteBuf<T>
         return tmp;
     }
     
-    public ByteBuf<?> writeCharArray(char[] array)
+    public ByteBuf<T> writeCharArray(char[] array)
     {
         writeInt(array.length);
         ensureCapacity(array.length * 2 + writeIndex);
@@ -830,7 +830,7 @@ public abstract class ByteBuf<T>
         return tmp;
     }
     
-    public ByteBuf<?> writeByteArray(byte[] array)
+    public ByteBuf<T> writeByteArray(byte[] array)
     {
         writeInt(array.length);
         put(array);
@@ -850,7 +850,7 @@ public abstract class ByteBuf<T>
         return tmp;
     }
     
-    public ByteBuf<?> writeBooleanArray(boolean[] array)
+    public ByteBuf<T> writeBooleanArray(boolean[] array)
     {
         writeInt(array.length);
         for (boolean each : array)
