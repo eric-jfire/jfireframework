@@ -10,6 +10,7 @@ import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import com.jfireframework.baseutil.collection.set.LightSet;
+import com.jfireframework.baseutil.exception.UnSupportException;
 
 /**
  * 包扫描类，可以扫描某个路径下所有的class
@@ -51,7 +52,7 @@ public class PackageScan
                 }
                 catch (URISyntaxException e)
                 {
-                    throw new RuntimeException("路径：'" + url.toString() + "'不正确", e);
+                    throw new UnSupportException("路径：'" + url.toString() + "'不正确", e);
                 }
             }
             else if (url.getProtocol().contains("jar"))
@@ -156,7 +157,7 @@ public class PackageScan
                 }
                 catch (Exception e)
                 {
-                    throw new RuntimeException("url地址：'" + jarPath + "'不正确", e);
+                    throw new UnSupportException("url地址：'" + jarPath + "'不正确", e);
                 }
             }
         }

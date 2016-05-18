@@ -1,14 +1,15 @@
 package com.jfireframework.baseutil.verify;
 
 import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.exception.VerifyException;
 
-public class Verify
+public final class Verify
 {
     public static void Null(Object target, String msg, Object... params)
     {
         if (target != null)
         {
-            throw new RuntimeException(StringUtil.format(msg, params));
+            throw new VerifyException(StringUtil.format(msg, params));
         }
     }
     
@@ -16,7 +17,7 @@ public class Verify
     {
         if (target == null)
         {
-            throw new RuntimeException(StringUtil.format(msg, params));
+            throw new VerifyException(StringUtil.format(msg, params));
         }
     }
     
@@ -24,7 +25,7 @@ public class Verify
     {
         if (target)
         {
-            throw new RuntimeException(StringUtil.format(msg, params));
+            throw new VerifyException(StringUtil.format(msg, params));
         }
     }
     
@@ -32,7 +33,7 @@ public class Verify
     {
         if (target == false)
         {
-            throw new RuntimeException(StringUtil.format(msg, params));
+            throw new VerifyException(StringUtil.format(msg, params));
         }
     }
     
@@ -46,9 +47,9 @@ public class Verify
      */
     public static void matchType(Object target, Class<?> type, String msg, Object... params)
     {
-        if (target.getClass().equals(type) == false)
+        if (target.getClass() != type)
         {
-            throw new RuntimeException(StringUtil.format(msg, params));
+            throw new VerifyException(StringUtil.format(msg, params));
         }
     }
     
@@ -64,20 +65,20 @@ public class Verify
     {
         if (o1.equals(o2) == false)
         {
-            throw new RuntimeException(StringUtil.format(msg, params));
+            throw new VerifyException(StringUtil.format(msg, params));
         }
     }
     
     public static void error(String msg, Object... params)
     {
-        throw new RuntimeException(StringUtil.format(msg, params));
+        throw new VerifyException(StringUtil.format(msg, params));
     }
     
     public static void exist(Object entity, String msg, Object... params)
     {
         if (entity == null)
         {
-            throw new RuntimeException(StringUtil.format(msg, params));
+            throw new VerifyException(StringUtil.format(msg, params));
         }
     }
 }

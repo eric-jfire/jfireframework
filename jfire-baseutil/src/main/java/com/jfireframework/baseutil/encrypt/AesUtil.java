@@ -3,6 +3,8 @@ package com.jfireframework.baseutil.encrypt;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.exception.UnSupportException;
 
 /**
  * aes加解密工具类，注意，该类为非线程安全
@@ -29,25 +31,25 @@ public class AesUtil implements EnDecrpt
             }
             catch (Exception e)
             {
-                throw new RuntimeException(e);
+                throw new JustThrowException(e);
             }
         }
         else
         {
-            throw new RuntimeException("默认只支持16byte的密钥");
+            throw new UnSupportException("默认只支持16byte的密钥");
         }
     }
     
     @Override
     public void setPublicKey(byte[] publicKeyBytes)
     {
-        throw new RuntimeException("AES为对称加密，无公钥");
+        throw new UnSupportException("AES为对称加密，无公钥");
     }
     
     @Override
     public void setPrivateKey(byte[] privateKeyBytes)
     {
-        throw new RuntimeException("AES为对称加密，无私钥");
+        throw new UnSupportException("AES为对称加密，无私钥");
     }
     
     @Override
@@ -59,7 +61,7 @@ public class AesUtil implements EnDecrpt
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     
@@ -72,7 +74,7 @@ public class AesUtil implements EnDecrpt
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     
@@ -84,13 +86,13 @@ public class AesUtil implements EnDecrpt
     @Override
     public byte[] sign(byte[] src)
     {
-        throw new RuntimeException("aes无签名功能");
+        throw new UnSupportException("aes无签名功能");
     }
     
     @Override
     public boolean check(byte[] src, byte[] sign)
     {
-        throw new RuntimeException("aes无签名功能");
+        throw new UnSupportException("aes无签名功能");
     }
     
 }

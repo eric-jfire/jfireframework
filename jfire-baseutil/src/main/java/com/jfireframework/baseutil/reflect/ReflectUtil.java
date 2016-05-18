@@ -12,6 +12,8 @@ import com.jfireframework.baseutil.annotation.IgnoreField;
 import com.jfireframework.baseutil.code.CodeLocation;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.collection.set.LightSet;
+import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.verify.Verify;
 import sun.misc.Unsafe;
 import sun.reflect.MethodAccessor;
@@ -46,7 +48,7 @@ public final class ReflectUtil
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     
@@ -73,7 +75,7 @@ public final class ReflectUtil
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     
@@ -93,7 +95,7 @@ public final class ReflectUtil
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     
@@ -135,7 +137,7 @@ public final class ReflectUtil
     }
     
     private final static Comparator<Method> METHOD_COMPARATOR = new Comparator<Method>() {
-        
+        // 只希望去重。并且希望子类的method在数组中排在前面，所以这里都返回1
         @Override
         public int compare(Method o1, Method o2)
         {
@@ -210,7 +212,7 @@ public final class ReflectUtil
         }
         else
         {
-            throw new RuntimeException(log);
+            throw new UnSupportException(log);
         }
     }
     
@@ -249,7 +251,7 @@ public final class ReflectUtil
                 }
                 catch (NoSuchMethodException e)
                 {
-                    throw new RuntimeException(e);
+                    throw new JustThrowException(e);
                 }
             }
             if (tmp.endsWith(")"))
@@ -295,7 +297,7 @@ public final class ReflectUtil
                         }
                         catch (NoSuchMethodException e1)
                         {
-                            throw new RuntimeException("给定的参数有异常，没有对应的方法，请检查" + name);
+                            throw new UnSupportException("给定的参数有异常，没有对应的方法，请检查" + name);
                         }
                     }
                     
@@ -370,11 +372,13 @@ public final class ReflectUtil
         {
             for (Method each : ckass.getDeclaredMethods())
             {
-                if (Modifier.isPublic(each.getModifiers()) == false || each.isAnnotationPresent(IgnoreField.class) || each.getParameterTypes().length != 1 || each.getName().startsWith("set") == false)
-                {
-                    continue;
-                }
-                if (each.getName().equals("set"))
+                if (
+                    Modifier.isPublic(each.getModifiers()) == false//
+                            || each.isAnnotationPresent(IgnoreField.class)//
+                            || each.getParameterTypes().length != 1//
+                            || each.getName().startsWith("set") == false//
+                            || each.getName().equals("set")
+                )
                 {
                     continue;
                 }
@@ -412,7 +416,7 @@ public final class ReflectUtil
         }
         catch (Exception e)
         {
-            return null;
+            throw new JustThrowException(e);
         }
     }
     
@@ -433,7 +437,7 @@ public final class ReflectUtil
         }
         catch (Exception e)
         {
-            return null;
+            throw new JustThrowException(e);
         }
         
     }
@@ -457,15 +461,14 @@ public final class ReflectUtil
             }
             catch (Exception e)
             {
-                e.printStackTrace();
                 ckass = ckass.getSuperclass();
                 if (ckass == null)
                 {
-                    throw new RuntimeException(StringUtil.format("找不到对应的方法,请检查{}.{}", ori.getName(), name));
+                    throw new UnSupportException(StringUtil.format("找不到对应的方法,请检查{}.{}", ori.getName(), name));
                 }
             }
-        } while (ckass.equals(Object.class) != false);
-        throw new RuntimeException("找不到对应的方法");
+        } while (ckass != Object.class);
+        throw new UnSupportException("找不到对应的方法");
     }
 }
 

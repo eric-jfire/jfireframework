@@ -1,32 +1,17 @@
 package com.jfireframework.baseutil;
 
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.reflect.ReflectUtil;
-import sun.misc.Unsafe;
+import com.jfireframework.baseutil.exception.UnSupportException;
 
-@SuppressWarnings("restriction")
 public class StringUtil
 {
-    private static ThreadLocal<StringCache> cacheLocal   = new ThreadLocal<StringCache>() {
-                                                             protected StringCache initialValue()
-                                                             {
-                                                                 return new StringCache();
-                                                             }
-                                                         };
-    private static final char[]             DIGITS_LOWER = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-    private static long                     strOffset;
-    private static Unsafe                   unsafe       = ReflectUtil.getUnsafe();
-    
-    static
-    {
-        try
-        {
-            strOffset = ReflectUtil.getUnsafe().objectFieldOffset(String.class.getDeclaredField("value"));
-        }
-        catch (Exception e)
-        {
-        }
-    }
+    private final static ThreadLocal<StringCache> cacheLocal   = new ThreadLocal<StringCache>() {
+                                                                   protected StringCache initialValue()
+                                                                   {
+                                                                       return new StringCache();
+                                                                   }
+                                                               };
+    private static final char[]                   DIGITS_LOWER = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
     
     /**
      * 将byte数组以16进制的形式输出
@@ -78,7 +63,7 @@ public class StringUtil
     {
         if ((hexChars.length & 0x01) == 1)
         {
-            throw new RuntimeException("用于解析的十六进制字符数组的长度不对，不是2的整数倍");
+            throw new UnSupportException("用于解析的十六进制字符数组的长度不对，不是2的整数倍");
         }
         int length = hexChars.length / 2;
         byte[] result = new byte[length];
@@ -101,7 +86,7 @@ public class StringUtil
                 return index;
             }
         }
-        throw new RuntimeException("字符" + c + "不是小写十六进制的字符");
+        throw new UnSupportException("字符" + c + "不是小写十六进制的字符");
     }
     
     /**
@@ -187,7 +172,7 @@ public class StringUtil
     {
         StringCache cache = cacheLocal.get();
         cache.clear();
-        char[] value = (char[]) unsafe.getObject(pattern, strOffset);
+        char[] value = pattern.toCharArray();
         int total = params.length;
         int start = 0;
         int pre = 0;

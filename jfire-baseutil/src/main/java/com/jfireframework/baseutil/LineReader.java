@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import com.jfireframework.baseutil.collection.ByteCache;
+import com.jfireframework.baseutil.exception.JustThrowException;
 
 public class LineReader
 {
@@ -22,7 +23,7 @@ public class LineReader
     /** 换行符 /n */
     private final static int LF         = 0x0A;
     private int              readLength = 1024;
-                                        
+    
     public LineReader(File file, Charset charset, int readLength)
     {
         this(file, charset);
@@ -44,7 +45,7 @@ public class LineReader
         }
         catch (FileNotFoundException e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     

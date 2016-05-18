@@ -9,6 +9,7 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.exception.JustThrowException;
 
 public class Md5Util
 {
@@ -24,7 +25,7 @@ public class Md5Util
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     
@@ -39,7 +40,7 @@ public class Md5Util
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     
@@ -80,7 +81,7 @@ public class Md5Util
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
         finally
         {

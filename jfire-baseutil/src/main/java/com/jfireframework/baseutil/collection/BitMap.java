@@ -1,5 +1,7 @@
 package com.jfireframework.baseutil.collection;
 
+import com.jfireframework.baseutil.exception.UnSupportException;
+
 public class BitMap
 {
     private byte[] array = new byte[1];
@@ -52,7 +54,7 @@ public class BitMap
                 case (byte) 0x80:
                     return head + 1;
                 default:
-                    throw new RuntimeException("error");
+                    throw new UnSupportException("error");
             }
         }
         return 0;

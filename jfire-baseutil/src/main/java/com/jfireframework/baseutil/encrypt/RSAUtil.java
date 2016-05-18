@@ -14,6 +14,8 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import javax.crypto.Cipher;
 import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.exception.UnSupportException;
 
 /**
  * rsa加解密工具类，注意，该类是非线程安全的
@@ -51,7 +53,7 @@ public class RSAUtil implements EnDecrpt
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     
@@ -73,14 +75,14 @@ public class RSAUtil implements EnDecrpt
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     
     @Override
     public void setKey(byte[] key)
     {
-        throw new RuntimeException("rsa加密方法，不能设置对称密钥");
+        throw new UnSupportException("rsa加密方法，不能设置对称密钥");
     }
     
     @Override
@@ -92,7 +94,7 @@ public class RSAUtil implements EnDecrpt
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     
@@ -105,7 +107,7 @@ public class RSAUtil implements EnDecrpt
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     
@@ -119,7 +121,7 @@ public class RSAUtil implements EnDecrpt
         }
         catch (SignatureException e)
         {
-            return new byte[0];
+            throw new JustThrowException(e);
         }
     }
     
@@ -133,7 +135,6 @@ public class RSAUtil implements EnDecrpt
         }
         catch (SignatureException e)
         {
-            e.printStackTrace();
             return false;
         }
     }
