@@ -3,8 +3,10 @@ package com.jfireframework.baseutil.reflect;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.annotation.IgnoreField;
 import com.jfireframework.baseutil.code.CodeLocation;
@@ -15,13 +17,18 @@ import sun.misc.Unsafe;
 import sun.reflect.MethodAccessor;
 
 @SuppressWarnings("restriction")
-public class ReflectUtil
+public final class ReflectUtil
 {
     // 调用该方法用于生成method.invoke需要的实际执行者
     protected static Method acquireMethodAccessor;
     // 该属性是method.invoke的实际执行者
     protected static Field  methodAccessor;
     private static Unsafe   unsafe;
+    
+    private ReflectUtil()
+    {
+        
+    }
     
     static
     {
@@ -90,6 +97,22 @@ public class ReflectUtil
         }
     }
     
+    private static final Comparator<Field> FIELD_COMPARATOR = new Comparator<Field>() {
+        // 只需要去重，并且希望父类的field在返回数组中排在后面，所以比较全部返回1
+        @Override
+        public int compare(Field o1, Field o2)
+        {
+            if (o1.getName().equals(o2.getName()))
+            {
+                return 0;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+    };
+    
     /**
      * 获取该类的所有field对象，如果子类重写了父类的field，则只包含子类的field
      * 
@@ -98,25 +121,44 @@ public class ReflectUtil
      */
     public static Field[] getAllFields(Class<?> entityClass)
     {
-        LightSet<Field> set = new LightSet<Field>();
-        while (entityClass.equals(Object.class) == false)
+        Set<Field> set = new TreeSet<Field>(FIELD_COMPARATOR);
+        while (entityClass != Object.class)
         {
-            Field[] fields = entityClass.getDeclaredFields();
-            checkNextField: for (Field each : fields)
+            for (Field each : entityClass.getDeclaredFields())
             {
-                for (Field alreadIn : set)
-                {
-                    if (each.getName().equals(alreadIn.getName()))
-                    {
-                        continue checkNextField;
-                    }
-                }
                 set.add(each);
             }
             entityClass = entityClass.getSuperclass();
         }
-        return set.toArray(Field.class);
+        return set.toArray(new Field[set.size()]);
+        
     }
+    
+    private final static Comparator<Method> METHOD_COMPARATOR = new Comparator<Method>() {
+        
+        @Override
+        public int compare(Method o1, Method o2)
+        {
+            if (o1.getName().equals(o2.getName()) == false)
+            {
+                return 1;
+            }
+            Class<?>[] paramTypes1 = o1.getParameterTypes();
+            Class<?>[] paramTypes2 = o2.getParameterTypes();
+            if (paramTypes1.length != paramTypes2.length)
+            {
+                return 1;
+            }
+            for (int i = 0, n = paramTypes1.length; i < n; i++)
+            {
+                if (paramTypes1[i] != paramTypes2[i])
+                {
+                    return 1;
+                }
+            }
+            return 0;
+        }
+    };
     
     /**
      * 获取该类所有方法,包含父类的方法.如果子类重载了父类的方法,则该集合中只有子类的方法
@@ -126,39 +168,16 @@ public class ReflectUtil
      */
     public static Method[] getAllMehtods(Class<?> entityClass)
     {
-        LightSet<Method> set = new LightSet<Method>();
-        while (entityClass.equals(Object.class) == false)
+        Set<Method> set = new TreeSet<Method>(METHOD_COMPARATOR);
+        while (entityClass != Object.class)
         {
-            Method[] methods = entityClass.getDeclaredMethods();
-            checkNextMethod: for (Method each : methods)
+            for (Method each : entityClass.getDeclaredMethods())
             {
-                checkAlreadIn: for (Method alreadIn : set)
-                {
-                    if (alreadIn.getName().equals(each.getName()) == false)
-                    {
-                        continue;
-                    }
-                    Class<?>[] a1 = alreadIn.getParameterTypes();
-                    Class<?>[] a2 = each.getParameterTypes();
-                    if (a1.length != a2.length)
-                    {
-                        continue;
-                    }
-                    for (int i = 0; i < a1.length; i++)
-                    {
-                        if (a1[i] != a2[i])
-                        {
-                            continue checkAlreadIn;
-                        }
-                    }
-                    // 代码走到这里，意味着父类的方法已经被子类重载了
-                    continue checkNextMethod;
-                }
                 set.add(each);
             }
             entityClass = entityClass.getSuperclass();
         }
-        return set.toArray(Method.class);
+        return set.toArray(new Method[set.size()]);
     }
     
     /**
@@ -315,11 +334,15 @@ public class ReflectUtil
         {
             for (Method each : ckass.getDeclaredMethods())
             {
-                if (Modifier.isPublic(each.getModifiers()) == false || each.isAnnotationPresent(IgnoreField.class) || each.getParameterTypes().length > 0 || (each.getName().startsWith("get") | each.getName().startsWith("is")) == false || each.getReturnType().equals(Void.class))
-                {
-                    continue;
-                }
-                if (each.getName().equals("get") || each.getName().equals("is"))
+                if (
+                    Modifier.isPublic(each.getModifiers()) == false //
+                            || each.isAnnotationPresent(IgnoreField.class) //
+                            || each.getParameterTypes().length > 0//
+                            || (each.getName().startsWith("get") | each.getName().startsWith("is")) == false //
+                            || each.getReturnType().equals(Void.class)//
+                            || each.getName().equals("get") //
+                            || each.getName().equals("is")
+                )
                 {
                     continue;
                 }
@@ -329,7 +352,7 @@ public class ReflectUtil
                 }
             }
             ckass = ckass.getSuperclass();
-        } while (ckass != null && ckass.equals(Object.class) == false);
+        } while (ckass != null && ckass != Object.class);
         return methods.toArray(Method.class);
     }
     

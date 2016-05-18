@@ -26,7 +26,7 @@ public class HeapByteBuf extends ByteBuf<byte[]>
     @Override
     protected void _release()
     {
-        
+        memory = null;
     }
     
     protected void _expend(int size)
