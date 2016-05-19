@@ -349,7 +349,7 @@ public abstract class ByteBuf<T>
      * @param byteBuf
      * @return
      */
-    public ByteBuf<T> put(ByteBuf<T> byteBuf)
+    public ByteBuf<T> put(ByteBuf<?> byteBuf)
     {
         return put(byteBuf, byteBuf.remainRead());
     }
@@ -361,7 +361,7 @@ public abstract class ByteBuf<T>
      * @param length
      * @return
      */
-    public ByteBuf<T> put(ByteBuf<T> byteBuf, int length)
+    public ByteBuf<T> put(ByteBuf<?> byteBuf, int length)
     {
         int newWriteIndex = writeIndex + length;
         ensureCapacity(newWriteIndex);
