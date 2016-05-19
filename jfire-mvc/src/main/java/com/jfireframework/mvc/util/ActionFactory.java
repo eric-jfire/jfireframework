@@ -11,6 +11,7 @@ import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.mvc.annotation.ActionMethod;
+import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.binder.DataBinderFactory;
 import com.jfireframework.mvc.core.Action;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
@@ -35,25 +36,40 @@ public class ActionFactory
         ActionMethod actionMethod = method.getAnnotation(ActionMethod.class);
         Verify.True(actionMethod.methods().length > 0, "action的允可方法列表为空，请检查{}.{}", method.getDeclaringClass().getName(), method.getName());
         actionInfo.setRequestMethods(actionMethod.methods());
+        actionInfo.setDataBinders(DataBinderFactory.build(method));
+        actionInfo.setReadStream(actionMethod.readStream());
+        actionInfo.setEntity(bean.getInstance());
+        actionInfo.setResultType(actionMethod.resultType());
+        actionInfo.setContentType(actionMethod.contentType());
         if (actionMethod.url().equals("/"))
         {
             ;
         }
         else
         {
-            requestPath += "/" + (StringUtil.isNotBlank(actionMethod.url()) ? actionMethod.url() : method.getName());
+            actionInfo.setRest(actionMethod.rest());
+            if (actionMethod.rest())
+            {
+                if (StringUtil.isNotBlank(actionMethod.url()))
+                {
+                    requestPath += "/" + actionMethod.url();
+                }
+                else
+                {
+                    requestPath += "/" + method.getName();
+                    for (DataBinder each : actionInfo.getDataBinders())
+                    {
+                        requestPath += "/{" + each.getParamName() + "}";
+                    }
+                }
+                actionInfo.setRestfulRule(RestfulUrlTool.build(requestPath));
+            }
+            else
+            {
+                requestPath += "/" + (StringUtil.isNotBlank(actionMethod.url()) ? actionMethod.url() : method.getName());
+            }
         }
-        if (requestPath.contains("{"))
-        {
-            actionInfo.setRest(true);
-            actionInfo.setRestfulRule(RestfulUrlTool.build(requestPath));
-        }
-        actionInfo.setDataBinders(DataBinderFactory.build(method));
-        actionInfo.setReadStream(actionMethod.readStream());
         actionInfo.setRequestUrl(requestPath);
-        actionInfo.setEntity(bean.getInstance());
-        actionInfo.setResultType(actionMethod.resultType());
-        actionInfo.setContentType(actionMethod.contentType());
         try
         {
             // 使用原始方法的名称和参数类型数组,在类型中获取真实的方法。这一步主要是防止action类本身被增强后，却仍然调用未增强的方法。

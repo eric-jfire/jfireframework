@@ -40,6 +40,13 @@ public @interface ActionMethod
      */
     public boolean readStream() default false;
     
+    /**
+     * 是否是rest风格的url
+     * 
+     * @return
+     */
+    public boolean rest() default false;
+    
     public RequestMethod[] methods() default { RequestMethod.GET, RequestMethod.POST };
     
     /**
