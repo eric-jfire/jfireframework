@@ -10,11 +10,11 @@ import com.jfireframework.baseutil.code.RandomString;
 
 public class SimpleUid
 {
-    private long             base;
-    private short            pid;
-    private byte[]           internal  = new byte[5];
-    private AtomicInteger    count     = new AtomicInteger(0);
-    private final static int countMask = 0x00ffffff;
+    private final long          base;
+    private final short         pid;
+    private final byte[]        internal;
+    private final AtomicInteger count     = new AtomicInteger(0);
+    private final static int    countMask = 0x00ffffff;
     
     public SimpleUid()
     {
@@ -35,6 +35,7 @@ public class SimpleUid
             {
                 _maxHash = RandomString.randomString(5).hashCode();
             }
+            internal = new byte[5];
             internal[0] = (byte) (pid >>> 8);
             internal[1] = (byte) pid;
             internal[2] = (byte) (_maxHash >>> 16);
@@ -47,7 +48,20 @@ public class SimpleUid
         }
     }
     
-    public String id()
+    /**
+     * 生成一个12字节的id，使用24个字母的长度的String来表示。 id生成规则为：
+     * 1-4字节为当前时间减去2016-01-01的秒数。30年内够用 5-6字节为当前的进程的pid
+     * 7-9字节为当前mac地址的hash值，如果取不到mac地址才随机一个数字的hash值。并且只取后三个字节
+     * 10-12字节为自增数字，也就意味着1秒内能产生1600w个id
+     * 
+     * @return
+     */
+    public String generate()
+    {
+        return StringUtil.toHexString(generateBytes());
+    }
+    
+    public byte[] generateBytes()
     {
         byte[] result = new byte[12];
         int time = (int) ((System.currentTimeMillis() - base) / 1000);
@@ -64,7 +78,7 @@ public class SimpleUid
         result[9] = (byte) (tmp >>> 16);
         result[10] = (byte) (tmp >>> 8);
         result[11] = (byte) (tmp);
-        return StringUtil.toHexString(result);
+        return result;
     }
     
 }

@@ -8,13 +8,13 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.fose.Fose;
 import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.common.channel.ChannelInfo;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
+import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
-import com.jfireframework.jnet.common.result.InternalResult;
+import com.jfireframework.jnet.common.result.InternalTask;
 
 public class BytecodeInvoker
 {
@@ -39,10 +39,10 @@ public class BytecodeInvoker
                 client.setInitListener(new ChannelInitListener() {
                     
                     @Override
-                    public void channelInit(ChannelInfo channelInfo)
+                    public void channelInit(JnetChannel channelInfo)
                     {
                         channelInfo.setReadTimeout(readTimeout);
-                        channelInfo.setResultArrayLength(1024);
+                        channelInfo.setCapacity(1024);
                         channelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, maxLength));
                         channelInfo.setHandlers(new ReadHandler());
                     }
@@ -113,7 +113,7 @@ class ReadHandler implements DataHandler
     };
     
     @Override
-    public Object handle(Object data, InternalResult result) throws JnetException
+    public Object handle(Object data, InternalTask result) throws JnetException
     {
         ByteBuf<?> buf = (ByteBuf<?>) data;
         Object tmp = lbseLocal.get().deserialize(buf);
@@ -122,7 +122,7 @@ class ReadHandler implements DataHandler
     }
     
     @Override
-    public Object catchException(Object data, InternalResult result)
+    public Object catchException(Object data, InternalTask result)
     {
         return null;
     }
@@ -168,7 +168,7 @@ class WriteHandler implements DataHandler
     }
     
     @Override
-    public Object handle(Object data, InternalResult result) throws JnetException
+    public Object handle(Object data, InternalTask result) throws JnetException
     {
         Object[] datas = (Object[]) data;
         String methodName = (String) datas[0];
@@ -181,7 +181,7 @@ class WriteHandler implements DataHandler
     }
     
     @Override
-    public Object catchException(Object data, InternalResult result)
+    public Object catchException(Object data, InternalTask result)
     {
         // TODO Auto-generated method stub
         return null;

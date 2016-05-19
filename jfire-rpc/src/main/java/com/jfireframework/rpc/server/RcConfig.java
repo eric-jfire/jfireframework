@@ -1,7 +1,7 @@
 package com.jfireframework.rpc.server;
 
 import java.util.Map;
-import com.jfireframework.jnet.server.server.ServerConfig;
+import com.jfireframework.jnet.server.util.ServerConfig;
 
 public class RcConfig extends ServerConfig
 {
