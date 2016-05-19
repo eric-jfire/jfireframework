@@ -12,7 +12,12 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class StringView implements View
 {
-    private static Charset charset = Charset.forName("utf8");
+    private final Charset charset;
+    
+    public StringView(Charset charset)
+    {
+        this.charset = charset;
+    }
     
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response, Object result) throws Throwable

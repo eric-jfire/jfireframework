@@ -2,21 +2,15 @@ package com.jfireframework.mvc.core;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.mvc.annotation.ContentType;
 import com.jfireframework.mvc.annotation.RequestMethod;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.config.ResultType;
+import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.rest.RestfulRule;
-import com.jfireframework.mvc.util.BeetlRender;
-import com.jfireframework.mvc.view.BeetlView;
-import com.jfireframework.mvc.view.BytesView;
-import com.jfireframework.mvc.view.HtmlView;
-import com.jfireframework.mvc.view.JsonView;
-import com.jfireframework.mvc.view.JspView;
-import com.jfireframework.mvc.view.NoneView;
-import com.jfireframework.mvc.view.RedirectView;
-import com.jfireframework.mvc.view.StringView;
-import com.jfireframework.mvc.view.View;
+import com.jfireframework.mvc.util.ActionInfo;
 import sun.reflect.MethodAccessor;
 
 /**
@@ -29,23 +23,72 @@ import sun.reflect.MethodAccessor;
 public class Action
 {
     /** 调用该action的对象实例 */
-    protected Object         actionEntity;
-    protected DataBinder[]   dataBinders;
+    private final Object              actionEntity;
+    private final DataBinder[]        dataBinders;
     // 该action方法的快速反射调用工具
-    protected MethodAccessor methodAccessor;
+    private final MethodAccessor      methodAccessor;
     // 该action响应的url地址
-    protected String         requestUrl;
-    protected View           view;
-    private boolean          rest       = false;
-    private RestfulRule      restfulRule;
-    private boolean          readStream = false;
-    private RequestMethod[]  requestMethods;
-    private Method           method;
-    private String           contentType;
+    private final String              requestUrl;
+    private final boolean             rest;
+    private final RestfulRule         restfulRule;
+    private final boolean             readStream;
+    private final RequestMethod[]     requestMethods;
+    private final Method              method;
+    private final String              contentType;
+    private final ResultType          resultType;
+    private final ActionInterceptor[] interceptors;
     
-    public Action(Method method)
+    public Action(ActionInfo info)
     {
-        this.method = method;
+        actionEntity = info.getEntity();
+        dataBinders = info.getDataBinders();
+        methodAccessor = info.getMethodAccessor();
+        requestUrl = info.getRequestUrl();
+        rest = info.isRest();
+        restfulRule = info.getRestfulRule();
+        readStream = info.isReadStream();
+        requestMethods = info.getRequestMethods();
+        method = info.getMethod();
+        resultType = info.getResultType();
+        if ("".equals(info.getContentType()))
+        {
+            switch (resultType)
+            {
+                case Json:
+                    contentType = ContentType.JSON;
+                    break;
+                case Beetl:
+                    contentType = ContentType.HTML;
+                    break;
+                case String:
+                    contentType = ContentType.JSON;
+                    break;
+                case Jsp:
+                    contentType = ContentType.HTML;
+                    break;
+                case Html:
+                    contentType = ContentType.HTML;
+                    break;
+                case Redirect:
+                    contentType = ContentType.HTML;
+                    break;
+                case None:
+                    contentType = ContentType.STREAM;
+                    break;
+                case Bytes:
+                    contentType = ContentType.STREAM;
+                    break;
+                case FreeMakrer:
+                    throw new UnSupportException("尚未支持freemarker，建议使用beetl");
+                default:
+                    throw new UnSupportException("方法没有指定返回类型");
+            }
+        }
+        else
+        {
+            contentType = info.getContentType();
+        }
+        interceptors = info.getInterceptors();
     }
     
     public Object invoke(Object[] params)
@@ -56,38 +99,13 @@ public class Action
         }
         catch (IllegalArgumentException | InvocationTargetException e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     
-    /**
-     * 返回该action方法的请求路径
-     * 
-     * @return
-     */
-    public String getRequestUrl()
+    public Object getActionEntity()
     {
-        return requestUrl;
-    }
-    
-    public void setRest(boolean rest)
-    {
-        this.rest = rest;
-    }
-    
-    /**
-     * 返回这个action持有的method对象
-     * 
-     * @return
-     */
-    public Method getMethod()
-    {
-        return method;
-    }
-    
-    public boolean isRest()
-    {
-        return rest;
+        return actionEntity;
     }
     
     public DataBinder[] getDataBinders()
@@ -95,72 +113,19 @@ public class Action
         return dataBinders;
     }
     
-    public void setDataBinders(DataBinder[] dataBinders)
+    public MethodAccessor getMethodAccessor()
     {
-        this.dataBinders = dataBinders;
+        return methodAccessor;
     }
     
-    public void setActionEntity(Object actionEntity)
+    public String getRequestUrl()
     {
-        this.actionEntity = actionEntity;
+        return requestUrl;
     }
     
-    public void setMethodAccessor(MethodAccessor methodAccessor)
+    public boolean isRest()
     {
-        this.methodAccessor = methodAccessor;
-    }
-    
-    public void setRequestUrl(String requestPath)
-    {
-        this.requestUrl = requestPath;
-    }
-    
-    public void setResultType(ResultType resultType, BeetlRender beetlRender)
-    {
-        switch (resultType)
-        {
-            case Json:
-                view = new JsonView();
-                contentType = ContentType.JSON;
-                break;
-            case Beetl:
-                view = new BeetlView(beetlRender);
-                contentType = ContentType.HTML;
-                break;
-            case String:
-                contentType = ContentType.JSON;
-                view = new StringView();
-                break;
-            case Jsp:
-                view = new JspView();
-                contentType = ContentType.HTML;
-                break;
-            case Html:
-                view = new HtmlView();
-                contentType = ContentType.HTML;
-                break;
-            case Redirect:
-                view = new RedirectView();
-                contentType = ContentType.HTML;
-                break;
-            case None:
-                contentType = ContentType.STREAM;
-                view = new NoneView();
-                break;
-            case Bytes:
-                contentType = ContentType.STREAM;
-                view = new BytesView();
-                break;
-            case FreeMakrer:
-                throw new RuntimeException("尚未支持freemarker，建议使用beetl");
-            default:
-                throw new RuntimeException("方法没有指定返回类型");
-        }
-    }
-    
-    public void setRestfulRule(RestfulRule restfulRule)
-    {
-        this.restfulRule = restfulRule;
+        return rest;
     }
     
     public RestfulRule getRestfulRule()
@@ -173,24 +138,14 @@ public class Action
         return readStream;
     }
     
-    public void setReadStream(boolean onlyServletRequest)
-    {
-        this.readStream = onlyServletRequest;
-    }
-    
     public RequestMethod[] getRequestMethods()
     {
         return requestMethods;
     }
     
-    public void setRequestMethods(RequestMethod[] requestMethods)
+    public Method getMethod()
     {
-        this.requestMethods = requestMethods;
-    }
-    
-    public View getView()
-    {
-        return view;
+        return method;
     }
     
     public String getContentType()
@@ -198,8 +153,14 @@ public class Action
         return contentType;
     }
     
-    public void setContentType(String contentType)
+    public ResultType getResultType()
     {
-        this.contentType = contentType;
+        return resultType;
     }
+    
+    public ActionInterceptor[] getInterceptors()
+    {
+        return interceptors;
+    }
+    
 }

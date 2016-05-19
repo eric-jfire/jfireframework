@@ -1,32 +1,36 @@
 package com.jfireframework.mvc.core;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.mvc.annotation.RequestMethod;
-import com.jfireframework.mvc.rest.RestfulRule;
 
-public class ActionCenter
+public final class ActionCenter
 {
-    private HashMap<String, Action> getActions    = new HashMap<>();
-    private RestfulRule[]           rest_get_rules;
-    private HashMap<String, Action> postActions   = new HashMap<>();
-    private RestfulRule[]           rest_post_rules;
-    private HashMap<String, Action> putActions    = new HashMap<>();
-    private RestfulRule[]           rest_put_rules;
-    private HashMap<String, Action> deleteActions = new HashMap<>();
-    private RestfulRule[]           rest_delete_rules;
-    private Logger                  logger        = ConsoleLogFactory.getLogger();
+    private final Map<String, Action> getActions    = new HashMap<>();
+    private final Action[]            rest_get_actions;
+    private final Map<String, Action> postActions   = new HashMap<>();
+    private final Action[]            rest_post_actions;
+    private final Map<String, Action> putActions    = new HashMap<>();
+    private final Action[]            rest_put_actions;
+    private final Map<String, Action> deleteActions = new HashMap<>();
+    private final Action[]            rest_delete_actions;
+    private static final Logger       logger        = ConsoleLogFactory.getLogger();
     
     public ActionCenter(Action[] actions)
     {
-        Map<RestfulRule, Action> rest_get_rules = new HashMap<>();
-        Map<RestfulRule, Action> rest_post_rules = new HashMap<>();
-        Map<RestfulRule, Action> rest_put_rules = new HashMap<>();
-        Map<RestfulRule, Action> rest_delete_rules = new HashMap<>();
+        List<Action> rest_get_actions_list = new LinkedList<>();
+        List<Action> rest_post_actions_list = new LinkedList<>();
+        List<Action> rest_put_actions_list = new LinkedList<>();
+        List<Action> rest_delete_actions_list = new LinkedList<>();
         for (Action each : actions)
         {
             for (RequestMethod requestMethod : each.getRequestMethods())
@@ -36,11 +40,7 @@ public class ActionCenter
                     case GET:
                         if (each.isRest())
                         {
-                            if (rest_get_rules.containsKey(each.getRestfulRule()))
-                            {
-                                throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), rest_get_rules.get(each.getRequestUrl()).getMethod().toGenericString()));
-                            }
-                            rest_get_rules.put(each.getRestfulRule(), each);
+                            rest_get_actions_list.add(each);
                         }
                         else
                         {
@@ -54,11 +54,7 @@ public class ActionCenter
                     case POST:
                         if (each.isRest())
                         {
-                            if (rest_post_rules.containsKey(each.getRestfulRule()))
-                            {
-                                throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), rest_post_rules.get(each.getRequestUrl()).getMethod().toGenericString()));
-                            }
-                            rest_post_rules.put(each.getRestfulRule(), each);
+                            rest_post_actions_list.add(each);
                         }
                         else
                         {
@@ -72,11 +68,7 @@ public class ActionCenter
                     case PUT:
                         if (each.isRest())
                         {
-                            if (rest_put_rules.containsKey(each.getRestfulRule()))
-                            {
-                                throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), rest_put_rules.get(each.getRequestUrl()).getMethod().toGenericString()));
-                            }
-                            rest_put_rules.put(each.getRestfulRule(), each);
+                            rest_put_actions_list.add(each);
                         }
                         else
                         {
@@ -90,11 +82,7 @@ public class ActionCenter
                     case DELETE:
                         if (each.isRest())
                         {
-                            if (rest_delete_rules.containsKey(each.getRestfulRule()))
-                            {
-                                throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), rest_delete_rules.get(each.getRequestUrl()).getMethod().toGenericString()));
-                            }
-                            rest_delete_rules.put(each.getRestfulRule(), each);
+                            rest_delete_actions_list.add(each);
                         }
                         else
                         {
@@ -108,10 +96,14 @@ public class ActionCenter
                 }
             }
         }
-        this.rest_get_rules = rest_get_rules.keySet().toArray(new RestfulRule[0]);
-        this.rest_post_rules = rest_post_rules.keySet().toArray(new RestfulRule[0]);
-        this.rest_put_rules = rest_put_rules.keySet().toArray(new RestfulRule[0]);
-        this.rest_delete_rules = rest_delete_rules.keySet().toArray(new RestfulRule[0]);
+        checkRepetition(rest_get_actions_list);
+        checkRepetition(rest_post_actions_list);
+        checkRepetition(rest_put_actions_list);
+        checkRepetition(rest_delete_actions_list);
+        rest_get_actions = rest_get_actions_list.toArray(new Action[0]);
+        rest_post_actions = rest_post_actions_list.toArray(new Action[0]);
+        rest_delete_actions = rest_delete_actions_list.toArray(new Action[0]);
+        rest_put_actions = rest_put_actions_list.toArray(new Action[0]);
         for (Action each : getActions.values())
         {
             logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
@@ -128,21 +120,39 @@ public class ActionCenter
         {
             logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
         }
-        for (RestfulRule each : this.rest_get_rules)
+        for (Action each : rest_get_actions)
         {
-            logger.debug("url:{},调用的方法是{}", each.getUrl(), each.getAction().getMethod().toGenericString());
+            logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
         }
-        for (RestfulRule each : this.rest_post_rules)
+        for (Action each : rest_post_actions)
         {
-            logger.debug("url:{},调用的方法是{}", each.getUrl(), each.getAction().getMethod().toGenericString());
+            logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
         }
-        for (RestfulRule each : this.rest_delete_rules)
+        for (Action each : rest_put_actions)
         {
-            logger.debug("url:{},调用的方法是{}", each.getUrl(), each.getAction().getMethod().toGenericString());
+            logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
         }
-        for (RestfulRule each : this.rest_put_rules)
+        for (Action each : rest_delete_actions)
         {
-            logger.debug("url:{},调用的方法是{}", each.getUrl(), each.getAction().getMethod().toGenericString());
+            logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
+        }
+    }
+    
+    /**
+     * 检查是否存在重复的url。返回false表示没有重复。
+     * 
+     * @param restActions
+     * @return
+     */
+    private void checkRepetition(List<Action> restActions)
+    {
+        Set<String> set = new HashSet<>();
+        for (Action each : restActions)
+        {
+            if (set.add(each.getRequestUrl()) == false)
+            {
+                throw new UnSupportException(StringUtil.format("url:{}存在重复，请检查{}", each.getRequestUrl(), each.getMethod()));
+            }
         }
     }
     
@@ -156,11 +166,11 @@ public class ActionCenter
             action = getActions.get(path);
             if (action == null)
             {
-                for (RestfulRule each : rest_get_rules)
+                for (Action each : rest_get_actions)
                 {
-                    if (each.match(path))
+                    if (each.getRestfulRule().match(path))
                     {
-                        return each.getAction();
+                        return each;
                     }
                 }
             }
@@ -170,11 +180,11 @@ public class ActionCenter
             action = postActions.get(path);
             if (action == null)
             {
-                for (RestfulRule each : rest_post_rules)
+                for (Action each : rest_post_actions)
                 {
-                    if (each.match(path))
+                    if (each.getRestfulRule().match(path))
                     {
-                        return each.getAction();
+                        return each;
                     }
                 }
             }
@@ -184,11 +194,11 @@ public class ActionCenter
             action = putActions.get(path);
             if (action == null)
             {
-                for (RestfulRule each : rest_put_rules)
+                for (Action each : rest_put_actions)
                 {
-                    if (each.match(path))
+                    if (each.getRestfulRule().match(path))
                     {
-                        return each.getAction();
+                        return each;
                     }
                 }
             }
@@ -198,11 +208,11 @@ public class ActionCenter
             action = deleteActions.get(path);
             if (action == null)
             {
-                for (RestfulRule each : rest_delete_rules)
+                for (Action each : rest_delete_actions)
                 {
-                    if (each.match(path))
+                    if (each.getRestfulRule().match(path))
                     {
-                        return each.getAction();
+                        return each;
                     }
                 }
             }

@@ -42,6 +42,11 @@ public @interface ActionMethod
     
     public RequestMethod[] methods() default { RequestMethod.GET, RequestMethod.POST };
     
-    public String contentType() default ContentType.SELFADAPTION;
+    /**
+     * 默认为返回类型为text/html
+     * 
+     * @return
+     */
+    public String contentType() default "";
     
 }

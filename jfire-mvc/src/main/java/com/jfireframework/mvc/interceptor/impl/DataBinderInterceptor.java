@@ -13,13 +13,13 @@ import com.jfireframework.mvc.interceptor.ActionInterceptor;
 @Resource
 public class DataBinderInterceptor implements ActionInterceptor
 {
-    public static final String                      DATABINDERKEY = "databinder_key" + System.currentTimeMillis();
-    private static ThreadLocal<Map<String, String>> mapLocal      = new ThreadLocal<Map<String, String>>() {
-                                                                      protected Map<String, String> initialValue()
-                                                                      {
-                                                                          return new HashMap<String, String>();
-                                                                      }
-                                                                  };
+    public static final String                            DATABINDERKEY = "databinder_key" + System.currentTimeMillis();
+    private static final ThreadLocal<Map<String, String>> mapLocal      = new ThreadLocal<Map<String, String>>() {
+                                                                            protected Map<String, String> initialValue()
+                                                                            {
+                                                                                return new HashMap<String, String>();
+                                                                            }
+                                                                        };
     
     @Override
     public int getOrder()
@@ -88,6 +88,12 @@ public class DataBinderInterceptor implements ActionInterceptor
             param[i] = dataBinders[i].binder(request, map, response);
         }
         return param;
+    }
+    
+    @Override
+    public String rule()
+    {
+        return "*";
     }
     
 }

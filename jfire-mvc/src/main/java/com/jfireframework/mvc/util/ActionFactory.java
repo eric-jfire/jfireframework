@@ -1,35 +1,43 @@
 package com.jfireframework.mvc.util;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.mvc.annotation.ActionMethod;
-import com.jfireframework.mvc.annotation.ContentType;
 import com.jfireframework.mvc.binder.DataBinderFactory;
 import com.jfireframework.mvc.core.Action;
+import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.rest.RestfulUrlTool;
 
 public class ActionFactory
 {
     
+    private static final AescComparator AESC_COMPARATOR = new AescComparator();
+    
     /**
-     * 使用方法对象，顶级请求路径，容器对象初始化一个action实例。
-     * 该实例负责该action的调用
+     * 使用方法对象，顶级请求路径，容器对象初始化一个action实例。 该实例负责该action的调用
      * 
      * @param method
      * @param rootRequestPath 顶级请求路径，实际的请求路径为顶级请求路径/方法请求路径
      * @param beanContext
      */
-    public static Action buildAction(Method method, String requestPath, Bean bean, BeetlRender beetlRender, Class<?> type)
+    public static Action buildAction(Method method, String requestPath, Bean bean, JfireContext jfireContext)
     {
-        Action action = new Action(method);
+        ActionInfo actionInfo = new ActionInfo();
+        actionInfo.setMethod(method);
         ActionMethod actionMethod = method.getAnnotation(ActionMethod.class);
         Verify.True(actionMethod.methods().length > 0, "action的允可方法列表为空，请检查{}.{}", method.getDeclaringClass().getName(), method.getName());
-        action.setRequestMethods(actionMethod.methods());
+        actionInfo.setRequestMethods(actionMethod.methods());
         if (actionMethod.url().equals("/"))
         {
+            ;
         }
         else
         {
@@ -37,29 +45,50 @@ public class ActionFactory
         }
         if (requestPath.contains("{"))
         {
-            action.setRest(true);
-            action.setRestfulRule(RestfulUrlTool.build(requestPath, action));
+            actionInfo.setRest(true);
+            actionInfo.setRestfulRule(RestfulUrlTool.build(requestPath));
         }
-        action.setDataBinders(DataBinderFactory.build(method));
-        action.setReadStream(actionMethod.readStream());
-        action.setRequestUrl(requestPath);
-        action.setActionEntity(bean.getInstance());
-        action.setResultType(actionMethod.resultType(), beetlRender);
-        if (actionMethod.contentType().equals(ContentType.SELFADAPTION) == false)
-        {
-            action.setContentType(actionMethod.contentType());
-        }
+        actionInfo.setDataBinders(DataBinderFactory.build(method));
+        actionInfo.setReadStream(actionMethod.readStream());
+        actionInfo.setRequestUrl(requestPath);
+        actionInfo.setEntity(bean.getInstance());
+        actionInfo.setResultType(actionMethod.resultType());
+        actionInfo.setContentType(actionMethod.contentType());
         try
         {
-            // 使用原始方法的名称和参数类型数组。就算是增强后的子类，该名称和参数类型数组信息也是不变的。
-            Method realMethod = type.getMethod(method.getName(), method.getParameterTypes());
-            action.setMethodAccessor(ReflectUtil.fastMethod(realMethod));
+            // 使用原始方法的名称和参数类型数组,在类型中获取真实的方法。这一步主要是防止action类本身被增强后，却仍然调用未增强的方法。
+            Method realMethod = bean.getType().getMethod(method.getName(), method.getParameterTypes());
+            actionInfo.setMethodAccessor(ReflectUtil.fastMethod(realMethod));
         }
         catch (NoSuchMethodException | SecurityException e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
-        return action;
+        Bean[] beans = jfireContext.getBeanByInterface(ActionInterceptor.class);
+        List<ActionInterceptor> interceptors = new ArrayList<>();
+        for (Bean each : beans)
+        {
+            ActionInterceptor interceptor = (ActionInterceptor) each.getInstance();
+            String rule = interceptor.rule();
+            if ("*".equals(rule))
+            {
+                interceptors.add(interceptor);
+            }
+            else
+            {
+                for (String singleRule : rule.split(";"))
+                {
+                    if (requestPath.startsWith(singleRule))
+                    {
+                        interceptors.add(interceptor);
+                        break;
+                    }
+                }
+            }
+        }
+        interceptors.sort(AESC_COMPARATOR);
+        actionInfo.setInterceptors(interceptors.toArray(new ActionInterceptor[interceptors.size()]));
+        return new Action(actionInfo);
     }
     
 }

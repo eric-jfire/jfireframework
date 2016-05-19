@@ -8,7 +8,12 @@ import com.jfireframework.codejson.JsonTool;
 
 public class JsonView implements View
 {
-    private static Charset charset = Charset.forName("utf8");
+    private final Charset charset;
+    
+    public JsonView(Charset charset)
+    {
+        this.charset = charset;
+    }
     
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response, Object result) throws Throwable

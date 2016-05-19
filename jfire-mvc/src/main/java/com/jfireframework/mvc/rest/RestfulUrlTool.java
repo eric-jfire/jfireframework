@@ -1,7 +1,6 @@
 package com.jfireframework.mvc.rest;
 
 import com.jfireframework.baseutil.collection.set.LightSet;
-import com.jfireframework.mvc.core.Action;
 
 public class RestfulUrlTool
 {
@@ -11,11 +10,11 @@ public class RestfulUrlTool
      * @param url
      * @return
      */
-    public static RestfulRule build(String url, Action action)
+    public static RestfulRule build(String url)
     {
         LightSet<String> set = new LightSet<>();
         String rule = transToRule(url, set);
-        return new RestfulRule(rule, set.toArray(String.class), action);
+        return new RestfulRule(rule, set.toArray(String.class));
     }
     
     private static String transToRule(String url, LightSet<String> set)

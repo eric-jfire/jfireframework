@@ -1,7 +1,6 @@
 package com.jfireframework.mvc.rest;
 
 import java.util.Map;
-import com.jfireframework.mvc.core.Action;
 
 public class RestfulRule
 {
@@ -15,15 +14,14 @@ public class RestfulRule
         }
     }
     
-    private String[] names;
-    private String[] rules;
-    private int      lastRuleLength;
-    private boolean  endWithAsterisk = false;
-    private int      valueLength;
-    private Action   action;
-    private String   url;
+    private final String[] names;
+    private final String[] rules;
+    private final int      lastRuleLength;
+    private final boolean  endWithAsterisk;
+    private final int      valueLength;
+    private final String   url;
     
-    public RestfulRule(String rule)
+    public RestfulRule(String rule, String[] names)
     {
         url = rule;
         rules = rule.split("\\*");
@@ -34,16 +32,11 @@ public class RestfulRule
         }
         else
         {
+            endWithAsterisk = false;
             valueLength = rules.length - 1;
         }
         lastRuleLength = rules[rules.length - 1].length();
-    }
-    
-    public RestfulRule(String rule, String[] names, Action action)
-    {
-        this(rule);
         this.names = names;
-        this.action = action;
     }
     
     public String getUrl()
@@ -133,19 +126,9 @@ public class RestfulRule
         return rules;
     }
     
-    public void setRules(String[] rules)
-    {
-        this.rules = rules;
-    }
-    
     public String[] getNames()
     {
         return names;
-    }
-    
-    public Action getAction()
-    {
-        return action;
     }
     
 }
