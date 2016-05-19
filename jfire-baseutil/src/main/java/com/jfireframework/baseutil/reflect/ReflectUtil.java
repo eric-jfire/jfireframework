@@ -22,10 +22,10 @@ import sun.reflect.MethodAccessor;
 public final class ReflectUtil
 {
     // 调用该方法用于生成method.invoke需要的实际执行者
-    protected static Method acquireMethodAccessor;
+    protected final static Method acquireMethodAccessor;
     // 该属性是method.invoke的实际执行者
-    protected static Field  methodAccessor;
-    private static Unsafe   unsafe;
+    protected final static Field  methodAccessor;
+    private final static Unsafe   unsafe;
     
     private ReflectUtil()
     {
@@ -264,7 +264,7 @@ public final class ReflectUtil
             {
                 int right = tmp.indexOf(']', left);
                 Verify.True(right != -1, "构建javabean的get或is方法出现异常,给定的字符串:{}不符合解析规则.请检查代码{}", name, CodeLocation.getCodeLocation(2));
-                int num = Integer.valueOf(tmp.substring(left + 1, right));
+                int num = Integer.parseInt(tmp.substring(left + 1, right));
                 cache.append("get").append(tmp.substring(0, 1).toUpperCase()).append(tmp.substring(1, left));
                 cache.append("()").append('[').append(num).append(']');
                 rootType = rootType.getDeclaredField(tmp).getType().getComponentType();
@@ -495,7 +495,7 @@ class MethodInfo
         if (target instanceof MethodInfo)
         {
             MethodInfo info = (MethodInfo) target;
-            if (info.methodName != methodName)
+            if (methodName.equals(info.methodName) == false)
             {
                 return false;
             }

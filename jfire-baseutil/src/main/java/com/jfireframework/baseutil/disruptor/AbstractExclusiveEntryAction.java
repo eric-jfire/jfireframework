@@ -1,6 +1,7 @@
 package com.jfireframework.baseutil.disruptor;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategyStopException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -16,16 +17,17 @@ import com.jfireframework.baseutil.simplelog.Logger;
 public abstract class AbstractExclusiveEntryAction implements ExclusiveEntryAction
 {
     // 当前准备处理的序号
-    private AtomicLong   cursor    = new AtomicLong(0);
-    protected Logger     logger    = ConsoleLogFactory.getLogger();
+    private AtomicLong   cursor = new AtomicLong(0);
+    protected Logger     logger = ConsoleLogFactory.getLogger();
     protected RingArray  ringArray;
-    private volatile int canRun    = 0;
+    private volatile int canRun = 0;
     
     @Override
     public void run()
     {
         while (canRun == 0)
         {
+            LockSupport.parkNanos(1000);
             continue;
         }
         Entry entry;

@@ -11,7 +11,7 @@ import com.jfireframework.baseutil.verify.Verify;
 public abstract class ByteBuf<T>
 {
     
-    protected static int[]        offsets      = new int[] { 0, 8, 16, 24, 32, 40, 48, 56 };
+    protected static final int[]  offsets      = new int[] { 0, 8, 16, 24, 32, 40, 48, 56 };
     protected int                 capacity;
     protected int                 writeIndex   = 0;
     protected int                 maskWrite    = 0;

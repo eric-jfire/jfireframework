@@ -1,6 +1,7 @@
 package com.jfireframework.baseutil.disruptor;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategyStopException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -32,6 +33,7 @@ public abstract class AbstractSharedEntryAction implements SharedEntryAction
     {
         while (canRun == 0)
         {
+            LockSupport.parkNanos(1000);
             continue;
         }
         Entry entry;

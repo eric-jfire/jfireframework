@@ -33,6 +33,7 @@ public class MPSCLinkedQueue<E> implements Queue<E>
             {
                 ;
             }
+            pre = pre.next;
             count += 1;
         }
         return count;
