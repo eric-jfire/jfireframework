@@ -92,6 +92,7 @@ public class EasyMvcDispathServlet extends HttpServlet
     private JspView           jspView;
     private RedirectView      redirectView;
     private NoneView          noneView;
+    private String            encode;
     
     @Override
     public void init(ServletConfig servletConfig) throws ServletException
@@ -121,10 +122,12 @@ public class EasyMvcDispathServlet extends HttpServlet
         if (servletConfig.getInitParameter("encode") != null)
         {
             charset = Charset.forName(servletConfig.getInitParameter("encode"));
+            encode = servletConfig.getInitParameter("encode");
         }
         else
         {
             charset = Charset.forName("utf8");
+            encode = "UTF-8";
         }
         initTemplate(charset);
         jfireContext = new JfireContextImpl();
@@ -338,8 +341,8 @@ public class EasyMvcDispathServlet extends HttpServlet
         }
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
-        request.setCharacterEncoding(MvcStaticConfig.encode);
-        response.setCharacterEncoding(MvcStaticConfig.encode);
+        request.setCharacterEncoding(encode);
+        response.setCharacterEncoding(encode);
         Action action = actionCenter.getAction(request);
         if (action == null)
         {
