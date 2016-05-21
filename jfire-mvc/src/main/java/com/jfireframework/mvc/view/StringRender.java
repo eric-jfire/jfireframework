@@ -1,16 +1,20 @@
 package com.jfireframework.mvc.view;
 
-import java.io.OutputStream;
 import java.nio.charset.Charset;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.jfireframework.codejson.JsonTool;
 
-public class JsonView implements View
+/**
+ * 代表是一个直接字符串展示
+ * 
+ * @author 林斌{erci@jfire.cn}
+ * 
+ */
+public class StringRender implements ViewRender
 {
     private final Charset charset;
     
-    public JsonView(Charset charset)
+    public StringRender(Charset charset)
     {
         this.charset = charset;
     }
@@ -18,8 +22,7 @@ public class JsonView implements View
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response, Object result) throws Throwable
     {
-        response.setContentType("application/json");
-        OutputStream out = response.getOutputStream();
-        out.write(JsonTool.write(result).getBytes(charset));
+        response.getOutputStream().write(((String) result).getBytes(charset));
+        
     }
 }

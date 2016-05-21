@@ -1,4 +1,4 @@
-package com.jfireframework.mvc.util;
+package com.jfireframework.mvc.view;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -14,8 +14,9 @@ import org.beetl.core.exception.BeetlException;
 import org.beetl.ext.web.SessionWrapper;
 import org.beetl.ext.web.WebVariable;
 import com.jfireframework.mvc.core.ViewAndModel;
+import com.jfireframework.mvc.util.JfireMvcResponseWrapper;
 
-public class BeetlRender
+public class BeetlRender implements ViewRender
 {
     
     GroupTemplate gt = null;
@@ -24,6 +25,37 @@ public class BeetlRender
     {
         this.gt = gt;
         gt.getConf().setDirectByteOutput(true);
+    }
+    
+    public void render(HttpServletRequest request, HttpServletResponse response, Object result) throws Throwable
+    {
+        ViewAndModel viewAndModel = (ViewAndModel) result;
+        response.setContentType("text/html");
+        if (viewAndModel.cached())
+        {
+            response.getOutputStream().write(viewAndModel.getDirectBytes());
+        }
+        else if (viewAndModel.isDirect())
+        {
+            synchronized (viewAndModel)
+            {
+                if (viewAndModel.cached())
+                {
+                    response.getOutputStream().write(viewAndModel.getDirectBytes());
+                }
+                else
+                {
+                    JfireMvcResponseWrapper wrapper = new JfireMvcResponseWrapper(response, viewAndModel);
+                    render(viewAndModel, request, wrapper);
+                    wrapper.getOutputStream().flush();
+                    viewAndModel.setDirectBytes(viewAndModel.getCache().toArray());
+                }
+            }
+        }
+        else
+        {
+            render(viewAndModel, request, response);
+        }
     }
     
     public void render(String key, Map<String, Object> data, HttpServletRequest request, OutputStream outputStream)
@@ -200,8 +232,7 @@ public class BeetlRender
      * @param response
      * @param args 调用render的时候传的参数
      */
-    protected void modifyTemplate(Template template, String key, HttpServletRequest request,
-            HttpServletResponse response, Object... args)
+    protected void modifyTemplate(Template template, String key, HttpServletRequest request, HttpServletResponse response, Object... args)
     {
         
     }

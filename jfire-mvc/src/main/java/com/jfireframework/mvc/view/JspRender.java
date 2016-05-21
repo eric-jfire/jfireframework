@@ -5,7 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.mvc.core.ViewAndModel;
 
-public class JspView implements View
+public class JspRender implements ViewRender
 {
     
     @Override

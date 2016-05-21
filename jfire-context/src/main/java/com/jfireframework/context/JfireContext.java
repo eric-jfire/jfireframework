@@ -2,6 +2,7 @@ package com.jfireframework.context;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
+import com.jfireframework.codejson.JsonObject;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.context.bean.BeanConfig;
 
@@ -14,6 +15,13 @@ public interface JfireContext
      * @param configFile
      */
     public void readConfig(File configFile);
+    
+    /**
+     * 读取一个包含了配置信息的json对象
+     * 
+     * @param config
+     */
+    public void readConfig(JsonObject config);
     
     /**
      * 向容器内增加需要扫描的包名

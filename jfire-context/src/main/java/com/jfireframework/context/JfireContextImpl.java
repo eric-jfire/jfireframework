@@ -19,6 +19,7 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.codejson.JsonObject;
 import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.context.aop.AopUtil;
 import com.jfireframework.context.bean.Bean;
@@ -70,24 +71,18 @@ public class JfireContextImpl implements JfireContext
     }
     
     @Override
-    public void readConfig(File configFile)
+    public void readConfig(JsonObject config)
     {
         try
         {
+            ContextConfig contextConfig = JsonTool.read(ContextConfig.class, config);
             /** 将配置文件的内容，以json方式读取，并且得到json对象 */
-            FileInputStream inputStream = new FileInputStream(configFile);
-            byte[] result = new byte[inputStream.available()];
-            inputStream.read(result);
-            inputStream.close();
-            String json = new String(result, Charset.forName("utf-8"));
-            ContextConfig config = JsonTool.read(ContextConfig.class, json);
-            /** 将配置文件的内容，以json方式读取，并且得到json对象 */
-            String[] packageNames = config.getPackageNames();
+            String[] packageNames = contextConfig.getPackageNames();
             if (packageNames != null)
             {
                 addPackageNames(packageNames);
             }
-            BeanInfo[] beans = config.getBeans();
+            BeanInfo[] beans = contextConfig.getBeans();
             if (beans != null)
             {
                 for (BeanInfo each : beans)
@@ -108,9 +103,9 @@ public class JfireContextImpl implements JfireContext
                     }
                 }
             }
-            if (config.getBeanConfigs() != null)
+            if (contextConfig.getBeanConfigs() != null)
             {
-                for (BeanAttribute each : config.getBeanConfigs())
+                for (BeanAttribute each : contextConfig.getBeanConfigs())
                 {
                     if (each.getParams().size() > 0 || each.getDependencies().size() > 0 || each.getPostConstructMethod() != null)
                     {
@@ -123,6 +118,25 @@ public class JfireContextImpl implements JfireContext
                 }
             }
         }
+        catch (ClassNotFoundException e)
+        {
+            logger.error("配置的className错误", e);
+        }
+    }
+    
+    @Override
+    public void readConfig(File configFile)
+    {
+        try
+        {
+            /** 将配置文件的内容，以json方式读取，并且得到json对象 */
+            FileInputStream inputStream = new FileInputStream(configFile);
+            byte[] result = new byte[inputStream.available()];
+            inputStream.read(result);
+            inputStream.close();
+            String json = new String(result, Charset.forName("utf-8"));
+            readConfig((JsonObject) JsonTool.fromString(json));
+        }
         catch (FileNotFoundException e)
         {
             logger.error("配置文件不存在", e);
@@ -130,10 +144,6 @@ public class JfireContextImpl implements JfireContext
         catch (IOException e)
         {
             logger.error("解析配置文件出现异常，请检查配置文件是否按照格式要求", e);
-        }
-        catch (ClassNotFoundException e)
-        {
-            logger.error("配置的className错误", e);
         }
     }
     

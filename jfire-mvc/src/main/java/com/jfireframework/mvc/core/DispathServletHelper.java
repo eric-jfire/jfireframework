@@ -1,24 +1,39 @@
 package com.jfireframework.mvc.core;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchEvent.Kind;
+import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
-import org.beetl.core.Configuration;
-import org.beetl.core.GroupTemplate;
-import org.beetl.core.resource.WebAppResourceLoader;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.collection.set.LightSet;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.codejson.JsonArray;
+import com.jfireframework.codejson.JsonObject;
+import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.JfireContextImpl;
 import com.jfireframework.context.aop.AopUtil;
@@ -26,81 +41,91 @@ import com.jfireframework.context.bean.Bean;
 import com.jfireframework.mvc.annotation.ActionClass;
 import com.jfireframework.mvc.annotation.ActionMethod;
 import com.jfireframework.mvc.config.MvcStaticConfig;
+import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
 import com.jfireframework.mvc.interceptor.impl.UploadInterceptor;
 import com.jfireframework.mvc.util.ActionFactory;
-import com.jfireframework.mvc.util.BeetlRender;
-import com.jfireframework.mvc.view.BeetlView;
-import com.jfireframework.mvc.view.BytesView;
-import com.jfireframework.mvc.view.HtmlView;
-import com.jfireframework.mvc.view.JsonView;
-import com.jfireframework.mvc.view.JspView;
-import com.jfireframework.mvc.view.NoneView;
-import com.jfireframework.mvc.view.RedirectView;
-import com.jfireframework.mvc.view.StringView;
+import com.jfireframework.mvc.util.HotwrapClassLoader;
+import com.jfireframework.mvc.view.BeetlRender;
+import com.jfireframework.mvc.view.RenderFactory;
+import com.jfireframework.mvc.view.ViewRender;
 
 public class DispathServletHelper
 {
-    private Logger            logger  = ConsoleLogFactory.getLogger();
-    private JfireContext      jfireContext;
-    private ActionCenter      actionCenter;
-    private String            contextUrl;
-    private ServletContext    servletContext;
-    private RequestDispatcher staticResourceDispatcher;
-    private File              configFile;
-    private File              monitorFile;
-    private String[]          reloadPackages;
-    private WatchService      watcher;
-    private boolean           devMode = false;
-    private BeetlView         beetlView;
-    private BytesView         bytesView;
-    private JsonView          JsonView;
-    private StringView        stringView;
-    private HtmlView          htmlView;
-    private JspView           jspView;
-    private RedirectView      redirectView;
-    private NoneView          noneView;
+    private static final Logger     logger = ConsoleLogFactory.getLogger();
+    private ActionCenter            actionCenter;
+    private final String            contextUrl;
+    private final ServletContext    servletContext;
+    private final RequestDispatcher staticResourceDispatcher;
+    private final JsonObject        config;
+    private final File              monitorFile;
+    private final String[]          reloadPackages;
+    private final WatchService      watcher;
+    private final boolean           devMode;
+    private final RenderFactory     renderFactory;
+    private final String            encode;
     
-    public DispathServletHelper(ServletContext servletContext, ServletConfig servletConfig)
+    public DispathServletHelper(ServletConfig servletConfig)
     {
-        this.servletContext = servletContext;
+        this.servletContext = servletConfig.getServletContext();
         staticResourceDispatcher = getStaticResourceDispatcher();
-        Charset charset;
-        if (servletConfig.getInitParameter("encode") != null)
+        contextUrl = servletContext.getContextPath();
+        config = readConfigFile();
+        encode = config.getWString("encode") == null ? "UTF8" : config.getWString("encode");
+        Charset charset = Charset.forName(encode);
+        renderFactory = new RenderFactory(charset);
+        generateActionCenter(null);
+        devMode = config.contains("devMode") ? config.getBoolean("devMode") : false;
+        if (devMode)
         {
-            charset = Charset.forName(servletConfig.getInitParameter("encode"));
+            Verify.True(config.contains("reloadPackages"), "开发模式为true，此时应该配置reloadPackages内容");
+            Verify.True(config.contains("monitorPath"), "开发模式为true，此时应该配置monitorPath内容");
+            JsonArray jsonArray = config.getJsonArray("reloadPackages");
+            reloadPackages = jsonArray.toArray(new String[jsonArray.size()]);
+            monitorFile = new File(config.getWString("monitorPath"));
+            watcher = generatorWatcher(monitorFile);
         }
         else
         {
-            charset = Charset.forName("utf8");
+            watcher = null;
+            monitorFile = null;
+            reloadPackages = null;
         }
-        initTemplate(charset);
-        try
+        
+    }
+    
+    private JsonObject readConfigFile()
+    {
+        try (FileInputStream inputStream = new FileInputStream(new File(this.getClass().getClassLoader().getResource("mvc.json").toURI())))
         {
-            File configFile = new File(this.getClass().getClassLoader().getResource("mvc.json").toURI());
-            initMvc(configFile);
+            byte[] src = new byte[inputStream.available()];
+            inputStream.read(src);
+            String value = new String(src, Charset.forName("utf8"));
+            return (JsonObject) JsonTool.fromString(value);
         }
-        catch (Exception e)
+        catch (URISyntaxException | IOException e)
         {
-            throw new UnSupportException("解析配置文件异常", e);
+            throw new JustThrowException(e);
         }
     }
     
-    private void initMvc(File configFile)
+    private void generateActionCenter(JfireContext jfireContext)
     {
         AopUtil.initClassPool();
-        jfireContext.readConfig(configFile);
+        jfireContext = jfireContext == null ? new JfireContextImpl() : jfireContext;
+        jfireContext.readConfig(config);
         jfireContext.addPackageNames("com.jfireframework.sql");
         jfireContext.addSingletonEntity("servletContext", servletContext);
+        BeetlRender beetlRender = (BeetlRender) renderFactory.getViewRender(ResultType.Beetl);
+        jfireContext.addSingletonEntity(beetlRender.getClass().getName(), beetlRender);
         addDefaultInterceptors(jfireContext);
-        actionCenter = new ActionCenter(initUrlActionMap(contextUrl, jfireContext).toArray(new Action[0]));
+        actionCenter = new ActionCenter(generateActions(contextUrl, jfireContext).toArray(new Action[0]));
     }
-    
     
     /**
      * 初始化Beancontext容器，并且抽取其中的ActionClass注解的类，将action实例化
      */
-    private List<Action> initUrlActionMap(String contextUrl, JfireContext jfireContext)
+    private List<Action> generateActions(String contextUrl, JfireContext jfireContext)
     {
         Bean[] beans = jfireContext.getBeanByAnnotation(ActionClass.class);
         Bean[] listenerBeans = jfireContext.getBeanByInterface(ActionInitListener.class);
@@ -151,8 +176,6 @@ public class DispathServletHelper
         return list;
     }
     
-    
-    
     private void addDefaultInterceptors(JfireContext jfireContext)
     {
         jfireContext.addBean(DataBinderInterceptor.class);
@@ -176,38 +199,118 @@ public class DispathServletHelper
         }
         else
         {
-            throw new RuntimeException("找不到默认用来处理静态资源的处理器");
+            throw new UnSupportException("找不到默认用来处理静态资源的处理器");
         }
         return requestDispatcher;
     }
     
-    private void initTemplate(Charset charset)
+    private WatchService generatorWatcher(File monitorDir)
     {
-        BeetlRender beetlRender = initBeetlTemplate();
-        beetlView = new BeetlView(beetlRender);
-        bytesView = new BytesView();
-        htmlView = new HtmlView();
-        JsonView = new JsonView(charset);
-        jspView = new JspView();
-        noneView = new NoneView();
-        redirectView = new RedirectView();
-        stringView = new StringView(charset);
-        
-    }
-    
-    private BeetlRender initBeetlTemplate()
-    {
-        WebAppResourceLoader loader = new WebAppResourceLoader();
-        Configuration configuration = null;
+        Set<File> dirs = new HashSet<>();
+        getChildDirs(monitorDir, dirs);
+        Set<Path> paths = new HashSet<>();
+        for (File each : dirs)
+        {
+            paths.add(Paths.get(each.getAbsolutePath()));
+        }
         try
         {
-            configuration = Configuration.defaultConfiguration();
+            WatchService watcher = FileSystems.getDefault().newWatchService();
+            for (Path each : paths)
+            {
+                each.register(watcher, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+            }
+            return watcher;
         }
         catch (IOException e)
         {
-            e.printStackTrace();
+            throw new JustThrowException(e);
         }
-        return new BeetlRender(new GroupTemplate(loader, configuration));
+        
     }
     
+    private void getChildDirs(File parentDir, Set<File> dirSets)
+    {
+        dirSets.add(parentDir);
+        for (File each : parentDir.listFiles())
+        {
+            if (each.isDirectory())
+            {
+                getChildDirs(each, dirSets);
+            }
+        }
+    }
+    
+    public String encode()
+    {
+        return encode;
+    }
+    
+    public Action getAction(HttpServletRequest request)
+    {
+        return actionCenter.getAction(request);
+    }
+    
+    public ViewRender getViewRender(ResultType resultType)
+    {
+        return renderFactory.getViewRender(resultType);
+    }
+    
+    public void handleStaticResourceRequest(HttpServletRequest request, HttpServletResponse response)
+    {
+        try
+        {
+            staticResourceDispatcher.forward(request, response);
+        }
+        catch (ServletException | IOException e)
+        {
+            throw new JustThrowException(e);
+        }
+    }
+    
+    public void preHandleDevMode()
+    {
+        if (devMode)
+        {
+            while (true)
+            {
+                WatchKey key = watcher.poll();
+                if (key == null)
+                {
+                    break;
+                }
+                for (WatchEvent<?> event : key.pollEvents())
+                {
+                    Kind<?> kind = event.kind();
+                    if (kind == StandardWatchEventKinds.OVERFLOW)
+                    {// 事件可能lost or discarded
+                        continue;
+                    }
+                    try
+                    {
+                        long t0 = System.currentTimeMillis();
+                        ClassLoader classLoader = new HotwrapClassLoader(monitorFile, reloadPackages);
+                        JfireContext jfireContext = (JfireContext) classLoader.loadClass("com.jfireframework.context.JfireContextImpl").newInstance();
+                        jfireContext.addSingletonEntity(ClassLoader.class.getSimpleName(), classLoader);
+                        jfireContext.setClassLoader(classLoader);
+                        generateActionCenter(jfireContext);
+                        logger.debug("热部署,耗时:{}", System.currentTimeMillis() - t0);
+                        if (!key.reset())
+                        {
+                            break;
+                        }
+                        break;
+                    }
+                    catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
+                    {
+                        if (!key.reset())
+                        {
+                            break;
+                        }
+                        throw new JustThrowException(e);
+                    }
+                }
+            }
+        }
+    }
 }
