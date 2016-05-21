@@ -109,5 +109,4 @@ public class ActionFactory
         actionInfo.setInterceptors(interceptors.toArray(new ActionInterceptor[interceptors.size()]));
         return new Action(actionInfo);
     }
-    
 }

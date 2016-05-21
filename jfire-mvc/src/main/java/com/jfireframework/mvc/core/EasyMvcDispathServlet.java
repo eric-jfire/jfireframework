@@ -14,7 +14,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
-import com.jfireframework.mvc.view.ViewRender;
+import com.jfireframework.mvc.viewrender.ViewRender;
 
 /**
  * 充当路径分发器的类，用来根据地址规则转发数据请求

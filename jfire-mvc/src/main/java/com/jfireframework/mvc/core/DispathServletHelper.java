@@ -24,6 +24,9 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.beetl.core.Configuration;
+import org.beetl.core.GroupTemplate;
+import org.beetl.core.resource.WebAppResourceLoader;
 import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
@@ -45,10 +48,10 @@ import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
 import com.jfireframework.mvc.interceptor.impl.UploadInterceptor;
 import com.jfireframework.mvc.util.ActionFactory;
+import com.jfireframework.mvc.util.BeetlRender;
 import com.jfireframework.mvc.util.HotwrapClassLoader;
-import com.jfireframework.mvc.view.BeetlRender;
-import com.jfireframework.mvc.view.RenderFactory;
-import com.jfireframework.mvc.view.ViewRender;
+import com.jfireframework.mvc.viewrender.RenderFactory;
+import com.jfireframework.mvc.viewrender.ViewRender;
 
 public class DispathServletHelper
 {
@@ -73,7 +76,17 @@ public class DispathServletHelper
         config = readConfigFile();
         encode = config.getWString("encode") == null ? "UTF8" : config.getWString("encode");
         Charset charset = Charset.forName(encode);
-        renderFactory = new RenderFactory(charset);
+        WebAppResourceLoader loader = new WebAppResourceLoader();
+        Configuration configuration = null;
+        try
+        {
+            configuration = Configuration.defaultConfiguration();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        renderFactory = new RenderFactory(charset, new BeetlRender(new GroupTemplate(loader, configuration)));
         generateActionCenter(null);
         devMode = config.contains("devMode") ? config.getBoolean("devMode") : false;
         if (devMode)
@@ -116,6 +129,7 @@ public class DispathServletHelper
         jfireContext.readConfig(config);
         jfireContext.addPackageNames("com.jfireframework.sql");
         jfireContext.addSingletonEntity("servletContext", servletContext);
+        jfireContext.addSingletonEntity("beetlRender", renderFactory.getViewRender(ResultType.Beetl));
         BeetlRender beetlRender = (BeetlRender) renderFactory.getViewRender(ResultType.Beetl);
         jfireContext.addSingletonEntity(beetlRender.getClass().getName(), beetlRender);
         addDefaultInterceptors(jfireContext);

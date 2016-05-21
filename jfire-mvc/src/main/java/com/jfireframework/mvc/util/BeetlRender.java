@@ -1,4 +1,4 @@
-package com.jfireframework.mvc.view;
+package com.jfireframework.mvc.util;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -14,7 +14,7 @@ import org.beetl.core.exception.BeetlException;
 import org.beetl.ext.web.SessionWrapper;
 import org.beetl.ext.web.WebVariable;
 import com.jfireframework.mvc.core.ViewAndModel;
-import com.jfireframework.mvc.util.JfireMvcResponseWrapper;
+import com.jfireframework.mvc.viewrender.ViewRender;
 
 public class BeetlRender implements ViewRender
 {

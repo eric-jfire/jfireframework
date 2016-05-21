@@ -1,4 +1,4 @@
-package com.jfireframework.mvc.view;
+package com.jfireframework.mvc.viewrender;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
