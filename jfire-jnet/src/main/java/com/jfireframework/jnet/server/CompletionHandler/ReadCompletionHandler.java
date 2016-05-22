@@ -215,10 +215,10 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             }
             if (workMode == WorkMode.ASYNC_WITHOUT_ORDER)
             {
-                ServerInternalTask task = new ServerInternalTask();
+                ServerInternalTask task = asyncTaskCenter.askFor();
                 task.init(-1, intermediateResult, serverChannel, this, writeCompletionHandler, 0);
-                asyncTaskCenter.addTask(task);
                 sequence.set(cursor + 1);
+                asyncTaskCenter.addTask(task);
                 if (ioBuf.remainRead() == 0)
                 {
                     return IN_READ;

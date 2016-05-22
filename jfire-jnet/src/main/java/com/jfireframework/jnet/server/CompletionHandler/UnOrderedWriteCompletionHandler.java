@@ -3,26 +3,45 @@ package com.jfireframework.jnet.server.CompletionHandler;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.CompositeByteBuf;
 import com.jfireframework.baseutil.concurrent.MPSCLinkedQueue;
+import com.jfireframework.baseutil.concurrent.UnsafeReferenceFieldUpdater;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 
 public class UnOrderedWriteCompletionHandler implements WriteCompletionHandler
 {
-    private static final Logger               logger                      = ConsoleLogFactory.getLogger();
-    private final ReadCompletionHandler       readCompletionHandler;
-    private final ServerChannel               serverChannel;
-    private volatile long                     cursor                      = 0;
-    private static final int                  UN_WRITE                    = 0;
-    private static final int                  WRITING                     = 1;
-    private AtomicInteger                     status                      = new AtomicInteger(UN_WRITE);
-    private final MPSCLinkedQueue<ByteBuf<?>> bufQueue                    = new MPSCLinkedQueue<ByteBuf<?>>();
-    private final int                         maxBatchWriteNum;
-    private final BatchWriteCompletionHandler batchWriteCompletionHandler = new BatchWriteCompletionHandler();
+    private static final Logger                                                                        logger                      = ConsoleLogFactory.getLogger();
+    private final ReadCompletionHandler                                                                readCompletionHandler;
+    private final ServerChannel                                                                        serverChannel;
+    private volatile long                                                                              cursor                      = 0;
+    private volatile WritePermission                                                                   writePermission             = WritePermission.valueOf(WritePermission.UN_take, 0);
+    private static final UnsafeReferenceFieldUpdater<UnOrderedWriteCompletionHandler, WritePermission> updater                     = new UnsafeReferenceFieldUpdater<>(UnOrderedWriteCompletionHandler.class, "writePermission");
+    private final MPSCLinkedQueue<ByteBuf<?>>                                                          bufQueue                    = new MPSCLinkedQueue<ByteBuf<?>>();
+    private final int                                                                                  maxBatchWriteNum;
+    private final BatchWriteCompletionHandler                                                          batchWriteCompletionHandler = new BatchWriteCompletionHandler();
+    
+    private static final class WritePermission
+    {
+        public static final int UN_take = 0;
+        public static final int TAKED   = 1;
+        private final long      version;
+        private final int       state;
+        
+        private WritePermission(int state, long version)
+        {
+            this.version = version;
+            this.state = state;
+        }
+        
+        static WritePermission valueOf(int state, long version)
+        {
+            return new WritePermission(state, version);
+        }
+        
+    }
     
     public UnOrderedWriteCompletionHandler(ReadCompletionHandler readCompletionHandler, ServerChannel channelInfo, int maxBatchWriteNum)
     {
@@ -33,14 +52,17 @@ public class UnOrderedWriteCompletionHandler implements WriteCompletionHandler
     
     public void askToWrite(ByteBuf<?> buf)
     {
-        bufQueue.add(buf);
-        if (status.compareAndSet(UN_WRITE, WRITING))
+        
+        WritePermission current = writePermission;
+        bufQueue.offer(buf);
+        if (current.state == WritePermission.UN_take && current == writePermission)
         {
-            
-        }
-        else
-        {
-            ;
+            // 如果这个cas可以完成，就意味着这两个if之间，没有其他的操作参与进来
+            if (updater.compareAndSwap(this, current, WritePermission.valueOf(WritePermission.TAKED, current.version)))
+            {
+                ByteBuf<?> bufForWrite = bufQueue.poll();
+                serverChannel.getSocketChannel().write(bufForWrite.cachedNioBuffer(), 10, TimeUnit.SECONDS, bufForWrite, this);
+            }
         }
     }
     
@@ -83,10 +105,11 @@ public class UnOrderedWriteCompletionHandler implements WriteCompletionHandler
             }
             else
             {
-                status.set(UN_WRITE);
+                WritePermission give_up = WritePermission.valueOf(WritePermission.UN_take, cursor);
+                writePermission = give_up;
                 if (bufQueue.isEmpty() == false)
                 {
-                    if (status.compareAndSet(UN_WRITE, WRITING))
+                    if (updater.compareAndSwap(this, give_up, WritePermission.valueOf(WritePermission.TAKED, give_up.version)))
                     {
                         ByteBuf<?> nextBuf = bufQueue.poll();
                         serverChannel.getSocketChannel().write(nextBuf.cachedNioBuffer(), 10, TimeUnit.SECONDS, nextBuf, this);

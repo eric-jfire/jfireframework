@@ -11,6 +11,7 @@ import com.jfireframework.jnet.server.CompletionHandler.UnOrderedWriteCompletion
 public class AsyncTaskCenter
 {
     private final LinkedTransferQueue<ServerInternalTask> tasks  = new LinkedTransferQueue<>();
+    private final LinkedTransferQueue<ServerInternalTask> res    = new LinkedTransferQueue<>();
     private volatile boolean                              stoped = false;
     
     public AsyncTaskCenter(int threadSize, WorkMode workMode)
@@ -20,6 +21,16 @@ public class AsyncTaskCenter
         {
             pool.submit(new TaskHandler(workMode));
         }
+    }
+    
+    public ServerInternalTask askFor()
+    {
+        ServerInternalTask task = res.poll();
+        if (task == null)
+        {
+            return new ServerInternalTask();
+        }
+        return task;
     }
     
     public void addTask(ServerInternalTask task)
@@ -81,6 +92,7 @@ public class AsyncTaskCenter
                             {
                                 UnOrderedWriteCompletionHandler writeCompletionHandler = (UnOrderedWriteCompletionHandler) task.getWriteCompletionHandler();
                                 writeCompletionHandler.askToWrite((ByteBuf<?>) intermediateResult);
+                                res.offer(task);
                             }
                             else
                             {

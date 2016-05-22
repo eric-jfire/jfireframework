@@ -33,32 +33,12 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
         maxBatchWriteNum = serverConfig.getMaxBatchWriteNum();
         writeMode = serverConfig.getWriteMode();
         workMode = serverConfig.getWorkMode();
-        switch (workMode)
-        {
-            case SYNC_WITH_ORDER:
-                asyncTaskCenter = null;
-                break;
-            case ASYNC_WITH_ORDER:
-                asyncTaskCenter = new AsyncTaskCenter(serverConfig.getAsyncThreadSize(), workMode);
-                break;
-            case MIX_WITH_ORDER:
-                asyncTaskCenter = new AsyncTaskCenter(serverConfig.getAsyncThreadSize(), workMode);
-                break;
-            case ASYNC_WITHOUT_ORDER:
-                asyncTaskCenter = new AsyncTaskCenter(serverConfig.getAsyncThreadSize(), workMode);
-                break;
-            default:
-                asyncTaskCenter = null;
-                break;
-        }
+        asyncTaskCenter = new AsyncTaskCenter(serverConfig.getAsyncThreadSize(), workMode);
     }
     
     public void stop()
     {
-        if (asyncTaskCenter != null)
-        {
-            asyncTaskCenter.stop();
-        }
+        asyncTaskCenter.stop();
     }
     
     @Override

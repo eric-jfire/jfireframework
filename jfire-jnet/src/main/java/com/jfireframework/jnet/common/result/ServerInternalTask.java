@@ -15,7 +15,7 @@ public class ServerInternalTask extends AbstractInternalTask
      */
     private static final class WritePermission
     {
-        public static final int UN_take = 0;
+        public static final int UN_TAKE = 0;
         public static final int TAKED   = 1;
         private final long      version;
         private final int       state;
@@ -57,7 +57,7 @@ public class ServerInternalTask extends AbstractInternalTask
         this.writeCompletionHandler = orderedWriteCompletionHandler;
         this.index = index;
         this.data = data;
-        updater.orderSet(this, WritePermission.valueOf(WritePermission.UN_take, version));
+        updater.orderSet(this, WritePermission.valueOf(WritePermission.UN_TAKE, version));
         taskState = UNDONE;
     }
     
@@ -104,7 +104,7 @@ public class ServerInternalTask extends AbstractInternalTask
     private boolean casState(long expectedVersion)
     {
         WritePermission current = writePermission;
-        return current.version == expectedVersion && current.state == WritePermission.UN_take && updater.compareAndSwap(this, current, WritePermission.valueOf(WritePermission.TAKED, expectedVersion));
+        return current.version == expectedVersion && current.state == WritePermission.UN_TAKE && updater.compareAndSwap(this, current, WritePermission.valueOf(WritePermission.TAKED, expectedVersion));
     }
     
     /**
