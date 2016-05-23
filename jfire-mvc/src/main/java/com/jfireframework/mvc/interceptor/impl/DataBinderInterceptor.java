@@ -30,7 +30,7 @@ public class DataBinderInterceptor implements ActionInterceptor
     @Override
     public boolean interceptor(HttpServletRequest request, HttpServletResponse response, Action action)
     {
-        if (request.getAttribute(DATABINDERKEY) != null)
+        if (request.getMethod().equals("PUT"))
         {
             String value = (String) request.getAttribute(DATABINDERKEY);
             String[] params = value.split("&");

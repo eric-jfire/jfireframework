@@ -152,12 +152,21 @@ public class DispathServletHelper
         List<Action> list = new ArrayList<>();
         for (Bean each : beans)
         {
-            list.addAll(initAction(each, listeners, contextUrl, jfireContext));
+            list.addAll(generateActions(each, listeners, jfireContext));
         }
         return list;
     }
     
-    private List<Action> initAction(Bean bean, ActionInitListener[] listeners, String contextUrl, JfireContext jfireContext)
+    /**
+     * 创建某一个bean下面的所有action
+     * 
+     * @param bean
+     * @param listeners
+     * @param contextUrl
+     * @param jfireContext
+     * @return
+     */
+    private List<Action> generateActions(Bean bean, ActionInitListener[] listeners, JfireContext jfireContext)
     {
         Class<?> src = bean.getOriginType();
         ActionClass actionClass = src.getAnnotation(ActionClass.class);
