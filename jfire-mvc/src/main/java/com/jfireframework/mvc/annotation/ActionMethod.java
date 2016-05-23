@@ -6,6 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import com.jfireframework.mvc.config.ResultType;
+import com.jfireframework.mvc.util.RequestMethod;
 
 /**
  * 表示该方法是一个action方法
@@ -47,7 +48,7 @@ public @interface ActionMethod
      */
     public boolean rest() default false;
     
-    public RequestMethod[] methods() default { RequestMethod.GET, RequestMethod.POST };
+    public RequestMethod method() default RequestMethod.GET;
     
     /**
      * 默认为返回类型为text/html

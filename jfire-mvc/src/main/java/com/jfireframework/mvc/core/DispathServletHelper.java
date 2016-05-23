@@ -50,6 +50,7 @@ import com.jfireframework.mvc.interceptor.impl.UploadInterceptor;
 import com.jfireframework.mvc.util.ActionFactory;
 import com.jfireframework.mvc.util.BeetlRender;
 import com.jfireframework.mvc.util.HotwrapClassLoader;
+import com.jfireframework.mvc.util.ReportMdActionListener;
 import com.jfireframework.mvc.viewrender.RenderFactory;
 import com.jfireframework.mvc.viewrender.ViewRender;
 
@@ -133,6 +134,11 @@ public class DispathServletHelper
         BeetlRender beetlRender = (BeetlRender) renderFactory.getViewRender(ResultType.Beetl);
         jfireContext.addSingletonEntity(beetlRender.getClass().getName(), beetlRender);
         addDefaultInterceptors(jfireContext);
+        boolean report = config.getWBoolean("report") == null ? false : config.getBoolean("report");
+        if (report)
+        {
+            jfireContext.addBean(ReportMdActionListener.class);
+        }
         actionCenter = new ActionCenter(generateActions(contextUrl, jfireContext).toArray(new Action[0]));
     }
     

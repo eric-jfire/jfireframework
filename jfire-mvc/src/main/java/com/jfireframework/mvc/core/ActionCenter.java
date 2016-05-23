@@ -9,9 +9,6 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.UnSupportException;
-import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
-import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.mvc.annotation.RequestMethod;
 
 public final class ActionCenter
 {
@@ -23,7 +20,6 @@ public final class ActionCenter
     private final Action[]            rest_put_actions;
     private final Map<String, Action> deleteActions = new HashMap<>();
     private final Action[]            rest_delete_actions;
-    private static final Logger       logger        = ConsoleLogFactory.getLogger();
     
     public ActionCenter(Action[] actions)
     {
@@ -33,67 +29,64 @@ public final class ActionCenter
         List<Action> rest_delete_actions_list = new LinkedList<>();
         for (Action each : actions)
         {
-            for (RequestMethod requestMethod : each.getRequestMethods())
+            switch (each.getRequestMethod())
             {
-                switch (requestMethod)
-                {
-                    case GET:
-                        if (each.isRest())
+                case GET:
+                    if (each.isRest())
+                    {
+                        rest_get_actions_list.add(each);
+                    }
+                    else
+                    {
+                        if (getActions.containsKey(each.getRequestUrl()))
                         {
-                            rest_get_actions_list.add(each);
+                            throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), getActions.get(each.getRequestUrl()).getMethod().toGenericString()));
                         }
-                        else
+                        getActions.put(each.getRequestUrl(), each);
+                    }
+                    break;
+                case POST:
+                    if (each.isRest())
+                    {
+                        rest_post_actions_list.add(each);
+                    }
+                    else
+                    {
+                        if (postActions.containsKey(each.getRequestUrl()))
                         {
-                            if (getActions.containsKey(each.getRequestUrl()))
-                            {
-                                throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), getActions.get(each.getRequestUrl()).getMethod().toGenericString()));
-                            }
-                            getActions.put(each.getRequestUrl(), each);
+                            throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), postActions.get(each.getRequestUrl()).getMethod().toGenericString()));
                         }
-                        break;
-                    case POST:
-                        if (each.isRest())
+                        postActions.put(each.getRequestUrl(), each);
+                    }
+                    break;
+                case PUT:
+                    if (each.isRest())
+                    {
+                        rest_put_actions_list.add(each);
+                    }
+                    else
+                    {
+                        if (putActions.containsKey(each.getRequestUrl()))
                         {
-                            rest_post_actions_list.add(each);
+                            throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), putActions.get(each.getRequestUrl()).getMethod().toGenericString()));
                         }
-                        else
+                        putActions.put(each.getRequestUrl(), each);
+                    }
+                    break;
+                case DELETE:
+                    if (each.isRest())
+                    {
+                        rest_delete_actions_list.add(each);
+                    }
+                    else
+                    {
+                        if (deleteActions.containsKey(each.getRequestUrl()))
                         {
-                            if (postActions.containsKey(each.getRequestUrl()))
-                            {
-                                throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), postActions.get(each.getRequestUrl()).getMethod().toGenericString()));
-                            }
-                            postActions.put(each.getRequestUrl(), each);
+                            throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), deleteActions.get(each.getRequestUrl()).getMethod().toGenericString()));
                         }
-                        break;
-                    case PUT:
-                        if (each.isRest())
-                        {
-                            rest_put_actions_list.add(each);
-                        }
-                        else
-                        {
-                            if (putActions.containsKey(each.getRequestUrl()))
-                            {
-                                throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), putActions.get(each.getRequestUrl()).getMethod().toGenericString()));
-                            }
-                            putActions.put(each.getRequestUrl(), each);
-                        }
-                        break;
-                    case DELETE:
-                        if (each.isRest())
-                        {
-                            rest_delete_actions_list.add(each);
-                        }
-                        else
-                        {
-                            if (deleteActions.containsKey(each.getRequestUrl()))
-                            {
-                                throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), deleteActions.get(each.getRequestUrl()).getMethod().toGenericString()));
-                            }
-                            deleteActions.put(each.getRequestUrl(), each);
-                        }
-                        break;
-                }
+                        deleteActions.put(each.getRequestUrl(), each);
+                    }
+                    break;
             }
         }
         checkRepetition(rest_get_actions_list);
@@ -104,38 +97,6 @@ public final class ActionCenter
         rest_post_actions = rest_post_actions_list.toArray(new Action[0]);
         rest_delete_actions = rest_delete_actions_list.toArray(new Action[0]);
         rest_put_actions = rest_put_actions_list.toArray(new Action[0]);
-        for (Action each : getActions.values())
-        {
-            logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
-        }
-        for (Action each : postActions.values())
-        {
-            logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
-        }
-        for (Action each : putActions.values())
-        {
-            logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
-        }
-        for (Action each : deleteActions.values())
-        {
-            logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
-        }
-        for (Action each : rest_get_actions)
-        {
-            logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
-        }
-        for (Action each : rest_post_actions)
-        {
-            logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
-        }
-        for (Action each : rest_put_actions)
-        {
-            logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
-        }
-        for (Action each : rest_delete_actions)
-        {
-            logger.debug("url:{},调用的方法是{}", each.getRequestUrl(), each.getMethod().toGenericString());
-        }
     }
     
     /**

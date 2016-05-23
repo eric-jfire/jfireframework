@@ -5,12 +5,12 @@ import java.lang.reflect.Method;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.mvc.annotation.ContentType;
-import com.jfireframework.mvc.annotation.RequestMethod;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.rest.RestfulRule;
 import com.jfireframework.mvc.util.ActionInfo;
+import com.jfireframework.mvc.util.RequestMethod;
 import sun.reflect.MethodAccessor;
 
 /**
@@ -32,7 +32,7 @@ public class Action
     private final boolean             rest;
     private final RestfulRule         restfulRule;
     private final boolean             readStream;
-    private final RequestMethod[]     requestMethods;
+    private final RequestMethod       requestMethod;
     private final Method              method;
     private final String              contentType;
     private final ResultType          resultType;
@@ -47,7 +47,7 @@ public class Action
         rest = info.isRest();
         restfulRule = info.getRestfulRule();
         readStream = info.isReadStream();
-        requestMethods = info.getRequestMethods();
+        requestMethod = info.getRequestMethod();
         method = info.getMethod();
         resultType = info.getResultType();
         if ("".equals(info.getContentType()))
@@ -138,9 +138,9 @@ public class Action
         return readStream;
     }
     
-    public RequestMethod[] getRequestMethods()
+    public RequestMethod getRequestMethod()
     {
-        return requestMethods;
+        return requestMethod;
     }
     
     public Method getMethod()

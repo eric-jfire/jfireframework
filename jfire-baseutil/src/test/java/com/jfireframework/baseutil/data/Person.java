@@ -1,14 +1,9 @@
 package com.jfireframework.baseutil.data;
 
-import com.jfireframework.baseutil.annotation.FieldOrder;
-
 public class Person
 {
-    @FieldOrder(1)
     private String name = "linbin";
-    @FieldOrder(2)
     private int    age;
-    @FieldOrder(3)
     private float  weight;
     private Home   home;
                    

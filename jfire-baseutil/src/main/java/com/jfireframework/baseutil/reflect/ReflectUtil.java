@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.baseutil.annotation.IgnoreField;
 import com.jfireframework.baseutil.code.CodeLocation;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.collection.set.LightSet;
@@ -338,7 +337,6 @@ public final class ReflectUtil
             {
                 if (
                     Modifier.isPublic(each.getModifiers()) == false //
-                            || each.isAnnotationPresent(IgnoreField.class) //
                             || each.getParameterTypes().length > 0//
                             || (each.getName().startsWith("get") | each.getName().startsWith("is")) == false //
                             || each.getReturnType().equals(Void.class)//
@@ -374,7 +372,6 @@ public final class ReflectUtil
             {
                 if (
                     Modifier.isPublic(each.getModifiers()) == false//
-                            || each.isAnnotationPresent(IgnoreField.class)//
                             || each.getParameterTypes().length != 1//
                             || each.getName().startsWith("set") == false//
                             || each.getName().equals("set")

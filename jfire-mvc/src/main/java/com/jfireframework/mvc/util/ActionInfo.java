@@ -1,7 +1,6 @@
 package com.jfireframework.mvc.util;
 
 import java.lang.reflect.Method;
-import com.jfireframework.mvc.annotation.RequestMethod;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
@@ -13,7 +12,7 @@ public class ActionInfo
 {
     private Object              entity;
     private Method              method;
-    private RequestMethod[]     requestMethods;
+    private RequestMethod       requestMethod;
     private boolean             rest       = false;
     private DataBinder[]        dataBinders;
     protected String            requestUrl;
@@ -135,14 +134,14 @@ public class ActionInfo
         this.method = method;
     }
     
-    public RequestMethod[] getRequestMethods()
+    public RequestMethod getRequestMethod()
     {
-        return requestMethods;
+        return requestMethod;
     }
     
-    public void setRequestMethods(RequestMethod[] requestMethods)
+    public void setRequestMethod(RequestMethod requestMethod)
     {
-        this.requestMethods = requestMethods;
+        this.requestMethod = requestMethod;
     }
     
 }

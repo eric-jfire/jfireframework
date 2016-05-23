@@ -7,12 +7,15 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.mvc.annotation.ActionMethod;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.binder.DataBinderFactory;
+import com.jfireframework.mvc.binder.impl.HttpRequestBinder;
+import com.jfireframework.mvc.binder.impl.HttpResponseBinder;
+import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
+import com.jfireframework.mvc.binder.impl.ServletContextBinder;
 import com.jfireframework.mvc.core.Action;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.rest.RestfulUrlTool;
@@ -34,8 +37,7 @@ public class ActionFactory
         ActionInfo actionInfo = new ActionInfo();
         actionInfo.setMethod(method);
         ActionMethod actionMethod = method.getAnnotation(ActionMethod.class);
-        Verify.True(actionMethod.methods().length > 0, "action的允可方法列表为空，请检查{}.{}", method.getDeclaringClass().getName(), method.getName());
-        actionInfo.setRequestMethods(actionMethod.methods());
+        actionInfo.setRequestMethod(actionMethod.method());
         actionInfo.setDataBinders(DataBinderFactory.build(method));
         actionInfo.setReadStream(actionMethod.readStream());
         actionInfo.setEntity(bean.getInstance());
@@ -62,6 +64,15 @@ public class ActionFactory
                 {
                     for (DataBinder each : actionInfo.getDataBinders())
                     {
+                        if (
+                            each instanceof HttpSessionBinder //
+                                    || each instanceof HttpRequestBinder //
+                                    || each instanceof HttpResponseBinder //
+                                    || each instanceof ServletContextBinder
+                        )
+                        {
+                            continue;
+                        }
                         requestPath += "/{" + each.getParamName() + "}";
                     }
                 }
