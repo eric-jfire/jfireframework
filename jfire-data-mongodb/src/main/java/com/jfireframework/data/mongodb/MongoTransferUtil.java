@@ -133,7 +133,11 @@ abstract class TransferField
         @Override
         public void transfer(Document document, Object target)
         {
-            unsafe.putObject(target, offset, document.getObjectId("_id").toHexString());
+            ObjectId objectId = document.getObjectId("_id");
+            if (objectId != null)
+            {
+                unsafe.putObject(target, offset, objectId.toHexString());
+            }
         }
         
         @Override

@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
+import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.baseutil.disruptor.Sequence;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
@@ -45,9 +46,11 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     private final WorkMode               workMode;
     private final AsyncTaskCenter        asyncTaskCenter;
     private final int                    capacity;
+    private final Disruptor              disruptor;
     
-    public ReadCompletionHandler(ServerChannel serverChannel, WorkMode workMode, AsyncTaskCenter asyncTaskCenter, WriteMode writeMode, int maxBatchWriteNum)
+    public ReadCompletionHandler(ServerChannel serverChannel, WorkMode workMode, AsyncTaskCenter asyncTaskCenter, WriteMode writeMode, int maxBatchWriteNum, Disruptor disruptor)
     {
+        this.disruptor = disruptor;
         this.asyncTaskCenter = asyncTaskCenter;
         this.workMode = workMode;
         this.serverChannel = serverChannel;
@@ -285,7 +288,8 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
                     }
                     case ASYNC_WITH_ORDER:
                     {
-                        asyncTaskCenter.addTask(task);
+//                        asyncTaskCenter.addTask(task);
+                        disruptor.publish(task);
                         break;
                     }
                     default:
