@@ -32,7 +32,7 @@ public @interface ActionMethod
      * @return
      * @author windfire(windfire@zailanghua.com)
      */
-    public ResultType resultType();
+    public ResultType resultType() default ResultType.AUTO;
     
     /**
      * 该方法直接从request中读取流，不进行数据组装处理

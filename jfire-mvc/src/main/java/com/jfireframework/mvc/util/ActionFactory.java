@@ -16,7 +16,9 @@ import com.jfireframework.mvc.binder.impl.HttpRequestBinder;
 import com.jfireframework.mvc.binder.impl.HttpResponseBinder;
 import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
 import com.jfireframework.mvc.binder.impl.ServletContextBinder;
+import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.core.Action;
+import com.jfireframework.mvc.core.ViewAndModel;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.rest.RestfulUrlTool;
 
@@ -41,7 +43,7 @@ public class ActionFactory
         actionInfo.setDataBinders(DataBinderFactory.build(method));
         actionInfo.setReadStream(actionMethod.readStream());
         actionInfo.setEntity(bean.getInstance());
-        actionInfo.setResultType(actionMethod.resultType());
+        setResultType(actionInfo);
         actionInfo.setContentType(actionMethod.contentType());
         if (actionMethod.url().equals("/"))
         {
@@ -108,7 +110,7 @@ public class ActionFactory
             {
                 for (String singleRule : rule.split(";"))
                 {
-                    if (requestPath.startsWith(singleRule))
+                    if (isInterceptored(requestPath, singleRule))
                     {
                         interceptors.add(interceptor);
                         break;
@@ -119,5 +121,61 @@ public class ActionFactory
         interceptors.sort(AESC_COMPARATOR);
         actionInfo.setInterceptors(interceptors.toArray(new ActionInterceptor[interceptors.size()]));
         return new Action(actionInfo);
+    }
+    
+    private static boolean isInterceptored(String requestPath, String rule)
+    {
+        String[] rules = rule.split("\\*");
+        int index = 0;
+        for (int i = 0; i < rules.length; i++)
+        {
+            index = requestPath.indexOf(rules[i], index);
+            if (index < 0)
+            {
+                return false;
+            }
+            index += rules[i].length();
+        }
+        return true;
+    }
+    
+    private static void setResultType(ActionInfo info)
+    {
+        Method method = info.getMethod();
+        if (method.getAnnotation(ActionMethod.class).resultType() == ResultType.AUTO)
+        {
+            Class<?> type = method.getReturnType();
+            if (type == String.class)
+            {
+                info.setResultType(ResultType.Redirect);
+            }
+            else if (type == Void.class)
+            {
+                info.setResultType(ResultType.None);
+            }
+            else if (type == ViewAndModel.class)
+            {
+                if (method.getParameterTypes().length == 0)
+                {
+                    info.setResultType(ResultType.Html);
+                }
+                else
+                {
+                    info.setResultType(ResultType.Beetl);
+                }
+            }
+            else if (type == byte[].class)
+            {
+                info.setResultType(ResultType.Bytes);
+            }
+            else
+            {
+                info.setResultType(ResultType.Json);
+            }
+        }
+        else
+        {
+            info.setResultType(method.getAnnotation(ActionMethod.class).resultType());
+        }
     }
 }
