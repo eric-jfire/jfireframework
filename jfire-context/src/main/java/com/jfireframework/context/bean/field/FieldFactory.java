@@ -181,17 +181,16 @@ public class FieldFactory
                 Bean dependencyBean = beanNameMap.get(value);
                 Verify.exist(dependencyBean, "属性{}.{}进行map注入，配置信息{}中指定的bean{}不存在", field.getDeclaringClass(), field.getName(), dependencyStr, value);
                 beans[i] = dependencyBean;
-                String _simpleName = keyClass.getSimpleName();
-                if (_simpleName.equals("Integer"))
+                if (keyClass == Integer.class)
                 {
                     keys[i] = Integer.valueOf(key);
                     
                 }
-                else if (_simpleName.equals("String"))
+                else if (keyClass == String.class)
                 {
                     keys[i] = key;
                 }
-                else if (_simpleName.equals("Long"))
+                else if (keyClass == Long.class)
                 {
                     keys[i] = Long.valueOf(key);
                 }
