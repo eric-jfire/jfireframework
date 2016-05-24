@@ -21,7 +21,7 @@ public class SimpleUid
         try
         {
             String _pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
-            pid = Short.valueOf(_pid);
+            pid = Short.parseShort(_pid);
             // 用到2046-01-01需要的位数是30的bit
             SimpleDateFormat format = new SimpleDateFormat("yyyy-mm-dd");
             base = format.parse("2016-01-01").getTime();
