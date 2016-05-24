@@ -4,11 +4,12 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
-import java.util.concurrent.Executors;
 import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.baseutil.disruptor.EntryAction;
 import com.jfireframework.baseutil.disruptor.waitstrategy.BlockWaitStrategy;
-import com.jfireframework.baseutil.disruptor.waitstrategy.BusyWaitStrategy;
+import com.jfireframework.baseutil.disruptor.waitstrategy.ParkWaitStrategy;
+import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
@@ -42,11 +43,27 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
         workMode = serverConfig.getWorkMode();
         asyncTaskCenter = new AsyncTaskCenter(serverConfig.getAsyncThreadSize(), workMode);
         EntryAction[] actions = new EntryAction[serverConfig.getAsyncThreadSize()];
+        Thread[] threads = new Thread[actions.length];
         for (int i = 0; i < actions.length; i++)
         {
             actions[i] = new ServerInternalResultAction();
+            threads[i] = new Thread(actions[i]);
         }
-        disruptor = new Disruptor(2048, new BusyWaitStrategy(), actions, 2, Executors.newFixedThreadPool(serverConfig.getAsyncThreadSize()));
+        WaitStrategy waitStrategy = null;
+        switch (serverConfig.getWaitMode())
+        {
+            case BLOCK:
+                waitStrategy = new BlockWaitStrategy();
+                break;
+            case PARK:
+                waitStrategy = new ParkWaitStrategy(threads);
+                break;
+        }
+        if (serverConfig.getAsyncCapacity() <= serverConfig.getAsyncThreadSize() * serverConfig.getChannelCapacity())
+        {
+            throw new UnSupportException("异步任务的容量必须大于异步线程数乘以通道容量的结果");
+        }
+        disruptor = new Disruptor(serverConfig.getAsyncCapacity(), actions, threads, waitStrategy);
     }
     
     public void stop()

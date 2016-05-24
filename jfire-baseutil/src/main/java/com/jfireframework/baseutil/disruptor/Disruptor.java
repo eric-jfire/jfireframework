@@ -20,6 +20,16 @@ public class Disruptor
         this.ringArray = ringArray;
     }
     
+    public Disruptor(int ringSize, EntryAction[] actions, Thread[] threads, WaitStrategy waitStrategy)
+    {
+        ringArray = new ComplexMultRingArray(ringSize, waitStrategy, actions);
+        for (int i = 0; i < threads.length; i++)
+        {
+            threads[i].start();
+        }
+        pool = null;
+    }
+    
     public Disruptor(int ringSize, WaitStrategy waitStrategy, EntryAction[] actions, int ringType, ExecutorService pool)
     {
         if (actions[0] instanceof ExclusiveEntryAction)
@@ -77,7 +87,10 @@ public class Disruptor
     
     public void stop()
     {
-        pool.shutdown();
+        if (pool != null)
+        {
+            pool.shutdown();
+        }
         ringArray.stop();
     }
     

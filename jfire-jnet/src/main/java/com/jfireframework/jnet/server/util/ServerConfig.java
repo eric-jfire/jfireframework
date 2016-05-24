@@ -1,7 +1,5 @@
 package com.jfireframework.jnet.server.util;
 
-import com.jfireframework.baseutil.disruptor.waitstrategy.BlockWaitStrategy;
-import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
 
 /**
@@ -15,12 +13,25 @@ public class ServerConfig
     private ChannelInitListener initListener;
     // 服务器的启动端口
     private int                 port;
-    private WaitStrategy        waitStrategy     = new BlockWaitStrategy();
+    private DisruptorWaitMode   waitMode         = DisruptorWaitMode.PARK;
     private int                 socketThreadSize = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
     private int                 asyncThreadSize  = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
     private WorkMode            workMode         = WorkMode.SYNC_WITH_ORDER;
     private WriteMode           writeMode        = WriteMode.BATCH_WRITE;
     private int                 maxBatchWriteNum = 10;
+    private int                 channelCapacity  = 16;
+    private int                 asyncCapacity    = 1024;
+    
+    public int getAsyncCapacity()
+    {
+        return asyncCapacity;
+    }
+    
+    public ServerConfig setAsyncCapacity(int asyncCapacity)
+    {
+        this.asyncCapacity = asyncCapacity;
+        return this;
+    }
     
     public WriteMode getWriteMode()
     {
@@ -58,14 +69,14 @@ public class ServerConfig
         return this;
     }
     
-    public WaitStrategy getWaitStrategy()
+    public DisruptorWaitMode getWaitMode()
     {
-        return waitStrategy;
+        return waitMode;
     }
     
-    public ServerConfig setWaitStrategy(WaitStrategy waitStrategy)
+    public ServerConfig setWaitMode(DisruptorWaitMode waitMode)
     {
-        this.waitStrategy = waitStrategy;
+        this.waitMode = waitMode;
         return this;
     }
     
@@ -110,6 +121,17 @@ public class ServerConfig
     public ServerConfig setMaxBatchWriteNum(int maxBatchWriteNum)
     {
         this.maxBatchWriteNum = maxBatchWriteNum;
+        return this;
+    }
+    
+    public int getChannelCapacity()
+    {
+        return channelCapacity;
+    }
+    
+    public ServerConfig setChannelCapacity(int channelCapacity)
+    {
+        this.channelCapacity = channelCapacity;
         return this;
     }
     

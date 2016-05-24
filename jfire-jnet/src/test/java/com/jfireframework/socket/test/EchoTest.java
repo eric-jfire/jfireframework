@@ -22,16 +22,17 @@ import com.jfireframework.jnet.server.util.WorkMode;
 
 public class EchoTest
 {
-    private int    threadCount = 10;
-    private int    sendCount   = 100000;
-    private int    arraylength = 16;
-    private String ip          = "127.0.0.1";
+    private int    threadCountStart = 18;
+    private int    threadCountEnd   = 20;
+    private int    sendCount        = 100000;
+    private int    arraylength      = 16;
+    private String ip               = "127.0.0.1";
     
     @Test
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setWorkMode(WorkMode.ASYNC_WITH_ORDER);
+        config.setWorkMode(WorkMode.SYNC_WITH_ORDER);
         config.setSocketThreadSize(8);
         config.setAsyncThreadSize(8);
         config.setInitListener(new ChannelInitListener() {
@@ -47,7 +48,7 @@ public class EchoTest
         config.setPort(8554);
         AioServer aioServer = new AioServer(config);
         aioServer.start();
-        for (int index = 1; index <= threadCount; index++)
+        for (int index = threadCountStart; index <= threadCountEnd; index++)
         {
             Thread[] threads = new Thread[index];
             for (int i = 0; i < threads.length; i++)
