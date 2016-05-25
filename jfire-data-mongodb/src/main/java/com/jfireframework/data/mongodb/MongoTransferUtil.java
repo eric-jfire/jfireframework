@@ -8,6 +8,8 @@ import org.bson.Document;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.baseutil.uniqueid.SimpleUid;
+import com.jfireframework.data.mongodb.TransferField.idField;
 import sun.misc.Unsafe;
 
 /**
@@ -20,20 +22,38 @@ import sun.misc.Unsafe;
 @SuppressWarnings("restriction")
 public class MongoTransferUtil<T>
 {
-    private TransferField[] fields;
+    private final TransferField[] fields;
+    private final idField         idField;
+    private SimpleUid             simpleUid = new SimpleUid();
     
     public MongoTransferUtil(Class<T> type)
     {
         List<TransferField> fields = new ArrayList<TransferField>();
+        idField idField = null;
         for (Field each : ReflectUtil.getAllFields(type))
         {
             TransferField field = TransferField.build(each);
             if (field != null)
             {
+                if (field instanceof idField)
+                {
+                    idField = (com.jfireframework.data.mongodb.TransferField.idField) field;
+                }
                 fields.add(field);
             }
         }
+        this.idField = idField;
         this.fields = fields.toArray(new TransferField[0]);
+    }
+    
+    public Document setIdAndFrom(T target, Document document)
+    {
+        if (idField != null)
+        {
+            idField.setId(target, simpleUid.generate());
+        }
+        return from(target, document);
+        
     }
     
     public Document from(T target, Document document)
@@ -117,6 +137,10 @@ abstract class TransferField
                 return new stringField(field);
             }
         }
+        else if (type == byte[].class)
+        {
+            return new bytesField(field);
+        }
         else
         {
             return null;
@@ -129,6 +153,11 @@ abstract class TransferField
         public idField(Field field)
         {
             super(field);
+        }
+        
+        public void setId(Object target, String id)
+        {
+            unsafe.putObject(target, offset, id);
         }
         
         @Override
