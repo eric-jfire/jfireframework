@@ -70,6 +70,10 @@ public abstract class AbstractParamField implements ParamField
         {
             return new StringArrayField(field, value);
         }
+        else if (fieldType == Set.class)
+        {
+            return new SetField(field, value);
+        }
         else
         {
             throw new RuntimeException(StringUtil.format("属性类型{}还未支持，请联系框架作者eric@jfire.com", fieldType));
