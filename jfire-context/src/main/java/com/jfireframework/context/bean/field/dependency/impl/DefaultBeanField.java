@@ -7,8 +7,8 @@ import com.jfireframework.context.bean.Bean;
 
 public class DefaultBeanField extends AbstractDependencyField
 {
-    private Bean   dependencyBean;
-    private String msg;
+    private final Bean   dependencyBean;
+    private final String msg;
     
     public DefaultBeanField(Field field, Bean bean)
     {
@@ -24,5 +24,4 @@ public class DefaultBeanField extends AbstractDependencyField
         logger.trace(msg);
         unsafe.putObject(src, offset, dependencyBean.getInstance(beanInstanceMap));
     }
-    
 }

@@ -7,7 +7,7 @@ import com.jfireframework.context.bean.Bean;
 @SuppressWarnings("restriction")
 public class InterfaceField extends AbstractDependencyField
 {
-    private Bean implBean;
+    private final Bean implBean;
     
     public InterfaceField(Field field, Bean implBean)
     {

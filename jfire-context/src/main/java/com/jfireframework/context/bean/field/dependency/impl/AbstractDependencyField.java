@@ -10,16 +10,16 @@ import sun.misc.Unsafe;
 @SuppressWarnings("restriction")
 public abstract class AbstractDependencyField implements DependencyField
 {
-    protected long          offset;
-    protected Unsafe        unsafe = ReflectUtil.getUnsafe();
-    protected static Logger logger = ConsoleLogFactory.getLogger();
-    protected Field         field;
+    protected final long          offset;
+    protected static Unsafe       unsafe = ReflectUtil.getUnsafe();
+    protected final static Logger logger = ConsoleLogFactory.getLogger();
+    protected final Field         field;
     
     public AbstractDependencyField(Field field)
     {
-        field.setAccessible(true);
         this.offset = unsafe.objectFieldOffset(field);
         this.field = field;
+        
     }
     
 }

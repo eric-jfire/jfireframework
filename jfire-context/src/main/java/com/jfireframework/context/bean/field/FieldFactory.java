@@ -26,17 +26,8 @@ import com.jfireframework.context.bean.field.dependency.impl.ListField;
 import com.jfireframework.context.bean.field.dependency.impl.MethodMapField;
 import com.jfireframework.context.bean.field.dependency.impl.NoActionField;
 import com.jfireframework.context.bean.field.dependency.impl.ValueMapField;
+import com.jfireframework.context.bean.field.param.AbstractParamField;
 import com.jfireframework.context.bean.field.param.ParamField;
-import com.jfireframework.context.bean.field.param.impl.BooleanField;
-import com.jfireframework.context.bean.field.param.impl.FloatField;
-import com.jfireframework.context.bean.field.param.impl.IntField;
-import com.jfireframework.context.bean.field.param.impl.IntegerField;
-import com.jfireframework.context.bean.field.param.impl.LongField;
-import com.jfireframework.context.bean.field.param.impl.StringArrayField;
-import com.jfireframework.context.bean.field.param.impl.StringField;
-import com.jfireframework.context.bean.field.param.impl.WBooleanField;
-import com.jfireframework.context.bean.field.param.impl.WFloatField;
-import com.jfireframework.context.bean.field.param.impl.WLongField;
 import sun.reflect.MethodAccessor;
 
 @SuppressWarnings("restriction")
@@ -170,7 +161,7 @@ public class FieldFactory
         else if (dependencyStr.startsWith("version2!"))
         {
             dependencyStr = dependencyStr.substring(9);
-            Verify.True(keyClass.equals(String.class), "只用Resource注解进行map注入时，key就是注入的bean的名称，所以要求key是String类型。请检查{}.{}", field.getDeclaringClass(), field.getName());
+            Verify.True(keyClass == String.class, "使用version2方式注入的时候是使用名称作为key，所以要求key是String类型。请检查{}.{}", field.getDeclaringClass(), field.getName());
             String[] keyAndValues = dependencyStr.split("\\|");
             Bean[] beans = new Bean[keyAndValues.length];
             Object[] keys = new Object[keyAndValues.length];
@@ -184,7 +175,6 @@ public class FieldFactory
                 if (keyClass == Integer.class)
                 {
                     keys[i] = Integer.valueOf(key);
-                    
                 }
                 else if (keyClass == String.class)
                 {
@@ -409,50 +399,6 @@ public class FieldFactory
     
     private static ParamField buildParamField(Field field, String value)
     {
-        Class<?> fieldType = field.getType();
-        if (fieldType.equals(String.class))
-        {
-            return new StringField(field, value);
-        }
-        else if (fieldType.equals(Integer.class))
-        {
-            return new IntegerField(field, value);
-        }
-        else if (fieldType.equals(int.class))
-        {
-            return new IntField(field, value);
-        }
-        else if (fieldType.equals(Long.class))
-        {
-            return new WLongField(field, value);
-        }
-        else if (fieldType.equals(long.class))
-        {
-            return new LongField(field, value);
-        }
-        else if (fieldType.equals(Boolean.class))
-        {
-            return new WBooleanField(field, value);
-        }
-        else if (fieldType.equals(boolean.class))
-        {
-            return new BooleanField(field, value);
-        }
-        else if (fieldType.equals(Float.class))
-        {
-            return new FloatField(field, value);
-        }
-        else if (fieldType.equals(Float.class))
-        {
-            return new WFloatField(field, value);
-        }
-        else if (fieldType.equals(String[].class))
-        {
-            return new StringArrayField(field, value);
-        }
-        else
-        {
-            throw new RuntimeException(StringUtil.format("属性类型{}还未支持，请联系框架作者eric@jfire.com", fieldType));
-        }
+        return AbstractParamField.build(field, value);
     }
 }
