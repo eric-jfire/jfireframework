@@ -5,6 +5,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import org.bson.Document;
+import org.bson.types.Binary;
 import org.bson.types.ObjectId;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import sun.misc.Unsafe;
@@ -379,6 +380,33 @@ abstract class TransferField
                 document.append(name, value);
             }
         }
+    }
+    
+    static class bytesField extends TransferField
+    {
+        
+        public bytesField(Field field)
+        {
+            super(field);
+        }
+        
+        @Override
+        public void transfer(Document document, Object target)
+        {
+            Binary value = (Binary) document.get(name);
+            if (value != null)
+            {
+                unsafe.putObject(target, offset, value.getData());
+            }
+        }
+        
+        @Override
+        public void from(Object target, Document document)
+        {
+            byte[] src = (byte[]) unsafe.getObject(target, offset);
+            document.append(name, src);
+        }
+        
     }
     
     static class doubleField extends TransferField
