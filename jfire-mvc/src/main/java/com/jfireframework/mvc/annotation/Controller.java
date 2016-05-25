@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-public @interface ActionClass
+public @interface Controller
 {
     /**
      * 包的整体请求路径前缀，默认不填写的话为类的简单名称

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import com.jfireframework.baseutil.collection.ByteCache;
 
-public class ViewAndModel
+public class ModelAndView
 {
     private Map<String, Object> data   = null;
     private String              modelName;
@@ -30,19 +30,19 @@ public class ViewAndModel
         this.contentType = contentType;
     }
     
-    public ViewAndModel(String modelName)
+    public ModelAndView(String modelName)
     {
         this.modelName = modelName;
     }
     
-    public ViewAndModel(String modelName, boolean direct)
+    public ModelAndView(String modelName, boolean direct)
     {
         this.modelName = modelName;
         this.direct = direct;
         cache = new ByteCache(512);
     }
     
-    public void addData(String key, Object value)
+    public void addObject(String key, Object value)
     {
         if (data == null)
         {

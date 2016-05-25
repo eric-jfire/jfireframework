@@ -17,14 +17,14 @@ import com.jfireframework.mvc.util.RequestMethod;
 @Target(ElementType.METHOD)
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ActionMethod
+public @interface RequestMapping
 {
     /**
      * 请求路径，默认不填写的话为方法名称
      * 
      * @return
      */
-    public String url() default "";
+    public String value() default "";
     
     /**
      * 视图类型

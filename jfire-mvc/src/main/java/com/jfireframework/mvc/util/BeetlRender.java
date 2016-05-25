@@ -13,7 +13,7 @@ import org.beetl.core.Template;
 import org.beetl.core.exception.BeetlException;
 import org.beetl.ext.web.SessionWrapper;
 import org.beetl.ext.web.WebVariable;
-import com.jfireframework.mvc.core.ViewAndModel;
+import com.jfireframework.mvc.core.ModelAndView;
 import com.jfireframework.mvc.viewrender.ViewRender;
 
 public class BeetlRender implements ViewRender
@@ -29,7 +29,7 @@ public class BeetlRender implements ViewRender
     
     public void render(HttpServletRequest request, HttpServletResponse response, Object result) throws Throwable
     {
-        ViewAndModel viewAndModel = (ViewAndModel) result;
+        ModelAndView viewAndModel = (ModelAndView) result;
         response.setContentType("text/html");
         if (viewAndModel.cached())
         {
@@ -60,12 +60,12 @@ public class BeetlRender implements ViewRender
     
     public void render(String key, Map<String, Object> data, HttpServletRequest request, OutputStream outputStream)
     {
-        ViewAndModel vm = new ViewAndModel(key);
+        ModelAndView vm = new ModelAndView(key);
         vm.setDataMap(data);
         render(vm, request, outputStream);
     }
     
-    public void render(ViewAndModel vm, HttpServletRequest request, OutputStream outputStream)
+    public void render(ModelAndView vm, HttpServletRequest request, OutputStream outputStream)
     {
         String ajaxId = null;
         Template template = null;
@@ -112,12 +112,12 @@ public class BeetlRender implements ViewRender
     
     public void render(String key, Map<String, Object> data, ServletContext servletContext, OutputStream outputStream)
     {
-        ViewAndModel vm = new ViewAndModel(key);
+        ModelAndView vm = new ModelAndView(key);
         vm.setDataMap(data);
         render(vm, servletContext, outputStream);
     }
     
-    public void render(ViewAndModel vm, ServletContext servletContext, OutputStream outputStream)
+    public void render(ModelAndView vm, ServletContext servletContext, OutputStream outputStream)
     {
         String ajaxId = null;
         String key = vm.getModelName();
@@ -159,7 +159,7 @@ public class BeetlRender implements ViewRender
      * @param response
      * @param args 其他参数，将会传给modifyTemplate方法
      */
-    public void render(ViewAndModel vm, HttpServletRequest request, HttpServletResponse response)
+    public void render(ModelAndView vm, HttpServletRequest request, HttpServletResponse response)
     {
         Writer writer = null;
         String key = vm.getModelName();

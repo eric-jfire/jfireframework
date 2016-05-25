@@ -9,7 +9,7 @@ import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.bean.Bean;
-import com.jfireframework.mvc.annotation.ActionMethod;
+import com.jfireframework.mvc.annotation.RequestMapping;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.binder.DataBinderFactory;
 import com.jfireframework.mvc.binder.impl.HttpRequestBinder;
@@ -18,7 +18,7 @@ import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
 import com.jfireframework.mvc.binder.impl.ServletContextBinder;
 import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.core.Action;
-import com.jfireframework.mvc.core.ViewAndModel;
+import com.jfireframework.mvc.core.ModelAndView;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.rest.RestfulUrlTool;
 
@@ -38,14 +38,14 @@ public class ActionFactory
     {
         ActionInfo actionInfo = new ActionInfo();
         actionInfo.setMethod(method);
-        ActionMethod actionMethod = method.getAnnotation(ActionMethod.class);
+        RequestMapping actionMethod = method.getAnnotation(RequestMapping.class);
         actionInfo.setRequestMethod(actionMethod.method());
         actionInfo.setDataBinders(DataBinderFactory.build(method));
         actionInfo.setReadStream(actionMethod.readStream());
         actionInfo.setEntity(bean.getInstance());
         setResultType(actionInfo);
         actionInfo.setContentType(actionMethod.contentType());
-        if (actionMethod.url().equals("/"))
+        if (actionMethod.value().equals("/"))
         {
             ;
         }
@@ -54,9 +54,9 @@ public class ActionFactory
             actionInfo.setRest(actionMethod.rest());
             if (actionMethod.rest())
             {
-                if (StringUtil.isNotBlank(actionMethod.url()))
+                if (StringUtil.isNotBlank(actionMethod.value()))
                 {
-                    requestPath += "/" + actionMethod.url();
+                    requestPath += "/" + actionMethod.value();
                 }
                 else
                 {
@@ -82,7 +82,7 @@ public class ActionFactory
             }
             else
             {
-                requestPath += "/" + (StringUtil.isNotBlank(actionMethod.url()) ? actionMethod.url() : method.getName());
+                requestPath += "/" + (StringUtil.isNotBlank(actionMethod.value()) ? actionMethod.value() : method.getName());
             }
         }
         actionInfo.setRequestUrl(requestPath);
@@ -142,7 +142,7 @@ public class ActionFactory
     private static void setResultType(ActionInfo info)
     {
         Method method = info.getMethod();
-        if (method.getAnnotation(ActionMethod.class).resultType() == ResultType.AUTO)
+        if (method.getAnnotation(RequestMapping.class).resultType() == ResultType.AUTO)
         {
             Class<?> type = method.getReturnType();
             if (type == String.class)
@@ -153,7 +153,7 @@ public class ActionFactory
             {
                 info.setResultType(ResultType.None);
             }
-            else if (type == ViewAndModel.class)
+            else if (type == ModelAndView.class)
             {
                 if (method.getParameterTypes().length == 0)
                 {
@@ -175,7 +175,7 @@ public class ActionFactory
         }
         else
         {
-            info.setResultType(method.getAnnotation(ActionMethod.class).resultType());
+            info.setResultType(method.getAnnotation(RequestMapping.class).resultType());
         }
     }
 }

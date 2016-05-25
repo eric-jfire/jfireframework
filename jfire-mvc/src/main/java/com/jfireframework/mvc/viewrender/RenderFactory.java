@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.mvc.config.ResultType;
-import com.jfireframework.mvc.core.ViewAndModel;
+import com.jfireframework.mvc.core.ModelAndView;
 import com.jfireframework.mvc.util.BeetlRender;
 import com.jfireframework.mvc.util.JfireMvcResponseWrapper;
 
@@ -80,7 +80,7 @@ public class RenderFactory
         @Override
         public void render(HttpServletRequest request, HttpServletResponse response, Object result) throws Throwable
         {
-            ViewAndModel viewAndModel = (ViewAndModel) result;
+            ModelAndView viewAndModel = (ModelAndView) result;
             response.setContentType("text/html");
             if (viewAndModel.cached())
             {
@@ -135,7 +135,7 @@ public class RenderFactory
         @Override
         public void render(HttpServletRequest request, HttpServletResponse response, Object result) throws Throwable
         {
-            ViewAndModel viewAndModel = (ViewAndModel) result;
+            ModelAndView viewAndModel = (ModelAndView) result;
             for (Entry<String, Object> entry : viewAndModel.getData().entrySet())
             {
                 request.setAttribute(entry.getKey(), entry.getValue());

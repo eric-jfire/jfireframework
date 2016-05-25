@@ -41,8 +41,8 @@ import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.JfireContextImpl;
 import com.jfireframework.context.aop.AopUtil;
 import com.jfireframework.context.bean.Bean;
-import com.jfireframework.mvc.annotation.ActionClass;
-import com.jfireframework.mvc.annotation.ActionMethod;
+import com.jfireframework.mvc.annotation.Controller;
+import com.jfireframework.mvc.annotation.RequestMapping;
 import com.jfireframework.mvc.config.MvcStaticConfig;
 import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
@@ -147,7 +147,7 @@ public class DispathServletHelper
      */
     private List<Action> generateActions(String contextUrl, JfireContext jfireContext)
     {
-        Bean[] beans = jfireContext.getBeanByAnnotation(ActionClass.class);
+        Bean[] beans = jfireContext.getBeanByAnnotation(Controller.class);
         Bean[] listenerBeans = jfireContext.getBeanByInterface(ActionInitListener.class);
         LightSet<ActionInitListener> tmp = new LightSet<>();
         for (Bean each : listenerBeans)
@@ -175,7 +175,7 @@ public class DispathServletHelper
     private List<Action> generateActions(Bean bean, ActionInitListener[] listeners, JfireContext jfireContext)
     {
         Class<?> src = bean.getOriginType();
-        ActionClass actionClass = src.getAnnotation(ActionClass.class);
+        Controller actionClass = src.getAnnotation(Controller.class);
         String modelUrl = null;
         if (actionClass.value().equals("/"))
         {
@@ -192,7 +192,7 @@ public class DispathServletHelper
         List<Action> list = new ArrayList<>();
         for (Method each : methods)
         {
-            if (each.isAnnotationPresent(ActionMethod.class))
+            if (each.isAnnotationPresent(RequestMapping.class))
             {
                 Action action = ActionFactory.buildAction(each, modelUrl, bean, jfireContext);
                 list.add(action);

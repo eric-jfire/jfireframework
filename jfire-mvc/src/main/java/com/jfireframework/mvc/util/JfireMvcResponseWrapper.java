@@ -4,13 +4,13 @@ import java.io.IOException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
-import com.jfireframework.mvc.core.ViewAndModel;
+import com.jfireframework.mvc.core.ModelAndView;
 
 public class JfireMvcResponseWrapper extends javax.servlet.http.HttpServletResponseWrapper
 {
-    private ViewAndModel vm;
+    private ModelAndView vm;
     
-    public JfireMvcResponseWrapper(HttpServletResponse response, ViewAndModel vm)
+    public JfireMvcResponseWrapper(HttpServletResponse response, ModelAndView vm)
     {
         super(response);
         this.vm = vm;
@@ -26,9 +26,9 @@ class ServletOutputStreamWrapper extends ServletOutputStream
 {
     
     private ServletOutputStream os;
-    private ViewAndModel        vm;
+    private ModelAndView        vm;
     
-    public ServletOutputStreamWrapper(ServletOutputStream os, ViewAndModel vm)
+    public ServletOutputStreamWrapper(ServletOutputStream os, ModelAndView vm)
     {
         this.os = os;
         this.vm = vm;
