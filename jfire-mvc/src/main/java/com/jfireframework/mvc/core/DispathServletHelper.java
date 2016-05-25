@@ -61,7 +61,7 @@ public class DispathServletHelper
     private final String            contextUrl;
     private final ServletContext    servletContext;
     private final RequestDispatcher staticResourceDispatcher;
-    private final JsonObject        config;
+    private JsonObject              config;
     private final File              monitorFile;
     private final String[]          reloadPackages;
     private final WatchService      watcher;
@@ -318,6 +318,7 @@ public class DispathServletHelper
                     try
                     {
                         long t0 = System.currentTimeMillis();
+                        config = readConfigFile();
                         ClassLoader classLoader = new HotwrapClassLoader(monitorFile, reloadPackages);
                         JfireContext jfireContext = (JfireContext) classLoader.loadClass("com.jfireframework.context.JfireContextImpl").newInstance();
                         jfireContext.addSingletonEntity(ClassLoader.class.getSimpleName(), classLoader);
