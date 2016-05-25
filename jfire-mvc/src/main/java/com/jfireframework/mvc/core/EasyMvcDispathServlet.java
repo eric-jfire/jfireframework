@@ -62,7 +62,7 @@ public class EasyMvcDispathServlet extends HttpServlet
             {
                 if (each.interceptor(request, response, action) == false)
                 {
-                    logger.debug("发生异常{}" + each.getClass().getName());
+                    logger.debug("发生异常{}", each.getClass().getName());
                     return;
                 }
             }

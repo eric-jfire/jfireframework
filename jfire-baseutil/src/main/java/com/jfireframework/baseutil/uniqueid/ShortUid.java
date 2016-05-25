@@ -1,16 +1,13 @@
 package com.jfireframework.baseutil.uniqueid;
 
-import java.lang.management.ManagementFactory;
 import java.text.SimpleDateFormat;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.UnSupportException;
 
-public class LongUid
+public class ShortUid
 {
     private final long          base;
-    private final short         pid;
-    private final byte[]        internal;
     private final AtomicInteger count      = new AtomicInteger(0);
     private final static int    countMask  = 0x000007ff;
     private final byte          coreId;
@@ -20,7 +17,7 @@ public class LongUid
             '~', '!' };
     private static final long   short_mask = 0x000000000000003f;
     
-    public LongUid(int value)
+    public ShortUid(int value)
     {
         try
         {
@@ -32,14 +29,9 @@ public class LongUid
             {
                 throw new UnSupportException("间隔id的值在0到15之间");
             }
-            String _pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
-            pid = Short.valueOf(_pid);
             // 用到2046-01-01需要的位数是30的bit
             SimpleDateFormat format = new SimpleDateFormat("yyyy-mm-dd");
             base = format.parse("2016-01-01").getTime();
-            internal = new byte[2];
-            internal[0] = (byte) (pid >>> 8);
-            internal[1] = (byte) pid;
         }
         catch (Exception e)
         {
@@ -48,12 +40,11 @@ public class LongUid
     }
     
     /**
-     * 生成一个8字节的id，使用16个字母的长度的String来表示。
+     * 生成一个6字节的id，使用12个字母的长度的String来表示。
      * id生成规则为：
      * 1-30bit为当前时间减去2016-01-01的秒数,30年内够用 .
-     * 31-35bit为初始化给定的参数。只有0-15这16个值。这意味着这个算法可以同时运行在16个物理节点上而不碰撞。因为下面还有pid参数。
+     * 31-35bit为初始化给定的参数。只有0-15这16个值。这意味着这个算法可以同时运行在16个逻辑节点上不碰撞
      * 36-48bit为自增数字，这意味着1秒内能产生8192个id.
-     * 49-64bit为当前项目进程pid
      * 
      * @return
      */
@@ -62,7 +53,7 @@ public class LongUid
         return StringUtil.toHexString(generateBytes());
     }
     
-    public long generateLong()
+    public String generateShort()
     {
         byte[] result = generateBytes();
         long tmp = result[0] << 56;
@@ -71,15 +62,7 @@ public class LongUid
         tmp |= ((long) result[3] & 0xff) << 32;
         tmp |= ((long) result[4] & 0xff) << 24;
         tmp |= ((long) result[5] & 0xff) << 16;
-        tmp |= ((long) result[6] & 0xff) << 8;
-        tmp |= ((long) result[7] & 0xff);
-        return tmp;
-    }
-    
-    public String generateShort()
-    {
-        long tmp = generateLong();
-        char[] value = new char[11];
+        char[] value = new char[8];
         value[0] = digits[(int) ((tmp >>> 58) & short_mask)];
         value[1] = digits[(int) ((tmp >>> 52) & short_mask)];
         value[2] = digits[(int) ((tmp >>> 46) & short_mask)];
@@ -88,15 +71,12 @@ public class LongUid
         value[5] = digits[(int) ((tmp >>> 28) & short_mask)];
         value[6] = digits[(int) ((tmp >>> 22) & short_mask)];
         value[7] = digits[(int) ((tmp >>> 16) & short_mask)];
-        value[8] = digits[(int) ((tmp >>> 10) & short_mask)];
-        value[9] = digits[(int) ((tmp >>> 4) & short_mask)];
-        value[10] = digits[(int) ((tmp) & 0x000000000000000f)];
         return String.valueOf(value);
     }
     
     public byte[] generateBytes()
     {
-        byte[] result = new byte[8];
+        byte[] result = new byte[6];
         int time = (int) ((System.currentTimeMillis() - base) / 1000);
         result[0] = (byte) (time >>> 22);
         result[1] = (byte) (time >>> 14);
@@ -107,8 +87,6 @@ public class LongUid
         result[4] = (byte) ((coreId & 0xff) << 5);
         result[4] |= (byte) (tmp >>> 8);
         result[5] = (byte) tmp;
-        result[6] = internal[0];
-        result[7] = internal[1];
         return result;
     }
     
