@@ -32,10 +32,12 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
     private final AsyncTaskCenter asyncTaskCenter;
     private final int             maxBatchWriteNum;
     private final Disruptor       disruptor;
+    private final int             channelCapacity;
     
     public AcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
         this.initListener = serverConfig.getInitListener();
+        channelCapacity = serverConfig.getChannelCapacity();
         Verify.notNull(initListener, "initListener不能为空");
         this.aioServer = aioServer;
         maxBatchWriteNum = serverConfig.getMaxBatchWriteNum();
@@ -77,6 +79,7 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
         try
         {
             ServerChannel channelInfo = new ServerChannel();
+            channelInfo.setCapacity(channelCapacity);
             channelInfo.setChannel(socketChannel);
             initListener.channelInit(channelInfo);
             Verify.notNull(channelInfo.getDataArray(), "没有设置entryArraySize");

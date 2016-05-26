@@ -111,6 +111,41 @@ public abstract class AbstractMultRingArray implements RingArray
     }
     
     @Override
+    public boolean tryPublish(Object data)
+    {
+        boolean canPublish = true;
+        final long current = cursor.value();
+        final long next = current + 1;
+        long wrapPoint = cachedWrapPoint.value();
+        if (next >= wrapPoint)
+        {
+            wrapPoint = getMin() + size;
+            if (next >= wrapPoint)
+            {
+                canPublish = false;
+            }
+            else
+            {
+                cachedWrapPoint.set(wrapPoint);
+            }
+        }
+        if (canPublish)
+        {
+            if (cursor.tryCasSet(current, next))
+            {
+                Entry entry = entryAt(next);
+                entry.setNewData(data);
+                publish(next);
+            }
+            else
+            {
+                canPublish = false;
+            }
+        }
+        return canPublish;
+    }
+    
+    @Override
     public void publish(Object data)
     {
         long cursor = next();

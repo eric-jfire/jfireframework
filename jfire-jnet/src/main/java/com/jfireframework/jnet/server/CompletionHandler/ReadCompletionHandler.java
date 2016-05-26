@@ -288,8 +288,34 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
                     }
                     case ASYNC_WITH_ORDER:
                     {
-//                        asyncTaskCenter.addTask(task);
-                        disruptor.publish(task);
+                        // asyncTaskCenter.addTask(task);
+                        if (disruptor.tryPublish(task))
+                        {
+                            ;
+                        }
+                        else
+                        {
+                            for (int i = 0; i < handlers.length;)
+                            {
+                                intermediateResult = handlers[i].handle(intermediateResult, task);
+                                if (i == task.getIndex())
+                                {
+                                    i++;
+                                    task.setIndex(i);
+                                }
+                                else
+                                {
+                                    i = task.getIndex();
+                                }
+                            }
+                            if (intermediateResult instanceof ByteBuf<?>)
+                            {
+                                task.setData(intermediateResult);
+                                long version = task.version();
+                                task.flowDone();
+                                task.write(version);
+                            }
+                        }
                         break;
                     }
                     default:

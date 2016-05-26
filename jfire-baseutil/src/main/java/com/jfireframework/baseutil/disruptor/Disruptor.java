@@ -113,4 +113,9 @@ public class Disruptor
     {
         return ringArray;
     }
+    
+    public boolean tryPublish(Object data)
+    {
+        return ringArray.tryPublish(data);
+    }
 }

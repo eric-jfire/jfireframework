@@ -1,19 +1,34 @@
 package com.jfireframework.data.mongodb;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.bson.Document;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.uniqueid.SimpleUid;
+import com.jfireframework.data.mongodb.TransferField.booleanField;
+import com.jfireframework.data.mongodb.TransferField.bytesField;
+import com.jfireframework.data.mongodb.TransferField.dateField;
+import com.jfireframework.data.mongodb.TransferField.doubleField;
+import com.jfireframework.data.mongodb.TransferField.floatField;
 import com.jfireframework.data.mongodb.TransferField.idField;
+import com.jfireframework.data.mongodb.TransferField.intField;
+import com.jfireframework.data.mongodb.TransferField.longField;
+import com.jfireframework.data.mongodb.TransferField.shortField;
+import com.jfireframework.data.mongodb.TransferField.stringField;
 import sun.misc.Unsafe;
 
 /**
- * 数据库的_id字段和类本身的id都是保留字段，不可以更改作他用。同时，类本身的id类型为String
+ * monggo的数据转化器。可以在类和monggodb的document之间转换。
+ * 注意：id字段必须为String。
  * 
  * @author linbin
  *
@@ -22,24 +37,66 @@ import sun.misc.Unsafe;
 @SuppressWarnings("restriction")
 public class MongoTransferUtil<T>
 {
-    private final TransferField[] fields;
-    private final idField         idField;
-    private SimpleUid             simpleUid = new SimpleUid();
+    private final TransferField[]                      fields;
+    private final idField                              idField;
+    private SimpleUid                                  simpleUid = new SimpleUid();
+    private static final Map<Class<?>, Constructor<?>> fieldMap  = new HashMap<Class<?>, Constructor<?>>();
     
+    static
+    {
+        try
+        {
+            fieldMap.put(int.class, intField.class.getConstructor(Field.class));
+            fieldMap.put(Integer.class, intField.class.getConstructor(Field.class));
+            fieldMap.put(boolean.class, booleanField.class.getConstructor(Field.class));
+            fieldMap.put(Boolean.class, booleanField.class.getConstructor(Field.class));
+            fieldMap.put(long.class, longField.class.getConstructor(Field.class));
+            fieldMap.put(Long.class, longField.class.getConstructor(Field.class));
+            fieldMap.put(float.class, floatField.class.getConstructor(Field.class));
+            fieldMap.put(Float.class, floatField.class.getConstructor(Field.class));
+            fieldMap.put(double.class, doubleField.class.getConstructor(Field.class));
+            fieldMap.put(Double.class, doubleField.class.getConstructor(Field.class));
+            fieldMap.put(short.class, shortField.class.getConstructor(Field.class));
+            fieldMap.put(Short.class, shortField.class.getConstructor(Field.class));
+            fieldMap.put(byte[].class, bytesField.class.getConstructor(Field.class));
+            fieldMap.put(Date.class, dateField.class.getConstructor(Field.class));
+            fieldMap.put(String.class, stringField.class.getConstructor(Field.class));
+        }
+        catch (Exception e)
+        {
+            throw new JustThrowException(e);
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
     public MongoTransferUtil(Class<T> type)
     {
         List<TransferField> fields = new ArrayList<TransferField>();
         idField idField = null;
         for (Field each : ReflectUtil.getAllFields(type))
         {
-            TransferField field = TransferField.build(each);
-            if (field != null)
+            int modi = each.getModifiers();
+            if (Modifier.isStatic(modi) || Modifier.isFinal(modi) || each.isAnnotationPresent(MongoIgnore.class))
             {
-                if (field instanceof idField)
+                continue;
+            }
+            Class<?> fieldType = each.getType();
+            Constructor<TransferField> constructor = (Constructor<TransferField>) fieldMap.get(fieldType);
+            if (constructor != null)
+            {
+                try
                 {
-                    idField = (com.jfireframework.data.mongodb.TransferField.idField) field;
+                    if (each.getName().equals("id") && fieldType == String.class)
+                    {
+                        idField = new idField(each);
+                        continue;
+                    }
+                    fields.add((TransferField) constructor.newInstance(each));
                 }
-                fields.add(field);
+                catch (Exception e)
+                {
+                    throw new JustThrowException(e);
+                }
             }
         }
         this.idField = idField;
@@ -62,6 +119,10 @@ public class MongoTransferUtil<T>
         {
             each.from(target, document);
         }
+        if (idField != null)
+        {
+            idField.from(target, document);
+        }
         return document;
     }
     
@@ -70,6 +131,10 @@ public class MongoTransferUtil<T>
         for (TransferField each : fields)
         {
             each.transfer(document, target);
+        }
+        if (idField != null)
+        {
+            idField.transfer(document, target);
         }
         return target;
     }
@@ -93,59 +158,6 @@ abstract class TransferField
     public abstract void transfer(Document document, Object target);
     
     public abstract void from(Object target, Document document);
-    
-    public static TransferField build(Field field)
-    {
-        int modi = field.getModifiers();
-        if (Modifier.isStatic(modi) || Modifier.isFinal(modi) || Modifier.isTransient(modi))
-        {
-            return null;
-        }
-        Class<?> type = field.getType();
-        if (type == int.class || type == Integer.class)
-        {
-            return new intField(field);
-        }
-        else if (type == long.class || type == Long.class)
-        {
-            return new longField(field);
-        }
-        else if (type == float.class || type == Float.class)
-        {
-            return new floatField(field);
-        }
-        else if (type == double.class || type == Double.class)
-        {
-            return new doubleField(field);
-        }
-        else if (type == boolean.class || type == Boolean.class)
-        {
-            return new booleanField(field);
-        }
-        else if (type == short.class || type == Short.class)
-        {
-            return new shortField(field);
-        }
-        else if (type == String.class)
-        {
-            if (field.getName().equals("id"))
-            {
-                return new idField(field);
-            }
-            else
-            {
-                return new stringField(field);
-            }
-        }
-        else if (type == byte[].class)
-        {
-            return new bytesField(field);
-        }
-        else
-        {
-            return null;
-        }
-    }
     
     static class idField extends TransferField
     {
@@ -468,14 +480,34 @@ abstract class TransferField
         {
             if (primitive)
             {
-                double value = unsafe.getDouble(target, offset);
-                document.append(name, value);
+                document.append(name, unsafe.getDouble(target, offset));
             }
             else
             {
-                Double value = (Double) unsafe.getObject(target, offset);
-                document.append(name, value);
+                document.append(name, unsafe.getObject(target, offset));
             }
         }
+    }
+    
+    static class dateField extends TransferField
+    {
+        
+        public dateField(Field field)
+        {
+            super(field);
+        }
+        
+        @Override
+        public void transfer(Document document, Object target)
+        {
+            unsafe.putObject(target, offset, document.getDate(name));
+        }
+        
+        @Override
+        public void from(Object target, Document document)
+        {
+            document.append(name, unsafe.getObject(target, offset));
+        }
+        
     }
 }

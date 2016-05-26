@@ -26,7 +26,19 @@ public class ParkWaitStrategy extends AbstractWaitStrategy
         {
             if (state.get() == 0)
             {
-                state.compareAndSet(0, 1);
+                if (state.compareAndSet(0, 1))
+                {
+                    if (ringArray.isAvailable(next))
+                    {
+                        state.set(0);
+                        for (Thread each : threads)
+                        {
+                            LockSupport.unpark(each);
+                        }
+                        detectStopException();
+                        break;
+                    }
+                }
             }
             LockSupport.park();
             detectStopException();
