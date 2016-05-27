@@ -10,16 +10,13 @@ import java.util.List;
 import java.util.Map;
 import org.bson.Document;
 import org.bson.types.Binary;
-import org.bson.types.ObjectId;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.baseutil.uniqueid.SimpleUid;
 import com.jfireframework.data.mongodb.TransferField.booleanField;
 import com.jfireframework.data.mongodb.TransferField.bytesField;
 import com.jfireframework.data.mongodb.TransferField.dateField;
 import com.jfireframework.data.mongodb.TransferField.doubleField;
 import com.jfireframework.data.mongodb.TransferField.floatField;
-import com.jfireframework.data.mongodb.TransferField.idField;
 import com.jfireframework.data.mongodb.TransferField.intField;
 import com.jfireframework.data.mongodb.TransferField.longField;
 import com.jfireframework.data.mongodb.TransferField.shortField;
@@ -38,9 +35,7 @@ import sun.misc.Unsafe;
 public class MongoTransferUtil<T>
 {
     private final TransferField[]                      fields;
-    private final idField                              idField;
-    private SimpleUid                                  simpleUid = new SimpleUid();
-    private static final Map<Class<?>, Constructor<?>> fieldMap  = new HashMap<Class<?>, Constructor<?>>();
+    private static final Map<Class<?>, Constructor<?>> fieldMap = new HashMap<Class<?>, Constructor<?>>();
     
     static
     {
@@ -72,7 +67,6 @@ public class MongoTransferUtil<T>
     public MongoTransferUtil(Class<T> type)
     {
         List<TransferField> fields = new ArrayList<TransferField>();
-        idField idField = null;
         for (Field each : ReflectUtil.getAllFields(type))
         {
             int modi = each.getModifiers();
@@ -86,11 +80,6 @@ public class MongoTransferUtil<T>
             {
                 try
                 {
-                    if (each.getName().equals("id") && fieldType == String.class)
-                    {
-                        idField = new idField(each);
-                        continue;
-                    }
                     fields.add((TransferField) constructor.newInstance(each));
                 }
                 catch (Exception e)
@@ -99,18 +88,7 @@ public class MongoTransferUtil<T>
                 }
             }
         }
-        this.idField = idField;
         this.fields = fields.toArray(new TransferField[0]);
-    }
-    
-    public Document setIdAndFrom(T target, Document document)
-    {
-        if (idField != null)
-        {
-            idField.setId(target, simpleUid.generate());
-        }
-        return from(target, document);
-        
     }
     
     public Document from(T target, Document document)
@@ -118,10 +96,6 @@ public class MongoTransferUtil<T>
         for (TransferField each : fields)
         {
             each.from(target, document);
-        }
-        if (idField != null)
-        {
-            idField.from(target, document);
         }
         return document;
     }
@@ -131,10 +105,6 @@ public class MongoTransferUtil<T>
         for (TransferField each : fields)
         {
             each.transfer(document, target);
-        }
-        if (idField != null)
-        {
-            idField.transfer(document, target);
         }
         return target;
     }
@@ -158,41 +128,6 @@ abstract class TransferField
     public abstract void transfer(Document document, Object target);
     
     public abstract void from(Object target, Document document);
-    
-    static class idField extends TransferField
-    {
-        
-        public idField(Field field)
-        {
-            super(field);
-        }
-        
-        public void setId(Object target, String id)
-        {
-            unsafe.putObject(target, offset, id);
-        }
-        
-        @Override
-        public void transfer(Document document, Object target)
-        {
-            ObjectId objectId = document.getObjectId("_id");
-            if (objectId != null)
-            {
-                unsafe.putObject(target, offset, objectId.toHexString());
-            }
-        }
-        
-        @Override
-        public void from(Object target, Document document)
-        {
-            String value = (String) unsafe.getObject(target, offset);
-            if (value != null)
-            {
-                document.append("_id", new ObjectId(value));
-            }
-        }
-        
-    }
     
     static class stringField extends TransferField
     {
