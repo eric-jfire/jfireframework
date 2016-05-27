@@ -91,9 +91,15 @@ public class DataBinderInterceptor implements ActionInterceptor
     }
     
     @Override
-    public String rule()
+    public String pathRule()
     {
         return "*";
+    }
+
+    @Override
+    public String tokenRule()
+    {
+        return null;
     }
     
 }

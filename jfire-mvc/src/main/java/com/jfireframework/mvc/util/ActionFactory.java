@@ -9,6 +9,7 @@ import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.bean.Bean;
+import com.jfireframework.mvc.annotation.Interceptor;
 import com.jfireframework.mvc.annotation.RequestMapping;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.binder.DataBinderFactory;
@@ -52,7 +53,11 @@ public class ActionFactory
         else
         {
             actionInfo.setRest(actionMethod.rest());
-            if (actionMethod.rest())
+            if (actionMethod.value().indexOf("{") != -1)
+            {
+                actionInfo.setRest(true);
+            }
+            if (actionInfo.isRest())
             {
                 if (StringUtil.isNotBlank(actionMethod.value()))
                 {
@@ -98,13 +103,14 @@ public class ActionFactory
         }
         Bean[] beans = jfireContext.getBeanByInterface(ActionInterceptor.class);
         List<ActionInterceptor> interceptors = new ArrayList<>();
-        for (Bean each : beans)
+        next: for (Bean each : beans)
         {
             ActionInterceptor interceptor = (ActionInterceptor) each.getInstance();
-            String rule = interceptor.rule();
+            String rule = interceptor.pathRule();
             if ("*".equals(rule))
             {
                 interceptors.add(interceptor);
+                continue next;
             }
             else
             {
@@ -113,10 +119,19 @@ public class ActionFactory
                     if (isInterceptored(requestPath, singleRule))
                     {
                         interceptors.add(interceptor);
-                        break;
+                        continue next;
                     }
                 }
             }
+            String token = interceptor.tokenRule();
+            if (token != null && method.isAnnotationPresent(Interceptor.class))
+            {
+                if (method.getAnnotation(Interceptor.class).value().equals(token))
+                {
+                    interceptors.add(interceptor);
+                }
+            }
+            
         }
         interceptors.sort(AESC_COMPARATOR);
         actionInfo.setInterceptors(interceptors.toArray(new ActionInterceptor[interceptors.size()]));
