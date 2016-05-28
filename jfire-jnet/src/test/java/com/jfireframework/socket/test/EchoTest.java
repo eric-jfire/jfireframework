@@ -24,7 +24,7 @@ public class EchoTest
 {
     private int    threadCountStart = 1;
     private int    threadCountEnd   = 50;
-    private int    sendCount        = 1000000;
+    private int    sendCount        = 100000;
     private String ip               = "192.168.9.181";
     
     @Test

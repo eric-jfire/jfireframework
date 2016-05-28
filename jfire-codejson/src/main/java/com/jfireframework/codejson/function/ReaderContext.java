@@ -9,6 +9,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -18,6 +19,7 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.codejson.annotation.JsonIgnore;
+import com.jfireframework.codejson.function.impl.read.DateReader;
 import com.jfireframework.codejson.function.impl.read.ObjectReader;
 import com.jfireframework.codejson.function.impl.read.array.BooleanArrayReader;
 import com.jfireframework.codejson.function.impl.read.array.ByteArrayReader;
@@ -101,6 +103,7 @@ public class ReaderContext
         readerMap.put(double[].class, new DoubleArrayReader());
         readerMap.put(String[].class, new StringArrayReader());
         readerMap.put(Object.class, new ObjectReader());
+        readerMap.put(Date.class, new DateReader());
     }
     
     public static Object read(Type entityType, Object value)
