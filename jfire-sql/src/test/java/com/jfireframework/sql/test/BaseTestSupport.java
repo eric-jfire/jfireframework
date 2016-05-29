@@ -23,7 +23,7 @@ public abstract class BaseTestSupport
         DruidDataSource dataSource = new DruidDataSource();
         dataSource.setUrl("jdbc:mysql://localhost:3306/test?characterEncoding=utf8");
         dataSource.setUsername("root");
-        dataSource.setPassword("Starnetsql1019");
+        dataSource.setPassword("centerm");
         dataSource.setMaxActive(150);
         dataSource.setMaxWait(500);
         try
@@ -36,7 +36,7 @@ public abstract class BaseTestSupport
             e.printStackTrace();
         }
         sessionFactory = new SessionFactoryImpl(dataSource);
-        sessionFactory.setScanPackage("link.jfire.orm");
+        sessionFactory.setScanPackage("com.jfireframework.sql.test");
         sessionFactory.init();
         testUnit = new DbUnit(DbUnit.SAVE_IN_MEM, dataSource);
     }

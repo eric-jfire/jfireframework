@@ -59,8 +59,9 @@ public class SessionTest extends BaseTestSupport
         logger.info("测试:{}", "sqlUpdate(String sql, Object... params)");
         String sql = "update user set username=?,birthday=? where userid=?";
         session.update(sql, "新的林斌", "2014-6-6 0:0:0", 1);
-        try (PreparedStatement pstat = session.getConnection().prepareStatement("select * from user where userid=1"))
+        try
         {
+            PreparedStatement pstat = session.getConnection().prepareStatement("select * from user where userid=1");
             ResultSet resultSet = pstat.executeQuery();
             resultSet.next();
             assertEquals("新的林斌", resultSet.getString("username"));
@@ -76,15 +77,16 @@ public class SessionTest extends BaseTestSupport
     public void batchSqlUpdateTest()
     {
         logger.info("测试{}", "batchSqlUpdate(String sql, Iterator<Object[]> iterator)");
-        List<Object[]> list = new ArrayList<>();
+        List<Object[]> list = new ArrayList<Object[]>();
         Object[] data = new Object[] { "林斌1", "2015-6-6 0:0:0", 13, 4, "dasds" };
         list.add(data);
         data = new Object[] { "林斌2", "2015-6-7 0:0:0", 15, 5, "dsads" };
         list.add(data);
         String sql = "insert into user (username,birthday,age,userid,password) values(?,?,?,?,?)";
         session.batchUpdate(sql, list);
-        try (PreparedStatement pstat = session.getConnection().prepareStatement("select * from user where userid in(5,4) order by userid"))
+        try
         {
+            PreparedStatement pstat = session.getConnection().prepareStatement("select * from user where userid in(5,4) order by userid");
             ResultSet rs = pstat.executeQuery();
             rs.next();
             assertEquals("林斌1", rs.getString("username"));

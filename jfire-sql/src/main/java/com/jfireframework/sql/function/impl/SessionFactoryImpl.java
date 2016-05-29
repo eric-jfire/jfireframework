@@ -9,6 +9,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
 import com.jfireframework.baseutil.PackageScan;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.BatchUpdate;
 import com.jfireframework.sql.annotation.Query;
@@ -29,7 +30,7 @@ public class SessionFactoryImpl implements SessionFactory
     private DataSource                     dataSource;
     @Resource
     private ClassLoader                    classLoader;
-    private static ThreadLocal<SqlSession> sessionLocal = new ThreadLocal<>();
+    private static ThreadLocal<SqlSession> sessionLocal = new ThreadLocal<SqlSession>();
     private String                         scanPackage;
     // 如果值是create，则会创建表。
     private String                         tableMode    = "none";
@@ -53,7 +54,7 @@ public class SessionFactoryImpl implements SessionFactory
         {
             return;
         }
-        Set<String> set = new HashSet<>();
+        Set<String> set = new HashSet<String>();
         String[] packageNames = scanPackage.split(";");
         for (String packageName : packageNames)
         {
@@ -82,9 +83,9 @@ public class SessionFactoryImpl implements SessionFactory
                 }
             }
         }
-        catch (ClassNotFoundException | SecurityException e1)
+        catch (Exception e1)
         {
-            throw new RuntimeException(e1);
+            throw new JustThrowException(e1);
         }
         if ("create".equals(tableMode) || "update".equals(tableMode))
         {
@@ -103,8 +104,10 @@ public class SessionFactoryImpl implements SessionFactory
             {
                 throw new RuntimeException("暂不支持的数据库结构类型新建或者修改,当前支持：mysql,MariaDB");
             }
-            try (Connection connection = dataSource.getConnection())
+            Connection connection = null;
+            try
             {
+                connection = dataSource.getConnection();
                 connection.setAutoCommit(false);
                 for (DAOBean each : DaoFactory.getDaoBeans().values())
                 {
@@ -123,6 +126,20 @@ public class SessionFactoryImpl implements SessionFactory
             catch (Exception e)
             {
                 throw new RuntimeException(e);
+            }
+            finally
+            {
+                if (connection != null)
+                {
+                    try
+                    {
+                        connection.close();
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new JustThrowException(e);
+                    }
+                }
             }
         }
     }

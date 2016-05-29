@@ -17,12 +17,12 @@ public class Table implements Comparable<Table>
     // 表的名字
     private String           tableName;
     // 该表所持有的外键对应的外键表名称
-    private LightSet<String> fatherTableNames = new LightSet<>();
-    private LightSet<Table>  fatherTables     = new LightSet<>();
+    private LightSet<String> fatherTableNames = new LightSet<String>();
+    private LightSet<Table>  fatherTables     = new LightSet<Table>();
     // 持有该表主键作为外键的表名称
-    private LightSet<Table>  childTables      = new LightSet<>();
-    private LightSet<String> colNameList      = new LightSet<>();
-    private LightSet<Row>    rowArray         = new LightSet<>();
+    private LightSet<Table>  childTables      = new LightSet<Table>();
+    private LightSet<String> colNameList      = new LightSet<String>();
+    private LightSet<Row>    rowArray         = new LightSet<Row>();
     private int              orderNum         = 0;
     private int              rowCount         = 0;
     private String           selectSql;
@@ -204,17 +204,17 @@ public class Table implements Comparable<Table>
         insertSql = cache.toString();
         cache.clear();
     }
-
+    
     public String getSelectSql()
     {
         return selectSql;
     }
-
+    
     public String getDeleteSql()
     {
         return deleteSql;
     }
-
+    
     public String getInsertSql()
     {
         return insertSql;

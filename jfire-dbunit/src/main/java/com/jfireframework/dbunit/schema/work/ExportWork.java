@@ -33,8 +33,9 @@ public class ExportWork
     private static void doExport(Table[] sorTables, boolean needData)
     {
         File outputFile = new File("test.xlsx");
-        try (FileOutputStream outputStream = new FileOutputStream(outputFile))
+        try
         {
+            FileOutputStream outputStream = new FileOutputStream(outputFile);
             XSSFWorkbook wb = new XSSFWorkbook();
             for (int i = 0; i < sorTables.length; i++)
             {
@@ -47,6 +48,7 @@ public class ExportWork
             }
             wb.write(outputStream);
             logger.info("excel文件输出完毕");
+            outputStream.close();
         }
         catch (IOException e)
         {

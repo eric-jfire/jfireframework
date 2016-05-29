@@ -49,7 +49,7 @@ public class DaoTest extends BaseTestSupport
         session.commit();
         ThreadTimewatch.end();
         logger.debug("在开启事务的情况下插入1000条数据耗时：{}", ThreadTimewatch.getTotalTime());
-        List<User> users = new LinkedList<>();
+        List<User> users = new LinkedList<User>();
         for (int i = 0; i < 30000; i++)
         {
             user = new User();
@@ -70,8 +70,9 @@ public class DaoTest extends BaseTestSupport
         ThreadTimewatch.end();
         logger.debug("在开启事务的情况下批量插入30000条数据耗时：{}", ThreadTimewatch.getTotalTime());
         
-        try (PreparedStatement pstat = connection.prepareStatement("select username from user where password='weadasda'"))
+        try
         {
+            PreparedStatement pstat = connection.prepareStatement("select username from user where password='weadasda'");
             ResultSet resultSet = pstat.executeQuery();
             resultSet.next();
             String username = resultSet.getString(1);
@@ -98,8 +99,9 @@ public class DaoTest extends BaseTestSupport
         session.save(user);
         timewatch.end();
         logger.debug("更新花费的时间是{}", timewatch.getTotal());
-        try (PreparedStatement pstat = connection.prepareStatement("select username from user where userid=1"))
+        try
         {
+            PreparedStatement pstat = connection.prepareStatement("select username from user where userid=1");
             ResultSet resultSet = pstat.executeQuery();
             resultSet.next();
             String username = resultSet.getString(1);
@@ -118,8 +120,9 @@ public class DaoTest extends BaseTestSupport
         User user = new User();
         user.setId(1);
         session.delete(user);
-        try (PreparedStatement pstat = connection.prepareStatement("select count(userid) from user"))
+        try
         {
+            PreparedStatement pstat = connection.prepareStatement("select count(userid) from user");
             ResultSet resultSet = pstat.executeQuery();
             resultSet.next();
             assertEquals(2, resultSet.getInt(1));
@@ -136,7 +139,7 @@ public class DaoTest extends BaseTestSupport
     {
         User user = session.get(User.class, 1);
         assertEquals("林斌", user.getName());
-        assertEquals("2015-03-03 12:12:12", user.getBirthday());
+        assertEquals("2015-03-03 12:12:12.0", user.getBirthday());
     }
     
     @Test

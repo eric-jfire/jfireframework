@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
  * 
  * 
  * @author 林斌（eric@jfire.cn）
- *         
+ * 
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
@@ -32,7 +32,7 @@ public @interface Query
      * 
      * @return
      */
-    public String[] paramNames();
+    public String paramNames();
     
     /**
      * 方法查询返回的类型
@@ -43,6 +43,7 @@ public @interface Query
     
     /**
      * 默认的查询总数的sql语句。为空则让系统自动生成
+     * 
      * @return
      */
     public String countSql() default "";

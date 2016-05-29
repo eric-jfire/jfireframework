@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  * 该注解的接口方法表明该方法被调用的时候会发出该sql语句
  * 
  * @author 林斌（windfire@zailanghua.com）
- *         
+ * 
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
@@ -27,6 +27,6 @@ public @interface Update
      * 
      * @return
      */
-    public String[] paramNames();
+    public String paramNames();
     
 }

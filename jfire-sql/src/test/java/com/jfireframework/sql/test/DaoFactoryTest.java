@@ -11,7 +11,7 @@ public class DaoFactoryTest extends BaseTestSupport
     @Test
     public void test()
     {
-        Set<String> set = new HashSet<>();
+        Set<String> set = new HashSet<String>();
         set.add("sdasdasd");
         try
         {

@@ -2,42 +2,69 @@ package com.jfireframework.sql.util;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import com.jfireframework.baseutil.exception.UnSupportException;
 
 public class SqlTool
 {
     @SuppressWarnings("unchecked")
     public static <T> Object getValue(ResultSet resultSet, int index, Class<T> type) throws SQLException
     {
-        switch (type.getSimpleName())
+        if (type == String.class)
         {
-            case "String":
-                return (T) getString(resultSet, index);
-            case "Double":
-                return (T) getWDouble(resultSet, index);
-            case "Float":
-                return (T) getWFloat(resultSet, index);
-            case "Integer":
-                return (T) getInteger(resultSet, index);
-            case "Boolean":
-                return (T) getWBoolean(resultSet, index);
-            case "Long":
-                return (T) getWLong(resultSet, index);
-            case "int":
-                return resultSet.getInt(index);
-            case "long":
-                return resultSet.getLong(index);
-            case "boolean":
-                return resultSet.getBoolean(index);
-            case "float":
-                return resultSet.getFloat(index);
-            case "double":
-                return resultSet.getDouble(index);
-            case "short":
-                return resultSet.getShort(index);
-            case "byte":
-                return resultSet.getByte(index);
-            default:
-                throw new RuntimeException("不支持的读取类型" + type.getName());
+            return (T) getString(resultSet, index);
+        }
+        else if (type == Double.class)
+        {
+            return (T) getWDouble(resultSet, index);
+        }
+        else if (type == Float.class)
+        {
+            return (T) getWFloat(resultSet, index);
+        }
+        else if (type == Integer.class)
+        {
+            return (T) getInteger(resultSet, index);
+        }
+        else if (type == Boolean.class)
+        {
+            return (T) getWBoolean(resultSet, index);
+        }
+        else if (type == Long.class)
+        {
+            return (T) getWLong(resultSet, index);
+        }
+        else if (type == int.class)
+        {
+            return resultSet.getInt(index);
+        }
+        else if (type == long.class)
+        {
+            return resultSet.getLong(index);
+        }
+        else if (type == boolean.class)
+        {
+            return resultSet.getBoolean(index);
+            
+        }
+        else if (type == float.class)
+        {
+            return resultSet.getFloat(index);
+        }
+        else if (type == short.class)
+        {
+            return resultSet.getShort(index);
+        }
+        else if (type == double.class)
+        {
+            return resultSet.getDouble(index);
+        }
+        else if (type == byte.class)
+        {
+            return resultSet.getByte(index);
+        }
+        else
+        {
+            throw new UnSupportException("不支持的读取类型" + type.getName());
         }
     }
     

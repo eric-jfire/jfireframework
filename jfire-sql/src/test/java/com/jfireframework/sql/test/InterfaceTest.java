@@ -47,8 +47,9 @@ public class InterfaceTest extends BaseTestSupport
         user.setAge(15);
         user.setBirthday("2015-3-6 12:10:10");
         logger.debug("插入的用户条数是{}", userDAO.insertUser(user));
-        try (PreparedStatement pstat = session.getConnection().prepareStatement("select * from user where userid=4"))
+        try
         {
+            PreparedStatement pstat = session.getConnection().prepareStatement("select * from user where userid=4");
             ResultSet resultSet = pstat.executeQuery();
             resultSet.next();
             assertEquals(user.getName(), resultSet.getString("username"));
@@ -76,8 +77,9 @@ public class InterfaceTest extends BaseTestSupport
     {
         UserDAO userDAO = session.getMapper(UserDAO.class);
         logger.debug("删除的用户条数是{}", userDAO.deleteUser(1));
-        try (PreparedStatement pstat = session.getConnection().prepareStatement("select count(userid) from user where userid=1"))
+        try
         {
+            PreparedStatement pstat = session.getConnection().prepareStatement("select count(userid) from user where userid=1");
             ResultSet resultSet = pstat.executeQuery();
             resultSet.next();
             assertEquals(0, resultSet.getInt(1));
@@ -109,7 +111,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void insertUsersTest()
     {
-        List<User> users = new ArrayList<>();
+        List<User> users = new ArrayList<User>();
         User user = new User();
         user.setId(4);
         user.setName("林斌1");
@@ -130,8 +132,9 @@ public class InterfaceTest extends BaseTestSupport
         {
             logger.debug("插入的用户条数{}", each);
         }
-        try (PreparedStatement pstat = session.getConnection().prepareStatement("select * from user where userid in(4,5) order by userid"))
+        try
         {
+            PreparedStatement pstat = session.getConnection().prepareStatement("select * from user where userid in(4,5) order by userid");
             ResultSet rs = pstat.executeQuery();
             rs.next();
             assertEquals("林斌1", rs.getString("username"));
@@ -238,7 +241,7 @@ public class InterfaceTest extends BaseTestSupport
     public void test5()
     {
         UserDAO userDAO = session.getMapper(UserDAO.class);
-        List<Integer> ids = new ArrayList<>();
+        List<Integer> ids = new ArrayList<Integer>();
         ids.add(1);
         userDAO.querySize(ids);
     }
