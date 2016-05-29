@@ -171,11 +171,11 @@ public class InterfaceMapperFactory
         String querySql = null, queryParam = null, countSql = null, countParam = null;
         if (isDynamicSql)
         {
-            methodBody.append(DynamicSqlTool.analyseDynamicSql(query.sql(), query.paramNames(), method.getParameterTypes(), isPage, query.countSql().equals("") ? null : query.countSql()));
+            methodBody.append(DynamicSqlTool.analyseDynamicSql(query.sql(), query.paramNames().split(","), method.getParameterTypes(), isPage, query.countSql().equals("") ? null : query.countSql()));
         }
         else
         {
-            String[] sqlAndParam = DynamicSqlTool.analyseFormatSql(query.sql(), query.paramNames(), method.getParameterTypes(), isPage);
+            String[] sqlAndParam = DynamicSqlTool.analyseFormatSql(query.sql(), query.paramNames().split(","), method.getParameterTypes(), isPage);
             querySql = sqlAndParam[0];
             queryParam = sqlAndParam[1];
             countSql = sqlAndParam[2];
@@ -305,11 +305,11 @@ public class InterfaceMapperFactory
         String sql = null, param = null;
         if (isDynamicSql)
         {
-            cache.append(DynamicSqlTool.analyseDynamicSql(update.sql(), update.paramNames(), method.getParameterTypes(), false, null));
+            cache.append(DynamicSqlTool.analyseDynamicSql(update.sql(), update.paramNames().split(","), method.getParameterTypes(), false, null));
         }
         else
         {
-            String[] sqlAndParam = DynamicSqlTool.analyseFormatSql(update.sql(), update.paramNames(), method.getParameterTypes(), false);
+            String[] sqlAndParam = DynamicSqlTool.analyseFormatSql(update.sql(), update.paramNames().split(","), method.getParameterTypes(), false);
             sql = sqlAndParam[0];
             param = sqlAndParam[1];
         }
@@ -351,7 +351,7 @@ public class InterfaceMapperFactory
         String sql = DynamicSqlTool.getFormatSql(originalSql, variateNames);
         int length = variateNames.size();
         String[] params = new String[length];
-        String[] paramNames = batchInsert.paramNames();
+        String[] paramNames = batchInsert.paramNames().split(",");
         Type[] types = method.getGenericParameterTypes();
         Class<?>[] paramTypes = new Class<?>[types.length];
         for (int i = 0; i < types.length; i++)

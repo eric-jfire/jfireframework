@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  * 该注解表明该接口的实现会发出对应的批量sql语句
  * 
  * @author 林斌（windfire@zailanghua.com）
- *         
+ * 
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
@@ -27,6 +27,6 @@ public @interface BatchUpdate
      * 
      * @return
      */
-    public String[] paramNames();
+    public String paramNames();
     
 }
