@@ -12,7 +12,7 @@ public class MapbeanFactoryTest extends BaseTestSupport
     public void test()
     {
         new MapBeanFactory();
-        Set<String> set = new HashSet<>();
+        Set<String> set = new HashSet<String>();
         set.add("dsasda");
         try
         {

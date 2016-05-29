@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.collection.set.LightSet;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
@@ -39,7 +40,7 @@ public class DAOBeanImpl implements DAOBean
     private static Logger             logger          = ConsoleLogFactory.getLogger();
     private Class<?>                  entityClass;
     // 存储类的属性名和其对应的Mapfield映射关系
-    private Map<String, MapField>     fieldMap        = new HashMap<>();
+    private Map<String, MapField>     fieldMap        = new HashMap<String, MapField>();
     // 代表数据库主键id的field
     private MapField                  idField;
     private long                      idOffset;
@@ -53,14 +54,14 @@ public class DAOBeanImpl implements DAOBean
     private SqlAndFields              getForUpdateInfo;
     private SqlAndFields              insertInfo;
     private SqlAndFields              updateInfo;
-    private Map<String, SqlAndFields> selectUpdateMap = new ConcurrentHashMap<>();
-    private Map<String, SqlAndFields> selectGetMap    = new ConcurrentHashMap<>();
-                                                      
+    private Map<String, SqlAndFields> selectUpdateMap = new ConcurrentHashMap<String, SqlAndFields>();
+    private Map<String, SqlAndFields> selectGetMap    = new ConcurrentHashMap<String, SqlAndFields>();
+    
     public DAOBeanImpl(Class<?> entityClass)
     {
         this.entityClass = entityClass;
         Field[] fields = ReflectUtil.getAllFields(entityClass);
-        LightSet<MapField> set = new LightSet<>();
+        LightSet<MapField> set = new LightSet<MapField>();
         for (Field each : fields)
         {
             if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || each.getType().isArray() || Modifier.isStatic(each.getModifiers()))
@@ -95,7 +96,7 @@ public class DAOBeanImpl implements DAOBean
             }
         }
         Verify.notNull(idField, "使用TableEntity映射的表必须由id字段，请检查{}", entityClass.getName());
-        LightSet<MapField> tmp = new LightSet<>();
+        LightSet<MapField> tmp = new LightSet<MapField>();
         for (MapField each : set)
         {
             if (each.saveIgnore())
@@ -134,7 +135,7 @@ public class DAOBeanImpl implements DAOBean
         /******** 生成updatesql *******/
         cache.clear();
         cache.append("update ").append(tableName).append(" set ");
-        LightSet<MapField> tmps = new LightSet<>();
+        LightSet<MapField> tmps = new LightSet<MapField>();
         for (MapField each : insertOrUpdateFields)
         {
             if (each.getColName().equals(idField.getColName()))
@@ -182,8 +183,10 @@ public class DAOBeanImpl implements DAOBean
     @Override
     public boolean delete(Object entity, Connection connection)
     {
-        try (PreparedStatement pstat = connection.prepareStatement(deleteInfo.getSql()))
+        PreparedStatement pstat = null;
+        try
         {
+            pstat = connection.prepareStatement(deleteInfo.getSql());
             pstat.setObject(1, unsafe.getObject(entity, idOffset));
             pstat.executeUpdate();
             return true;
@@ -192,14 +195,30 @@ public class DAOBeanImpl implements DAOBean
         {
             throw new RuntimeException(e);
         }
+        finally
+        {
+            if (pstat != null)
+            {
+                try
+                {
+                    pstat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
+        }
     }
     
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getById(Object pk, Connection connection)
     {
-        try (PreparedStatement pStat = connection.prepareStatement(getInfo.getSql()))
+        PreparedStatement pStat = null;
+        try
         {
+            pStat = connection.prepareStatement(getInfo.getSql());
             logger.trace("执行的sql是{}", getInfo.getSql());
             pStat.setObject(1, pk);
             ResultSet resultSet = pStat.executeQuery();
@@ -217,9 +236,23 @@ public class DAOBeanImpl implements DAOBean
                 return null;
             }
         }
-        catch (SQLException | InstantiationException | IllegalAccessException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
+        }
+        finally
+        {
+            if (pStat != null)
+            {
+                try
+                {
+                    pStat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -230,7 +263,7 @@ public class DAOBeanImpl implements DAOBean
         if (sqlAndFields == null)
         {
             StringCache cache = new StringCache("select ");
-            LightSet<MapField> set = new LightSet<>();
+            LightSet<MapField> set = new LightSet<MapField>();
             for (String each : fieldNames.split(","))
             {
                 MapField tmp = fieldMap.get(each);
@@ -245,8 +278,10 @@ public class DAOBeanImpl implements DAOBean
             sqlAndFields.setFields(set.toArray(MapField.class));
         }
         logger.trace("执行的sql语句是{}", sqlAndFields.getSql());
-        try (PreparedStatement pStat = connection.prepareStatement(sqlAndFields.getSql()))
+        PreparedStatement pStat = null;
+        try
         {
+            pStat = connection.prepareStatement(sqlAndFields.getSql());
             pStat.setObject(1, pk);
             ResultSet resultSet = pStat.executeQuery();
             if (resultSet.next())
@@ -263,9 +298,23 @@ public class DAOBeanImpl implements DAOBean
                 return null;
             }
         }
-        catch (SQLException | InstantiationException | IllegalAccessException e)
+        catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (pStat != null)
+            {
+                try
+                {
+                    pStat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -281,8 +330,10 @@ public class DAOBeanImpl implements DAOBean
         else
         {
             // id有值，执行更新操作
-            try (PreparedStatement pStat = connection.prepareStatement(updateInfo.getSql()))
+            PreparedStatement pStat = null;
+            try
             {
+                pStat = connection.prepareStatement(updateInfo.getSql());
                 int index = 1;
                 for (MapField each : updateInfo.getFields())
                 {
@@ -295,6 +346,20 @@ public class DAOBeanImpl implements DAOBean
             {
                 throw new RuntimeException(e);
             }
+            finally
+            {
+                if (pStat != null)
+                {
+                    try
+                    {
+                        pStat.close();
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new JustThrowException(e);
+                    }
+                }
+            }
         }
         
     }
@@ -302,8 +367,10 @@ public class DAOBeanImpl implements DAOBean
     @Override
     public <T> void batchInsert(List<T> entitys, Connection connection)
     {
-        try (PreparedStatement pStat = connection.prepareStatement(insertInfo.getSql()))
+        PreparedStatement pStat = null;
+        try
         {
+            pStat = connection.prepareStatement(insertInfo.getSql());
             for (Object entity : entitys)
             {
                 int index = 1;
@@ -318,7 +385,21 @@ public class DAOBeanImpl implements DAOBean
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (pStat != null)
+            {
+                try
+                {
+                    pStat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -330,7 +411,7 @@ public class DAOBeanImpl implements DAOBean
         {
             StringCache cache = new StringCache("update ");
             cache.append(tableName).append(" set ");
-            LightSet<MapField> set = new LightSet<>();
+            LightSet<MapField> set = new LightSet<MapField>();
             for (String each : fieldNames.split(","))
             {
                 MapField tmp = fieldMap.get(each);
@@ -343,8 +424,10 @@ public class DAOBeanImpl implements DAOBean
             sqlAndFields.setFields(set.toArray(MapField.class));
         }
         logger.trace("执行的sql语句是{}", sqlAndFields.getSql());
-        try (PreparedStatement pStat = connection.prepareStatement(sqlAndFields.getSql()))
+        PreparedStatement pStat = null;
+        try
         {
+            pStat = connection.prepareStatement(sqlAndFields.getSql());
             int index = 1;
             for (MapField each : sqlAndFields.getFields())
             {
@@ -356,14 +439,30 @@ public class DAOBeanImpl implements DAOBean
         }
         catch (SQLException e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (pStat != null)
+            {
+                try
+                {
+                    pStat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
     public <T> void insert(T entity, Connection connection)
     {
-        try (PreparedStatement pStat = connection.prepareStatement(insertInfo.getSql(), Statement.RETURN_GENERATED_KEYS))
+        PreparedStatement pStat = null;
+        try
         {
+            pStat = connection.prepareStatement(insertInfo.getSql(), Statement.RETURN_GENERATED_KEYS);
             int index = 1;
             for (MapField each : insertInfo.getFields())
             {
@@ -392,7 +491,21 @@ public class DAOBeanImpl implements DAOBean
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (pStat != null)
+            {
+                try
+                {
+                    pStat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -401,8 +514,10 @@ public class DAOBeanImpl implements DAOBean
     public <T> T getById(Object pk, Connection connection, LockMode mode)
     {
         String sql = mode == LockMode.SHARE ? getInShareInfo.getSql() : getForUpdateInfo.getSql();
-        try (PreparedStatement pStat = connection.prepareStatement(sql))
+        PreparedStatement pStat = null;
+        try
         {
+            pStat = connection.prepareStatement(sql);
             logger.trace("执行的sql是{}", sql);
             pStat.setObject(1, pk);
             ResultSet resultSet = pStat.executeQuery();
@@ -420,9 +535,23 @@ public class DAOBeanImpl implements DAOBean
                 return null;
             }
         }
-        catch (SQLException | InstantiationException | IllegalAccessException e)
+        catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (pStat != null)
+            {
+                try
+                {
+                    pStat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -430,7 +559,7 @@ public class DAOBeanImpl implements DAOBean
     public int deleteByIds(String ids, Connection connection)
     {
         StringCache cache = new StringCache(batchDeleteInfo.getSql());
-        ArrayList<String> params = new ArrayList<>(16);
+        ArrayList<String> params = new ArrayList<String>(16);
         for (String id : ids.split(","))
         {
             cache.append("?,");
@@ -441,8 +570,10 @@ public class DAOBeanImpl implements DAOBean
             throw new RuntimeException("ids中不包含实际的id值，请加上判断");
         }
         cache.deleteLast().append(')');
-        try (PreparedStatement pStat = connection.prepareStatement(cache.toString()))
+        PreparedStatement pStat = null;
+        try
         {
+            pStat = connection.prepareStatement(cache.toString());
             logger.trace("执行的sql是{}", cache.toString());
             int index = 1;
             for (String each : params)
@@ -453,7 +584,21 @@ public class DAOBeanImpl implements DAOBean
         }
         catch (SQLException e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (pStat != null)
+            {
+                try
+                {
+                    pStat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -461,7 +606,7 @@ public class DAOBeanImpl implements DAOBean
     public int deleteByIds(int[] ids, Connection connection)
     {
         StringCache cache = new StringCache(batchDeleteInfo.getSql());
-        ArrayList<Integer> params = new ArrayList<>(16);
+        ArrayList<Integer> params = new ArrayList<Integer>(16);
         for (int id : ids)
         {
             cache.append("?,");
@@ -472,8 +617,10 @@ public class DAOBeanImpl implements DAOBean
             throw new RuntimeException("ids中不包含实际的id值，请加上判断");
         }
         cache.deleteLast().append(')');
-        try (PreparedStatement pStat = connection.prepareStatement(cache.toString()))
+        PreparedStatement pStat = null;
+        try
         {
+            pStat = connection.prepareStatement(cache.toString());
             logger.trace("执行的sql是{}", cache.toString());
             int index = 1;
             for (Integer each : params)
@@ -485,6 +632,20 @@ public class DAOBeanImpl implements DAOBean
         catch (SQLException e)
         {
             throw new RuntimeException(e);
+        }
+        finally
+        {
+            if (pStat != null)
+            {
+                try
+                {
+                    pStat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -518,7 +679,7 @@ class SqlAndFields
 {
     private String     sql;
     private MapField[] fields;
-                       
+    
     public String getSql()
     {
         return sql;

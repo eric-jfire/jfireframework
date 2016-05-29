@@ -10,9 +10,9 @@ import com.jfireframework.sql.metadata.MetaData;
 
 public class MapBeanFactory
 {
-    private static Map<Class<?>, MapBeanImpl<?>> mapBeans    = new HashMap<>();
-    private static Map<String, MetaData>         metaDataMap = new HashMap<>();
-                                                             
+    private static Map<Class<?>, MapBeanImpl<?>> mapBeans    = new HashMap<Class<?>, MapBeanImpl<?>>();
+    private static Map<String, MetaData>         metaDataMap = new HashMap<String, MetaData>();
+    
     /**
      * 获取对应类型的MapBean
      * 
@@ -25,6 +25,7 @@ public class MapBeanFactory
         return (MapBeanImpl<T>) mapBeans.get(entityClass);
     }
     
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static void build(Set<String> set, ClassLoader classLoader)
     {
         for (String each : set)
@@ -43,7 +44,7 @@ public class MapBeanFactory
                 if (ckass.isAnnotationPresent(TableEntity.class))
                 {
                     metaDataMap.put(ckass.getSimpleName(), new MetaData(ckass));
-                    mapBeans.put(ckass, new MapBeanImpl<>(ckass));
+                    mapBeans.put(ckass, new MapBeanImpl(ckass));
                 }
             }
             catch (ClassNotFoundException e)

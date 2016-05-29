@@ -33,7 +33,7 @@ import com.jfireframework.sql.function.impl.DAOBeanImpl;
 
 public class DaoFactory
 {
-    private static Map<Class<?>, DAOBean> daoMap = new HashMap<>();
+    private static Map<Class<?>, DAOBean> daoMap = new HashMap<Class<?>, DAOBean>();
     
     public static DAOBean getDaoBean(Class<?> entityClass)
     {

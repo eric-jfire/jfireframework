@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import javax.sql.DataSource;
 import com.jfireframework.baseutil.collection.set.LightSet;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.dbunit.table.Row;
 import com.jfireframework.dbunit.table.Table;
 
@@ -24,8 +25,10 @@ public class BuckupWork
      */
     public static void buckupDbData(DataSource dataSource, Map<String, Table> tableMap)
     {
-        try (Connection queryTableData = dataSource.getConnection())
+        Connection queryTableData = null;
+        try
         {
+            queryTableData = dataSource.getConnection();
             for (Table each : tableMap.values())
             {
                 LightSet<String> colNameList = each.getColNameList();
@@ -41,6 +44,20 @@ public class BuckupWork
         catch (SQLException e)
         {
             throw new RuntimeException(e);
+        }
+        finally
+        {
+            if (queryTableData != null)
+            {
+                try
+                {
+                    queryTableData.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     

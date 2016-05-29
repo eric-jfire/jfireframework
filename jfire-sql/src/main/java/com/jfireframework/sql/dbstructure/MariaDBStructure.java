@@ -18,9 +18,9 @@ import com.jfireframework.sql.function.impl.DAOBeanImpl;
 public class MariaDBStructure implements Structure
 {
     private Logger                                logger    = ConsoleLogFactory.getLogger();
-                                                            
-    protected static Map<Class<?>, TypeAndLength> dbTypeMap = new HashMap<>();
-                                                            
+    
+    protected static Map<Class<?>, TypeAndLength> dbTypeMap = new HashMap<Class<?>, TypeAndLength>();
+    
     static
     {
         dbTypeMap.put(int.class, new TypeAndLength("int", 9));

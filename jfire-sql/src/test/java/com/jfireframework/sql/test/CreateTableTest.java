@@ -13,7 +13,7 @@ public class CreateTableTest
         DruidDataSource dataSource = new DruidDataSource();
         dataSource.setUrl("jdbc:mysql://localhost:3306/test?characterEncoding=utf8");
         dataSource.setUsername("root");
-        dataSource.setPassword("Starnetsql1019");
+        dataSource.setPassword("centerm");
         dataSource.setMaxActive(150);
         dataSource.setMaxWait(500);
         try
@@ -27,7 +27,7 @@ public class CreateTableTest
         }
         
         SessionFactoryImpl sessionFactory = new SessionFactoryImpl(dataSource);
-        sessionFactory.setScanPackage("link.jfire.orm.table");
+        sessionFactory.setScanPackage("com.jfireframework.sql.test.table");
         sessionFactory.setDbType("MariaDB");
         sessionFactory.setTableMode("update");
         sessionFactory.init();
