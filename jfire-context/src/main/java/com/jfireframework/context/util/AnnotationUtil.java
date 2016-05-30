@@ -21,7 +21,42 @@ public class AnnotationUtil
         return result != null;
     }
     
+    public static boolean isAnnotationPresent(Class<? extends Annotation> annoType, Method method)
+    {
+        Annotation result = getAnnotation(annoType, method);
+        return result != null;
+    }
+    
+    public static <T extends Annotation> T getAnnotation(Class<T> annoType, Method method)
+    {
+        T anno = null;
+        anno = method.getAnnotation(annoType);
+        if (anno != null)
+        {
+            return anno;
+        }
+        return getAnnotation(annoType, method.getAnnotations());
+    }
+    
     @SuppressWarnings("unchecked")
+    private static <T extends Annotation> T getAnnotation(Class<T> annoType, Annotation[] annotations)
+    {
+        for (Annotation each : annotations)
+        {
+            AliasAnno aliasAnno = aliasMap.get(each);
+            if (aliasAnno == null)
+            {
+                aliasAnno = new AliasAnno(each, new HashMap<String, Object>());
+                aliasMap.put(each, aliasAnno);
+            }
+            if (aliasAnno.rootType() == annoType)
+            {
+                return (T) aliasAnno.target();
+            }
+        }
+        return null;
+    }
+    
     public static <T extends Annotation> T getAnnotation(Class<T> annotationType, Class<?> target)
     {
         T anno;
@@ -30,20 +65,7 @@ public class AnnotationUtil
         {
             return anno;
         }
-        for (Annotation each : target.getAnnotations())
-        {
-            AliasAnno aliasAnno = aliasMap.get(each);
-            if (aliasAnno == null)
-            {
-                aliasAnno = new AliasAnno(each, new HashMap<String, Object>());
-                aliasMap.put(each, aliasAnno);
-            }
-            if (aliasAnno.rootType() == annotationType)
-            {
-                return (T) aliasAnno.target();
-            }
-        }
-        return null;
+        return getAnnotation(annotationType, target.getAnnotations());
     }
     
     static class AliasAnno

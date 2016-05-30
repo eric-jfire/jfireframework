@@ -1,4 +1,4 @@
-package com.jfireframework.context.test.function;
+package com.jfireframework.context.test.function.aliastest;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
