@@ -27,6 +27,7 @@ import com.jfireframework.context.bean.BeanConfig;
 import com.jfireframework.context.config.BeanAttribute;
 import com.jfireframework.context.config.BeanInfo;
 import com.jfireframework.context.config.ContextConfig;
+import com.jfireframework.context.util.ContextUtil;
 
 public class JfireContextImpl implements JfireContext
 {

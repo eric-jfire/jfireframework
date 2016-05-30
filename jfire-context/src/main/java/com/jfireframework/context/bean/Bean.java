@@ -17,6 +17,7 @@ import com.jfireframework.context.aop.annotation.BeforeEnhance;
 import com.jfireframework.context.aop.annotation.ThrowEnhance;
 import com.jfireframework.context.bean.field.dependency.DependencyField;
 import com.jfireframework.context.bean.field.param.ParamField;
+import com.jfireframework.context.util.AnnotationUtil;
 import sun.reflect.MethodAccessor;
 
 /**
@@ -103,7 +104,8 @@ public class Bean
      */
     public Bean(Class<?> src)
     {
-        Resource resource = src.getAnnotation(Resource.class);
+//        Resource resource = src.getAnnotation(Resource.class);
+        Resource resource = AnnotationUtil.getAnnotation(Resource.class, src);
         // 如果资源名称不为空，使用注解的资源名称。否则使用被注解的类的名称
         beanName = StringUtil.isNotBlank(resource.name()) ? resource.name() : src.getName();
         configBean(beanName, resource.shareable() == false, src);
