@@ -12,6 +12,4 @@ public @interface TestAlias
     @AliasFor(annotation = Resource.class, value = "name")
     String test() default "test";
     
-    @AliasFor(annotation = Resource.class, value = "sharable")
-    boolean share() default false;
 }
