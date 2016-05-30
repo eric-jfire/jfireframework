@@ -1,6 +1,7 @@
 package com.jfireframework.context.util;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -15,16 +16,19 @@ public class AnnotationUtil
 {
     private static final Map<Annotation, AliasAnno> aliasMap = new HashMap<Annotation, AnnotationUtil.AliasAnno>();
     
-    public static boolean isAnnotationPresent(Class<? extends Annotation> annotationType, Class<?> target)
+    public static boolean isAnnotationPresent(Class<? extends Annotation> annoType, Field field)
     {
-        Annotation result = getAnnotation(annotationType, target);
-        return result != null;
+        return getAnnotation(annoType, field) != null;
+    }
+    
+    public static boolean isAnnotationPresent(Class<? extends Annotation> annoType, Class<?> target)
+    {
+        return getAnnotation(annoType, target) != null;
     }
     
     public static boolean isAnnotationPresent(Class<? extends Annotation> annoType, Method method)
     {
-        Annotation result = getAnnotation(annoType, method);
-        return result != null;
+        return getAnnotation(annoType, method) != null;
     }
     
     public static <T extends Annotation> T getAnnotation(Class<T> annoType, Method method)
@@ -36,6 +40,17 @@ public class AnnotationUtil
             return anno;
         }
         return getAnnotation(annoType, method.getAnnotations());
+    }
+    
+    public static <T extends Annotation> T getAnnotation(Class<T> annoType, Field field)
+    {
+        T anno = null;
+        anno = field.getAnnotation(annoType);
+        if (anno != null)
+        {
+            return anno;
+        }
+        return getAnnotation(annoType, field.getAnnotations());
     }
     
     @SuppressWarnings("unchecked")

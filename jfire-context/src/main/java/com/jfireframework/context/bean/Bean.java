@@ -104,7 +104,6 @@ public class Bean
      */
     public Bean(Class<?> src)
     {
-//        Resource resource = src.getAnnotation(Resource.class);
         Resource resource = AnnotationUtil.getAnnotation(Resource.class, src);
         // 如果资源名称不为空，使用注解的资源名称。否则使用被注解的类的名称
         beanName = StringUtil.isNotBlank(resource.name()) ? resource.name() : src.getName();
