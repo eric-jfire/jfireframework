@@ -11,7 +11,6 @@ public class FloatField extends AbstractParamField
         this.value = Float.valueOf(value);
     }
     
-    @SuppressWarnings("restriction")
     public void setParam(Object entity)
     {
         unsafe.putFloat(entity, offset, ((Float) value).floatValue());

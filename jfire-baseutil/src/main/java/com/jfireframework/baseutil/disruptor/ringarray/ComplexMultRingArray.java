@@ -2,18 +2,19 @@ package com.jfireframework.baseutil.disruptor.ringarray;
 
 import com.jfireframework.baseutil.disruptor.EntryAction;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
-import sun.misc.Unsafe;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
 
-@SuppressWarnings("restriction")
 public class ComplexMultRingArray extends AbstractMultRingArray
 {
     
     private final static int intShift;
+    private final static int intOffset;
     private final int[]      availableFlags;
     
     static
     {
-        int scale = Unsafe.ARRAY_INT_INDEX_SCALE;
+        int scale = ReflectUtil.getUnsafe().arrayIndexScale(int[].class);
+        intOffset = ReflectUtil.getUnsafe().arrayBaseOffset(int[].class);
         if (scale == 8)
         {
             intShift = 3;
@@ -41,13 +42,13 @@ public class ComplexMultRingArray extends AbstractMultRingArray
     public void publish(long cursor)
     {
         // 下一步可能会使用volatile写入。所以这里只要使用ordered的写入方式，放入store-store屏障来保证上写不会重排序即可
-        unsafe.putOrderedInt(availableFlags, Unsafe.ARRAY_INT_BASE_OFFSET + ((cursor & sizeMask) << intShift), (int) (cursor >>> flagShift));
+        unsafe.putOrderedInt(availableFlags, intOffset + ((cursor & sizeMask) << intShift), (int) (cursor >>> flagShift));
         waitStrategy.signallBlockwaiting();
     }
     
     public boolean isAvailable(long cursor)
     {
-        if ((int) (cursor >>> flagShift) == unsafe.getIntVolatile(availableFlags, Unsafe.ARRAY_INT_BASE_OFFSET + ((cursor & sizeMask) << intShift)))
+        if ((int) (cursor >>> flagShift) == unsafe.getIntVolatile(availableFlags, intOffset + ((cursor & sizeMask) << intShift)))
         {
             return true;
         }

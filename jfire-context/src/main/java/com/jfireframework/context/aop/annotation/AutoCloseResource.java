@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
  * 注解在方法上,代表会自动关闭方法中打开的资源
  * 
  * @author 林斌{erci@jfire.cn}
- *         
+ * 
  */
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
@@ -24,5 +24,5 @@ public @interface AutoCloseResource
      * 
      * @return
      */
-    public Class<?>[]exceptions() default { Throwable.class };
+    public Class<?>[] exceptions() default { Throwable.class };
 }

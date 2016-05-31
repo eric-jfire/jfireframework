@@ -3,7 +3,6 @@ package com.jfireframework.baseutil.disruptor;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import sun.misc.Unsafe;
 
-@SuppressWarnings("restriction")
 public class Entry
 {
     private static final Unsafe unsafe          = ReflectUtil.getUnsafe();

@@ -11,7 +11,6 @@ public class LongField extends AbstractParamField
         this.value = Long.valueOf(value);
     }
     
-    @SuppressWarnings("restriction")
     public void setParam(Object entity)
     {
         unsafe.putLong(entity, offset, ((Long) value).longValue());

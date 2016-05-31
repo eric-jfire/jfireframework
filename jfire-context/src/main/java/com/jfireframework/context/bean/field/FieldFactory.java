@@ -40,7 +40,6 @@ import com.jfireframework.context.bean.field.param.impl.WLongField;
 import com.jfireframework.context.util.AnnotationUtil;
 import sun.reflect.MethodAccessor;
 
-@SuppressWarnings("restriction")
 public class FieldFactory
 {
     private static Logger logger = ConsoleLogFactory.getLogger();

@@ -5,7 +5,6 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.context.bean.field.param.ParamField;
 import sun.misc.Unsafe;
 
-@SuppressWarnings("restriction")
 public abstract class AbstractParamField implements ParamField
 {
     protected long   offset;

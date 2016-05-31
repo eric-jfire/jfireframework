@@ -41,6 +41,6 @@ public class AliasTest
     {
         JfireContext jfireContext = new JfireContextImpl("com.jfireframework.context");
         SingleDemo demo = (SingleDemo) jfireContext.getBean("demo");
-        assertFalse(demo==null);
+        assertFalse(demo == null);
     }
 }

@@ -41,14 +41,7 @@ public class ContextUtil
         Class<?> res = null;
         try
         {
-            if (classloader == null)
-            {
-                res = Class.forName(className);
-            }
-            else
-            {
-                res = classloader.loadClass(className);
-            }
+            res = classloader.loadClass(className);
         }
         catch (ClassNotFoundException e)
         {

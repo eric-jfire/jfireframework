@@ -4,7 +4,7 @@ package com.jfireframework.context.aop;
  * 用于在AOP增强中对连接点的抽象。
  * 
  * @author linbin
- *         
+ * 
  */
 public class ProceedPointImpl implements ProceedPoint
 {

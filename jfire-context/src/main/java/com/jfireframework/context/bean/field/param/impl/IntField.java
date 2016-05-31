@@ -11,7 +11,6 @@ public class IntField extends AbstractParamField
         this.value = Integer.valueOf(value);
     }
     
-    @SuppressWarnings("restriction")
     public void setParam(Object entity)
     {
         unsafe.putInt(entity, offset, ((Integer) value).intValue());

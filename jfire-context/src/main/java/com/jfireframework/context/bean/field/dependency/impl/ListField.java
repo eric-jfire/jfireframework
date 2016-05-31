@@ -19,7 +19,7 @@ public class ListField extends AbstractDependencyField
         msg = StringUtil.format("属性{}.{}为空,无法进行lightSet注入", field.getDeclaringClass().getName(), field.getName());
     }
     
-    @SuppressWarnings({ "restriction", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public void inject(Object src, Map<String, Object> beanInstanceMap)
     {

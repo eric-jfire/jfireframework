@@ -4,7 +4,6 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import com.jfireframework.context.bean.Bean;
 
-@SuppressWarnings("restriction")
 public class InterfaceField extends AbstractDependencyField
 {
     private Bean implBean;

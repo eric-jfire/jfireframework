@@ -11,7 +11,6 @@ import sun.reflect.MethodAccessor;
  * map依赖注入的field。该field使用依赖注入的bean中的约定方法的返回值作为map字段的key
  * 
  */
-@SuppressWarnings("restriction")
 public class MethodMapField extends AbstractDependencyField
 {
     private Bean[]                dependencyBeans;

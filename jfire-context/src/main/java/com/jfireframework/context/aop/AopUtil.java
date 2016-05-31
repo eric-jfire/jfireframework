@@ -250,15 +250,7 @@ public class AopUtil
                 }
             }
         }
-        if (classLoader != null)
-        {
-            bean.setType(childCc.toClass(classLoader, null));
-        }
-        else
-        {
-            bean.setType(childCc.toClass());
-            
-        }
+        bean.setType(childCc.toClass(classLoader, null));
         // 进行脱离操作，减少内存占用
         parentCc.detach();
         childCc.detach();
@@ -406,7 +398,7 @@ public class AopUtil
     {
         for (Method method : txMethods)
         {
-            Transaction transaction =AnnotationUtil.getAnnotation(Transaction.class, method);
+            Transaction transaction = AnnotationUtil.getAnnotation(Transaction.class, method);
             Class<?>[] types = transaction.exceptions();
             CtClass[] exCcs = new CtClass[types.length];
             for (int i = 0; i < types.length; i++)

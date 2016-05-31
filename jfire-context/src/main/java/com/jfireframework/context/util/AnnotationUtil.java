@@ -134,12 +134,15 @@ public class AnnotationUtil
                         superAnno = anno.annotationType().getAnnotation(aliasFor.annotation());
                     }
                 }
-                else if (each.getParameterCount() == 0)
+                else if (each.getParameterTypes().length == 0)
                 {
                     String name = each.getDeclaringClass().getName() + "." + each.getName();
                     try
                     {
-                        valueMap.putIfAbsent(name, each.invoke(anno));
+                        if (valueMap.containsKey(name) == false)
+                        {
+                            valueMap.put(name, each.invoke(anno));
+                        }
                     }
                     catch (Exception e)
                     {

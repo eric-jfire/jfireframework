@@ -10,7 +10,6 @@ public class BooleanField extends AbstractParamField
         this.value = Boolean.valueOf(value);
     }
     
-    @SuppressWarnings("restriction")
     public void setParam(Object entity)
     {
         unsafe.putBoolean(entity, offset, (Boolean) value);

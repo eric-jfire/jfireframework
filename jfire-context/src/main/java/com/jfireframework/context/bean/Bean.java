@@ -27,7 +27,6 @@ import sun.reflect.MethodAccessor;
  * @author 林斌（eric@jfire.cn）
  * 
  */
-@SuppressWarnings("restriction")
 public class Bean
 {
     /** 该bean的名称 */

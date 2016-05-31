@@ -1,41 +1,28 @@
 package com.jfireframework.baseutil;
 
 import java.io.IOException;
-import java.net.JarURLConnection;
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
+import java.util.HashMap;
+import com.jfireframework.baseutil.reflect.HotswapClassLoader;
 
 public class Demo
 {
-    public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException
     {
-        String value = System.getProperty("java.class.path");
-        List<String> jarUrls = new LinkedList<String>();
-        for (String each : value.split(";"))
-        {
-            if (each.endsWith(".jar"))
-            {
-                JarFile jarFile = null;
-                try
-                {
-                    jarFile =new JarFile(each);
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException("url地址：'" + each + "'不正确", e);
-                }
-                Enumeration<JarEntry> entries = jarFile.entries();
-                while (entries.hasMoreElements())
-                {
-                    JarEntry jarEntry = (JarEntry) entries.nextElement();
-                    String entryName = jarEntry.getName();
-                    System.out.println(entryName);
-                }
-            }
-        }
+        HotswapClassLoader classLoader = new HotswapClassLoader();
+        classLoader.setReloadPackages("com.jfireframework");
+        Class<?> result1 = classLoader.loadClass("com.jfireframework.baseutil.Logtest");
+        Class<?> t = classLoader.loadClass("junit.textui.TestRunner");
+        System.out.println(result1);
+        System.out.println(result1.getClassLoader());
+        System.out.println(t);
+        System.out.println(t.getClassLoader());
+        classLoader = new HotswapClassLoader( classLoader);
+        classLoader.setReloadPackages("com.jfireframework");
+         result1 = classLoader.loadClass("com.jfireframework.baseutil.Logtest");
+       t = classLoader.loadClass("junit.textui.TestRunner");
+        System.out.println(result1);
+        System.out.println(result1.getClassLoader());
+        System.out.println(t);
+        System.out.println(t.getClassLoader());
     }
 }

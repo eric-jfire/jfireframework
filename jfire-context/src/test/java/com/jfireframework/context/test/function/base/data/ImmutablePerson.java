@@ -5,23 +5,23 @@ import javax.annotation.Resource;
 @Resource
 public class ImmutablePerson
 {
-    private int     age;
-    private String  name;
+    private int      age;
+    private String   name;
     @Resource
-    private House   home;
-    private Boolean boy;
+    private House    home;
+    private Boolean  boy;
     private String[] arrays;
     
     public String[] getArrays()
     {
         return arrays;
     }
-
+    
     public void setArrays(String[] arrays)
     {
         this.arrays = arrays;
     }
-
+    
     public int getAge()
     {
         return age;
