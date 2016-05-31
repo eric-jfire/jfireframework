@@ -2,6 +2,8 @@ package com.jfireframework.baseutil.reflect;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class HotwrapClassLoader extends ClassLoader
@@ -9,13 +11,26 @@ public class HotwrapClassLoader extends ClassLoader
     private ClassLoader                         parent;
     private String[]                            reloadPackages;
     private ConcurrentHashMap<String, Class<?>> classMap = new ConcurrentHashMap<String, Class<?>>();
-    private File                                parentFile;
+    private File[]                              pathFils;
     
-    public HotwrapClassLoader(File parentFile, String[] reloadPackages)
+    public void setClassPaths(String... paths)
+    {
+        List<File> list = new ArrayList<File>();
+        for (String each : paths)
+        {
+            list.add(new File(each));
+        }
+        pathFils = list.toArray(new File[list.size()]);
+    }
+    
+    public void setReloadPackages(String... packages)
+    {
+        reloadPackages = packages;
+    }
+    
+    public HotwrapClassLoader()
     {
         parent = Thread.currentThread().getContextClassLoader();
-        this.reloadPackages = reloadPackages;
-        this.parentFile = parentFile;
     }
     
     public Class<?> loadClass(String name) throws ClassNotFoundException
@@ -32,14 +47,20 @@ public class HotwrapClassLoader extends ClassLoader
                 {
                     try
                     {
-                        File file = new File(parentFile, name.replace(".", "/") + ".class");
-                        FileInputStream inputStream = new FileInputStream(file);
-                        byte[] src = new byte[inputStream.available()];
-                        inputStream.read(src);
-                        inputStream.close();
-                        Class<?> c = defineClass(name, src, 0, src.length);
-                        classMap.put(name, c);
-                        return c;
+                        for (File pathFile : pathFils)
+                        {
+                            File file = new File(pathFile, name.replace(".", "/") + ".class");
+                            if (file.exists())
+                            {
+                                FileInputStream inputStream = new FileInputStream(file);
+                                byte[] src = new byte[inputStream.available()];
+                                inputStream.read(src);
+                                inputStream.close();
+                                Class<?> c = defineClass(name, src, 0, src.length);
+                                classMap.put(name, c);
+                                return c;
+                            }
+                        }
                     }
                     catch (Exception e)
                     {
@@ -68,6 +89,7 @@ public class HotwrapClassLoader extends ClassLoader
             classMap.put(name, c);
             return c;
         }
+        
     }
     
 }

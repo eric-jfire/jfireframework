@@ -346,4 +346,8 @@ public class JfireContextImpl implements JfireContext
         this.classLoader = classLoader;
     }
     
+    public ClassLoader getClassLoader()
+    {
+        return classLoader;
+    }
 }
