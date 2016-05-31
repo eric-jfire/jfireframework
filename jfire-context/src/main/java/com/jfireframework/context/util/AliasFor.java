@@ -1,19 +1,18 @@
-package com.jfireframework.context.aop.annotation;
+package com.jfireframework.context.util;
 
+import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
 @Documented
-@Inherited
-public @interface AfterEnhance
+public @interface AliasFor
 {
-    public String value() default "";
+    public String value();
     
-    public int order() default 1;
+    Class<? extends Annotation> annotation();
 }

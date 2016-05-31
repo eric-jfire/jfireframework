@@ -7,6 +7,7 @@ import org.junit.Test;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.JfireContextImpl;
 import com.jfireframework.context.bean.Bean;
+import com.jfireframework.context.util.AnnotationUtil;
 
 public class AopTest
 {
@@ -16,7 +17,7 @@ public class AopTest
         JfireContext jfireContext = new JfireContextImpl("com.jfireframework.context.test.function.aop");
         Bean bean = jfireContext.getBeanInfo(Person.class);
         Method method = bean.getType().getDeclaredMethod("sayHello");
-        assertEquals("注解保留", method.getAnnotation(Resource.class).name());
+        assertEquals("注解保留", AnnotationUtil.getAnnotation(Resource.class, method).name());
     }
     
     @Test

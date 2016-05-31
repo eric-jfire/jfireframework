@@ -1,19 +1,13 @@
-package com.jfireframework.context.aop.annotation;
+package com.jfireframework.context.test.function.aliastest;
 
-import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-@Documented
-@Inherited
-public @interface AfterEnhance
+public @interface InitMethod
 {
-    public String value() default "";
-    
-    public int order() default 1;
+    public String name();
 }

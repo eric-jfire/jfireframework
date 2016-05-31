@@ -27,6 +27,8 @@ import com.jfireframework.context.bean.BeanConfig;
 import com.jfireframework.context.config.BeanAttribute;
 import com.jfireframework.context.config.BeanInfo;
 import com.jfireframework.context.config.ContextConfig;
+import com.jfireframework.context.util.AnnotationUtil;
+import com.jfireframework.context.util.ContextUtil;
 
 public class JfireContextImpl implements JfireContext
 {
@@ -153,7 +155,7 @@ public class JfireContextImpl implements JfireContext
         Verify.False(init, "不能在容器初始化后再加入Bean");
         for (Class<?> src : srcs)
         {
-            if (src.isAnnotationPresent(Resource.class))
+            if (AnnotationUtil.isPresent(Resource.class, src))
             {
                 Bean bean = new Bean(src);
                 beanNameMap.put(bean.getBeanName(), bean);
@@ -304,7 +306,7 @@ public class JfireContextImpl implements JfireContext
         LightSet<Bean> beans = new LightSet<Bean>();
         for (Bean each : beanNameMap.values())
         {
-            if (each.getOriginType().isAnnotationPresent(annotationType))
+            if (AnnotationUtil.isPresent(annotationType, each.getOriginType()))
             {
                 beans.add(each);
             }
