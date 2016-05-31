@@ -92,12 +92,12 @@ public class ActionFactory
             Method realMethod = bean.getType().getMethod(method.getName(), method.getParameterTypes());
             actionInfo.setMethodAccessor(ReflectUtil.fastMethod(realMethod));
         }
-        catch (NoSuchMethodException | SecurityException e)
+        catch (Exception e)
         {
             throw new JustThrowException(e);
         }
         Bean[] beans = jfireContext.getBeanByInterface(ActionInterceptor.class);
-        List<ActionInterceptor> interceptors = new ArrayList<>();
+        List<ActionInterceptor> interceptors = new ArrayList<ActionInterceptor>();
         for (Bean each : beans)
         {
             ActionInterceptor interceptor = (ActionInterceptor) each.getInstance();

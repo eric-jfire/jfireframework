@@ -229,7 +229,7 @@ public class DataBinderFactory
     {
         String prefix = info.getPrefix();
         Class<?> entityClass = (Class<?>) info.getEntityClass();
-        LightSet<BinderField> set = new LightSet<>();
+        LightSet<BinderField> set = new LightSet<BinderField>();
         initFields(prefix, entityClass, set, cycleSet);
         NewParamVoBinder binder = new NewParamVoBinder(info.getPrefix(), entityClass);
         binder.setBinderFields(set.toArray(BinderField.class));

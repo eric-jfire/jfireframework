@@ -1,17 +1,16 @@
-package com.jfireframework.mvc.util;
+package com.jfireframework.baseutil.reflect;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class HotwrapClassLoader extends ClassLoader
 {
     private ClassLoader                         parent;
     private String[]                            reloadPackages;
-    private ConcurrentHashMap<String, Class<?>> classMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Class<?>> classMap = new ConcurrentHashMap<String, Class<?>>();
     private File                                parentFile;
-                                                
+    
     public HotwrapClassLoader(File parentFile, String[] reloadPackages)
     {
         parent = Thread.currentThread().getContextClassLoader();
@@ -42,7 +41,7 @@ public class HotwrapClassLoader extends ClassLoader
                         classMap.put(name, c);
                         return c;
                     }
-                    catch (ClassFormatError | IOException e)
+                    catch (Exception e)
                     {
                         throw new RuntimeException(e);
                     }

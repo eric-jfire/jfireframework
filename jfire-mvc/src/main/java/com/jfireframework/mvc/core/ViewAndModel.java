@@ -20,7 +20,7 @@ public class ViewAndModel
     {
         if (header == null)
         {
-            header = new HashMap<>();
+            header = new HashMap<String, String>();
         }
         header.put(key, value);
     }
@@ -46,7 +46,7 @@ public class ViewAndModel
     {
         if (data == null)
         {
-            data = new HashMap<>();
+            data = new HashMap<String, Object>();
         }
         data.put(key, value);
     }

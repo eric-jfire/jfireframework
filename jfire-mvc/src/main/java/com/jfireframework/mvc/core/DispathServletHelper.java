@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -21,7 +20,6 @@ import java.util.Set;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.beetl.core.Configuration;
@@ -30,6 +28,7 @@ import org.beetl.core.resource.WebAppResourceLoader;
 import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
+import com.jfireframework.baseutil.reflect.HotwrapClassLoader;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
@@ -49,7 +48,6 @@ import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
 import com.jfireframework.mvc.interceptor.impl.UploadInterceptor;
 import com.jfireframework.mvc.util.ActionFactory;
 import com.jfireframework.mvc.util.BeetlRender;
-import com.jfireframework.mvc.util.HotwrapClassLoader;
 import com.jfireframework.mvc.util.ReportMdActionListener;
 import com.jfireframework.mvc.viewrender.RenderFactory;
 import com.jfireframework.mvc.viewrender.ViewRender;
@@ -110,16 +108,32 @@ public class DispathServletHelper
     
     private JsonObject readConfigFile()
     {
-        try (FileInputStream inputStream = new FileInputStream(new File(this.getClass().getClassLoader().getResource("mvc.json").toURI())))
+        FileInputStream inputStream = null;
+        try
         {
+            inputStream = new FileInputStream(new File(this.getClass().getClassLoader().getResource("mvc.json").toURI()));
             byte[] src = new byte[inputStream.available()];
             inputStream.read(src);
             String value = new String(src, Charset.forName("utf8"));
             return (JsonObject) JsonTool.fromString(value);
         }
-        catch (URISyntaxException | IOException e)
+        catch (Exception e)
         {
             throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (inputStream != null)
+            {
+                try
+                {
+                    inputStream.close();
+                }
+                catch (IOException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -149,13 +163,13 @@ public class DispathServletHelper
     {
         Bean[] beans = jfireContext.getBeanByAnnotation(ActionClass.class);
         Bean[] listenerBeans = jfireContext.getBeanByInterface(ActionInitListener.class);
-        LightSet<ActionInitListener> tmp = new LightSet<>();
+        LightSet<ActionInitListener> tmp = new LightSet<ActionInitListener>();
         for (Bean each : listenerBeans)
         {
             tmp.add((ActionInitListener) each.getInstance());
         }
         ActionInitListener[] listeners = tmp.toArray(ActionInitListener.class);
-        List<Action> list = new ArrayList<>();
+        List<Action> list = new ArrayList<Action>();
         for (Bean each : beans)
         {
             list.addAll(generateActions(each, listeners, jfireContext));
@@ -189,7 +203,7 @@ public class DispathServletHelper
         Verify.False(modelUrl.contains("*"), "顶级url不能包含*");
         // 这里需要使用原始的类来得到方法，因为如果使用增强后的子类，就无法得到正确的方法名称以及方法上的注解信息
         Method[] methods = ReflectUtil.getAllMehtods(bean.getOriginType());
-        List<Action> list = new ArrayList<>();
+        List<Action> list = new ArrayList<Action>();
         for (Method each : methods)
         {
             if (each.isAnnotationPresent(ActionMethod.class))
@@ -235,9 +249,9 @@ public class DispathServletHelper
     
     private WatchService generatorWatcher(File monitorDir)
     {
-        Set<File> dirs = new HashSet<>();
+        Set<File> dirs = new HashSet<File>();
         getChildDirs(monitorDir, dirs);
-        Set<Path> paths = new HashSet<>();
+        Set<Path> paths = new HashSet<Path>();
         for (File each : dirs)
         {
             paths.add(Paths.get(each.getAbsolutePath()));
@@ -291,7 +305,7 @@ public class DispathServletHelper
         {
             staticResourceDispatcher.forward(request, response);
         }
-        catch (ServletException | IOException e)
+        catch (Exception e)
         {
             throw new JustThrowException(e);
         }
@@ -330,7 +344,7 @@ public class DispathServletHelper
                         }
                         break;
                     }
-                    catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
+                    catch (Exception e)
                     {
                         if (!key.reset())
                         {

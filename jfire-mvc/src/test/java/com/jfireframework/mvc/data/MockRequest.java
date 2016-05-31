@@ -148,7 +148,7 @@ public class MockRequest implements HttpServletRequest
     @Override
     public Map<String, String[]> getParameterMap()
     {
-        return new HashMap<>();
+        return new HashMap<String, String[]>();
     }
     
     @Override

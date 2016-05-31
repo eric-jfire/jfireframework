@@ -1,12 +1,10 @@
 package com.jfireframework.mvc.interceptor.impl;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
@@ -56,7 +54,7 @@ public class UploadInterceptor implements ActionInterceptor
             {
                 if (version == 3.0)
                 {
-                    List<UploadItem> list = new ArrayList<>();
+                    List<UploadItem> list = new ArrayList<UploadItem>();
                     for (Part part : request.getParts())
                     {
                         /**
@@ -73,7 +71,7 @@ public class UploadInterceptor implements ActionInterceptor
                 }
                 else if (version == 3.1)
                 {
-                    List<UploadItem> list = new ArrayList<>();
+                    List<UploadItem> list = new ArrayList<UploadItem>();
                     for (Part part : request.getParts())
                     {
                         /**
@@ -98,7 +96,7 @@ public class UploadInterceptor implements ActionInterceptor
                 return true;
             }
         }
-        catch (IOException | ServletException e)
+        catch (Exception e)
         {
             logger.error("进行上传拦截出现问题", e);
             return false;

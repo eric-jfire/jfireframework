@@ -38,7 +38,7 @@ public class JfireContextImpl implements JfireContext
     private boolean                 init        = false;
     private LightSet<String>        classNames  = new LightSet<String>();
     private static Logger           logger      = ConsoleLogFactory.getLogger();
-    private ClassLoader             classLoader;
+    private ClassLoader             classLoader = this.getClass().getClassLoader();
     
     public JfireContextImpl()
     {

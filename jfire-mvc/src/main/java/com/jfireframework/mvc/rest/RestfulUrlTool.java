@@ -12,7 +12,7 @@ public class RestfulUrlTool
      */
     public static RestfulRule build(String url)
     {
-        LightSet<String> set = new LightSet<>();
+        LightSet<String> set = new LightSet<String>();
         String rule = transToRule(url, set);
         return new RestfulRule(rule, set.toArray(String.class));
     }
