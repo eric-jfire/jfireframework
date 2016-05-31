@@ -6,6 +6,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import javax.annotation.Resource;
 import org.junit.Test;
+import com.jfireframework.context.JfireContext;
+import com.jfireframework.context.JfireContextImpl;
 import com.jfireframework.context.util.AnnotationUtil;
 
 @Testalis3(t = "sada", s = false)
@@ -32,5 +34,13 @@ public class AliasTest
         Field field = AliasTest.class.getDeclaredField("bi");
         resource = AnnotationUtil.getAnnotation(Resource.class, field);
         assertEquals("sad", resource.name());
+    }
+    
+    @Test
+    public void test2()
+    {
+        JfireContext jfireContext = new JfireContextImpl("com.jfireframework.context");
+        SingleDemo demo = (SingleDemo) jfireContext.getBean("demo");
+        assertFalse(demo==null);
     }
 }

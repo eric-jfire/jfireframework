@@ -54,7 +54,7 @@ public class ContextUtil
         {
             throw new RuntimeException("对应的类不存在", e);
         }
-        if (AnnotationUtil.isAnnotationPresent(Resource.class, res) == false)
+        if (AnnotationUtil.isPresent(Resource.class, res) == false)
         {
             logger.trace("类{}未使用资源注解", className);
             return;

@@ -37,6 +37,7 @@ import com.jfireframework.context.bean.field.param.impl.StringField;
 import com.jfireframework.context.bean.field.param.impl.WBooleanField;
 import com.jfireframework.context.bean.field.param.impl.WFloatField;
 import com.jfireframework.context.bean.field.param.impl.WLongField;
+import com.jfireframework.context.util.AnnotationUtil;
 import sun.reflect.MethodAccessor;
 
 @SuppressWarnings("restriction")
@@ -69,7 +70,7 @@ public class FieldFactory
                 String dependencyStr = dependencyMap.get(field.getName());
                 set.add(buildDependFieldsByConfig(field, beanNameMap, dependencyStr));
             }
-            else if (field.isAnnotationPresent(Resource.class))
+            else if (AnnotationUtil.isPresent(Resource.class, field))
             {
                 set.add(buildDependencyFieldByAnno(field, bean, beanNameMap));
             }
@@ -280,9 +281,9 @@ public class FieldFactory
             }
         }
         Bean[] beans = tmp.toArray(Bean.class);
-        if (field.isAnnotationPresent(MapKey.class))
+        if (AnnotationUtil.isPresent(MapKey.class, field))
         {
-            String methodName = field.getAnnotation(MapKey.class).value();
+            String methodName = AnnotationUtil.getAnnotation(MapKey.class, field).value();
             return new MethodMapField(field, beans, initMapKeyMethods(beans, methodName, field.getDeclaringClass(), keyClass));
             
         }
@@ -295,7 +296,7 @@ public class FieldFactory
     
     private static DependencyField buildInterfaceField(Field field, Map<String, Bean> beanNameMap)
     {
-        Resource resource = field.getAnnotation(Resource.class);
+        Resource resource = AnnotationUtil.getAnnotation(Resource.class, field);
         Class<?> type = field.getType();
         // 如果指明了beanName,则寻找对应的beanName进行注入准备
         if (StringUtil.isNotBlank(resource.name()))
@@ -333,7 +334,7 @@ public class FieldFactory
     
     private static DependencyField buildDefaultField(Field field, Map<String, Bean> beanNameMap)
     {
-        Resource resource = field.getAnnotation(Resource.class);
+        Resource resource = AnnotationUtil.getAnnotation(Resource.class, field);
         String beanName = resource.name().equals("") ? field.getType().getName() : resource.name();
         Bean implBean = beanNameMap.get(beanName);
         if (implBean == null)

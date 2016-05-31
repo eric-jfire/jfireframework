@@ -16,23 +16,24 @@ public class AnnotationUtil
 {
     private static final Map<Annotation, AliasAnno> aliasMap = new HashMap<Annotation, AnnotationUtil.AliasAnno>();
     
-    public static boolean isAnnotationPresent(Class<? extends Annotation> annoType, Field field)
+    public static boolean isPresent(Class<? extends Annotation> annoType, Field field)
     {
         return getAnnotation(annoType, field) != null;
     }
     
-    public static boolean isAnnotationPresent(Class<? extends Annotation> annoType, Class<?> target)
+    public static boolean isPresent(Class<? extends Annotation> annoType, Class<?> target)
     {
         return getAnnotation(annoType, target) != null;
     }
     
-    public static boolean isAnnotationPresent(Class<? extends Annotation> annoType, Method method)
+    public static boolean isPresent(Class<? extends Annotation> annoType, Method method)
     {
         return getAnnotation(annoType, method) != null;
     }
     
     public static <T extends Annotation> T getAnnotation(Class<T> annoType, Method method)
     {
+        
         T anno = null;
         anno = method.getAnnotation(annoType);
         if (anno != null)
@@ -74,6 +75,10 @@ public class AnnotationUtil
     
     public static <T extends Annotation> T getAnnotation(Class<T> annotationType, Class<?> target)
     {
+        if (target.isAnnotation())
+        {
+            return null;
+        }
         T anno;
         anno = target.getAnnotation(annotationType);
         if (anno != null)

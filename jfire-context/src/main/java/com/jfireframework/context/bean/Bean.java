@@ -7,6 +7,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.set.LightSet;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.context.ContextInitFinish;
@@ -201,7 +202,7 @@ public class Bean
         }
         catch (Exception e)
         {
-            throw new RuntimeException("初始化bean实例错误,实例名称：" + beanName + ",对象类名：" + type.getName(), e);
+            throw new UnSupportException(StringUtil.format("初始化bean实例错误，实例名称:{},对象类名:{}", beanName, type.getName(), e));
         }
     }
     
@@ -237,27 +238,28 @@ public class Bean
         int order;
         for (Method each : bean.getType().getDeclaredMethods())
         {
-            if (each.isAnnotationPresent(AfterEnhance.class))
+            
+            if (AnnotationUtil.isPresent(AfterEnhance.class, each))
             {
-                AfterEnhance afterEnhance = each.getAnnotation(AfterEnhance.class);
+                AfterEnhance afterEnhance = AnnotationUtil.getAnnotation(AfterEnhance.class, each);
                 path = afterEnhance.value().equals("") ? each.getName() + "(*)" : afterEnhance.value();
                 order = afterEnhance.order();
             }
-            else if (each.isAnnotationPresent(AroundEnhance.class))
+            else if (AnnotationUtil.isPresent(AroundEnhance.class, each))
             {
-                AroundEnhance aroundEnhance = each.getAnnotation(AroundEnhance.class);
+                AroundEnhance aroundEnhance = AnnotationUtil.getAnnotation(AroundEnhance.class, each);
                 path = aroundEnhance.value().equals("") ? each.getName() + "(*)" : aroundEnhance.value();
                 order = aroundEnhance.order();
             }
-            else if (each.isAnnotationPresent(BeforeEnhance.class))
+            else if (AnnotationUtil.isPresent(BeforeEnhance.class, each))
             {
-                BeforeEnhance beforeEnhance = each.getAnnotation(BeforeEnhance.class);
+                BeforeEnhance beforeEnhance = AnnotationUtil.getAnnotation(BeforeEnhance.class, each);
                 path = beforeEnhance.value().equals("") ? each.getName() + "(*)" : beforeEnhance.value();
                 order = beforeEnhance.order();
             }
-            else if (each.isAnnotationPresent(ThrowEnhance.class))
+            else if (AnnotationUtil.isPresent(ThrowEnhance.class, each))
             {
-                ThrowEnhance throwEnhance = each.getAnnotation(ThrowEnhance.class);
+                ThrowEnhance throwEnhance = AnnotationUtil.getAnnotation(ThrowEnhance.class, each);
                 path = throwEnhance.value().equals("") ? each.getName() + "(*)" : throwEnhance.value();
                 order = throwEnhance.order();
                 EnhanceAnnoInfo enhanceAnnoInfo = new EnhanceAnnoInfo(bean, enhanceBeanfieldName, path, order, each);
