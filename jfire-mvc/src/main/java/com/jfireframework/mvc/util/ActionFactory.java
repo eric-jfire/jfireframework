@@ -97,7 +97,7 @@ public class ActionFactory
             Method realMethod = bean.getType().getMethod(method.getName(), method.getParameterTypes());
             actionInfo.setMethodAccessor(ReflectUtil.fastMethod(realMethod));
         }
-        catch (NoSuchMethodException | SecurityException e)
+        catch (Exception e)
         {
             throw new JustThrowException(e);
         }

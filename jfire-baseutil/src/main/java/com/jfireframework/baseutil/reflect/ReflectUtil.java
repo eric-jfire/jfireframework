@@ -17,7 +17,6 @@ import com.jfireframework.baseutil.verify.Verify;
 import sun.misc.Unsafe;
 import sun.reflect.MethodAccessor;
 
-@SuppressWarnings("restriction")
 public final class ReflectUtil
 {
     // 调用该方法用于生成method.invoke需要的实际执行者

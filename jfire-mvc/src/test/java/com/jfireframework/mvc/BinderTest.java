@@ -20,7 +20,7 @@ public class BinderTest
 	@Test
 	public void simple()
 	{
-		Map<String, String> map = new HashMap<>();
+		Map<String, String> map = new HashMap<String, String>();
 		map.put("name", "林斌");
 		map.put("age", "25");
 		map.put("weight", "75.26");
@@ -46,7 +46,7 @@ public class BinderTest
 	public void test()
 	{
 		
-		Map<String, String> map = new HashMap<>();
+		Map<String, String> map = new HashMap<String, String>();
 		map.put("host.name", "林斌");
 		map.put("host.age", "25");
 		map.put("host.weight", "75.26");
@@ -84,7 +84,7 @@ public class BinderTest
 	@Test
 	public void emptyTest()
 	{
-		Map<String, String> map = new HashMap<>();
+		Map<String, String> map = new HashMap<String, String>();
 		
 		MockRequest request = new MockRequest(map);
 		ParamInfo info = new ParamInfo();

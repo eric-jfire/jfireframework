@@ -1,16 +1,15 @@
 package com.jfireframework.baseutil.disruptor.ringarray;
 
 import java.util.concurrent.locks.LockSupport;
-import com.jfireframework.baseutil.disruptor.Sequence;
 import com.jfireframework.baseutil.disruptor.Entry;
 import com.jfireframework.baseutil.disruptor.EntryAction;
-import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategyStopException;
+import com.jfireframework.baseutil.disruptor.Sequence;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
+import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategyStopException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import sun.misc.Unsafe;
 
-@SuppressWarnings("restriction")
 public abstract class AbstractMultRingArray implements RingArray
 {
     protected final WaitStrategy  waitStrategy;

@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
@@ -29,9 +30,9 @@ public class SqlSessionImpl implements SqlSession
     private SessionFactory       sessionFactory;
     private static Logger        logger       = ConsoleLogFactory.getLogger();
     private volatile boolean     closed       = false;
-    private static Set<Class<?>> baseClassSet = new HashSet<>();
+    private static Set<Class<?>> baseClassSet = new HashSet<Class<?>>();
     private long                 t0           = System.currentTimeMillis();
-                                              
+    
     static
     {
         baseClassSet.add(String.class);
@@ -185,8 +186,10 @@ public class SqlSessionImpl implements SqlSession
     public int update(String sql, Object... params)
     {
         logger.trace("查询使用的sql是：{}", sql);
-        try (PreparedStatement pstat = connection.prepareStatement(sql))
+        PreparedStatement pstat = null;
+        try
         {
+            pstat = connection.prepareStatement(sql);
             for (int i = 0; i < params.length; i++)
             {
                 pstat.setObject(i + 1, params[i]);
@@ -197,14 +200,30 @@ public class SqlSessionImpl implements SqlSession
         {
             throw new RuntimeException(e);
         }
+        finally
+        {
+            if (pstat != null)
+            {
+                try
+                {
+                    pstat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
+        }
     }
     
     @Override
     public int[] batchUpdate(String sql, List<Object[]> list)
     {
         logger.trace("使用的sql是{}", sql);
-        try (PreparedStatement pstat = connection.prepareStatement(sql))
+        PreparedStatement pstat = null;
+        try
         {
+            pstat = connection.prepareStatement(sql);
             for (Object[] each : list)
             {
                 int length = each.length;
@@ -219,6 +238,20 @@ public class SqlSessionImpl implements SqlSession
         catch (Exception e)
         {
             throw new RuntimeException(e);
+        }
+        finally
+        {
+            if (pstat != null)
+            {
+                try
+                {
+                    pstat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -236,14 +269,16 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public List<Object[]> listQuery(Class<?>[] resultTypes, String sql, Object... params)
     {
-        try (PreparedStatement pstat = connection.prepareStatement(sql))
+        PreparedStatement pstat = null;
+        try
         {
+            pstat = connection.prepareStatement(sql);
             for (int i = 0; i < params.length; i++)
             {
                 pstat.setObject(i + 1, params[i]);
             }
             ResultSet resultSet = pstat.executeQuery();
-            List<Object[]> list = new ArrayList<>();
+            List<Object[]> list = new ArrayList<Object[]>();
             int colNum = resultSet.getMetaData().getColumnCount();
             Object[] tmp;
             while (resultSet.next())
@@ -259,7 +294,21 @@ public class SqlSessionImpl implements SqlSession
         }
         catch (SQLException e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (pstat != null)
+            {
+                try
+                {
+                    pstat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -267,8 +316,10 @@ public class SqlSessionImpl implements SqlSession
     public <T> List<T> listQuery(Class<T> resultType, String sql, Object... params)
     {
         logger.trace("查询使用的sql是：{}", sql);
-        try (PreparedStatement pstat = connection.prepareStatement(sql))
+        PreparedStatement pstat = null;
+        try
         {
+            pstat = connection.prepareStatement(sql);
             for (int i = 0; i < params.length; i++)
             {
                 pstat.setObject(i + 1, params[i]);
@@ -287,6 +338,20 @@ public class SqlSessionImpl implements SqlSession
             }
             throw new RuntimeException(cache.toString(), e);
         }
+        finally
+        {
+            if (pstat != null)
+            {
+                try
+                {
+                    pstat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
+        }
     }
     
     @SuppressWarnings("unchecked")
@@ -295,14 +360,16 @@ public class SqlSessionImpl implements SqlSession
     {
         logger.trace("查询使用的sql是：{}", sql);
         Verify.True(baseClassSet.contains(resultType), "该方法的查询入参中，类型只能是基本类型或者其包装类");
-        try (PreparedStatement pstat = connection.prepareStatement(sql))
+        PreparedStatement pstat = null;
+        try
         {
+            pstat = connection.prepareStatement(sql);
             for (int i = 0; i < params.length; i++)
             {
                 pstat.setObject(i + 1, params[i]);
             }
             ResultSet resultSet = pstat.executeQuery();
-            List<Object> list = new ArrayList<>();
+            List<Object> list = new ArrayList<Object>();
             int colNum = resultSet.getMetaData().getColumnCount();
             Verify.True(colNum == 1, "查询sql：{} 返回的结果数量不是1", sql);
             while (resultSet.next())
@@ -313,7 +380,21 @@ public class SqlSessionImpl implements SqlSession
         }
         catch (SQLException e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (pstat != null)
+            {
+                try
+                {
+                    pstat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -323,8 +404,10 @@ public class SqlSessionImpl implements SqlSession
     {
         logger.trace("查询使用的sql是：{}", sql);
         Verify.True(baseClassSet.contains(resultType), "该方法的查询入参中，类型只能是基本类型或者其包装类");
-        try (PreparedStatement pstat = connection.prepareStatement(sql))
+        PreparedStatement pstat = null;
+        try
         {
+            pstat = connection.prepareStatement(sql);
             for (int i = 0; i < params.length; i++)
             {
                 pstat.setObject(i + 1, params[i]);
@@ -347,7 +430,21 @@ public class SqlSessionImpl implements SqlSession
         }
         catch (SQLException e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (pstat != null)
+            {
+                try
+                {
+                    pstat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -355,8 +452,10 @@ public class SqlSessionImpl implements SqlSession
     public <T> T query(Class<T> resultType, String sql, Object... params)
     {
         logger.trace("查询使用的sql是：{}", sql);
-        try (PreparedStatement pstat = connection.prepareStatement(sql))
+        PreparedStatement pstat = null;
+        try
         {
+            pstat = connection.prepareStatement(sql);
             for (int i = 0; i < params.length; i++)
             {
                 pstat.setObject(i + 1, params[i]);
@@ -367,7 +466,21 @@ public class SqlSessionImpl implements SqlSession
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (pstat != null)
+            {
+                try
+                {
+                    pstat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     

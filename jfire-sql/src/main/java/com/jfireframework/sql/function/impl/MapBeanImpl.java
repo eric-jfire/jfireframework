@@ -19,13 +19,13 @@ import com.jfireframework.sql.util.DaoFactory;
 public class MapBeanImpl<T> implements MapBean<T>
 {
     private MapField[]                mapFields;
-    private HashMap<String, MapField> fieldMap = new HashMap<>();
+    private HashMap<String, MapField> fieldMap = new HashMap<String, MapField>();
     private Class<T>                  entityClass;
-                                      
+    
     public MapBeanImpl(Class<T> entityClass)
     {
         this.entityClass = entityClass;
-        LightSet<MapField> set = new LightSet<>();
+        LightSet<MapField> set = new LightSet<MapField>();
         for (Field each : ReflectUtil.getAllFields(entityClass))
         {
             if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || each.getType().isArray() || Modifier.isStatic(each.getModifiers()))
@@ -44,7 +44,7 @@ public class MapBeanImpl<T> implements MapBean<T>
     @Override
     public List<T> toBean(ResultSet resultSet) throws SQLException, InstantiationException, IllegalAccessException
     {
-        List<T> list = new ArrayList<>();
+        List<T> list = new ArrayList<T>();
         ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
         int colNum = resultSetMetaData.getColumnCount();
         MapField[] mapFields = new MapField[colNum];

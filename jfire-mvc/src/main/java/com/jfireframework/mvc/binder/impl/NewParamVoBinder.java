@@ -3,6 +3,7 @@ package com.jfireframework.mvc.binder.impl;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.mvc.binder.AbstractDataBinder;
 import com.jfireframework.mvc.binder.field.BinderField;
 
@@ -27,9 +28,9 @@ public class NewParamVoBinder extends AbstractDataBinder
             }
             return entity;
         }
-        catch (InstantiationException | IllegalAccessException e)
+        catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     

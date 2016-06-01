@@ -19,6 +19,7 @@ import com.jfireframework.context.aop.annotation.AutoCloseResource;
 import com.jfireframework.context.aop.annotation.EnhanceClass;
 import com.jfireframework.context.aop.annotation.Transaction;
 import com.jfireframework.context.bean.Bean;
+import com.jfireframework.context.util.AnnotationUtil;
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
 import javassist.ClassPool;
@@ -110,14 +111,14 @@ public class AopUtil
             // 由于增强是采用子类来实现的,所以事务注解只对当前的类有效.如果当前类的父类也有事务注解,在本次增强中就无法起作用
             for (Method method : ReflectUtil.getAllMehtods(bean.getType()))
             {
-                if (method.isAnnotationPresent(Transaction.class))
+                if (AnnotationUtil.isPresent(Transaction.class, method))
                 {
-                    Verify.False(method.isAnnotationPresent(AutoCloseResource.class), "同一个方法上不能同时有事务注解和自动关闭注解，请检查{}.{}", method.getDeclaringClass(), method.getName());
+                    Verify.False(AnnotationUtil.isPresent(AutoCloseResource.class, method), "同一个方法上不能同时有事务注解和自动关闭注解，请检查{}.{}", method.getDeclaringClass(), method.getName());
                     Verify.True(Modifier.isPublic(method.getModifiers()) || Modifier.isProtected(method.getModifiers()), "方法{}.{}有事务注解,访问类型必须是public或protected", method.getDeclaringClass(), method.getName());
                     bean.addTxMethod(method);
                     logger.trace("发现事务方法{}", method.toString());
                 }
-                else if (method.isAnnotationPresent(AutoCloseResource.class))
+                else if (AnnotationUtil.isPresent(AutoCloseResource.class, method))
                 {
                     Verify.True(Modifier.isPublic(method.getModifiers()) || Modifier.isProtected(method.getModifiers()), "方法{}.{}有自动关闭注解,访问类型必须是public或protected", method.getDeclaringClass(), method.getName());
                     bean.addAcMethod(method);
@@ -136,7 +137,8 @@ public class AopUtil
     {
         for (Bean aopBean : beanMap.values())
         {
-            EnhanceClass enhanceClass = aopBean.getType().getAnnotation(EnhanceClass.class);
+            
+            EnhanceClass enhanceClass = AnnotationUtil.getAnnotation(EnhanceClass.class, aopBean.getType());
             if (enhanceClass != null)
             {
                 String rule = enhanceClass.value();
@@ -146,7 +148,7 @@ public class AopUtil
                     {
                         if (StringUtil.match(targetBean.getOriginType().getName(), rule))
                         {
-                            if (targetBean.getOriginType().isAnnotationPresent(EnhanceClass.class) == false)
+                            if (AnnotationUtil.isPresent(EnhanceClass.class, targetBean.getOriginType()) == false)
                             {
                                 targetBean.addEnhanceBean(aopBean);
                             }
@@ -248,15 +250,7 @@ public class AopUtil
                 }
             }
         }
-        if (classLoader != null)
-        {
-            bean.setType(childCc.toClass(classLoader, null));
-        }
-        else
-        {
-            bean.setType(childCc.toClass());
-            
-        }
+        bean.setType(childCc.toClass(classLoader, null));
         // 进行脱离操作，减少内存占用
         parentCc.detach();
         childCc.detach();
@@ -404,7 +398,7 @@ public class AopUtil
     {
         for (Method method : txMethods)
         {
-            Transaction transaction = method.getAnnotation(Transaction.class);
+            Transaction transaction = AnnotationUtil.getAnnotation(Transaction.class, method);
             Class<?>[] types = transaction.exceptions();
             CtClass[] exCcs = new CtClass[types.length];
             for (int i = 0; i < types.length; i++)
@@ -434,7 +428,7 @@ public class AopUtil
     {
         for (Method method : acMethods)
         {
-            AutoCloseResource autoClose = method.getAnnotation(AutoCloseResource.class);
+            AutoCloseResource autoClose = AnnotationUtil.getAnnotation(AutoCloseResource.class, method);
             Class<?>[] types = autoClose.exceptions();
             CtClass[] exCcs = new CtClass[types.length];
             for (int i = 0; i < types.length; i++)

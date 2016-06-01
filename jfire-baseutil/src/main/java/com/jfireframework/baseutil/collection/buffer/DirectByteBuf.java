@@ -8,7 +8,6 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import sun.misc.Unsafe;
 
-@SuppressWarnings("restriction")
 public class DirectByteBuf extends ByteBuf<ByteBuffer>
 {
     

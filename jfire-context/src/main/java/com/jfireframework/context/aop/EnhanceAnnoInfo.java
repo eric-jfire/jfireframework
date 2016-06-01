@@ -9,6 +9,7 @@ import com.jfireframework.context.aop.annotation.AroundEnhance;
 import com.jfireframework.context.aop.annotation.BeforeEnhance;
 import com.jfireframework.context.aop.annotation.ThrowEnhance;
 import com.jfireframework.context.bean.Bean;
+import com.jfireframework.context.util.AnnotationUtil;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.NotFoundException;
@@ -16,9 +17,9 @@ import javassist.NotFoundException;
 public class EnhanceAnnoInfo implements Order
 {
     
-    private Bean       enhanceBean;
+    private Bean            enhanceBean;
     /** 在进行增强时候,增强类在目标类的属性名称 */
-    private String     enhanceFieldName;
+    private String          enhanceFieldName;
     /**
      * 增强方法匹配目标方法的路径 匹配采用两段匹配完成,先匹配方法名称,再匹配方法入参类型.
      * 例子1:com.jfire.Person.getName();这样的情况从开始到'('为止是方法名称匹配区.匹配均采用从左到右的形式.*
@@ -29,22 +30,22 @@ public class EnhanceAnnoInfo implements Order
      * 要求方法入参的类型的顺序和内容与path中的一致.匹配时用的是String的indexOf方法进行匹配
      * 
      */
-    private String     path;
+    private String          path;
     /** path分解得到的匹配methodName */
-    private String     methodName;
+    private String          methodName;
     /** path分解得到的匹配入参类型字符串 */
-    private String[]   paramTypeNames = new String[0];
+    private String[]        paramTypeNames = new String[0];
     /***/
-    private int        order;
+    private int             order;
     /***/
-    private Class<?>[] throwtype;
+    private Class<?>[]      throwtype;
     
     private String          enhanceMethodName;
     private int             type;
-    public static final int BEFORE = 1;
-    public static final int AFTER  = 2;
-    public static final int AROUND = 3;
-    public static final int THROW  = 4;
+    public static final int BEFORE         = 1;
+    public static final int AFTER          = 2;
+    public static final int AROUND         = 3;
+    public static final int THROW          = 4;
     
     public EnhanceAnnoInfo(Bean enhanceBean, String enhanceFieldName, String path, int order, Method enhanceMethod)
     {
@@ -61,19 +62,19 @@ public class EnhanceAnnoInfo implements Order
         this.order = order;
         methodName = path.substring(0, left);
         paramTypeNames = (left + 1 == right) ? new String[0] : path.substring(left + 1, right).split(" ");
-        if (enhanceMethod.isAnnotationPresent(BeforeEnhance.class))
+        if (AnnotationUtil.isPresent(BeforeEnhance.class, enhanceMethod))
         {
             type = BEFORE;
         }
-        else if (enhanceMethod.isAnnotationPresent(AfterEnhance.class))
+        else if (AnnotationUtil.isPresent(AfterEnhance.class, enhanceMethod))
         {
             type = AFTER;
         }
-        else if (enhanceMethod.isAnnotationPresent(AroundEnhance.class))
+        else if (AnnotationUtil.isPresent(AroundEnhance.class, enhanceMethod))
         {
             type = AROUND;
         }
-        else if (enhanceMethod.isAnnotationPresent(ThrowEnhance.class))
+        else if (AnnotationUtil.isPresent(ThrowEnhance.class, enhanceMethod))
         {
             type = THROW;
         }
@@ -101,7 +102,7 @@ public class EnhanceAnnoInfo implements Order
         if (StringUtil.match(ctMethod.getName(), methodName))
         {
             CtClass[] methodParamTypes = ctMethod.getParameterTypes();
-            //如果规则是xxxx(*)的形式，表明忽略目标方法的入参，此时可以返回true
+            // 如果规则是xxxx(*)的形式，表明忽略目标方法的入参，此时可以返回true
             if (paramTypeNames.length == 1 && paramTypeNames[0].equals("*"))
             {
                 return true;

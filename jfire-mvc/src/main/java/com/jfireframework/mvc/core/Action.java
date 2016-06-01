@@ -1,6 +1,5 @@
 package com.jfireframework.mvc.core;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
@@ -97,7 +96,7 @@ public class Action
         {
             return methodAccessor.invoke(actionEntity, params);
         }
-        catch (IllegalArgumentException | InvocationTargetException e)
+        catch (Exception e)
         {
             throw new JustThrowException(e);
         }

@@ -24,7 +24,7 @@ public class BeanNameMapField extends AbstractDependencyField
         msg = StringUtil.format("属性{}.{}不能为空", field.getDeclaringClass(), field.getName());
     }
     
-    @SuppressWarnings({ "rawtypes", "unchecked", "restriction" })
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public void inject(Object src, Map<String, Object> beanInstanceMap)
     {

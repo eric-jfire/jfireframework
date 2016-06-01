@@ -7,7 +7,6 @@ import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.context.bean.field.dependency.DependencyField;
 import sun.misc.Unsafe;
 
-@SuppressWarnings("restriction")
 public abstract class AbstractDependencyField implements DependencyField
 {
     protected final long          offset;

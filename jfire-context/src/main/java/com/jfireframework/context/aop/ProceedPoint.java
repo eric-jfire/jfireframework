@@ -46,6 +46,7 @@ public interface ProceedPoint
     
     /**
      * 设置增强方法调用后最终的返回值
+     * 
      * @param invokedResult
      */
     public void setResult(Object invokedResult);

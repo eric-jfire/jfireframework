@@ -1,4 +1,4 @@
-package com.jfireframework.context;
+package com.jfireframework.context.util;
 
 import java.util.Map;
 import javax.annotation.Resource;
@@ -41,20 +41,13 @@ public class ContextUtil
         Class<?> res = null;
         try
         {
-            if (classloader == null)
-            {
-                res = Class.forName(className);
-            }
-            else
-            {
-                res = classloader.loadClass(className);
-            }
+            res = classloader.loadClass(className);
         }
         catch (ClassNotFoundException e)
         {
             throw new RuntimeException("对应的类不存在", e);
         }
-        if (res.isAnnotationPresent(Resource.class) == false)
+        if (AnnotationUtil.isPresent(Resource.class, res) == false)
         {
             logger.trace("类{}未使用资源注解", className);
             return;

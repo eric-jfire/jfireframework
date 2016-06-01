@@ -24,7 +24,7 @@ public abstract class AbstractArrayField extends AbstractBinderField
                 requestParamNames[i] = name + '[' + i + ']';
             }
         }
-        catch (InstantiationException | IllegalAccessException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }

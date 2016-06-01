@@ -1,7 +1,6 @@
 package com.jfireframework.baseutil.collection.buffer;
 
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class HeapByteBufPool extends ByteBufPool<byte[]>
 {
@@ -10,7 +9,7 @@ public class HeapByteBufPool extends ByteBufPool<byte[]>
     private HeapByteBufPool()
     {
         super();
-        bufHost = new ConcurrentLinkedQueue<ByteBuf<byte[]>>();
+        bufHost = queueFactory.newInstance();
     }
     
     public static HeapByteBufPool getInstance()

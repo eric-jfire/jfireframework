@@ -3,7 +3,6 @@ package com.jfireframework.baseutil.disruptor;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import sun.misc.Unsafe;
 
-@SuppressWarnings("restriction")
 class LeftPad
 {
     protected long p1, p2, p3, p4, p5, p6, p7;
@@ -20,7 +19,6 @@ class RightPad extends RealValue
     protected long p9, p10, p11, p12, p13, p14, p15;
 }
 
-@SuppressWarnings("restriction")
 /**
  * 一个经过了缓存行填充后的序号。
  * 

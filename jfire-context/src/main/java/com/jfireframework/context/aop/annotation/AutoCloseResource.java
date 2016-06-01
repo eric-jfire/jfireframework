@@ -1,5 +1,6 @@
 package com.jfireframework.context.aop.annotation;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -10,10 +11,11 @@ import java.lang.annotation.Target;
  * 注解在方法上,代表会自动关闭方法中打开的资源
  * 
  * @author 林斌{erci@jfire.cn}
- *         
+ * 
  */
-@Target(ElementType.METHOD)
+@Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
+@Documented
 @Inherited
 public @interface AutoCloseResource
 {
@@ -22,5 +24,5 @@ public @interface AutoCloseResource
      * 
      * @return
      */
-    public Class<?>[]exceptions() default { Throwable.class };
+    public Class<?>[] exceptions() default { Throwable.class };
 }

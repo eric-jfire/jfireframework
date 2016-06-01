@@ -20,8 +20,9 @@ public class RestoreWork
     public static void restoreDbData(DataSource dataSource, Table[] sortTables)
     {
         CleanWork.clearDbData(dataSource, sortTables);
-        try (Connection restoreConn = dataSource.getConnection())
+        try
         {
+            Connection restoreConn = dataSource.getConnection();
             try
             {
                 restoreConn.setAutoCommit(false);
@@ -43,6 +44,7 @@ public class RestoreWork
                 restoreConn.rollback();
                 logger.error("数据库现场恢复失败", e);
             }
+            restoreConn.close();
         }
         catch (SQLException e1)
         {

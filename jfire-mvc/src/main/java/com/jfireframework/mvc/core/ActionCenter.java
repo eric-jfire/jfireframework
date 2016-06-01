@@ -12,21 +12,21 @@ import com.jfireframework.baseutil.exception.UnSupportException;
 
 public final class ActionCenter
 {
-    private final Map<String, Action> getActions    = new HashMap<>();
+    private final Map<String, Action> getActions    = new HashMap<String, Action>();
     private final Action[]            rest_get_actions;
-    private final Map<String, Action> postActions   = new HashMap<>();
+    private final Map<String, Action> postActions   = new HashMap<String, Action>();
     private final Action[]            rest_post_actions;
-    private final Map<String, Action> putActions    = new HashMap<>();
+    private final Map<String, Action> putActions    = new HashMap<String, Action>();
     private final Action[]            rest_put_actions;
-    private final Map<String, Action> deleteActions = new HashMap<>();
+    private final Map<String, Action> deleteActions = new HashMap<String, Action>();
     private final Action[]            rest_delete_actions;
     
     public ActionCenter(Action[] actions)
     {
-        List<Action> rest_get_actions_list = new LinkedList<>();
-        List<Action> rest_post_actions_list = new LinkedList<>();
-        List<Action> rest_put_actions_list = new LinkedList<>();
-        List<Action> rest_delete_actions_list = new LinkedList<>();
+        List<Action> rest_get_actions_list = new LinkedList<Action>();
+        List<Action> rest_post_actions_list = new LinkedList<Action>();
+        List<Action> rest_put_actions_list = new LinkedList<Action>();
+        List<Action> rest_delete_actions_list = new LinkedList<Action>();
         for (Action each : actions)
         {
             switch (each.getRequestMethod())
@@ -107,7 +107,7 @@ public final class ActionCenter
      */
     private void checkRepetition(List<Action> restActions)
     {
-        Set<String> set = new HashSet<>();
+        Set<String> set = new HashSet<String>();
         for (Action each : restActions)
         {
             if (set.add(each.getRequestUrl()) == false)

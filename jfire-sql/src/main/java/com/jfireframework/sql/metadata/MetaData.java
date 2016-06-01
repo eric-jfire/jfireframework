@@ -12,9 +12,9 @@ import com.jfireframework.sql.annotation.TableEntity;
 public class MetaData
 {
     private String              tableName;
-    private Map<String, String> fieldColumnMap = new HashMap<>();
+    private Map<String, String> fieldColumnMap = new HashMap<String, String>();
     private String              simpleClassName;
-                                
+    
     public MetaData(Class<?> type)
     {
         simpleClassName = type.getSimpleName();

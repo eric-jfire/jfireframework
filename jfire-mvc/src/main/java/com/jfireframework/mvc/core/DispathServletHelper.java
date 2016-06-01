@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -21,7 +20,6 @@ import java.util.Set;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.beetl.core.Configuration;
@@ -30,6 +28,7 @@ import org.beetl.core.resource.WebAppResourceLoader;
 import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
+import com.jfireframework.baseutil.reflect.HotswapClassLoader;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
@@ -49,7 +48,6 @@ import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
 import com.jfireframework.mvc.interceptor.impl.UploadInterceptor;
 import com.jfireframework.mvc.util.ActionFactory;
 import com.jfireframework.mvc.util.BeetlRender;
-import com.jfireframework.mvc.util.HotwrapClassLoader;
 import com.jfireframework.mvc.util.ReportMdActionListener;
 import com.jfireframework.mvc.viewrender.RenderFactory;
 import com.jfireframework.mvc.viewrender.ViewRender;
@@ -61,13 +59,14 @@ public class DispathServletHelper
     private final String            contextUrl;
     private final ServletContext    servletContext;
     private final RequestDispatcher staticResourceDispatcher;
-    private JsonObject              config;
-    private final File              monitorFile;
+    private final JsonObject        config;
+    private final String[]          reloadPaths;
     private final String[]          reloadPackages;
     private final WatchService      watcher;
     private final boolean           devMode;
     private final RenderFactory     renderFactory;
     private final String            encode;
+    private ClassLoader             preClassLoader;
     
     public DispathServletHelper(ServletConfig servletConfig)
     {
@@ -93,16 +92,16 @@ public class DispathServletHelper
         if (devMode)
         {
             Verify.True(config.contains("reloadPackages"), "开发模式为true，此时应该配置reloadPackages内容");
-            Verify.True(config.contains("monitorPath"), "开发模式为true，此时应该配置monitorPath内容");
+            Verify.True(config.contains("reloadPaths"), "开发模式为true，此时应该配置monitorPath内容");
             JsonArray jsonArray = config.getJsonArray("reloadPackages");
             reloadPackages = jsonArray.toArray(new String[jsonArray.size()]);
-            monitorFile = new File(config.getWString("monitorPath"));
-            watcher = generatorWatcher(monitorFile);
+            reloadPaths = config.getJsonArray("reloadPaths").toArray(new String[0]);
+            watcher = generatorWatcher(reloadPaths);
         }
         else
         {
             watcher = null;
-            monitorFile = null;
+            reloadPaths = null;
             reloadPackages = null;
         }
         
@@ -110,16 +109,32 @@ public class DispathServletHelper
     
     private JsonObject readConfigFile()
     {
-        try (FileInputStream inputStream = new FileInputStream(new File(this.getClass().getClassLoader().getResource("mvc.json").toURI())))
+        FileInputStream inputStream = null;
+        try
         {
+            inputStream = new FileInputStream(new File(this.getClass().getClassLoader().getResource("mvc.json").toURI()));
             byte[] src = new byte[inputStream.available()];
             inputStream.read(src);
             String value = new String(src, Charset.forName("utf8"));
             return (JsonObject) JsonTool.fromString(value);
         }
-        catch (URISyntaxException | IOException e)
+        catch (Exception e)
         {
             throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (inputStream != null)
+            {
+                try
+                {
+                    inputStream.close();
+                }
+                catch (IOException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -149,13 +164,13 @@ public class DispathServletHelper
     {
         Bean[] beans = jfireContext.getBeanByAnnotation(Controller.class);
         Bean[] listenerBeans = jfireContext.getBeanByInterface(ActionInitListener.class);
-        LightSet<ActionInitListener> tmp = new LightSet<>();
+        LightSet<ActionInitListener> tmp = new LightSet<ActionInitListener>();
         for (Bean each : listenerBeans)
         {
             tmp.add((ActionInitListener) each.getInstance());
         }
         ActionInitListener[] listeners = tmp.toArray(ActionInitListener.class);
-        List<Action> list = new ArrayList<>();
+        List<Action> list = new ArrayList<Action>();
         for (Bean each : beans)
         {
             list.addAll(generateActions(each, listeners, jfireContext));
@@ -189,7 +204,7 @@ public class DispathServletHelper
         Verify.False(modelUrl.contains("*"), "顶级url不能包含*");
         // 这里需要使用原始的类来得到方法，因为如果使用增强后的子类，就无法得到正确的方法名称以及方法上的注解信息
         Method[] methods = ReflectUtil.getAllMehtods(bean.getOriginType());
-        List<Action> list = new ArrayList<>();
+        List<Action> list = new ArrayList<Action>();
         for (Method each : methods)
         {
             if (each.isAnnotationPresent(RequestMapping.class))
@@ -233,21 +248,25 @@ public class DispathServletHelper
         return requestDispatcher;
     }
     
-    private WatchService generatorWatcher(File monitorDir)
+    private WatchService generatorWatcher(String... reloadPaths)
     {
-        Set<File> dirs = new HashSet<>();
-        getChildDirs(monitorDir, dirs);
-        Set<Path> paths = new HashSet<>();
-        for (File each : dirs)
-        {
-            paths.add(Paths.get(each.getAbsolutePath()));
-        }
         try
         {
             WatchService watcher = FileSystems.getDefault().newWatchService();
-            for (Path each : paths)
+            for (String each : reloadPaths)
             {
-                each.register(watcher, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+                
+                Set<File> dirs = new HashSet<File>();
+                getChildDirs(new File(each), dirs);
+                Set<Path> paths = new HashSet<Path>();
+                for (File file : dirs)
+                {
+                    paths.add(Paths.get(file.getAbsolutePath()));
+                }
+                for (Path path : paths)
+                {
+                    path.register(watcher, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+                }
             }
             return watcher;
         }
@@ -255,7 +274,6 @@ public class DispathServletHelper
         {
             throw new JustThrowException(e);
         }
-        
     }
     
     private void getChildDirs(File parentDir, Set<File> dirSets)
@@ -291,7 +309,7 @@ public class DispathServletHelper
         {
             staticResourceDispatcher.forward(request, response);
         }
-        catch (ServletException | IOException e)
+        catch (Exception e)
         {
             throw new JustThrowException(e);
         }
@@ -318,11 +336,13 @@ public class DispathServletHelper
                     try
                     {
                         long t0 = System.currentTimeMillis();
-                        config = readConfigFile();
-                        ClassLoader classLoader = new HotwrapClassLoader(monitorFile, reloadPackages);
+                        HotswapClassLoader classLoader = new HotswapClassLoader(preClassLoader);
+                        classLoader.setExcludePaths("com.jfireframework.context.JfireContext");
+                        classLoader.setReloadPackages(reloadPackages);
+                        classLoader.setReloadPaths(reloadPaths);
                         JfireContext jfireContext = (JfireContext) classLoader.loadClass("com.jfireframework.context.JfireContextImpl").newInstance();
                         jfireContext.addSingletonEntity(ClassLoader.class.getSimpleName(), classLoader);
-                        jfireContext.setClassLoader(classLoader);
+                        // jfireContext.setClassLoader(classLoader);
                         generateActionCenter(jfireContext);
                         logger.debug("热部署,耗时:{}", System.currentTimeMillis() - t0);
                         if (!key.reset())
@@ -331,7 +351,7 @@ public class DispathServletHelper
                         }
                         break;
                     }
-                    catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
+                    catch (Exception e)
                     {
                         if (!key.reset())
                         {

@@ -8,6 +8,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import javax.servlet.http.Part;
 import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.verify.Verify;
 
 public class UploadItem
@@ -56,8 +57,12 @@ public class UploadItem
     public void write(String path)
     {
         writedFile = new File(path);
-        try (FileOutputStream outputStream = new FileOutputStream(writedFile); InputStream inputStream = part.getInputStream())
+        FileOutputStream outputStream = null;
+        InputStream inputStream = null;
+        try
         {
+            outputStream = new FileOutputStream(writedFile);
+            inputStream = part.getInputStream();
             byte[] data = new byte[1024 * 512];
             int length = -1;
             do
@@ -73,13 +78,35 @@ public class UploadItem
         {
             throw new RuntimeException(e);
         }
+        finally
+        {
+            try
+            {
+                if (outputStream != null)
+                {
+                    outputStream.close();
+                }
+                if (inputStream != null)
+                {
+                    inputStream.close();
+                }
+            }
+            catch (IOException e)
+            {
+                throw new JustThrowException(e);
+            }
+        }
     }
     
     public String writeAndReturnMd5(String path)
     {
         writedFile = new File(path);
-        try (FileOutputStream outputStream = new FileOutputStream(writedFile); InputStream inputStream = part.getInputStream())
+        FileOutputStream outputStream = null;
+        InputStream inputStream = null;
+        try
         {
+            outputStream = new FileOutputStream(writedFile);
+            inputStream = part.getInputStream();
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] data = new byte[1024 * 512];
             int length = -1;
@@ -94,9 +121,27 @@ public class UploadItem
             } while (length != -1);
             return StringUtil.toHexString(md.digest());
         }
-        catch (IOException | NoSuchAlgorithmException e)
+        catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            try
+            {
+                if (outputStream != null)
+                {
+                    outputStream.close();
+                }
+                if (inputStream != null)
+                {
+                    inputStream.close();
+                }
+            }
+            catch (IOException e)
+            {
+                throw new JustThrowException(e);
+            }
         }
     }
     
@@ -123,14 +168,30 @@ public class UploadItem
         }
         String md5 = StringUtil.toHexString(md.digest(src));
         writedFile = new File(dir, md5);
-        try (FileOutputStream outputStream = new FileOutputStream(writedFile))
+        FileOutputStream outputStream = null;
+        try
         {
+            outputStream = new FileOutputStream(writedFile);
             outputStream.write(src);
             return md5;
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
+        }
+        finally
+        {
+            if (outputStream != null)
+            {
+                try
+                {
+                    outputStream.close();
+                }
+                catch (IOException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
         
     }

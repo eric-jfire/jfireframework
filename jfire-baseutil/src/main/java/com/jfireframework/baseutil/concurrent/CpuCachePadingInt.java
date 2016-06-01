@@ -3,7 +3,6 @@ package com.jfireframework.baseutil.concurrent;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import sun.misc.Unsafe;
 
-@SuppressWarnings("restriction")
 public class CpuCachePadingInt
 {
     protected long              p1, p2, p3, p4, p5, p6, p7;

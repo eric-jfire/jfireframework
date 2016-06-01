@@ -17,7 +17,6 @@ public class DefaultBeanField extends AbstractDependencyField
         msg = StringUtil.format("属性{}.{}进行注入", field.getDeclaringClass(), field.getName());
     }
     
-    @SuppressWarnings("restriction")
     @Override
     public void inject(Object src, Map<String, Object> beanInstanceMap)
     {

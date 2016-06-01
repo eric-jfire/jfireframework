@@ -2,7 +2,7 @@ package com.jfireframework.context.test.function.initmethod;
 
 import javax.annotation.Resource;
 
-@Resource(name="p2")
+@Resource(name = "p2")
 public class Person2
 {
     private int age;
