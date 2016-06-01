@@ -19,12 +19,16 @@ public class HotswapClassLoader extends ClassLoader
 {
     private final ClassLoader                              parent;
     private String[]                                       reloadPackages    = new String[0];
+    // 需要被重载的Class
     private final ConcurrentHashMap<String, Class<?>>      reloadClassMap    = new ConcurrentHashMap<String, Class<?>>();
+    // 不需要被重载的，不可变的Class。无论是自定义的还是系统的，都在这个地方
     private final ConcurrentHashMap<String, Class<?>>      immutableClassMap = new ConcurrentHashMap<String, Class<?>>();
     private File[]                                         reloadPaths       = new File[0];
     private static final ConcurrentHashMap<String, Object> paracLockMap      = new ConcurrentHashMap<String, Object>();
     private static final File[]                            classPaths;
     private static final Map<String, classInfo>            classInfos        = new HashMap<String, classInfo>();
+    // 排除在外的路径，该路径下的类不会进入自定义的加载流程
+    private String[]                                       excludePaths      = new String[0];
     static
     {
         String value = System.getProperty("java.class.path");
@@ -54,9 +58,9 @@ public class HotswapClassLoader extends ClassLoader
                     String entryName = jarEntry.getName();
                     if (jarEntry.isDirectory() == false && entryName.endsWith(".class"))
                     {
-                        String ClassName = entryName.substring(0, entryName.length() - 6);
-                        ClassName = ClassName.replaceAll("/", ".");
-                        classInfos.put(ClassName, new classInfo(ClassName, jarEntry, each));
+                        String className = entryName.substring(0, entryName.length() - 6);
+                        className = className.replaceAll("/", ".");
+                        classInfos.put(className, new classInfo(jarEntry, each));
                     }
                 }
                 try
@@ -74,30 +78,13 @@ public class HotswapClassLoader extends ClassLoader
     
     static class classInfo
     {
-        private final String   name;
         private final JarEntry jarEntry;
         private final String   jarPath;
         
-        public classInfo(String name, JarEntry jarEntry, String jarPath)
+        public classInfo(JarEntry jarEntry, String jarPath)
         {
-            this.name = name;
             this.jarEntry = jarEntry;
             this.jarPath = jarPath;
-        }
-        
-        public String getName()
-        {
-            return name;
-        }
-        
-        public JarEntry getJarEntry()
-        {
-            return jarEntry;
-        }
-        
-        public String getJarPath()
-        {
-            return jarPath;
         }
         
     }
@@ -116,6 +103,11 @@ public class HotswapClassLoader extends ClassLoader
         reloadPaths = list.toArray(new File[list.size()]);
     }
     
+    public void setExcludePaths(String... excludePaths)
+    {
+        this.excludePaths = excludePaths;
+    }
+    
     public void setReloadPackages(String... packages)
     {
         reloadPackages = packages;
@@ -130,7 +122,14 @@ public class HotswapClassLoader extends ClassLoader
     public HotswapClassLoader(ClassLoader classLoader)
     {
         reloadPaths = classPaths;
-        parent = classLoader;
+        if (classLoader != null)
+        {
+            parent = classLoader;
+        }
+        else
+        {
+            parent = Thread.currentThread().getContextClassLoader();
+        }
     }
     
     public HotswapClassLoader(Map<String, Class<?>> classMap, ClassLoader parent)
@@ -140,7 +139,7 @@ public class HotswapClassLoader extends ClassLoader
         immutableClassMap.putAll(classMap);
     }
     
-    private Object getClassLoadingLock(String name)
+    protected Object getClassLoadingLock(String name)
     {
         Object result = paracLockMap.get(name);
         if (result == null)
@@ -157,65 +156,74 @@ public class HotswapClassLoader extends ClassLoader
     
     public Class<?> loadClass(String name) throws ClassNotFoundException
     {
-        if (immutableClassMap.containsKey(name))
+        Class<?> c = null;
+        c = immutableClassMap.get(name);
+        if (c != null)
         {
-            return immutableClassMap.get(name);
+            return c;
+        }
+        c = reloadClassMap.get(name);
+        if (c != null)
+        {
+            return c;
         }
         synchronized (getClassLoadingLock(name))
         {
-            for (String each : reloadPackages)
+            boolean exclude = false;
+            for (String each : excludePaths)
             {
                 if (name.startsWith(each))
                 {
-                    try
+                    exclude = true;
+                    break;
+                }
+            }
+            if (exclude == false)
+            {
+                for (String each : reloadPackages)
+                {
+                    if (name.startsWith(each))
                     {
-                        if (classInfos.containsKey(name))
+                        try
                         {
-                            classInfo cInfo = classInfos.get(name);
-                            JarFile jarFile = new JarFile(cInfo.getJarPath());
-                            InputStream inputStream = jarFile.getInputStream(cInfo.getJarEntry());
-                            byte[] src = new byte[inputStream.available()];
-                            inputStream.read(src);
-                            inputStream.close();
-                            jarFile.close();
-                            Class<?> c = defineClass(name, src, 0, src.length);
-                            reloadClassMap.put(name, c);
-                            return c;
-                        }
-                        for (File pathFile : reloadPaths)
-                        {
-                            File file = new File(pathFile, name.replace(".", "/") + ".class");
-                            if (file.exists())
+                            if (classInfos.containsKey(name))
                             {
-                                FileInputStream inputStream = new FileInputStream(file);
+                                classInfo cInfo = classInfos.get(name);
+                                JarFile jarFile = new JarFile(cInfo.jarPath);
+                                InputStream inputStream = jarFile.getInputStream(cInfo.jarEntry);
                                 byte[] src = new byte[inputStream.available()];
                                 inputStream.read(src);
                                 inputStream.close();
-                                Class<?> c = defineClass(name, src, 0, src.length);
+                                jarFile.close();
+                                c = defineClass(name, src, 0, src.length);
                                 reloadClassMap.put(name, c);
                                 return c;
                             }
+                            for (File pathFile : reloadPaths)
+                            {
+                                File file = new File(pathFile, name.replace(".", "/") + ".class");
+                                if (file.exists())
+                                {
+                                    FileInputStream inputStream = new FileInputStream(file);
+                                    byte[] src = new byte[inputStream.available()];
+                                    inputStream.read(src);
+                                    inputStream.close();
+                                    c = defineClass(name, src, 0, src.length);
+                                    reloadClassMap.put(name, c);
+                                    return c;
+                                }
+                            }
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        throw new RuntimeException(e);
+                        catch (Exception e)
+                        {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
             }
-            // First, check if the class has already been loaded
-            Class<?> c = findLoadedClass(name);
             if (c == null)
             {
-                // if (classBytesMap.containsKey(name))
-                // {
-                // byte[] src = classBytesMap.get(name);
-                // c = defineClass(name, src, 0, src.length);
-                // }
-                // else
-                // {
                 c = parent.loadClass(name);
-                // }
                 if (c == null)
                 {
                     throw new ClassNotFoundException(name);
@@ -225,7 +233,5 @@ public class HotswapClassLoader extends ClassLoader
             immutableClassMap.put(name, c);
             return c;
         }
-        
     }
-    
 }

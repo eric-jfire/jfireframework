@@ -28,7 +28,7 @@ import org.beetl.core.resource.WebAppResourceLoader;
 import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
-import com.jfireframework.baseutil.reflect.HotwrapClassLoader;
+import com.jfireframework.baseutil.reflect.HotswapClassLoader;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
@@ -60,12 +60,13 @@ public class DispathServletHelper
     private final ServletContext    servletContext;
     private final RequestDispatcher staticResourceDispatcher;
     private final JsonObject        config;
-    private final File              monitorFile;
+    private final String[]          reloadPaths;
     private final String[]          reloadPackages;
     private final WatchService      watcher;
     private final boolean           devMode;
     private final RenderFactory     renderFactory;
     private final String            encode;
+    private ClassLoader             preClassLoader;
     
     public DispathServletHelper(ServletConfig servletConfig)
     {
@@ -91,16 +92,16 @@ public class DispathServletHelper
         if (devMode)
         {
             Verify.True(config.contains("reloadPackages"), "开发模式为true，此时应该配置reloadPackages内容");
-            Verify.True(config.contains("monitorPath"), "开发模式为true，此时应该配置monitorPath内容");
+            Verify.True(config.contains("reloadPaths"), "开发模式为true，此时应该配置monitorPath内容");
             JsonArray jsonArray = config.getJsonArray("reloadPackages");
             reloadPackages = jsonArray.toArray(new String[jsonArray.size()]);
-            monitorFile = new File(config.getWString("monitorPath"));
-            watcher = generatorWatcher(monitorFile);
+            reloadPaths = config.getJsonArray("reloadPaths").toArray(new String[0]);
+            watcher = generatorWatcher(reloadPaths);
         }
         else
         {
             watcher = null;
-            monitorFile = null;
+            reloadPaths = null;
             reloadPackages = null;
         }
         
@@ -247,21 +248,25 @@ public class DispathServletHelper
         return requestDispatcher;
     }
     
-    private WatchService generatorWatcher(File monitorDir)
+    private WatchService generatorWatcher(String... reloadPaths)
     {
-        Set<File> dirs = new HashSet<File>();
-        getChildDirs(monitorDir, dirs);
-        Set<Path> paths = new HashSet<Path>();
-        for (File each : dirs)
-        {
-            paths.add(Paths.get(each.getAbsolutePath()));
-        }
         try
         {
             WatchService watcher = FileSystems.getDefault().newWatchService();
-            for (Path each : paths)
+            for (String each : reloadPaths)
             {
-                each.register(watcher, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+                
+                Set<File> dirs = new HashSet<File>();
+                getChildDirs(new File(each), dirs);
+                Set<Path> paths = new HashSet<Path>();
+                for (File file : dirs)
+                {
+                    paths.add(Paths.get(file.getAbsolutePath()));
+                }
+                for (Path path : paths)
+                {
+                    path.register(watcher, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+                }
             }
             return watcher;
         }
@@ -269,7 +274,6 @@ public class DispathServletHelper
         {
             throw new JustThrowException(e);
         }
-        
     }
     
     private void getChildDirs(File parentDir, Set<File> dirSets)
@@ -332,10 +336,13 @@ public class DispathServletHelper
                     try
                     {
                         long t0 = System.currentTimeMillis();
-                        ClassLoader classLoader = new HotwrapClassLoader(monitorFile, reloadPackages);
+                        HotswapClassLoader classLoader = new HotswapClassLoader(preClassLoader);
+                        classLoader.setExcludePaths("com.jfireframework.context.JfireContext");
+                        classLoader.setReloadPackages(reloadPackages);
+                        classLoader.setReloadPaths(reloadPaths);
                         JfireContext jfireContext = (JfireContext) classLoader.loadClass("com.jfireframework.context.JfireContextImpl").newInstance();
                         jfireContext.addSingletonEntity(ClassLoader.class.getSimpleName(), classLoader);
-                        jfireContext.setClassLoader(classLoader);
+//                        jfireContext.setClassLoader(classLoader);
                         generateActionCenter(jfireContext);
                         logger.debug("热部署,耗时:{}", System.currentTimeMillis() - t0);
                         if (!key.reset())
