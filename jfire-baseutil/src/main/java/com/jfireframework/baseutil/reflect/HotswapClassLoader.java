@@ -12,31 +12,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
-import com.jfireframework.baseutil.simplelog.Logger;
 
 public class HotswapClassLoader extends ClassLoader
 {
     private final ClassLoader                              parent;
     private String[]                                       reloadPackages    = new String[0];
+    private File[]                                         reloadPaths       = new File[0];
     // 需要被重载的Class
     private final ConcurrentHashMap<String, Class<?>>      reloadClassMap    = new ConcurrentHashMap<String, Class<?>>();
     // 不需要被重载的，不可变的Class。无论是自定义的还是系统的，都在这个地方
     private final ConcurrentHashMap<String, Class<?>>      immutableClassMap = new ConcurrentHashMap<String, Class<?>>();
-    private String[]                                       libPaths;
-    private List<File>                                     classPaths        = new LinkedList<File>();
     private static final ConcurrentHashMap<String, Object> paracLockMap      = new ConcurrentHashMap<String, Object>();
     private static final Map<String, classInfo>            classInfos        = new HashMap<String, classInfo>();
     // 排除在外的路径，该路径下的类不会进入自定义的加载流程
     private final Set<String>                              excludeClasses    = new HashSet<String>();
-    private static final Logger                            logger            = ConsoleLogFactory.getLogger();
-    private Lock                                           lock              = new ReentrantLock();
-    private boolean                                        init              = false;
     
     static class classInfo
     {
@@ -51,105 +43,54 @@ public class HotswapClassLoader extends ClassLoader
         
     }
     
-    private void tryInit()
+    public static void addLibPath(String libPath)
     {
-        if (init == false)
+        File[] files = new File(libPath).listFiles();
+        for (File file : files)
         {
-            lock.lock();
-            try
+            if (file.isDirectory() == false && file.getName().endsWith(".jar"))
             {
-                if (init == true)
+                JarFile jarFile = null;
+                try
                 {
-                    return;
+                    jarFile = new JarFile(file);
                 }
-                else
+                catch (IOException e)
                 {
-                    String value = System.getProperty("java.class.path");
-                    List<File> dirs = new LinkedList<File>();
-                    List<String> seachList = new LinkedList<String>();
-                    for (String each : value.split(";"))
-                    {
-                        seachList.add(each);
-                    }
-                    for (String each : libPaths)
-                    {
-                        File file = new File(each);
-                        for (File eachFile : file.listFiles())
-                        {
-                            if (eachFile.getName().endsWith(".jar"))
-                            {
-                                seachList.add(eachFile.getAbsolutePath());
-                            }
-                        }
-                    }
-                    for (String each : seachList)
-                    {
-                        File file = new File(each);
-                        if (file.isDirectory())
-                        {
-                            dirs.add(file);
-                        }
-                        else if (each.endsWith(".jar"))
-                        {
-                            JarFile jarFile = null;
-                            try
-                            {
-                                jarFile = new JarFile(each);
-                            }
-                            catch (IOException e)
-                            {
-                                throw new RuntimeException("url地址：'" + each + "'不正确", e);
-                            }
-                            Enumeration<JarEntry> entries = jarFile.entries();
-                            while (entries.hasMoreElements())
-                            {
-                                JarEntry jarEntry = (JarEntry) entries.nextElement();
-                                String entryName = jarEntry.getName();
-                                if (jarEntry.isDirectory() == false && entryName.endsWith(".class"))
-                                {
-                                    String className = entryName.substring(0, entryName.length() - 6);
-                                    className = className.replaceAll("/", ".");
-                                    for (String reloadPackage : reloadPackages)
-                                    {
-                                        if (className.startsWith(reloadPackage))
-                                        {
-                                            classInfos.put(className, new classInfo(jarEntry, each));
-                                        }
-                                    }
-                                }
-                            }
-                            try
-                            {
-                                jarFile.close();
-                            }
-                            catch (IOException e)
-                            {
-                                throw new JustThrowException(e);
-                            }
-                        }
-                    }
-                    classPaths.addAll(dirs);
-                    init = true;
+                    throw new JustThrowException("url地址：'" + file.getAbsolutePath() + "'不正确", e);
                 }
-            }
-            catch (Exception e)
-            {
-                ;
-            }
-            finally
-            {
-                lock.unlock();
+                Enumeration<JarEntry> entries = jarFile.entries();
+                while (entries.hasMoreElements())
+                {
+                    JarEntry jarEntry = (JarEntry) entries.nextElement();
+                    String entryName = jarEntry.getName();
+                    if (jarEntry.isDirectory() == false && entryName.endsWith(".class"))
+                    {
+                        String className = entryName.substring(0, entryName.length() - 6);
+                        className = className.replaceAll("/", ".");
+                        classInfos.put(className, new classInfo(jarEntry, file.getAbsolutePath()));
+                    }
+                }
+                try
+                {
+                    jarFile.close();
+                }
+                catch (IOException e)
+                {
+                    throw new JustThrowException(e);
+                }
             }
         }
-        
     }
     
     public void setReloadPaths(String... paths)
     {
+        List<File> files = new LinkedList<File>();
         for (String each : paths)
         {
-            classPaths.add(new File(each));
+            files.add(new File(each));
         }
+        reloadPaths = files.toArray(new File[files.size()]);
     }
     
     public void setExcludeClasses(String... excludeClasses)
@@ -163,11 +104,6 @@ public class HotswapClassLoader extends ClassLoader
     public void setReloadPackages(String... packages)
     {
         reloadPackages = packages;
-    }
-    
-    public void setlibPaths(String... libPaths)
-    {
-        this.libPaths = libPaths;
     }
     
     public HotswapClassLoader()
@@ -204,7 +140,6 @@ public class HotswapClassLoader extends ClassLoader
     
     public Class<?> loadClass(String name) throws ClassNotFoundException
     {
-        tryInit();
         Class<?> c = null;
         c = immutableClassMap.get(name);
         if (c != null)
@@ -244,7 +179,7 @@ public class HotswapClassLoader extends ClassLoader
                                 reloadClassMap.put(name, c);
                                 return c;
                             }
-                            for (File pathFile : classPaths)
+                            for (File pathFile : reloadPaths)
                             {
                                 File file = new File(pathFile, name.replace(".", "/") + ".class");
                                 if (file.exists())
