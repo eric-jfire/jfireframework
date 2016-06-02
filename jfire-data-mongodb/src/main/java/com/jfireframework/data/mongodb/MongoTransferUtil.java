@@ -122,6 +122,10 @@ abstract class TransferField
     {
         offset = unsafe.objectFieldOffset(field);
         name = field.getName();
+        if (field.isAnnotationPresent(MongoRename.class))
+        {
+            name = field.getAnnotation(MongoRename.class).value();
+        }
         primitive = field.getType().isPrimitive();
     }
     
