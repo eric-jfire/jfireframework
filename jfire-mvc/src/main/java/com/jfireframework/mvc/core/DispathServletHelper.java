@@ -37,7 +37,6 @@ import com.jfireframework.codejson.JsonArray;
 import com.jfireframework.codejson.JsonObject;
 import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.context.JfireContext;
-import com.jfireframework.context.JfireContextImpl;
 import com.jfireframework.context.aop.AopUtil;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.mvc.annotation.Controller;
@@ -66,7 +65,7 @@ public class DispathServletHelper
     private final boolean           devMode;
     private final RenderFactory     renderFactory;
     private final String            encode;
-    private ClassLoader             preClassLoader;
+    private HotswapClassLoader      preClassLoader;
     
     public DispathServletHelper(ServletConfig servletConfig)
     {
@@ -141,13 +140,18 @@ public class DispathServletHelper
     private void generateActionCenter(JfireContext jfireContext)
     {
         AopUtil.initClassPool();
-        jfireContext = jfireContext == null ? new JfireContextImpl() : jfireContext;
+        try
+        {
+            jfireContext = jfireContext == null ? (JfireContext) Class.forName("com.jfireframework.context.JfireContextImpl").newInstance() : jfireContext;
+        }
+        catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
+        {
+            throw new JustThrowException(e);
+        }
         jfireContext.readConfig(config);
         jfireContext.addPackageNames("com.jfireframework.sql");
         jfireContext.addSingletonEntity("servletContext", servletContext);
         jfireContext.addSingletonEntity("beetlRender", renderFactory.getViewRender(ResultType.Beetl));
-        BeetlRender beetlRender = (BeetlRender) renderFactory.getViewRender(ResultType.Beetl);
-        jfireContext.addSingletonEntity(beetlRender.getClass().getName(), beetlRender);
         addDefaultInterceptors(jfireContext);
         boolean report = config.getWBoolean("report") == null ? false : config.getBoolean("report");
         if (report)
@@ -337,12 +341,11 @@ public class DispathServletHelper
                     {
                         long t0 = System.currentTimeMillis();
                         HotswapClassLoader classLoader = new HotswapClassLoader(preClassLoader);
-                        classLoader.setExcludePaths("com.jfireframework.context.JfireContext");
                         classLoader.setReloadPackages(reloadPackages);
                         classLoader.setReloadPaths(reloadPaths);
                         JfireContext jfireContext = (JfireContext) classLoader.loadClass("com.jfireframework.context.JfireContextImpl").newInstance();
                         jfireContext.addSingletonEntity(ClassLoader.class.getSimpleName(), classLoader);
-                        // jfireContext.setClassLoader(classLoader);
+                         jfireContext.setClassLoader(classLoader);
                         generateActionCenter(jfireContext);
                         logger.debug("热部署,耗时:{}", System.currentTimeMillis() - t0);
                         if (!key.reset())
