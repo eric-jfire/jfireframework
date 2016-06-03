@@ -1,96 +1,70 @@
 package com.jfireframework.baseutil.collection;
 
-import com.jfireframework.baseutil.exception.UnSupportException;
-
 public class BitMap
 {
-    private byte[] array = new byte[1];
-    
-    private void setArray(byte[] array)
-    {
-        this.array = array;
-    }
-    
-    public static BitMap valueOf(byte[] array)
-    {
-        BitMap bitMap = new BitMap();
-        bitMap.setArray(array);
-        return bitMap;
-    }
-    
-    /**
-     * 获取当前bitmap中最大的数字
-     * 
-     * @return
-     */
-    public int max()
-    {
-        int flag = array.length - 1;
-        while (flag > -1)
-        {
-            int head = (flag << 3) - 1;
-            byte value = array[flag];
-            if (value == 0)
-            {
-                flag -= 1;
-                continue;
-            }
-            switch (value)
-            {
-                case (byte) 0xff:
-                    return head + 8;
-                case (byte) 0xfe:
-                    return head + 7;
-                case (byte) 0xfc:
-                    return head + 6;
-                case (byte) 0xf8:
-                    return head + 5;
-                case (byte) 0xf0:
-                    return head + 4;
-                case (byte) 0xe0:
-                    return head + 3;
-                case (byte) 0xc0:
-                    return head + 2;
-                case (byte) 0x80:
-                    return head + 1;
-                default:
-                    throw new UnSupportException("error");
-            }
-        }
-        return 0;
-    }
+    private long[] array = new long[] { 0 };
     
     public boolean get(int i)
     {
-        int wordIndex = i >>> 3;
+        int wordIndex = i >>> 6;
         if (wordIndex >= array.length)
         {
             return false;
         }
-        byte value = (byte) (0x80 >>> (i & 7));
+        long value = 0x8000000000000000l >>> (i & 63);
         return (array[wordIndex] & value) != 0;
     }
     
     public void set(int i)
     {
-        int wordIndex = i >>> 3;
-        byte value = (byte) (0x80 >>> (i & 7));
+        int wordIndex = i >>> 6;
+        long value = 0x8000000000000000l >>> (i & 63);
         if (wordIndex >= array.length)
         {
-            byte[] tmp = new byte[wordIndex + 1];
+            long[] tmp = new long[wordIndex + 1];
             System.arraycopy(array, 0, tmp, 0, array.length);
             array = tmp;
         }
         array[wordIndex] |= value;
     }
     
+    public int count()
+    {
+        int sum = 0;
+        for (long each : array)
+        {
+            sum += Long.bitCount(each);
+        }
+        return sum;
+    }
+    
+    public int max()
+    {
+        int index = array.length - 1;
+        while (index != -1)
+        {
+            if (array[index] != 0)
+            {
+                for (int i = (index + 1) << 6, max = index << 6; i >= max; i--)
+                {
+                    if (get(i))
+                    {
+                        return i;
+                    }
+                }
+            }
+            index -= 1;
+        }
+        return 0;
+    }
+    
     public void clear(int i)
     {
-        int wordIndex = i >>> 3;
-        byte value = (byte) (0x80 >>> (i & 7));
+        int wordIndex = i >>> 6;
+        long value = 0x8000000000000000l >>> (i & 63);
         if (wordIndex >= array.length)
         {
-            byte[] tmp = new byte[wordIndex + 1];
+            long[] tmp = new long[wordIndex + 1];
             System.arraycopy(array, 0, tmp, 0, array.length);
             array = tmp;
         }
@@ -99,8 +73,20 @@ public class BitMap
     
     public int nextSetBit(int fromIndex)
     {
-        int max = array.length * 8;
-        for (int i = fromIndex; i < max; i++)
+        int wordIndex = fromIndex >>> 6;
+        while (wordIndex < array.length)
+        {
+            if (array[wordIndex] == 0)
+            {
+                wordIndex += 1;
+            }
+            else
+            {
+                break;
+            }
+        }
+        int max = array.length * 64;
+        for (int i = wordIndex * 64 + (fromIndex & 63); i < max; i++)
         {
             if (get(i))
             {
@@ -112,8 +98,20 @@ public class BitMap
     
     public int nextClearBit(int fromIndex)
     {
-        int max = array.length * 8;
-        for (int i = fromIndex; i < max; i++)
+        int wordIndex = fromIndex >>> 6;
+        while (wordIndex < array.length)
+        {
+            if (array[wordIndex] == 0)
+            {
+                wordIndex += 1;
+            }
+            else
+            {
+                break;
+            }
+        }
+        int max = array.length * 64;
+        for (int i = wordIndex * 64 + (fromIndex & 63); i < max; i++)
         {
             if (get(i) == false)
             {
@@ -122,4 +120,5 @@ public class BitMap
         }
         return max;
     }
+    
 }

@@ -41,6 +41,6 @@ public class BitMapTest
         BitMap bitMap = new BitMap();
         bitMap.set(50);
         bitMap.clear(50);
-        System.out.println(bitMap.max());
+        Assert.assertEquals(0, bitMap.max());
     }
 }
