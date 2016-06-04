@@ -3,12 +3,12 @@ package com.jfireframework.mvc.core;
 import java.lang.reflect.Method;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
-import com.jfireframework.mvc.annotation.ContentType;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.rest.RestfulRule;
 import com.jfireframework.mvc.util.ActionInfo;
+import com.jfireframework.mvc.util.ContentType;
 import com.jfireframework.mvc.util.RequestMethod;
 import sun.reflect.MethodAccessor;
 
@@ -36,6 +36,7 @@ public class Action
     private final String              contentType;
     private final ResultType          resultType;
     private final ActionInterceptor[] interceptors;
+    private final String              token;
     
     public Action(ActionInfo info)
     {
@@ -49,6 +50,7 @@ public class Action
         requestMethod = info.getRequestMethod();
         method = info.getMethod();
         resultType = info.getResultType();
+        token = info.getToken();
         if ("".equals(info.getContentType()))
         {
             switch (resultType)
@@ -160,6 +162,11 @@ public class Action
     public ActionInterceptor[] getInterceptors()
     {
         return interceptors;
+    }
+    
+    public String getToken()
+    {
+        return token;
     }
     
 }

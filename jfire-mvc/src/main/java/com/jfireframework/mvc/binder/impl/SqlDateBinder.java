@@ -4,14 +4,14 @@ import java.util.Date;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.jfireframework.mvc.annotation.RequestParam;
+import com.jfireframework.mvc.binder.ParamInfo;
 
 public class SqlDateBinder extends DateBinder
 {
     
-    public SqlDateBinder(RequestParam requestParam, String paramName)
+    public SqlDateBinder(ParamInfo info, String paramName)
     {
-        super(requestParam, paramName);
+        super(info, paramName);
     }
     
     @Override

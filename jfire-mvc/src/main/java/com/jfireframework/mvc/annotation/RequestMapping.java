@@ -57,4 +57,11 @@ public @interface RequestMapping
      */
     public String contentType() default "";
     
+    /**
+     * 该方法映射的别名。特定的场合下，可以用来做唯一识别
+     * 
+     * @return
+     */
+    public String token() default "";
+    
 }

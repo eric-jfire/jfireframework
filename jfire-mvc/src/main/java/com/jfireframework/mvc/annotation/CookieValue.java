@@ -6,18 +6,22 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * 方法从http请求中获取的参数
- * 
- * @author 林斌（windfire@zailanghua.com）
- * 
- */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-public @interface RequestParam
+public @interface CookieValue
 {
-    /** 该属性的名称 */
-    public String value();
+    /**
+     * cookie的名称
+     * 
+     * @return
+     */
+    public String value() default "";
     
+    /**
+     * 如果该cookie不存在，返回一个默认的值
+     * 
+     * @return
+     */
+    public String defaultValue() default "";
 }

@@ -1,4 +1,4 @@
-package com.jfireframework.mvc.annotation;
+package com.jfireframework.mvc.util;
 
 public interface ContentType
 {

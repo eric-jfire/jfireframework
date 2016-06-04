@@ -12,17 +12,25 @@ import com.jfireframework.baseutil.exception.UnSupportException;
 
 public final class ActionCenter
 {
-    private final Map<String, Action> getActions    = new HashMap<String, Action>();
+    private final Map<String, Action> getActions     = new HashMap<String, Action>();
     private final Action[]            rest_get_actions;
-    private final Map<String, Action> postActions   = new HashMap<String, Action>();
+    private final Map<String, Action> postActions    = new HashMap<String, Action>();
     private final Action[]            rest_post_actions;
-    private final Map<String, Action> putActions    = new HashMap<String, Action>();
+    private final Map<String, Action> putActions     = new HashMap<String, Action>();
     private final Action[]            rest_put_actions;
-    private final Map<String, Action> deleteActions = new HashMap<String, Action>();
+    private final Map<String, Action> deleteActions  = new HashMap<String, Action>();
     private final Action[]            rest_delete_actions;
+    private final Map<String, Action> tokenActionMap = new HashMap<>();
     
     public ActionCenter(Action[] actions)
     {
+        for (Action each : actions)
+        {
+            if (tokenActionMap.containsKey(each.getToken()))
+            {
+                throw new UnSupportException(StringUtil.format("Action的token值是不能重复的。请检查{}和{}", each.getMethod().toGenericString(), tokenActionMap.get(each.getToken()).getMethod().toGenericString()));
+            }
+        }
         List<Action> rest_get_actions_list = new LinkedList<Action>();
         List<Action> rest_post_actions_list = new LinkedList<Action>();
         List<Action> rest_put_actions_list = new LinkedList<Action>();

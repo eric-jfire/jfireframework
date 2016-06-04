@@ -6,21 +6,20 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * 这个注解表明将使用对应的格式转换来完成字符串到属性的转换
- * 
- * @author 林斌
- * 
- */
-@Target(ElementType.FIELD)
+@Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-public @interface MvcParse
+public @interface RequestHeader
 {
     /**
-     * 日期的转换格式
+     * header的名称，如果不填写默认为参数名字
      * 
      * @return
      */
-    public String date_format() default "yyyy-MM-dd HH:mm:ss";
+    public String value() default "";
+    
+    /*
+     * 如果该header不存在的时候给予一个默认值
+     */
+    public String defaultValue() default "";
 }

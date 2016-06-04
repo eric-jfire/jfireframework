@@ -5,14 +5,14 @@ import java.util.Date;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.jfireframework.mvc.annotation.RequestParam;
+import com.jfireframework.mvc.binder.ParamInfo;
 
 public class CalendarBinder extends DateBinder
 {
     
-    public CalendarBinder(RequestParam requestParam, String paramName)
+    public CalendarBinder(ParamInfo info, String paramName)
     {
-        super(requestParam, paramName);
+        super(info, paramName);
     }
     
     @Override

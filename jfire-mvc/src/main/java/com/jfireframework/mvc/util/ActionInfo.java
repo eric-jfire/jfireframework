@@ -23,6 +23,17 @@ public class ActionInfo
     // 该action方法的快速反射调用工具
     private MethodAccessor      methodAccessor;
     private ActionInterceptor[] interceptors;
+    private String              token;
+    
+    public String getToken()
+    {
+        return token;
+    }
+    
+    public void setToken(String token)
+    {
+        this.token = token;
+    }
     
     public ActionInterceptor[] getInterceptors()
     {

@@ -18,11 +18,15 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.set.LightSet;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.context.aop.AopUtil;
+import com.jfireframework.context.util.AnnotationUtil;
+import com.jfireframework.mvc.annotation.CookieValue;
 import com.jfireframework.mvc.annotation.MvcIgnore;
 import com.jfireframework.mvc.annotation.MvcRename;
+import com.jfireframework.mvc.annotation.RequestHeader;
 import com.jfireframework.mvc.annotation.RequestParam;
 import com.jfireframework.mvc.binder.field.BinderField;
 import com.jfireframework.mvc.binder.field.array.ArrayBooleanField;
@@ -53,9 +57,11 @@ import com.jfireframework.mvc.binder.field.impl.WFloatField;
 import com.jfireframework.mvc.binder.field.impl.WLongField;
 import com.jfireframework.mvc.binder.impl.BooleanBinder;
 import com.jfireframework.mvc.binder.impl.CalendarBinder;
+import com.jfireframework.mvc.binder.impl.CookieBinder;
 import com.jfireframework.mvc.binder.impl.DateBinder;
 import com.jfireframework.mvc.binder.impl.DoubleBinder;
 import com.jfireframework.mvc.binder.impl.FloatBinder;
+import com.jfireframework.mvc.binder.impl.HeaderBinder;
 import com.jfireframework.mvc.binder.impl.HttpRequestBinder;
 import com.jfireframework.mvc.binder.impl.HttpResponseBinder;
 import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
@@ -77,22 +83,18 @@ public class DataBinderFactory
     
     public static DataBinder[] build(Method method)
     {
-        Type[] paramTypes = method.getGenericParameterTypes();
-        if (paramTypes.length == 0)
+        if (method.getParameterCount() == 0)
         {
             return new DataBinder[0];
         }
+        Class<?>[] paramTypes = method.getParameterTypes();
         String[] paramNames = getParamNames(method);
         Annotation[][] annotations = method.getParameterAnnotations();
-        method.getParameterAnnotations();
         DataBinder[] dataBinders = new DataBinder[paramNames.length];
-        for (int i = 0; i < paramTypes.length; i++)
+        for (int i = 0; i < paramNames.length; i++)
         {
             ParamInfo info = new ParamInfo();
-            if (annotations[i].length > 0)
-            {
-                info.setRequestParam((RequestParam) annotations[i][0]);
-            }
+            info.setAnnotations(annotations[i]);
             info.setEntityClass(paramTypes[i]);
             info.setPrefix(paramNames[i]);
             dataBinders[i] = build(info, new HashSet<Class<?>>());
@@ -118,7 +120,7 @@ public class DataBinderFactory
         if (type instanceof ParameterizedType)
         {
             Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
-            if (List.class.isAssignableFrom(rawType))
+            if (rawType == List.class)
             {
                 Class<?> paramType = (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
                 if (paramType.equals(UploadItem.class))
@@ -127,12 +129,23 @@ public class DataBinderFactory
                 }
                 else
                 {
-                    throw new RuntimeException("未支持的入参形式，请联系作者eric@jfire.cn");
+                    throw new UnSupportException("未支持的入参形式，请联系作者eric@jfire.cn");
                 }
             }
             else
             {
-                throw new RuntimeException("未支持的入参形式，请联系作者eric@jfire.cn");
+                throw new UnSupportException("未支持的入参形式，请联系作者eric@jfire.cn");
+            }
+        }
+        for (Annotation each : info.getAnnotations())
+        {
+            if (each instanceof RequestHeader)
+            {
+                return new HeaderBinder(info, paramName);
+            }
+            else if (each instanceof CookieValue)
+            {
+                return new CookieBinder(info, paramName);
             }
         }
         if (type.equals(Double.class))
@@ -201,15 +214,15 @@ public class DataBinderFactory
         }
         if (type.equals(java.util.Date.class))
         {
-            return new DateBinder(info.getRequestParam(), paramName);
+            return new DateBinder(info, paramName);
         }
         if (type.equals(Date.class))
         {
-            return new SqlDateBinder(info.getRequestParam(), paramName);
+            return new SqlDateBinder(info, paramName);
         }
         if (type.equals(Calendar.class))
         {
-            return new CalendarBinder(info.getRequestParam(), paramName);
+            return new CalendarBinder(info, paramName);
         }
         else
         {
@@ -384,8 +397,16 @@ public class DataBinderFactory
      */
     private static String[] getParamNames(Method method)
     {
-        String[] paramNames = AopUtil.getParamNames(method);
-        Annotation[][] annos = method.getParameterAnnotations();
+        String[] paramNames;
+        try
+        {
+            paramNames = AopUtil.getParamNames(method);
+        }
+        catch (Exception e)
+        {
+            paramNames = new String[method.getParameterCount()];
+        }
+        Annotation[][] annos = AnnotationUtil.getParameterAnnotations(method);
         for (int i = 0; i < annos.length; i++)
         {
             if (annos[i].length == 0)
@@ -394,8 +415,14 @@ public class DataBinderFactory
             }
             else
             {
-                RequestParam param = (RequestParam) annos[i][0];
-                paramNames[i] = param.value();
+                for (Annotation each : annos[i])
+                {
+                    if (each instanceof RequestParam)
+                    {
+                        paramNames[i] = ((RequestParam) each).value();
+                        break;
+                    }
+                }
             }
         }
         return paramNames;

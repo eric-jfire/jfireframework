@@ -6,6 +6,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import com.jfireframework.baseutil.StringUtil;
@@ -29,6 +31,34 @@ public class AnnotationUtil
     public static boolean isPresent(Class<? extends Annotation> annoType, Method method)
     {
         return getAnnotation(annoType, method) != null;
+    }
+    
+    public static Annotation[][] getParameterAnnotations(Method method)
+    {
+        Annotation[][] annotations = method.getParameterAnnotations();
+        List<Annotation[]> list = new LinkedList<Annotation[]>();
+        for (Annotation[] each : annotations)
+        {
+            List<Annotation> tmp = new LinkedList<Annotation>();
+            for (Annotation annotation : each)
+            {
+                AliasAnno aliasAnno = getAliasAnno(annotation);
+                tmp.add(aliasAnno.target());
+            }
+            list.add(tmp.toArray(new Annotation[tmp.size()]));
+        }
+        return list.toArray(new Annotation[list.size()][]);
+    }
+    
+    private static AliasAnno getAliasAnno(Annotation anno)
+    {
+        AliasAnno aliasAnno = aliasMap.get(anno);
+        if (aliasAnno == null)
+        {
+            aliasAnno = new AliasAnno(anno, new HashMap<String, Object>());
+            aliasMap.put(anno, aliasAnno);
+        }
+        return aliasAnno;
     }
     
     public static <T extends Annotation> T getAnnotation(Class<T> annoType, Method method)
@@ -59,12 +89,7 @@ public class AnnotationUtil
     {
         for (Annotation each : annotations)
         {
-            AliasAnno aliasAnno = aliasMap.get(each);
-            if (aliasAnno == null)
-            {
-                aliasAnno = new AliasAnno(each, new HashMap<String, Object>());
-                aliasMap.put(each, aliasAnno);
-            }
+            AliasAnno aliasAnno = getAliasAnno(each);
             if (aliasAnno.rootType() == annoType)
             {
                 return (T) aliasAnno.target();

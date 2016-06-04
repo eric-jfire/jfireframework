@@ -7,10 +7,10 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.baseutil.uniqueid.SimpleUid;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.context.util.AnnotationUtil;
-import com.jfireframework.mvc.annotation.Interceptor;
 import com.jfireframework.mvc.annotation.RequestMapping;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.binder.DataBinderFactory;
@@ -28,6 +28,7 @@ public class ActionFactory
 {
     
     private static final AescComparator AESC_COMPARATOR = new AescComparator();
+    private static final SimpleUid      uid             = new SimpleUid();
     
     /**
      * 使用方法对象，顶级请求路径，容器对象初始化一个action实例。 该实例负责该action的调用
@@ -47,6 +48,11 @@ public class ActionFactory
         actionInfo.setEntity(bean.getInstance());
         setResultType(actionInfo);
         actionInfo.setContentType(requestMapping.contentType());
+        actionInfo.setToken(requestMapping.token());
+        if (actionInfo.getToken().equals(""))
+        {
+            actionInfo.setToken(uid.generate());
+        }
         if (requestMapping.value().equals("/"))
         {
             ;
@@ -125,12 +131,9 @@ public class ActionFactory
                 }
             }
             String token = interceptor.tokenRule();
-            if (token != null && method.isAnnotationPresent(Interceptor.class))
+            if (token != null && actionInfo.getToken().equals(token))
             {
-                if (method.getAnnotation(Interceptor.class).value().equals(token))
-                {
-                    interceptors.add(interceptor);
-                }
+                interceptors.add(interceptor);
             }
             
         }

@@ -8,7 +8,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.mvc.annotation.MvcParse;
+import com.jfireframework.mvc.annotation.MvcDateParse;
 
 @SuppressWarnings("restriction")
 public class DateField extends AbstractBinderField
@@ -30,9 +30,9 @@ public class DateField extends AbstractBinderField
         {
             sqlData = false;
         }
-        if (field.isAnnotationPresent(MvcParse.class))
+        if (field.isAnnotationPresent(MvcDateParse.class))
         {
-            style = field.getAnnotation(MvcParse.class).date_format();
+            style = field.getAnnotation(MvcDateParse.class).date_format();
         }
         else
         {

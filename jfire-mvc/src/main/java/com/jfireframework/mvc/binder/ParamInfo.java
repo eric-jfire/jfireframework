@@ -1,23 +1,23 @@
 package com.jfireframework.mvc.binder;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import com.jfireframework.mvc.annotation.RequestParam;
 
 public class ParamInfo
 {
     private String       prefix;
     private Type         entityClass;
     private Object       defaultValue;
-    private RequestParam requestParam;
+    private Annotation[] annotations;
     
-    public RequestParam getRequestParam()
+    public Annotation[] getAnnotations()
     {
-        return requestParam;
+        return annotations;
     }
     
-    public void setRequestParam(RequestParam requestParam)
+    public void setAnnotations(Annotation[] annotations)
     {
-        this.requestParam = requestParam;
+        this.annotations = annotations;
     }
     
     public String getPrefix()
