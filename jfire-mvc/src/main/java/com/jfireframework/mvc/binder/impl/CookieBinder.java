@@ -2,6 +2,7 @@ package com.jfireframework.mvc.binder.impl;
 
 import java.lang.annotation.Annotation;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -14,9 +15,9 @@ public class CookieBinder extends AbstractDataBinder
     private final String cookieName;
     private final String defaultValue;
     
-    public CookieBinder(ParamInfo info, String paramName)
+    public CookieBinder(ParamInfo info, Set<Class<?>> cycleSet)
     {
-        super(paramName);
+        super(info, cycleSet);
         String cookieName = "";
         String defaultValue = "";
         for (Annotation each : info.getAnnotations())

@@ -48,7 +48,7 @@ public class ArrayObjectField extends AbstractArrayField
                         entity = type.newInstance();
                         array = (Object[]) unsafe.getObject(entity, offset);
                     }
-                    array[i] = dataBinders[i].binder(request, map, null);
+                    array[i] = dataBinders[i].binder(request, map, response);
                 }
             }
         }

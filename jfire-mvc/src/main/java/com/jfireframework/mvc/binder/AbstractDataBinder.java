@@ -1,27 +1,20 @@
 package com.jfireframework.mvc.binder;
 
+import java.util.Set;
+
 public abstract class AbstractDataBinder implements DataBinder
 {
     /**
      * 方法入参名称
      */
-    protected String   paramName;
-    /**
-     * 方法入参类型
-     */
-    protected Class<?> entityClass;
+    protected final String paramName;
     
-    public AbstractDataBinder(String paramName, Class<?> entityClass)
+    public AbstractDataBinder(ParamInfo info, Set<Class<?>> cycleSet)
     {
-        this.paramName = paramName;
-        this.entityClass = entityClass;
+        paramName = info.getPrefix();
     }
     
-    public AbstractDataBinder(String paramName)
-    {
-        this.paramName = paramName;
-    }
-    
+    @Override
     public String getParamName()
     {
         return paramName;

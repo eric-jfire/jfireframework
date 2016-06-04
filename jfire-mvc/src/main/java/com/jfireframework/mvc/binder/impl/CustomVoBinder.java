@@ -1,19 +1,21 @@
 package com.jfireframework.mvc.binder.impl;
 
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.mvc.binder.AbstractDataBinder;
+import com.jfireframework.mvc.binder.ParamInfo;
 import com.jfireframework.mvc.binder.field.BinderField;
 
-public class NewParamVoBinder extends AbstractDataBinder
+public class CustomVoBinder extends AbstractDataBinder
 {
     private BinderField[] binderFields;
     
-    public NewParamVoBinder(String paramName, Class<?> entityClass)
+    public CustomVoBinder(ParamInfo info, Set<Class<?>> cycleSet)
     {
-        super(paramName, entityClass);
+        super(info, cycleSet);
     }
     
     @Override

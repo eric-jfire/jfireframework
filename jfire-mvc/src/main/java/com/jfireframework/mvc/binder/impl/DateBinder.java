@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
@@ -15,9 +16,9 @@ public class DateBinder extends AbstractDataBinder
 {
     protected ThreadLocal<SimpleDateFormat> formats;
     
-    public DateBinder(ParamInfo info, String paramName)
+    public DateBinder(ParamInfo info, Set<Class<?>> cycleSet)
     {
-        super(paramName);
+        super(info, cycleSet);
         String format = "yyyy-MM-dd HH:mm:ss";
         for (Annotation each : info.getAnnotations())
         {

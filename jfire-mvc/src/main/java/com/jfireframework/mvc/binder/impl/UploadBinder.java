@@ -1,20 +1,32 @@
 package com.jfireframework.mvc.binder.impl;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.mvc.binder.AbstractDataBinder;
+import com.jfireframework.mvc.binder.ParamInfo;
 import com.jfireframework.mvc.interceptor.impl.UploadInterceptor;
 
 public class UploadBinder extends AbstractDataBinder
 {
-    private boolean singleItem = false;
+    private final boolean singleItem;
     
-    public UploadBinder(String paramName, boolean singleItem)
+    public UploadBinder(ParamInfo info, Set<Class<?>> cycleSet)
     {
-        super(paramName);
-        this.singleItem = singleItem;
+        super(info, cycleSet);
+        Type type = info.getEntityClass();
+        if (type instanceof ParameterizedType)
+        {
+            singleItem = false;
+        }
+        else
+        {
+            singleItem = true;
+        }
     }
     
     @Override

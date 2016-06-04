@@ -1,18 +1,20 @@
 package com.jfireframework.mvc.binder.impl;
 
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.mvc.binder.AbstractDataBinder;
+import com.jfireframework.mvc.binder.ParamInfo;
 
 public class FloatBinder extends AbstractDataBinder
 {
     
-    public FloatBinder(String paramName)
+    public FloatBinder(ParamInfo info, Set<Class<?>> cycleSet)
     {
-        super(paramName);
+        super(info, cycleSet);
     }
     
     @Override

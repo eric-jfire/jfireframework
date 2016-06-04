@@ -58,6 +58,7 @@ import com.jfireframework.mvc.binder.field.impl.WLongField;
 import com.jfireframework.mvc.binder.impl.BooleanBinder;
 import com.jfireframework.mvc.binder.impl.CalendarBinder;
 import com.jfireframework.mvc.binder.impl.CookieBinder;
+import com.jfireframework.mvc.binder.impl.CustomVoBinder;
 import com.jfireframework.mvc.binder.impl.DateBinder;
 import com.jfireframework.mvc.binder.impl.DoubleBinder;
 import com.jfireframework.mvc.binder.impl.FloatBinder;
@@ -68,7 +69,6 @@ import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
 import com.jfireframework.mvc.binder.impl.IntBinder;
 import com.jfireframework.mvc.binder.impl.IntegerBinder;
 import com.jfireframework.mvc.binder.impl.LongBinder;
-import com.jfireframework.mvc.binder.impl.NewParamVoBinder;
 import com.jfireframework.mvc.binder.impl.ServletContextBinder;
 import com.jfireframework.mvc.binder.impl.SqlDateBinder;
 import com.jfireframework.mvc.binder.impl.StringBinder;
@@ -116,7 +116,6 @@ public class DataBinderFactory
             return null;
         }
         Type type = info.getEntityClass();
-        String paramName = info.getPrefix();
         if (type instanceof ParameterizedType)
         {
             Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
@@ -125,7 +124,7 @@ public class DataBinderFactory
                 Class<?> paramType = (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
                 if (paramType.equals(UploadItem.class))
                 {
-                    return new UploadBinder(paramName, false);
+                    return new UploadBinder(info, set);
                 }
                 else
                 {
@@ -141,88 +140,88 @@ public class DataBinderFactory
         {
             if (each instanceof RequestHeader)
             {
-                return new HeaderBinder(info, paramName);
+                return new HeaderBinder(info, set);
             }
             else if (each instanceof CookieValue)
             {
-                return new CookieBinder(info, paramName);
+                return new CookieBinder(info, set);
             }
         }
         if (type.equals(Double.class))
         {
-            return new WDoubleBinder(paramName);
+            return new WDoubleBinder(info, set);
         }
         if (type.equals(double.class))
         {
-            return new DoubleBinder(paramName);
+            return new DoubleBinder(info, set);
         }
         if (type.equals(UploadItem.class))
         {
-            return new UploadBinder(info.getPrefix(), true);
+            return new UploadBinder(info, set);
         }
         if (type.equals(String.class))
         {
-            return new StringBinder(paramName);
+            return new StringBinder(info, set);
         }
         if (type.equals(Long.class))
         {
-            return new WLongBinder(paramName);
+            return new WLongBinder(info, set);
         }
         if (type.equals(long.class))
         {
-            return new LongBinder(paramName);
+            return new LongBinder(info, set);
         }
         if (type.equals(int.class))
         {
-            return new IntBinder(paramName);
+            return new IntBinder(info, set);
         }
         if (type.equals(Integer.class))
         {
-            return new IntegerBinder(paramName);
+            return new IntegerBinder(info, set);
         }
         if (type.equals(Float.class))
         {
-            return new WFloatBinder(paramName);
+            return new WFloatBinder(info, set);
         }
         if (type.equals(float.class))
         {
-            return new FloatBinder(paramName);
+            return new FloatBinder(info, set);
         }
         if (type.equals(Boolean.class))
         {
-            return new WBooleanBinder(paramName);
+            return new WBooleanBinder(info, set);
         }
         if (type.equals(boolean.class))
         {
-            return new BooleanBinder(paramName);
+            return new BooleanBinder(info, set);
         }
         if (HttpServletRequest.class.isAssignableFrom((Class<?>) type))
         {
-            return new HttpRequestBinder(paramName);
+            return new HttpRequestBinder(info, set);
         }
         if (HttpServletResponse.class.isAssignableFrom((Class<?>) type))
         {
-            return new HttpResponseBinder(paramName);
+            return new HttpResponseBinder(info, set);
         }
         if (HttpSession.class.isAssignableFrom((Class<?>) type))
         {
-            return new HttpSessionBinder(paramName);
+            return new HttpSessionBinder(info, set);
         }
         if (ServletContext.class.isAssignableFrom((Class<?>) type))
         {
-            return new ServletContextBinder(paramName);
+            return new ServletContextBinder(info, set);
         }
         if (type.equals(java.util.Date.class))
         {
-            return new DateBinder(info, paramName);
+            return new DateBinder(info, set);
         }
         if (type.equals(Date.class))
         {
-            return new SqlDateBinder(info, paramName);
+            return new SqlDateBinder(info, set);
         }
         if (type.equals(Calendar.class))
         {
-            return new CalendarBinder(info, paramName);
+            return new CalendarBinder(info, set);
         }
         else
         {
@@ -238,13 +237,13 @@ public class DataBinderFactory
      * @param cycleSet 循环检测set
      * @return
      */
-    private static NewParamVoBinder buildParamVoBinder(ParamInfo info, Set<Class<?>> cycleSet)
+    private static CustomVoBinder buildParamVoBinder(ParamInfo info, Set<Class<?>> cycleSet)
     {
         String prefix = info.getPrefix();
         Class<?> entityClass = (Class<?>) info.getEntityClass();
         LightSet<BinderField> set = new LightSet<BinderField>();
         initFields(prefix, entityClass, set, cycleSet);
-        NewParamVoBinder binder = new NewParamVoBinder(info.getPrefix(), entityClass);
+        CustomVoBinder binder = new CustomVoBinder(info, cycleSet);
         binder.setBinderFields(set.toArray(BinderField.class));
         return binder;
     }

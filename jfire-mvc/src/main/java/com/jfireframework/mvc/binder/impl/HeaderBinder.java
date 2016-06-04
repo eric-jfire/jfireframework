@@ -2,6 +2,7 @@ package com.jfireframework.mvc.binder.impl;
 
 import java.lang.annotation.Annotation;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
@@ -14,9 +15,9 @@ public class HeaderBinder extends AbstractDataBinder
     private final String headerName;
     private final String defaultValue;
     
-    public HeaderBinder(ParamInfo info, String paramName)
+    public HeaderBinder(ParamInfo info, Set<Class<?>> cycleSet)
     {
-        super(paramName);
+        super(info, cycleSet);
         String headerName = "";
         String defaultValue = "";
         for (Annotation each : info.getAnnotations())
