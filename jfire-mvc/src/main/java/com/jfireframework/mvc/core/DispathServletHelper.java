@@ -54,17 +54,16 @@ public class DispathServletHelper
         config = readConfigFile();
         encode = config.getWString("encode") == null ? "UTF8" : config.getWString("encode");
         Charset charset = Charset.forName(encode);
-        WebAppResourceLoader loader = new WebAppResourceLoader();
-        Configuration configuration = null;
         try
         {
-            configuration = Configuration.defaultConfiguration();
+            WebAppResourceLoader loader = new WebAppResourceLoader();
+            Configuration configuration = Configuration.defaultConfiguration();
+            renderFactory = new RenderFactory(charset, new BeetlRender(new GroupTemplate(loader, configuration)));
         }
         catch (IOException e)
         {
-            e.printStackTrace();
+            throw new JustThrowException(e);
         }
-        renderFactory = new RenderFactory(charset, new BeetlRender(new GroupTemplate(loader, configuration)));
         devMode = config.contains("devMode") ? config.getBoolean("devMode") : false;
         if (devMode)
         {
@@ -82,10 +81,8 @@ public class DispathServletHelper
     
     private JsonObject readConfigFile()
     {
-        FileInputStream inputStream = null;
-        try
+        try (FileInputStream inputStream = new FileInputStream(new File(this.getClass().getClassLoader().getResource("mvc.json").toURI())))
         {
-            inputStream = new FileInputStream(new File(this.getClass().getClassLoader().getResource("mvc.json").toURI()));
             byte[] src = new byte[inputStream.available()];
             inputStream.read(src);
             String value = new String(src, Charset.forName("utf8"));
@@ -94,20 +91,6 @@ public class DispathServletHelper
         catch (Exception e)
         {
             throw new JustThrowException(e);
-        }
-        finally
-        {
-            if (inputStream != null)
-            {
-                try
-                {
-                    inputStream.close();
-                }
-                catch (IOException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
         }
     }
     

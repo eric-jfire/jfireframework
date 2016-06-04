@@ -5,6 +5,8 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import javax.annotation.Resource;
+import com.jfireframework.context.util.AliasFor;
 
 /**
  * 代表注解类是一个action类
@@ -15,6 +17,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
+@Resource(shareable = false)
 public @interface Controller
 {
     /**
@@ -22,5 +25,6 @@ public @interface Controller
      * 
      * @return
      */
+    @AliasFor(annotation = Resource.class, value = "name")
     public String value() default "";
 }

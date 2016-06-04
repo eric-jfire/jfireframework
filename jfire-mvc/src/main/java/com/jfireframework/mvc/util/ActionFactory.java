@@ -9,6 +9,7 @@ import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.bean.Bean;
+import com.jfireframework.context.util.AnnotationUtil;
 import com.jfireframework.mvc.annotation.Interceptor;
 import com.jfireframework.mvc.annotation.RequestMapping;
 import com.jfireframework.mvc.binder.DataBinder;
@@ -39,29 +40,29 @@ public class ActionFactory
     {
         ActionInfo actionInfo = new ActionInfo();
         actionInfo.setMethod(method);
-        RequestMapping actionMethod = method.getAnnotation(RequestMapping.class);
-        actionInfo.setRequestMethod(actionMethod.method());
+        RequestMapping requestMapping = AnnotationUtil.getAnnotation(RequestMapping.class, method);
+        actionInfo.setRequestMethod(requestMapping.method());
         actionInfo.setDataBinders(DataBinderFactory.build(method));
-        actionInfo.setReadStream(actionMethod.readStream());
+        actionInfo.setReadStream(requestMapping.readStream());
         actionInfo.setEntity(bean.getInstance());
         setResultType(actionInfo);
-        actionInfo.setContentType(actionMethod.contentType());
-        if (actionMethod.value().equals("/"))
+        actionInfo.setContentType(requestMapping.contentType());
+        if (requestMapping.value().equals("/"))
         {
             ;
         }
         else
         {
-            actionInfo.setRest(actionMethod.rest());
-            if (actionMethod.value().indexOf("{") != -1)
+            actionInfo.setRest(requestMapping.rest());
+            if (requestMapping.value().indexOf("{") != -1 && requestMapping.value().indexOf("}") != -1)
             {
                 actionInfo.setRest(true);
             }
             if (actionInfo.isRest())
             {
-                if (StringUtil.isNotBlank(actionMethod.value()))
+                if (StringUtil.isNotBlank(requestMapping.value()))
                 {
-                    requestPath += "/" + actionMethod.value();
+                    requestPath += requestMapping.value();
                 }
                 else
                 {
@@ -87,7 +88,7 @@ public class ActionFactory
             }
             else
             {
-                requestPath += "/" + (StringUtil.isNotBlank(actionMethod.value()) ? actionMethod.value() : method.getName());
+                requestPath += (StringUtil.isNotBlank(requestMapping.value()) ? requestMapping.value() : "/" + method.getName());
             }
         }
         actionInfo.setRequestUrl(requestPath);

@@ -14,6 +14,7 @@ import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.JfireContextImpl;
 import com.jfireframework.context.aop.AopUtil;
 import com.jfireframework.context.bean.Bean;
+import com.jfireframework.context.util.AnnotationUtil;
 import com.jfireframework.mvc.annotation.Controller;
 import com.jfireframework.mvc.annotation.RequestMapping;
 import com.jfireframework.mvc.config.ResultType;
@@ -46,7 +47,7 @@ public class ActionCenterBulder
         jfireContext.readConfig(config);
         jfireContext.addPackageNames("com.jfireframework.sql");
         jfireContext.addSingletonEntity("servletContext", servletContext);
-        jfireContext.addSingletonEntity("beetlRender", renderFactory.getViewRender(ResultType.Beetl));
+        jfireContext.addSingletonEntity(BeetlRender.class.getName(), renderFactory.getViewRender(ResultType.Beetl));
         jfireContext.addBean(DataBinderInterceptor.class);
         jfireContext.addBean(UploadInterceptor.class);
         boolean report = config.getWBoolean("report") == null ? false : config.getBoolean("report");
@@ -90,26 +91,20 @@ public class ActionCenterBulder
     private static List<Action> generateActions(Bean bean, ActionInitListener[] listeners, JfireContext jfireContext, String contextUrl)
     {
         Class<?> src = bean.getOriginType();
-        Controller actionClass = src.getAnnotation(Controller.class);
-        String modelUrl = null;
-        if (actionClass.value().equals("/"))
+        String requestUrl = contextUrl;
+        if (AnnotationUtil.isPresent(RequestMapping.class, src))
         {
-            modelUrl = contextUrl;
+            RequestMapping requestMapping = AnnotationUtil.getAnnotation(RequestMapping.class, src);
+            requestUrl += requestMapping.value();
         }
-        else
-        {
-            modelUrl = actionClass.value().equals("") ? '/' + src.getSimpleName() : '/' + actionClass.value();
-            modelUrl = contextUrl + modelUrl;
-        }
-        Verify.False(modelUrl.contains("*"), "顶级url不能包含*");
         // 这里需要使用原始的类来得到方法，因为如果使用增强后的子类，就无法得到正确的方法名称以及方法上的注解信息
         Method[] methods = ReflectUtil.getAllMehtods(bean.getOriginType());
         List<Action> list = new ArrayList<Action>();
         for (Method each : methods)
         {
-            if (each.isAnnotationPresent(RequestMapping.class))
+            if (AnnotationUtil.isPresent(RequestMapping.class, each))
             {
-                Action action = ActionFactory.buildAction(each, modelUrl, bean, jfireContext);
+                Action action = ActionFactory.buildAction(each, requestUrl, bean, jfireContext);
                 list.add(action);
                 for (ActionInitListener listener : listeners)
                 {
