@@ -1,33 +1,20 @@
 package com.jfireframework.mvc.binder.field.impl;
 
 import java.lang.reflect.Field;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import com.jfireframework.baseutil.StringUtil;
+import java.util.Set;
 
 public class WDoubleField extends AbstractBinderField
 {
     
-    public WDoubleField(String prefix, Field field)
+    public WDoubleField(String prefix, Field field, Set<Class<?>> cycleSet)
     {
-        super(prefix, field);
+        super(prefix, field, cycleSet);
     }
     
-    @SuppressWarnings("restriction")
     @Override
-    public Object setValue(HttpServletRequest request, Object entity, Map<String, String> map, HttpServletResponse response) throws InstantiationException, IllegalAccessException
+    protected void set(Object entity, String value)
     {
-        String value = map.get(name);
-        if (StringUtil.isNotBlank(value))
-        {
-            if (entity == null)
-            {
-                entity = type.newInstance();
-            }
-            unsafe.putObject(entity, offset, Double.valueOf(value));
-        }
-        return entity;
+        unsafe.putObject(entity, offset, Double.valueOf(value));
     }
     
 }

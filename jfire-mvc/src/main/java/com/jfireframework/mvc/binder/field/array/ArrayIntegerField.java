@@ -2,42 +2,22 @@ package com.jfireframework.mvc.binder.field.array;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.jfireframework.baseutil.StringUtil;
 
 public class ArrayIntegerField extends AbstractArrayField
 {
     
-    public ArrayIntegerField(String prefix, Field field)
+    public ArrayIntegerField(String prefix, Field field, Set<Class<?>> cycleSet)
     {
-        super(prefix, field);
+        super(prefix, field, cycleSet);
     }
     
     @Override
-    @SuppressWarnings("restriction")
-    public Object setValue(HttpServletRequest request, Object entity, Map<String, String> map, HttpServletResponse response) throws InstantiationException, IllegalAccessException
+    protected void setFlagValue(String value, Object _array, int flag, HttpServletRequest request, Object entity, Map<String, String> map, HttpServletResponse response)
     {
-        Integer[] array = null;
-        if (entity != null)
-        {
-            array = (Integer[]) unsafe.getObject(entity, offset);
-        }
-        String value = null;
-        for (int i = 0; i < length; i++)
-        {
-            value = map.get(requestParamNames[i]);
-            if (StringUtil.isNotBlank(value))
-            {
-                if (entity == null)
-                {
-                    entity = type.newInstance();
-                    array = (Integer[]) unsafe.getObject(entity, offset);
-                }
-                array[i] = Integer.valueOf(value);
-            }
-        }
-        return entity;
+        ((Integer[]) _array)[flag] = Integer.valueOf(value);
     }
     
 }
