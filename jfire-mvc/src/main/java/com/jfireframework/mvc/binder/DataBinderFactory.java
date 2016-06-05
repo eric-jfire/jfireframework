@@ -1,117 +1,79 @@
 package com.jfireframework.mvc.binder;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.Date;
 import java.util.Calendar;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.baseutil.collection.set.LightSet;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
-import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.baseutil.verify.Verify;
-import com.jfireframework.context.aop.AopUtil;
-import com.jfireframework.context.util.AnnotationUtil;
 import com.jfireframework.mvc.annotation.CookieValue;
-import com.jfireframework.mvc.annotation.MvcIgnore;
-import com.jfireframework.mvc.annotation.MvcRename;
 import com.jfireframework.mvc.annotation.RequestHeader;
-import com.jfireframework.mvc.annotation.RequestParam;
-import com.jfireframework.mvc.binder.field.BinderField;
-import com.jfireframework.mvc.binder.field.array.ArrayBooleanField;
-import com.jfireframework.mvc.binder.field.array.ArrayDoubleField;
-import com.jfireframework.mvc.binder.field.array.ArrayFloatField;
-import com.jfireframework.mvc.binder.field.array.ArrayIntField;
-import com.jfireframework.mvc.binder.field.array.ArrayIntegerField;
-import com.jfireframework.mvc.binder.field.array.ArrayLongField;
-import com.jfireframework.mvc.binder.field.array.ArrayObjectField;
-import com.jfireframework.mvc.binder.field.array.ArrayStringField;
-import com.jfireframework.mvc.binder.field.array.ArrayWBooleanField;
-import com.jfireframework.mvc.binder.field.array.ArrayWDoubleField;
-import com.jfireframework.mvc.binder.field.array.ArrayWFloatField;
-import com.jfireframework.mvc.binder.field.array.ArrayWLongField;
-import com.jfireframework.mvc.binder.field.impl.BooleanField;
-import com.jfireframework.mvc.binder.field.impl.CalendarField;
-import com.jfireframework.mvc.binder.field.impl.DateField;
-import com.jfireframework.mvc.binder.field.impl.DoubleField;
-import com.jfireframework.mvc.binder.field.impl.FloatField;
-import com.jfireframework.mvc.binder.field.impl.IntField;
-import com.jfireframework.mvc.binder.field.impl.IntegerField;
-import com.jfireframework.mvc.binder.field.impl.LongField;
-import com.jfireframework.mvc.binder.field.impl.ObjectBinderField;
-import com.jfireframework.mvc.binder.field.impl.StringField;
-import com.jfireframework.mvc.binder.field.impl.WBooleanField;
-import com.jfireframework.mvc.binder.field.impl.WDoubleField;
-import com.jfireframework.mvc.binder.field.impl.WFloatField;
-import com.jfireframework.mvc.binder.field.impl.WLongField;
 import com.jfireframework.mvc.binder.impl.BooleanBinder;
 import com.jfireframework.mvc.binder.impl.CalendarBinder;
 import com.jfireframework.mvc.binder.impl.CookieBinder;
 import com.jfireframework.mvc.binder.impl.CustomVoBinder;
 import com.jfireframework.mvc.binder.impl.DateBinder;
 import com.jfireframework.mvc.binder.impl.DoubleBinder;
-import com.jfireframework.mvc.binder.impl.FloatBinder;
 import com.jfireframework.mvc.binder.impl.HeaderBinder;
-import com.jfireframework.mvc.binder.impl.HttpRequestBinder;
-import com.jfireframework.mvc.binder.impl.HttpResponseBinder;
-import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
-import com.jfireframework.mvc.binder.impl.IntBinder;
-import com.jfireframework.mvc.binder.impl.IntegerBinder;
-import com.jfireframework.mvc.binder.impl.LongBinder;
-import com.jfireframework.mvc.binder.impl.ServletContextBinder;
 import com.jfireframework.mvc.binder.impl.SqlDateBinder;
-import com.jfireframework.mvc.binder.impl.StringBinder;
 import com.jfireframework.mvc.binder.impl.UploadBinder;
-import com.jfireframework.mvc.binder.impl.WBooleanBinder;
-import com.jfireframework.mvc.binder.impl.WDoubleBinder;
-import com.jfireframework.mvc.binder.impl.WFloatBinder;
-import com.jfireframework.mvc.binder.impl.WLongBinder;
 
 public class DataBinderFactory
 {
+    private static ConcurrentHashMap<Class<?>, Constructor<?>> constructorMap = new ConcurrentHashMap<>();
     
-    public static DataBinder[] build(Method method)
+    static
     {
-        if (method.getParameterCount() == 0)
+        try
         {
-            return new DataBinder[0];
+            constructorMap.put(boolean.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(Calendar.class, CalendarBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(java.util.Date.class, DateBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(Date.class, SqlDateBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(double.class, DoubleBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(float.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(HttpServletRequest.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(HttpServletResponse.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(HttpSession.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(int.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(Integer.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(long.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(Map.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(ServletContext.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(String.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(UploadBinder.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(Boolean.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(Double.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(Float.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(Long.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
         }
-        Class<?>[] paramTypes = method.getParameterTypes();
-        String[] paramNames = getParamNames(method);
-        Annotation[][] annotations = method.getParameterAnnotations();
-        DataBinder[] dataBinders = new DataBinder[paramNames.length];
-        for (int i = 0; i < paramNames.length; i++)
+        catch (NoSuchMethodException | SecurityException e)
         {
-            ParamInfo info = new ParamInfo();
-            info.setAnnotations(annotations[i]);
-            info.setEntityClass(paramTypes[i]);
-            info.setPrefix(paramNames[i]);
-            dataBinders[i] = build(info, new HashSet<Class<?>>());
+            throw new JustThrowException(e);
         }
-        return dataBinders;
     }
     
     /**
      * 使用条件信息创建一个databinder实例。条件信息包含前缀和该条件的类型
      * 
      * @param info
-     * @param set
+     * @param cycleSet
      * @return
      */
-    public static DataBinder build(ParamInfo info, Set<Class<?>> set)
+    public static DataBinder build(ParamInfo info, Set<Class<?>> cycleSet)
     {
-        if (set.contains(info.getEntityClass()))
+        if (cycleSet.contains(info.getEntityClass()))
         {
             return null;
         }
@@ -124,7 +86,7 @@ public class DataBinderFactory
                 Class<?> paramType = (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
                 if (paramType.equals(UploadItem.class))
                 {
-                    return new UploadBinder(info, set);
+                    return new UploadBinder(info, cycleSet);
                 }
                 else
                 {
@@ -140,291 +102,30 @@ public class DataBinderFactory
         {
             if (each instanceof RequestHeader)
             {
-                return new HeaderBinder(info, set);
+                return new HeaderBinder(info, cycleSet);
             }
             else if (each instanceof CookieValue)
             {
-                return new CookieBinder(info, set);
+                return new CookieBinder(info, cycleSet);
             }
         }
-        if (type.equals(Double.class))
+        Constructor<?> constructor = constructorMap.get(type);
+        if (constructor != null)
         {
-            return new WDoubleBinder(info, set);
-        }
-        if (type.equals(double.class))
-        {
-            return new DoubleBinder(info, set);
-        }
-        if (type.equals(UploadItem.class))
-        {
-            return new UploadBinder(info, set);
-        }
-        if (type.equals(String.class))
-        {
-            return new StringBinder(info, set);
-        }
-        if (type.equals(Long.class))
-        {
-            return new WLongBinder(info, set);
-        }
-        if (type.equals(long.class))
-        {
-            return new LongBinder(info, set);
-        }
-        if (type.equals(int.class))
-        {
-            return new IntBinder(info, set);
-        }
-        if (type.equals(Integer.class))
-        {
-            return new IntegerBinder(info, set);
-        }
-        if (type.equals(Float.class))
-        {
-            return new WFloatBinder(info, set);
-        }
-        if (type.equals(float.class))
-        {
-            return new FloatBinder(info, set);
-        }
-        if (type.equals(Boolean.class))
-        {
-            return new WBooleanBinder(info, set);
-        }
-        if (type.equals(boolean.class))
-        {
-            return new BooleanBinder(info, set);
-        }
-        if (HttpServletRequest.class.isAssignableFrom((Class<?>) type))
-        {
-            return new HttpRequestBinder(info, set);
-        }
-        if (HttpServletResponse.class.isAssignableFrom((Class<?>) type))
-        {
-            return new HttpResponseBinder(info, set);
-        }
-        if (HttpSession.class.isAssignableFrom((Class<?>) type))
-        {
-            return new HttpSessionBinder(info, set);
-        }
-        if (ServletContext.class.isAssignableFrom((Class<?>) type))
-        {
-            return new ServletContextBinder(info, set);
-        }
-        if (type.equals(java.util.Date.class))
-        {
-            return new DateBinder(info, set);
-        }
-        if (type.equals(Date.class))
-        {
-            return new SqlDateBinder(info, set);
-        }
-        if (type.equals(Calendar.class))
-        {
-            return new CalendarBinder(info, set);
+            try
+            {
+                return (DataBinder) constructor.newInstance(info, cycleSet);
+            }
+            catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+            {
+                throw new JustThrowException(e);
+            }
         }
         else
         {
-            return buildParamVoBinder(info, set);
+            return new CustomVoBinder(info, cycleSet);
         }
         
-    }
-    
-    /**
-     * 创建一个自定义对象的绑定器。
-     * 
-     * @param info
-     * @param cycleSet 循环检测set
-     * @return
-     */
-    private static CustomVoBinder buildParamVoBinder(ParamInfo info, Set<Class<?>> cycleSet)
-    {
-        String prefix = info.getPrefix();
-        Class<?> entityClass = (Class<?>) info.getEntityClass();
-        LightSet<BinderField> set = new LightSet<BinderField>();
-        initFields(prefix, entityClass, set, cycleSet);
-        CustomVoBinder binder = new CustomVoBinder(info, cycleSet);
-        binder.setBinderFields(set.toArray(BinderField.class));
-        return binder;
-    }
-    
-    /**
-     * 将类中的属性生成binderfield
-     * 
-     * @param prefix
-     * @param entityClass
-     * @param set
-     * @param cycleSet
-     */
-    private static void initFields(String prefix, Class<?> entityClass, LightSet<BinderField> set, Set<Class<?>> cycleSet)
-    {
-        Field[] fields = ReflectUtil.getAllFields(entityClass);
-        for (Field each : fields)
-        {
-            if (Modifier.isStatic(each.getModifiers()) || Modifier.isFinal(each.getModifiers()) || each.isAnnotationPresent(MvcIgnore.class) || List.class.isAssignableFrom(each.getType()) || Map.class.isAssignableFrom(each.getType()) || each.getType().equals(each.getDeclaringClass()))
-            {
-                continue;
-            }
-            if (each.getType().isArray())
-            {
-                Class<?> fieldType = each.getType().getComponentType();
-                if (fieldType.equals(String.class))
-                {
-                    set.add(new ArrayStringField(prefix, each));
-                }
-                else if (fieldType.equals(Integer.class))
-                {
-                    set.add(new ArrayIntegerField(prefix, each));
-                }
-                else if (fieldType.equals(Long.class))
-                {
-                    set.add(new ArrayWLongField(prefix, each));
-                }
-                else if (fieldType.equals(Float.class))
-                {
-                    set.add(new ArrayWFloatField(prefix, each));
-                }
-                else if (fieldType.equals(Double.class))
-                {
-                    set.add(new ArrayWDoubleField(prefix, each));
-                }
-                else if (fieldType.equals(int.class))
-                {
-                    set.add(new ArrayIntField(prefix, each));
-                }
-                else if (fieldType.equals(long.class))
-                {
-                    set.add(new ArrayLongField(prefix, each));
-                }
-                else if (fieldType.equals(float.class))
-                {
-                    set.add(new ArrayFloatField(prefix, each));
-                }
-                else if (fieldType.equals(double.class))
-                {
-                    set.add(new ArrayDoubleField(prefix, each));
-                }
-                else if (fieldType.equals(Boolean.class))
-                {
-                    set.add(new ArrayWBooleanField(prefix, each));
-                }
-                else if (fieldType.equals(boolean.class))
-                {
-                    set.add(new ArrayBooleanField(prefix, each));
-                }
-                else
-                {
-                    Verify.False(fieldType.isArray(), "数据绑定只支持到二维数组,请检查{}.{}", each.getDeclaringClass(), each.getName());
-                    set.add(new ArrayObjectField(prefix, each, cycleSet));
-                }
-            }
-            else
-            {
-                Class<?> fieldType = each.getType();
-                if (fieldType.equals(String.class))
-                {
-                    set.add(new StringField(prefix, each));
-                }
-                else if (fieldType.equals(Integer.class))
-                {
-                    set.add(new IntegerField(prefix, each));
-                }
-                else if (fieldType.equals(Float.class))
-                {
-                    set.add(new WFloatField(prefix, each));
-                }
-                else if (fieldType.equals(Long.class))
-                {
-                    set.add(new WLongField(prefix, each));
-                }
-                else if (fieldType.equals(Double.class))
-                {
-                    set.add(new WDoubleField(prefix, each));
-                }
-                else if (fieldType.equals(Boolean.class))
-                {
-                    set.add(new WBooleanField(prefix, each));
-                }
-                else if (fieldType.equals(int.class))
-                {
-                    set.add(new IntField(prefix, each));
-                }
-                else if (fieldType.equals(long.class))
-                {
-                    set.add(new LongField(prefix, each));
-                }
-                else if (fieldType.equals(float.class))
-                {
-                    set.add(new FloatField(prefix, each));
-                }
-                else if (fieldType.equals(double.class))
-                {
-                    set.add(new DoubleField(prefix, each));
-                }
-                else if (fieldType.equals(boolean.class))
-                {
-                    set.add(new BooleanField(prefix, each));
-                }
-                else if (fieldType.equals(Date.class))
-                {
-                    set.add(new DateField(prefix, each));
-                }
-                else if (fieldType.equals(java.util.Date.class))
-                {
-                    set.add(new DateField(prefix, each));
-                }
-                else if (fieldType.equals(Calendar.class))
-                {
-                    set.add(new CalendarField(prefix, each));
-                }
-                else
-                {
-                    String fieldName = each.isAnnotationPresent(MvcRename.class) ? each.getAnnotation(MvcRename.class).value() : each.getName();
-                    String nestedPrefix = StringUtil.isNotBlank(prefix) ? prefix + '.' + fieldName : fieldName;
-                    set.add(new ObjectBinderField(nestedPrefix, each, cycleSet));
-                }
-            }
-        }
-        
-    }
-    
-    /**
-     * 获取方法的参数名称数组，如果没有注解则使用形参名称，如果有，则该参数采用注解的名称
-     * 
-     * @param method
-     * @return
-     */
-    private static String[] getParamNames(Method method)
-    {
-        String[] paramNames;
-        try
-        {
-            paramNames = AopUtil.getParamNames(method);
-        }
-        catch (Exception e)
-        {
-            paramNames = new String[method.getParameterCount()];
-        }
-        Annotation[][] annos = AnnotationUtil.getParameterAnnotations(method);
-        for (int i = 0; i < annos.length; i++)
-        {
-            if (annos[i].length == 0)
-            {
-                continue;
-            }
-            else
-            {
-                for (Annotation each : annos[i])
-                {
-                    if (each instanceof RequestParam)
-                    {
-                        paramNames[i] = ((RequestParam) each).value();
-                        break;
-                    }
-                }
-            }
-        }
-        return paramNames;
     }
     
 }

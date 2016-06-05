@@ -1,6 +1,8 @@
-package com.jfireframework.mvc.binder;
+package com.jfireframework.mvc.binder.impl;
 
 import java.util.Set;
+import com.jfireframework.mvc.binder.DataBinder;
+import com.jfireframework.mvc.binder.ParamInfo;
 
 public abstract class AbstractDataBinder implements DataBinder
 {

@@ -1,7 +1,9 @@
 package com.jfireframework.mvc.util;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
@@ -9,11 +11,14 @@ import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.uniqueid.SimpleUid;
 import com.jfireframework.context.JfireContext;
+import com.jfireframework.context.aop.AopUtil;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.context.util.AnnotationUtil;
 import com.jfireframework.mvc.annotation.RequestMapping;
+import com.jfireframework.mvc.annotation.RequestParam;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.binder.DataBinderFactory;
+import com.jfireframework.mvc.binder.ParamInfo;
 import com.jfireframework.mvc.binder.impl.HttpRequestBinder;
 import com.jfireframework.mvc.binder.impl.HttpResponseBinder;
 import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
@@ -43,7 +48,7 @@ public class ActionFactory
         actionInfo.setMethod(method);
         RequestMapping requestMapping = AnnotationUtil.getAnnotation(RequestMapping.class, method);
         actionInfo.setRequestMethod(requestMapping.method());
-        actionInfo.setDataBinders(DataBinderFactory.build(method));
+        actionInfo.setDataBinders(generateBinders(method));
         actionInfo.setReadStream(requestMapping.readStream());
         actionInfo.setEntity(bean.getInstance());
         setResultType(actionInfo);
@@ -196,5 +201,65 @@ public class ActionFactory
         {
             info.setResultType(method.getAnnotation(RequestMapping.class).resultType());
         }
+    }
+    
+    private static DataBinder[] generateBinders(Method method)
+    {
+        if (method.getParameterCount() == 0)
+        {
+            return new DataBinder[0];
+        }
+        Class<?>[] paramTypes = method.getParameterTypes();
+        String[] paramNames = getParamNames(method);
+        Annotation[][] annotations = method.getParameterAnnotations();
+        DataBinder[] dataBinders = new DataBinder[paramNames.length];
+        for (int i = 0; i < paramNames.length; i++)
+        {
+            ParamInfo info = new ParamInfo();
+            info.setAnnotations(annotations[i]);
+            info.setEntityClass(paramTypes[i]);
+            info.setPrefix(paramNames[i]);
+            dataBinders[i] = DataBinderFactory.build(info, new HashSet<Class<?>>());
+        }
+        return dataBinders;
+    }
+    
+    /**
+     * 获取方法的参数名称数组，如果没有注解则使用形参名称，如果有，则该参数采用注解的名称
+     * 
+     * @param method
+     * @return
+     */
+    private static String[] getParamNames(Method method)
+    {
+        String[] paramNames;
+        try
+        {
+            paramNames = AopUtil.getParamNames(method);
+        }
+        catch (Exception e)
+        {
+            paramNames = new String[method.getParameterCount()];
+        }
+        Annotation[][] annos = AnnotationUtil.getParameterAnnotations(method);
+        for (int i = 0; i < annos.length; i++)
+        {
+            if (annos[i].length == 0)
+            {
+                continue;
+            }
+            else
+            {
+                for (Annotation each : annos[i])
+                {
+                    if (each instanceof RequestParam)
+                    {
+                        paramNames[i] = ((RequestParam) each).value();
+                        break;
+                    }
+                }
+            }
+        }
+        return paramNames;
     }
 }

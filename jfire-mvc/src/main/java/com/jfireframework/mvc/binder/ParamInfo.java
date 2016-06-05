@@ -8,7 +8,7 @@ public class ParamInfo
     private String       prefix;
     private Type         entityClass;
     private Object       defaultValue;
-    private Annotation[] annotations;
+    private Annotation[] annotations = new Annotation[0];
     
     public Annotation[] getAnnotations()
     {

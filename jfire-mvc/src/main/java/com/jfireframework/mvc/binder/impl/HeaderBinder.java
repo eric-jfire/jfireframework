@@ -7,7 +7,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.mvc.annotation.RequestHeader;
-import com.jfireframework.mvc.binder.AbstractDataBinder;
 import com.jfireframework.mvc.binder.ParamInfo;
 
 public class HeaderBinder extends AbstractDataBinder

@@ -7,7 +7,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.mvc.annotation.CookieValue;
-import com.jfireframework.mvc.binder.AbstractDataBinder;
 import com.jfireframework.mvc.binder.ParamInfo;
 
 public class CookieBinder extends AbstractDataBinder

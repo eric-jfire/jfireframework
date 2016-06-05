@@ -5,7 +5,6 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.mvc.binder.AbstractDataBinder;
 import com.jfireframework.mvc.binder.ParamInfo;
 
 public class WBooleanBinder extends AbstractDataBinder
