@@ -3,6 +3,7 @@ package com.jfireframework.mvc.util;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import com.jfireframework.baseutil.StringUtil;
@@ -142,7 +143,7 @@ public class ActionFactory
             }
             
         }
-        interceptors.sort(AESC_COMPARATOR);
+        Collections.sort(interceptors, AESC_COMPARATOR);
         actionInfo.setInterceptors(interceptors.toArray(new ActionInterceptor[interceptors.size()]));
         return new Action(actionInfo);
     }
@@ -205,7 +206,7 @@ public class ActionFactory
     
     private static DataBinder[] generateBinders(Method method)
     {
-        if (method.getParameterCount() == 0)
+        if (method.getParameterTypes().length == 0)
         {
             return new DataBinder[0];
         }
@@ -239,7 +240,7 @@ public class ActionFactory
         }
         catch (Exception e)
         {
-            paramNames = new String[method.getParameterCount()];
+            paramNames = new String[method.getParameterTypes().length];
         }
         Annotation[][] annos = AnnotationUtil.getParameterAnnotations(method);
         for (int i = 0; i < annos.length; i++)
