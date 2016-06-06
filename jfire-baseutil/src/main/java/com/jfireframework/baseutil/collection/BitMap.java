@@ -4,6 +4,50 @@ public class BitMap
 {
     private long[] array = new long[] { 0 };
     
+    public BitMap()
+    {
+        
+    }
+    
+    public BitMap(long[] array)
+    {
+        this.array = array;
+    }
+    
+    public static BitMap valueOf(byte[] src)
+    {
+        int preLength = src.length >>> 3;
+        int wordLength = 0;
+        if ((src.length & 7) != 0)
+        {
+            wordLength += preLength + 1;
+        }
+        long[] array = new long[wordLength];
+        for (int i = 0; i < preLength; i++)
+        {
+            long tmp = 0l;
+            tmp |= ((long) (src[i * 8] & 0xff)) << 56;
+            tmp |= ((long) (src[i * 8 + 1] & 0xff)) << 48;
+            tmp |= ((long) (src[i * 8 + 2] & 0xff)) << 40;
+            tmp |= ((long) (src[i * 8 + 3] & 0xff)) << 32;
+            tmp |= ((long) (src[i * 8 + 4] & 0xff)) << 24;
+            tmp |= ((long) (src[i * 8 + 5] & 0xff)) << 16;
+            tmp |= ((long) (src[i * 8 + 6] & 0xff)) << 8;
+            tmp |= ((long) (src[i * 8 + 7] & 0xff));
+            array[i] = tmp;
+        }
+        if (preLength != wordLength)
+        {
+            long tmp = 0l;
+            for (int i = preLength * 8; i < src.length; i++)
+            {
+                tmp |= ((long) (src[i] & 0xff)) << (56 - ((i & 7) * 8));
+            }
+            array[wordLength - 1] = tmp;
+        }
+        return new BitMap(array);
+    }
+    
     public boolean get(int i)
     {
         int wordIndex = i >>> 6;
