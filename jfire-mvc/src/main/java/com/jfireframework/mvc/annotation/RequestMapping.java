@@ -14,7 +14,7 @@ import com.jfireframework.mvc.util.RequestMethod;
  * @author 林斌（windfire@zailanghua.com）
  * 
  */
-@Target(ElementType.METHOD)
+@Target({ ElementType.TYPE, ElementType.METHOD })
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RequestMapping

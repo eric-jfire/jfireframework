@@ -150,7 +150,7 @@ public class StringUtil
      */
     public static boolean isNotBlank(String src)
     {
-        if (src != null && src.trim().equals("") != true)
+        if (src != null && src.equals("") != true)
         {
             return true;
         }
