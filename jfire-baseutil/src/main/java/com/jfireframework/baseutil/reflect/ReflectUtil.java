@@ -122,7 +122,7 @@ public final class ReflectUtil
     public static Field[] getAllFields(Class<?> entityClass)
     {
         Set<Field> set = new TreeSet<Field>(FIELD_COMPARATOR);
-        while (entityClass != Object.class)
+        while (entityClass != Object.class && entityClass != null)
         {
             for (Field each : entityClass.getDeclaredFields())
             {
@@ -169,7 +169,7 @@ public final class ReflectUtil
     public static Method[] getAllMehtods(Class<?> entityClass)
     {
         Set<Method> set = new TreeSet<Method>(METHOD_COMPARATOR);
-        while (entityClass != Object.class)
+        while (entityClass != Object.class && entityClass != null)
         {
             for (Method each : entityClass.getDeclaredMethods())
             {
