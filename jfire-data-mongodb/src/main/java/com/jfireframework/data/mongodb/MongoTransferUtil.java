@@ -6,9 +6,11 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.Binary;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
@@ -21,6 +23,7 @@ import com.jfireframework.data.mongodb.TransferField.intField;
 import com.jfireframework.data.mongodb.TransferField.longField;
 import com.jfireframework.data.mongodb.TransferField.shortField;
 import com.jfireframework.data.mongodb.TransferField.stringField;
+import com.mongodb.client.model.Updates;
 import sun.misc.Unsafe;
 
 /**
@@ -108,6 +111,16 @@ public class MongoTransferUtil<T>
         }
         return target;
     }
+    
+    public Bson update(T target)
+    {
+        List<Bson> updates = new LinkedList<Bson>();
+        for (TransferField each : fields)
+        {
+            each.update(target, updates);
+        }
+        return Updates.combine(updates);
+    }
 }
 
 @SuppressWarnings("restriction")
@@ -133,6 +146,8 @@ abstract class TransferField
     
     public abstract void from(Object target, Document document);
     
+    public abstract void update(Object target, List<Bson> updates);
+    
     static class stringField extends TransferField
     {
         public stringField(Field field)
@@ -152,6 +167,16 @@ abstract class TransferField
         {
             String value = (String) unsafe.getObject(target, offset);
             document.append(name, value);
+        }
+        
+        @Override
+        public void update(Object target, List<Bson> updates)
+        {
+            String value = (String) unsafe.getObject(target, offset);
+            if (value != null)
+            {
+                updates.add(Updates.set(name, value));
+            }
         }
         
     }
@@ -196,6 +221,23 @@ abstract class TransferField
                 document.append(name, value);
             }
         }
+        
+        @Override
+        public void update(Object target, List<Bson> updates)
+        {
+            if (primitive)
+            {
+                updates.add(Updates.set(name, unsafe.getInt(target, offset)));
+            }
+            else
+            {
+                Integer value = (Integer) unsafe.getObject(target, offset);
+                if (value != null)
+                {
+                    updates.add(Updates.set(name, value));
+                }
+            }
+        }
     }
     
     static class booleanField extends TransferField
@@ -235,6 +277,23 @@ abstract class TransferField
             {
                 Boolean value = (Boolean) unsafe.getObject(target, offset);
                 document.append(name, value);
+            }
+        }
+        
+        @Override
+        public void update(Object target, List<Bson> updates)
+        {
+            if (primitive)
+            {
+                updates.add(Updates.set(name, unsafe.getBoolean(target, offset)));
+            }
+            else
+            {
+                Boolean value = (Boolean) unsafe.getObject(target, offset);
+                if (value != null)
+                {
+                    updates.add(Updates.set(name, value));
+                }
             }
         }
     }
@@ -278,6 +337,23 @@ abstract class TransferField
                 document.append(name, value);
             }
         }
+        
+        @Override
+        public void update(Object target, List<Bson> updates)
+        {
+            if (primitive)
+            {
+                updates.add(Updates.set(name, unsafe.getLong(target, offset)));
+            }
+            else
+            {
+                Long value = (Long) unsafe.getObject(target, offset);
+                if (value != null)
+                {
+                    updates.add(Updates.set(name, value));
+                }
+            }
+        }
     }
     
     static class shortField extends TransferField
@@ -317,6 +393,23 @@ abstract class TransferField
             {
                 Short value = (Short) unsafe.getObject(target, offset);
                 document.append(name, value);
+            }
+        }
+        
+        @Override
+        public void update(Object target, List<Bson> updates)
+        {
+            if (primitive)
+            {
+                updates.add(Updates.set(name, unsafe.getShort(target, offset)));
+            }
+            else
+            {
+                Short value = (Short) unsafe.getObject(target, offset);
+                if (value != null)
+                {
+                    updates.add(Updates.set(name, value));
+                }
             }
         }
     }
@@ -360,6 +453,23 @@ abstract class TransferField
                 document.append(name, value);
             }
         }
+        
+        @Override
+        public void update(Object target, List<Bson> updates)
+        {
+            if (primitive)
+            {
+                updates.add(Updates.set(name, unsafe.getFloat(target, offset)));
+            }
+            else
+            {
+                Float value = (Float) unsafe.getObject(target, offset);
+                if (value != null)
+                {
+                    updates.add(Updates.set(name, value));
+                }
+            }
+        }
     }
     
     static class bytesField extends TransferField
@@ -385,6 +495,13 @@ abstract class TransferField
         {
             byte[] src = (byte[]) unsafe.getObject(target, offset);
             document.append(name, src);
+        }
+        
+        @Override
+        public void update(Object target, List<Bson> updates)
+        {
+            byte[] src = (byte[]) unsafe.getObject(target, offset);
+            updates.add(Updates.set(name, src));
         }
         
     }
@@ -426,6 +543,23 @@ abstract class TransferField
                 document.append(name, unsafe.getObject(target, offset));
             }
         }
+        
+        @Override
+        public void update(Object target, List<Bson> updates)
+        {
+            if (primitive)
+            {
+                updates.add(Updates.set(name, unsafe.getDouble(target, offset)));
+            }
+            else
+            {
+                Double value = (Double) unsafe.getDouble(target, offset);
+                if (value != null)
+                {
+                    updates.add(Updates.set(name, value));
+                }
+            }
+        }
     }
     
     static class dateField extends TransferField
@@ -446,6 +580,16 @@ abstract class TransferField
         public void from(Object target, Document document)
         {
             document.append(name, unsafe.getObject(target, offset));
+        }
+        
+        @Override
+        public void update(Object target, List<Bson> updates)
+        {
+            Date date = (Date) unsafe.getObject(target, offset);
+            if (date != null)
+            {
+                updates.add(Updates.set(name, date));
+            }
         }
         
     }

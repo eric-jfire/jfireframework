@@ -66,7 +66,7 @@ public class DataBinderFactory
             constructorMap.put(Map.class, ParamMapBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(ServletContext.class, ServletContextBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(String.class, StringBinder.class.getConstructor(ParamInfo.class, Set.class));
-            constructorMap.put(UploadBinder.class, UploadBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(UploadItem.class, UploadBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(Boolean.class, WBooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(Double.class, WDoubleBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(Float.class, WFloatBinder.class.getConstructor(ParamInfo.class, Set.class));
