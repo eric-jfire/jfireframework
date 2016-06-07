@@ -11,8 +11,7 @@ public class StringWriter extends WriterAdapter implements WrapperWriter
     {
         String value = (String) field;
         value = value.replace("\"", "\\\"");
-        value = value.replace("\r", "\\r");
-        value = value.replace("\n", "\\n");
+        value = value.replace("\r\n", "\\r\\n");
         value = value.replace("\\", "\\\\");// 对斜线的转义
         cache.append('\"').append((String) field).append('\"');
     }
