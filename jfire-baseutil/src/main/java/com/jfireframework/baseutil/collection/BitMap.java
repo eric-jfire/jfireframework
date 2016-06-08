@@ -165,4 +165,45 @@ public class BitMap
         return max;
     }
     
+    public void shrink()
+    {
+        int index = array.length - 1;
+        while (index > -1)
+        {
+            if (array[index] != 0)
+            {
+                break;
+            }
+            index -= 1;
+        }
+        if (index != array.length - 1)
+        {
+            long[] tmp = new long[index + 1];
+            System.arraycopy(array, 0, tmp, 0, tmp.length);
+            array = tmp;
+        }
+        else
+        {
+            ;
+        }
+    }
+    
+    public byte[] toBytes()
+    {
+        shrink();
+        byte[] src = new byte[array.length * 8];
+        for (int i = 0; i < array.length; i++)
+        {
+            long value = array[i];
+            src[i * 8] = (byte) ((value >>> 56) & 0xffl);
+            src[i * 8 + 1] = (byte) ((value >>> 48) & 0xffl);
+            src[i * 8 + 2] = (byte) ((value >>> 40) & 0xffl);
+            src[i * 8 + 3] = (byte) ((value >>> 32) & 0xffl);
+            src[i * 8 + 4] = (byte) ((value >>> 24) & 0xffl);
+            src[i * 8 + 5] = (byte) ((value >>> 16) & 0xffl);
+            src[i * 8 + 6] = (byte) ((value >>> 8) & 0xffl);
+            src[i * 8 + 7] = (byte) ((value) & 0xffl);
+        }
+        return src;
+    }
 }
