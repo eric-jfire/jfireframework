@@ -111,7 +111,11 @@ public class MongoTransferUtil<T>
         }
         return target;
     }
-    
+    /**
+     * 根据对象的各个属性值，构建一个更新的bson。
+     * @param target
+     * @return
+     */
     public Bson update(T target)
     {
         List<Bson> updates = new LinkedList<Bson>();
