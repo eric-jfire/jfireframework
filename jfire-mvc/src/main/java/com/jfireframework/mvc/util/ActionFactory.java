@@ -80,6 +80,10 @@ public class ActionFactory
                 }
                 else
                 {
+                    requestPath += "/" + method.getName();
+                }
+                if (requestPath.indexOf("{") == -1)
+                {
                     for (DataBinder each : actionInfo.getDataBinders())
                     {
                         if (

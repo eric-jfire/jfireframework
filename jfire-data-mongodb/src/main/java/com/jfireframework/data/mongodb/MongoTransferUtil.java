@@ -12,6 +12,7 @@ import java.util.Map;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
+import org.bson.types.ObjectId;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.data.mongodb.TransferField.booleanField;
@@ -112,6 +113,12 @@ public class MongoTransferUtil<T>
         return target;
     }
     
+    /**
+     * 根据对象的各个属性值，构建一个更新的bson。
+     * 
+     * @param target
+     * @return
+     */
     public Bson update(T target)
     {
         List<Bson> updates = new LinkedList<Bson>();
@@ -150,23 +157,57 @@ abstract class TransferField
     
     static class stringField extends TransferField
     {
+        private final boolean isId;
+        private final String  idName;
+        
         public stringField(Field field)
         {
             super(field);
+            if (field.isAnnotationPresent(MongoId.class))
+            {
+                isId = true;
+                idName = field.getAnnotation(MongoId.class).value();
+            }
+            else
+            {
+                isId = false;
+                idName = null;
+            }
         }
         
         @Override
         public void transfer(Document document, Object target)
         {
-            String value = document.getString(name);
-            unsafe.putObject(target, offset, value);
+            if (isId)
+            {
+                ObjectId objectId = document.getObjectId(idName);
+                if (objectId != null)
+                {
+                    unsafe.putObject(target, offset, objectId.toHexString());
+                }
+            }
+            else
+            {
+                String value = document.getString(name);
+                unsafe.putObject(target, offset, value);
+            }
         }
         
         @Override
         public void from(Object target, Document document)
         {
             String value = (String) unsafe.getObject(target, offset);
-            document.append(name, value);
+            if (isId)
+            {
+                if (value != null)
+                {
+                    document.append(idName, new ObjectId(value));
+                }
+            }
+            else
+            {
+                document.append(name, value);
+            }
         }
         
         @Override
