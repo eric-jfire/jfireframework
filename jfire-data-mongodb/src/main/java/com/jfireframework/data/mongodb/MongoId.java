@@ -11,5 +11,10 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface MongoId
 {
-    
+    /**
+     * mongodb中的id名称,默认为_id
+     * 
+     * @return
+     */
+    public String value() default "_id";
 }
