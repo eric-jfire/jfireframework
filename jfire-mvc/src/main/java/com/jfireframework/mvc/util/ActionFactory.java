@@ -20,6 +20,8 @@ import com.jfireframework.mvc.annotation.RequestParam;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.binder.DataBinderFactory;
 import com.jfireframework.mvc.binder.ParamInfo;
+import com.jfireframework.mvc.binder.impl.CookieBinder;
+import com.jfireframework.mvc.binder.impl.HeaderBinder;
 import com.jfireframework.mvc.binder.impl.HttpRequestBinder;
 import com.jfireframework.mvc.binder.impl.HttpResponseBinder;
 import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
@@ -78,17 +80,15 @@ public class ActionFactory
                 }
                 else
                 {
-                    requestPath += "/" + method.getName();
-                }
-                if (requestPath.indexOf("{") == -1)
-                {
                     for (DataBinder each : actionInfo.getDataBinders())
                     {
                         if (
                             each instanceof HttpSessionBinder //
                                     || each instanceof HttpRequestBinder //
                                     || each instanceof HttpResponseBinder //
-                                    || each instanceof ServletContextBinder
+                                    || each instanceof ServletContextBinder //
+                                    || each instanceof CookieBinder //
+                                    || each instanceof HeaderBinder
                         )
                         {
                             continue;
