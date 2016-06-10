@@ -201,7 +201,7 @@ public class Bean
         }
         catch (Exception e)
         {
-            throw new UnSupportException(StringUtil.format("初始化bean实例错误，实例名称:{},对象类名:{}", beanName, type.getName(), e));
+            throw new UnSupportException(StringUtil.format("初始化bean实例错误，实例名称:{},对象类名:{}", beanName, type.getName()), e);
         }
     }
     
