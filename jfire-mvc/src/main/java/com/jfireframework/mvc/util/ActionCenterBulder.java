@@ -27,6 +27,7 @@ import com.jfireframework.mvc.viewrender.RenderFactory;
 
 public class ActionCenterBulder
 {
+    
     public static ActionCenter generate(JsonObject config, ServletContext servletContext, RenderFactory renderFactory)
     {
         boolean devMode = config.containsKey("devMode") ? config.getBoolean("devMode") : false;
@@ -41,6 +42,7 @@ public class ActionCenterBulder
             HotswapClassLoader classLoader = new HotswapClassLoader();
             classLoader.setReloadPackages(reloadPackages);
             classLoader.setReloadPaths(reloadPaths);
+            jfireContext.addSingletonEntity(classLoader.getClass().getName(), classLoader);
             jfireContext.setClassLoader(classLoader);
         }
         AopUtil.initClassPool();

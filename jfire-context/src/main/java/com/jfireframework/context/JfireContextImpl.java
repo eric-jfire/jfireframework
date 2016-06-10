@@ -8,6 +8,8 @@ import java.lang.annotation.Annotation;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 import com.jfireframework.baseutil.PackageScan;
@@ -303,7 +305,7 @@ public class JfireContextImpl implements JfireContext
         {
             initContext();
         }
-        LightSet<Bean> beans = new LightSet<Bean>();
+        List<Bean> beans = new LinkedList<Bean>();
         for (Bean each : beanNameMap.values())
         {
             if (AnnotationUtil.isPresent(annotationType, each.getOriginType()))
@@ -311,7 +313,7 @@ public class JfireContextImpl implements JfireContext
                 beans.add(each);
             }
         }
-        return beans.toArray(Bean.class);
+        return beans.toArray(new Bean[beans.size()]);
     }
     
     @Override

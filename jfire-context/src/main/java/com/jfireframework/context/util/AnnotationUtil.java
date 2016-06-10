@@ -10,26 +10,39 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 
 public class AnnotationUtil
 {
-    private static final Map<Annotation, AliasAnno> aliasMap = new HashMap<Annotation, AnnotationUtil.AliasAnno>();
+    private static final Map<Annotation, AliasAnno> aliasMap = new ConcurrentHashMap<Annotation, AnnotationUtil.AliasAnno>();
     
     public static boolean isPresent(Class<? extends Annotation> annoType, Field field)
     {
+        if (field.isAnnotationPresent(annoType))
+        {
+            return true;
+        }
         return getAnnotation(annoType, field) != null;
     }
     
     public static boolean isPresent(Class<? extends Annotation> annoType, Class<?> target)
     {
+        if (target.isAnnotationPresent(annoType))
+        {
+            return true;
+        }
         return getAnnotation(annoType, target) != null;
     }
     
     public static boolean isPresent(Class<? extends Annotation> annoType, Method method)
     {
+        if (method.isAnnotationPresent(annoType))
+        {
+            return true;
+        }
         return getAnnotation(annoType, method) != null;
     }
     
