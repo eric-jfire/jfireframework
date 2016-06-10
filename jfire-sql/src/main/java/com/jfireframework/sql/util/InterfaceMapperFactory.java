@@ -175,7 +175,7 @@ public class InterfaceMapperFactory
         }
         else
         {
-            String[] sqlAndParam = DynamicSqlTool.analyseFormatSql(query.sql(), query.paramNames().split(","), method.getParameterTypes(), isPage);
+            String[] sqlAndParam = DynamicSqlTool.analyseFormatSql(query.sql(), query.paramNames().split(","), method.getParameterTypes(), isPage, query.countSql().equals("") ? null : query.countSql());
             querySql = sqlAndParam[0];
             queryParam = sqlAndParam[1];
             countSql = sqlAndParam[2];
@@ -309,7 +309,7 @@ public class InterfaceMapperFactory
         }
         else
         {
-            String[] sqlAndParam = DynamicSqlTool.analyseFormatSql(update.sql(), update.paramNames().split(","), method.getParameterTypes(), false);
+            String[] sqlAndParam = DynamicSqlTool.analyseFormatSql(update.sql(), update.paramNames().split(","), method.getParameterTypes(), false, null);
             sql = sqlAndParam[0];
             param = sqlAndParam[1];
         }

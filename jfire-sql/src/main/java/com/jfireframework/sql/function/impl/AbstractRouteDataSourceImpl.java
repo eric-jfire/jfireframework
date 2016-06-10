@@ -3,10 +3,8 @@ package com.jfireframework.sql.function.impl;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 import javax.sql.DataSource;
 
 public abstract class AbstractRouteDataSourceImpl implements DataSource
@@ -55,12 +53,6 @@ public abstract class AbstractRouteDataSourceImpl implements DataSource
     public int getLoginTimeout() throws SQLException
     {
         return sourceMap.get(decideDataSource()).getLoginTimeout();
-    }
-    
-    @Override
-    public Logger getParentLogger() throws SQLFeatureNotSupportedException
-    {
-        return sourceMap.get(decideDataSource()).getParentLogger();
     }
     
     @Override

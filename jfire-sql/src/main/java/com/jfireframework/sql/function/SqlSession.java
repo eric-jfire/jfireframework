@@ -10,9 +10,9 @@ import com.jfireframework.sql.function.sqloperation.UpdateOperator;
  * 代表一个connection链接，提供各种dao操作入口
  * 
  * @author eric
- *         
+ * 
  */
-public interface SqlSession extends AutoCloseable, GetOperator, SaveOperator, UpdateOperator, SqlOperator
+public interface SqlSession extends GetOperator, SaveOperator, UpdateOperator, SqlOperator
 {
     
     /**

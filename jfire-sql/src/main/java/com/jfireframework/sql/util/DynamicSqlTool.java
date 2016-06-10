@@ -542,7 +542,7 @@ public class DynamicSqlTool
      * @throws SecurityException
      * @throws NoSuchFieldException
      */
-    public static String[] analyseFormatSql(String originalSql, String[] paramNames, Class<?>[] paramTypes, boolean isPage) throws NoSuchFieldException, SecurityException
+    public static String[] analyseFormatSql(String originalSql, String[] paramNames, Class<?>[] paramTypes, boolean isPage, String annoCountSql) throws NoSuchFieldException, SecurityException
     {
         String querySql, queryParam, countSql = null, countParam = null;
         List<String> variateNames = new ArrayList<String>();
@@ -553,7 +553,14 @@ public class DynamicSqlTool
             if (MysqlPage.class == paramTypes[paramTypes.length - 1])
             {
                 int index = formatSql.indexOf("from");
-                countSql = "select count(*) " + formatSql.substring(index);
+                if (annoCountSql == null)
+                {
+                    countSql = "select count(*) " + formatSql.substring(index);
+                }
+                else
+                {
+                    countSql = annoCountSql;
+                }
                 countParam = buildParams(formatSql, variateNames.toArray(new String[0]), paramNames, paramTypes);
                 String pageParamName = paramNames[paramNames.length - 1];
                 variateNames.add(pageParamName + ".start");
