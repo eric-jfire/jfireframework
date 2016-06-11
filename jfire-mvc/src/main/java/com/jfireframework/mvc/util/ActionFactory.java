@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.uniqueid.SummerId;
@@ -27,6 +28,7 @@ import com.jfireframework.mvc.binder.impl.HttpRequestBinder;
 import com.jfireframework.mvc.binder.impl.HttpResponseBinder;
 import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
 import com.jfireframework.mvc.binder.impl.ServletContextBinder;
+import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.core.Action;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.rest.RestfulUrlTool;
@@ -53,6 +55,10 @@ public class ActionFactory
         actionInfo.setDataBinders(generateBinders(method));
         actionInfo.setReadStream(requestMapping.readStream());
         actionInfo.setEntity(bean.getInstance());
+        if (requestMapping.resultType() == ResultType.Class_Head)
+        {
+            throw new UnSupportException(StringUtil.format("需要明确指定方法的返回类型，请检查{}.{}", method.getDeclaringClass().getName(), method.getName()));
+        }
         actionInfo.setResultType(requestMapping.resultType());
         actionInfo.setContentType(requestMapping.contentType());
         actionInfo.setToken(requestMapping.token());
