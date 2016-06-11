@@ -5,6 +5,7 @@ import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.rest.RestfulRule;
+import com.jfireframework.mvc.viewrender.ViewRender;
 import sun.reflect.MethodAccessor;
 
 @SuppressWarnings("restriction")
@@ -24,6 +25,17 @@ public class ActionInfo
     private MethodAccessor      methodAccessor;
     private ActionInterceptor[] interceptors;
     private String              token;
+    private ViewRender          viewRender;
+    
+    public ViewRender getViewRender()
+    {
+        return viewRender;
+    }
+    
+    public void setViewRender(ViewRender viewRender)
+    {
+        this.viewRender = viewRender;
+    }
     
     public String getToken()
     {

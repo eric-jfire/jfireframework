@@ -19,9 +19,6 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.beetl.core.Configuration;
-import org.beetl.core.GroupTemplate;
-import org.beetl.core.resource.WebAppResourceLoader;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -29,11 +26,7 @@ import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.codejson.JsonObject;
 import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.mvc.config.MvcStaticConfig;
-import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.util.ActionCenterBulder;
-import com.jfireframework.mvc.util.BeetlRender;
-import com.jfireframework.mvc.viewrender.RenderFactory;
-import com.jfireframework.mvc.viewrender.ViewRender;
 
 public class DispathServletHelper
 {
@@ -44,7 +37,6 @@ public class DispathServletHelper
     private final JsonObject        config;
     private final WatchService      watcher;
     private final boolean           devMode;
-    private final RenderFactory     renderFactory;
     private final String            encode;
     
     public DispathServletHelper(ServletConfig servletConfig)
@@ -53,28 +45,17 @@ public class DispathServletHelper
         staticResourceDispatcher = getStaticResourceDispatcher();
         config = readConfigFile();
         encode = config.getWString("encode") == null ? "UTF8" : config.getWString("encode");
-        Charset charset = Charset.forName(encode);
-        try
-        {
-            WebAppResourceLoader loader = new WebAppResourceLoader();
-            Configuration configuration = Configuration.defaultConfiguration();
-            renderFactory = new RenderFactory(charset, new BeetlRender(new GroupTemplate(loader, configuration)));
-        }
-        catch (IOException e)
-        {
-            throw new JustThrowException(e);
-        }
         devMode = config.contains("devMode") ? config.getBoolean("devMode") : false;
         if (devMode)
         {
-            String[] reloadPaths = config.getJsonArray("reloadPaths").toArray(new String[0]);
-            watcher = generatorWatcher(reloadPaths);
-            actionCenter = ActionCenterBulder.generate(config, servletContext, renderFactory);
+            String reloadPath = config.getWString("reloadPath");
+            watcher = generatorWatcher(reloadPath);
+            actionCenter = ActionCenterBulder.generate(config, servletContext, encode);
         }
         else
         {
             watcher = null;
-            actionCenter = ActionCenterBulder.generate(config, servletContext, renderFactory);
+            actionCenter = ActionCenterBulder.generate(config, servletContext, encode);
         }
         
     }
@@ -116,25 +97,21 @@ public class DispathServletHelper
         return requestDispatcher;
     }
     
-    private WatchService generatorWatcher(String... reloadPaths)
+    private WatchService generatorWatcher(String reloadPath)
     {
         try
         {
             WatchService watcher = FileSystems.getDefault().newWatchService();
-            for (String each : reloadPaths)
+            Set<File> dirs = new HashSet<File>();
+            getChildDirs(new File(reloadPath), dirs);
+            Set<Path> paths = new HashSet<Path>();
+            for (File file : dirs)
             {
-                
-                Set<File> dirs = new HashSet<File>();
-                getChildDirs(new File(each), dirs);
-                Set<Path> paths = new HashSet<Path>();
-                for (File file : dirs)
-                {
-                    paths.add(Paths.get(file.getAbsolutePath()));
-                }
-                for (Path path : paths)
-                {
-                    path.register(watcher, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
-                }
+                paths.add(Paths.get(file.getAbsolutePath()));
+            }
+            for (Path path : paths)
+            {
+                path.register(watcher, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
             }
             return watcher;
         }
@@ -164,11 +141,6 @@ public class DispathServletHelper
     public Action getAction(HttpServletRequest request)
     {
         return actionCenter.getAction(request);
-    }
-    
-    public ViewRender getViewRender(ResultType resultType)
-    {
-        return renderFactory.getViewRender(resultType);
     }
     
     public void handleStaticResourceRequest(HttpServletRequest request, HttpServletResponse response)
@@ -204,7 +176,7 @@ public class DispathServletHelper
                     try
                     {
                         long t0 = System.currentTimeMillis();
-                        actionCenter = ActionCenterBulder.generate(config, servletContext, renderFactory);
+                        actionCenter = ActionCenterBulder.generate(config, servletContext, encode);
                         logger.debug("热部署,耗时:{}", System.currentTimeMillis() - t0);
                         if (!key.reset())
                         {

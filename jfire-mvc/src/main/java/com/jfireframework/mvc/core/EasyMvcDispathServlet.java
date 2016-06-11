@@ -12,9 +12,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.mvc.interceptor.ActionInterceptor;
-import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
-import com.jfireframework.mvc.viewrender.ViewRender;
 
 /**
  * 充当路径分发器的类，用来根据地址规则转发数据请求
@@ -58,18 +55,7 @@ public class EasyMvcDispathServlet extends HttpServlet
         }
         try
         {
-            for (ActionInterceptor each : action.getInterceptors())
-            {
-                if (each.interceptor(request, response, action) == false)
-                {
-                    logger.debug("发生异常{}", each.getClass().getName());
-                    return;
-                }
-            }
-            response.setContentType(action.getContentType());
-            Object result = action.invoke((Object[]) request.getAttribute(DataBinderInterceptor.DATABINDERKEY));
-            ViewRender viewRender = helper.getViewRender(action.getResultType());
-            viewRender.render(request, response, result);
+            action.render(request, response);
         }
         catch (Throwable e)
         {

@@ -32,6 +32,7 @@ import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.core.Action;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.rest.RestfulUrlTool;
+import com.jfireframework.mvc.viewrender.RenderFactory;
 
 public class ActionFactory
 {
@@ -46,7 +47,7 @@ public class ActionFactory
      * @param rootRequestPath 顶级请求路径，实际的请求路径为顶级请求路径/方法请求路径
      * @param beanContext
      */
-    public static Action buildAction(Method method, String requestPath, Bean bean, JfireContext jfireContext)
+    public static Action buildAction(Method method, String requestPath, Bean bean, JfireContext jfireContext,RenderFactory renderFactory)
     {
         ActionInfo actionInfo = new ActionInfo();
         actionInfo.setMethod(method);
@@ -60,6 +61,7 @@ public class ActionFactory
             throw new UnSupportException(StringUtil.format("需要明确指定方法的返回类型，请检查{}.{}", method.getDeclaringClass().getName(), method.getName()));
         }
         actionInfo.setResultType(requestMapping.resultType());
+        actionInfo.setViewRender(renderFactory.getViewRender(actionInfo.getResultType()));
         actionInfo.setContentType(requestMapping.contentType());
         actionInfo.setToken(requestMapping.token());
         if (actionInfo.getToken().equals(""))

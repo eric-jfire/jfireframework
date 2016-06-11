@@ -1,15 +1,19 @@
 package com.jfireframework.mvc.core;
 
 import java.lang.reflect.Method;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
+import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
 import com.jfireframework.mvc.rest.RestfulRule;
 import com.jfireframework.mvc.util.ActionInfo;
 import com.jfireframework.mvc.util.ContentType;
 import com.jfireframework.mvc.util.RequestMethod;
+import com.jfireframework.mvc.viewrender.ViewRender;
 import sun.reflect.MethodAccessor;
 
 /**
@@ -37,9 +41,11 @@ public class Action
     private final ResultType          resultType;
     private final ActionInterceptor[] interceptors;
     private final String              token;
+    private final ViewRender          viewRender;
     
     public Action(ActionInfo info)
     {
+        viewRender = info.getViewRender();
         actionEntity = info.getEntity();
         dataBinders = info.getDataBinders();
         methodAccessor = info.getMethodAccessor();
@@ -92,13 +98,21 @@ public class Action
         interceptors = info.getInterceptors();
     }
     
-    public Object invoke(Object[] params)
+    public void render(HttpServletRequest request, HttpServletResponse response)
     {
+        for (ActionInterceptor each : interceptors)
+        {
+            if (each.interceptor(request, response, this) == false)
+            {
+                return;
+            }
+        }
         try
         {
-            return methodAccessor.invoke(actionEntity, params);
+            response.setContentType(contentType);
+            viewRender.render(request, response, methodAccessor.invoke(actionEntity, (Object[]) request.getAttribute(DataBinderInterceptor.DATABINDERKEY)));
         }
-        catch (Exception e)
+        catch (Throwable e)
         {
             throw new JustThrowException(e);
         }
@@ -162,6 +176,11 @@ public class Action
     public ActionInterceptor[] getInterceptors()
     {
         return interceptors;
+    }
+    
+    public ViewRender getViewRender()
+    {
+        return viewRender;
     }
     
     public String getToken()
