@@ -21,59 +21,25 @@ public class CopyUtilImpl<T, D> implements CopyUtil<T, D>
             fieldMap.put(each.getName(), each);
         }
         List<CopyField> copyFields = new ArrayList<CopyField>();
-        for (Field each : desFields)
+        for (Field desField : desFields)
         {
-            if (Modifier.isStatic(each.getModifiers()) || Modifier.isFinal(each.getModifiers()))
+            if (Modifier.isStatic(desField.getModifiers()) //
+                    || Modifier.isFinal(desField.getModifiers()) //
+                    || desField.isAnnotationPresent(CopyIgnore.class))
             {
                 continue;
             }
-            if (fieldMap.containsKey(each.getName()))
+            String copyName = desField.getName();
+            if (desField.isAnnotationPresent(CopyName.class))
             {
-                Field srcField = fieldMap.get(each.getName());
-                if (srcField.getType() == each.getType())
+                copyName = desField.getAnnotation(CopyName.class).value();
+            }
+            if (fieldMap.containsKey(copyName))
+            {
+                Field srcField = fieldMap.get(copyName);
+                if (srcField.getType() == desField.getType())
                 {
-                    if (srcField.getType() == int.class)
-                    {
-                        copyFields.add(new CopyField.IntField(srcField, each));
-                        continue;
-                    }
-                    if (srcField.getType() == byte.class)
-                    {
-                        copyFields.add(new CopyField.ByteField(srcField, each));
-                        continue;
-                    }
-                    if (srcField.getType() == long.class)
-                    {
-                        copyFields.add(new CopyField.LongField(srcField, each));
-                        continue;
-                    }
-                    if (srcField.getType() == short.class)
-                    {
-                        copyFields.add(new CopyField.ShortField(srcField, each));
-                        continue;
-                    }
-                    if (srcField.getType() == boolean.class)
-                    {
-                        copyFields.add(new CopyField.BooleanField(srcField, each));
-                        continue;
-                    }
-                    if (srcField.getType() == double.class)
-                    {
-                        copyFields.add(new CopyField.DoubleField(srcField, each));
-                        continue;
-                    }
-                    if (srcField.getType() == float.class)
-                    {
-                        copyFields.add(new CopyField.FloatField(srcField, each));
-                        continue;
-                    }
-                    if (srcField.getType() == char.class)
-                    {
-                        copyFields.add(new CopyField.CharField(srcField, each));
-                        continue;
-                    }
-                    copyFields.add(new CopyField.ObjectField(srcField, each));
-                    continue;
+                    copyFields.add(CopyField.build(srcField, desField));
                 }
             }
         }

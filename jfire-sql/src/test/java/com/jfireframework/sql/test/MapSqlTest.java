@@ -12,8 +12,8 @@ public class MapSqlTest
     public void test()
     {
         Set<String> set = new HashSet<String>();
-        set.add("link.jfire.orm.entity.User");
-        set.add("link.jfire.orm.entity.Home");
+        set.add("com.jfireframework.sql.test.entity.User");
+        set.add("com.jfireframework.sql.test.entity.Home");
         MapBeanFactory.build(set, null);
         // String sql = "select * from User where name='sdada'";
         // String result = DynamicSqlTool.transMapSql(sql);

@@ -18,7 +18,49 @@ public abstract class CopyField
     
     public abstract void copy(Object src, Object des);
     
-    public static class IntField extends CopyField
+    public static CopyField build(Field srcField, Field desField)
+    {
+        Class<?> type = srcField.getType();
+        if (type == int.class)
+        {
+            return new IntField(srcField, desField);
+        }
+        else if (type == long.class)
+        {
+            return new LongField(srcField, desField);
+        }
+        else if (type == boolean.class)
+        {
+            return new BooleanField(srcField, desField);
+        }
+        else if (type == float.class)
+        {
+            return new FloatField(srcField, desField);
+        }
+        else if (type == double.class)
+        {
+            return new DoubleField(srcField, desField);
+        }
+        else if (type == short.class)
+        {
+            return new ShortField(srcField, desField);
+        }
+        else if (type == byte.class)
+        {
+            return new ByteField(srcField, desField);
+        }
+        else if (type == char.class)
+        {
+            return new CharField(srcField, desField);
+        }
+        else
+        {
+            return new ObjectField(srcField, desField);
+        }
+        
+    }
+    
+    static class IntField extends CopyField
     {
         
         public IntField(Field srcField, Field desField)
@@ -34,7 +76,7 @@ public abstract class CopyField
         
     }
     
-    public static class LongField extends CopyField
+    static class LongField extends CopyField
     {
         
         public LongField(Field srcField, Field desField)
@@ -50,7 +92,7 @@ public abstract class CopyField
         
     }
     
-    public static class ShortField extends CopyField
+    static class ShortField extends CopyField
     {
         
         public ShortField(Field srcField, Field desField)
@@ -66,7 +108,7 @@ public abstract class CopyField
         
     }
     
-    public static class ByteField extends CopyField
+    static class ByteField extends CopyField
     {
         
         public ByteField(Field srcField, Field desField)
@@ -81,7 +123,7 @@ public abstract class CopyField
         }
     }
     
-    public static class BooleanField extends CopyField
+    static class BooleanField extends CopyField
     {
         
         public BooleanField(Field srcField, Field desField)
@@ -97,7 +139,7 @@ public abstract class CopyField
         
     }
     
-    public static class FloatField extends CopyField
+    static class FloatField extends CopyField
     {
         
         public FloatField(Field srcField, Field desField)
@@ -113,7 +155,7 @@ public abstract class CopyField
         
     }
     
-    public static class CharField extends CopyField
+    static class CharField extends CopyField
     {
         
         public CharField(Field srcField, Field desField)
@@ -129,7 +171,7 @@ public abstract class CopyField
         
     }
     
-    public static class DoubleField extends CopyField
+    static class DoubleField extends CopyField
     {
         
         public DoubleField(Field srcField, Field desField)
@@ -145,7 +187,7 @@ public abstract class CopyField
         
     }
     
-    public static class ObjectField extends CopyField
+    static class ObjectField extends CopyField
     {
         
         public ObjectField(Field srcField, Field desField)

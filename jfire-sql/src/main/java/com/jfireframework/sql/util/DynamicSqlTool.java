@@ -201,8 +201,8 @@ public class DynamicSqlTool
                 }
                 context += bk + "builder.append(\" limit ?,?\");\n";
                 context += bk + "Object[] countParam = list.toArray();\n";
-                context += bk + "list.add(($w)((com.jfireframework.sql.page.Page)$" + paramNames.length + ").getStart());\n";
-                context += bk + "list.add(($w)((com.jfireframework.sql.page.Page)$" + paramNames.length + ").getPageSize());\n";
+                context += bk + "list.add(($w)((com.jfireframework.sql.page.Page)$" + paramTypes.length + ").getStart());\n";
+                context += bk + "list.add(($w)((com.jfireframework.sql.page.Page)$" + paramTypes.length + ").getPageSize());\n";
                 return context;
             }
             else
@@ -552,9 +552,9 @@ public class DynamicSqlTool
         {
             if (MysqlPage.class == paramTypes[paramTypes.length - 1])
             {
-                int index = formatSql.indexOf("from");
                 if (annoCountSql == null)
                 {
+                    int index = formatSql.indexOf("from");
                     countSql = "select count(*) " + formatSql.substring(index);
                 }
                 else
@@ -562,12 +562,15 @@ public class DynamicSqlTool
                     countSql = annoCountSql;
                 }
                 countParam = buildParams(formatSql, variateNames.toArray(new String[0]), paramNames, paramTypes);
-                String pageParamName = paramNames[paramNames.length - 1];
+                String pageParamName = "page_" + System.currentTimeMillis();
                 variateNames.add(pageParamName + ".start");
                 variateNames.add(pageParamName + ".pageSize");
                 formatSql += " limit ?,?";
                 querySql = formatSql;
-                queryParam = buildParams(formatSql, variateNames.toArray(new String[0]), paramNames, paramTypes);
+                String[] newParamNames = new String[paramTypes.length];
+                System.arraycopy(paramNames, 0, newParamNames, 0, paramTypes.length);
+                newParamNames[newParamNames.length - 1] = pageParamName;
+                queryParam = buildParams(formatSql, variateNames.toArray(new String[0]), newParamNames, paramTypes);
             }
             else
             {

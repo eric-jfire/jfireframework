@@ -11,7 +11,7 @@ import sun.misc.Unsafe;
  * 基础CURD操作映射的抽象属性类
  * 
  * @author linbin
- *         
+ * 
  */
 @SuppressWarnings("restriction")
 public abstract class AbstractMapField implements MapField
@@ -22,27 +22,22 @@ public abstract class AbstractMapField implements MapField
     protected boolean       saveIgnore = false;
     protected Field         field;
     protected int           length;
-                            
+    
     public AbstractMapField(Field field)
     {
         offset = unsafe.objectFieldOffset(field);
         this.field = field;
         dbColName = field.getName();
-        if (field.isAnnotationPresent(Column.class) && StringUtil.isNotBlank(field.getAnnotation(Column.class).name()))
-        {
-            dbColName = field.getAnnotation(Column.class).name();
-        }
+        length = -1;
         if (field.isAnnotationPresent(Column.class))
         {
+            Column column = field.getAnnotation(Column.class);
+            if (StringUtil.isNotBlank(column.name()))
+            {
+                dbColName = field.getAnnotation(Column.class).name();
+            }
             saveIgnore = field.getAnnotation(Column.class).saveIgnore();
-        }
-        if (field.isAnnotationPresent(Column.class))
-        {
             length = field.getAnnotation(Column.class).length();
-        }
-        else
-        {
-            length = -1;
         }
     }
     

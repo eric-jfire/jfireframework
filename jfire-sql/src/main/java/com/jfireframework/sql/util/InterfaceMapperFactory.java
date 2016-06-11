@@ -257,7 +257,6 @@ public class InterfaceMapperFactory
             if (isDynamicSql)
             {
                 methodBody.append("\tint total = ((Integer)session.baseQuery(int.class,countSql,countParam)).intValue();\n");
-                
             }
             else
             {

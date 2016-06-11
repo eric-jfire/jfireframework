@@ -26,12 +26,12 @@ import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.field.MapField;
+import com.jfireframework.sql.field.MapFieldBuilder;
 import com.jfireframework.sql.field.impl.IntegerField;
 import com.jfireframework.sql.field.impl.StringField;
 import com.jfireframework.sql.field.impl.WLongField;
 import com.jfireframework.sql.function.DAOBean;
 import com.jfireframework.sql.function.LockMode;
-import com.jfireframework.sql.util.DaoFactory;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
@@ -75,10 +75,10 @@ public class DAOBeanImpl implements DAOBean
                     continue;
                 }
             }
-            set.add(DaoFactory.buildMapField(each));
+            set.add(MapFieldBuilder.buildMapField(each));
             if (each.isAnnotationPresent(Id.class))
             {
-                idField = DaoFactory.buildMapField(each);
+                idField = MapFieldBuilder.buildMapField(each);
                 idOffset = unsafe.objectFieldOffset(each);
                 idStrategy = each.getAnnotation(Id.class).idStrategy();
                 if (idStrategy == IdStrategy.autoDecision)

@@ -18,7 +18,7 @@ public interface UserDAO
     @Query(sql = "select username from user order by userid", paramNames = "")
     public List<String> getUsernames();
     
-    @Query(sql = "select username from user order by userid", paramNames = "page")
+    @Query(sql = "select username from user order by userid", paramNames = "")
     public List<String> getUsernames(MysqlPage page);
     
     @Query(sql = "select username from user where userid=$id", paramNames = "id")
@@ -45,7 +45,7 @@ public interface UserDAO
     @Query(sql = "select * from User where 1=1 [$user.age] and age=$user.age# [$user.name] and username like $%user.name%# [$user.id] and userid=$user.id#", paramNames = "user")
     public List<User> dynamicQuery(User user);
     
-    @Query(sql = "select * from User where 1=1 [$user.age] and age=$user.age# [$user.name] and username like $%user.name%# [$user.id] and userid=$user.id#", paramNames = "user,page")
+    @Query(sql = "select * from User where 1=1 [$user.age] and age=$user.age# [$user.name] and username like $%user.name%# [$user.id] and userid=$user.id#", paramNames = "user")
     public List<User> dynamicQuery2(User user, MysqlPage page);
     
     @Query(sql = "select * from User where id in $~ids and name = '林斌'", paramNames = "ids")

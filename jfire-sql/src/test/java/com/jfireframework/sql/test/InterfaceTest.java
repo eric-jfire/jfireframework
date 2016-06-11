@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
+import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.sql.page.MysqlPage;
 import com.jfireframework.sql.test.entity.User;
 
@@ -234,6 +235,7 @@ public class InterfaceTest extends BaseTestSupport
         page.setPage(1);
         page.setPageSize(20);
         userDAO.getUsernames(page);
+        session.close();
         assertEquals(3, page.getTotal());
     }
     

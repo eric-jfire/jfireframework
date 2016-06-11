@@ -13,8 +13,8 @@ import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.field.MapField;
+import com.jfireframework.sql.field.MapFieldBuilder;
 import com.jfireframework.sql.function.MapBean;
-import com.jfireframework.sql.util.DaoFactory;
 
 public class MapBeanImpl<T> implements MapBean<T>
 {
@@ -32,7 +32,7 @@ public class MapBeanImpl<T> implements MapBean<T>
             {
                 continue;
             }
-            set.add(DaoFactory.buildMapField(each));
+            set.add(MapFieldBuilder.buildMapField(each));
         }
         mapFields = set.toArray(MapField.class);
         for (MapField each : mapFields)
