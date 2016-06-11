@@ -80,33 +80,44 @@ public class RenderFactory
         @Override
         public void render(HttpServletRequest request, HttpServletResponse response, Object result) throws Throwable
         {
-            ModelAndView viewAndModel = (ModelAndView) result;
-            response.setContentType("text/html");
-            if (viewAndModel.cached())
+            if (result instanceof ModelAndView)
             {
-                response.getOutputStream().write(viewAndModel.getDirectBytes());
-            }
-            else if (viewAndModel.isDirect())
-            {
-                synchronized (viewAndModel)
+                ModelAndView viewAndModel = (ModelAndView) result;
+                response.setContentType("text/html");
+                if (viewAndModel.cached())
                 {
-                    
-                    if (viewAndModel.cached())
+                    response.getOutputStream().write(viewAndModel.getDirectBytes());
+                }
+                else if (viewAndModel.isDirect())
+                {
+                    synchronized (viewAndModel)
                     {
-                        response.getOutputStream().write(viewAndModel.getDirectBytes());
-                    }
-                    else
-                    {
-                        JfireMvcResponseWrapper wrapper = new JfireMvcResponseWrapper(response, viewAndModel);
-                        request.getRequestDispatcher(viewAndModel.getModelName()).forward(request, wrapper);
-                        wrapper.getOutputStream().flush();
-                        viewAndModel.setDirectBytes(viewAndModel.getCache().toArray());
+                        
+                        if (viewAndModel.cached())
+                        {
+                            response.getOutputStream().write(viewAndModel.getDirectBytes());
+                        }
+                        else
+                        {
+                            JfireMvcResponseWrapper wrapper = new JfireMvcResponseWrapper(response, viewAndModel);
+                            request.getRequestDispatcher(viewAndModel.getModelName()).forward(request, wrapper);
+                            wrapper.getOutputStream().flush();
+                            viewAndModel.setDirectBytes(viewAndModel.getCache().toArray());
+                        }
                     }
                 }
+                else
+                {
+                    request.getRequestDispatcher(viewAndModel.getModelName()).forward(request, response);
+                }
+            }
+            else if (result instanceof String)
+            {
+                request.getRequestDispatcher((String) result).forward(request, response);
             }
             else
             {
-                request.getRequestDispatcher(viewAndModel.getModelName()).forward(request, response);
+                throw new UnSupportException("不支持的返回类型");
             }
         }
     }
