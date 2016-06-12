@@ -10,6 +10,7 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.reflect.SimpleHotswapClassLoader;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.codejson.JsonObject;
+import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.JfireContextImpl;
 import com.jfireframework.context.aop.AopUtil;
@@ -41,6 +42,7 @@ public class ActionCenterBulder
             jfireContext.addSingletonEntity(classLoader.getClass().getName(), classLoader);
             jfireContext.setClassLoader(classLoader);
             AopUtil.initClassPool(classLoader);
+            JsonTool.initClassPool(classLoader);
         }
         jfireContext.readConfig(config);
         jfireContext.addPackageNames("com.jfireframework.sql");

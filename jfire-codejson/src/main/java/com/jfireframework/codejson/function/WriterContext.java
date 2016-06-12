@@ -50,22 +50,32 @@ import javassist.CtClass;
 import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.CtMethod;
+import javassist.LoaderClassPath;
 import javassist.NotFoundException;
 
 public class WriterContext
 {
     private static ConcurrentHashMap<Class<?>, JsonWriter> writerMap = new ConcurrentHashMap<Class<?>, JsonWriter>();
-    private static ClassPool                               classPool = ClassPool.getDefault();
+    private static ClassPool                               classPool;
     private static Logger                                  logger    = ConsoleLogFactory.getLogger();
     static
     {
-        ClassPool.doPruning = true;
+        initClassPool(null);
+    }
+    
+    public static void initClassPool(ClassLoader classLoader)
+    {
+        classPool = new ClassPool();
         classPool.appendClassPath(new ClassClassPath(WriterContext.class));
         classPool.importPackage("com.jfireframework.codejson.function");
         classPool.importPackage("com.jfireframework.codejson");
         classPool.importPackage("com.jfireframework.codejson.tracker");
         classPool.importPackage("java.util");
         classPool.importPackage("com.jfireframework.baseutil.collection");
+        if (classLoader != null)
+        {
+            classPool.insertClassPath(new LoaderClassPath(classLoader));
+        }
     }
     
     static

@@ -8,6 +8,13 @@ import com.jfireframework.codejson.function.WriterContext;
 
 public class JsonTool
 {
+    
+    public static void initClassPool(ClassLoader classLoader)
+    {
+        ReaderContext.initClassPool(classLoader);
+        WriterContext.initClassPool(classLoader);
+    }
+    
     private static ThreadLocal<StringCache> cacheLocal = new ThreadLocal<StringCache>() {
         protected StringCache initialValue()
         {

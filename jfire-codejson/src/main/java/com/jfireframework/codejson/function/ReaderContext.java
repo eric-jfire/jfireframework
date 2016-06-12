@@ -49,12 +49,13 @@ import javassist.CtClass;
 import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.CtMethod;
+import javassist.LoaderClassPath;
 import javassist.NotFoundException;
 
 public class ReaderContext
 {
     private static Map<Type, JsonReader> readerMap  = new ConcurrentHashMap<Type, JsonReader>();
-    private static ClassPool             classPool  = ClassPool.getDefault();
+    private static ClassPool             classPool;
     private static Set<Class<?>>         wrapperSet = new HashSet<Class<?>>();
     private static Logger                logger     = ConsoleLogFactory.getLogger();
     static
@@ -72,15 +73,24 @@ public class ReaderContext
         wrapperSet.equals(String.class);
     }
     
-    static
+    public static void initClassPool(ClassLoader classLoader)
     {
         ClassPool.doPruning = true;
+        classPool = new ClassPool();
         classPool.appendClassPath(new ClassClassPath(ReaderContext.class));
         classPool.importPackage("com.jfireframework.codejson.function");
-        classPool.importPackage("com.jfireframework.codejson.stringpattern");
         classPool.importPackage("com.jfireframework.codejson");
         classPool.importPackage("java.util");
         classPool.importPackage("com.jfireframework.baseutil.collection");
+        if (classLoader != null)
+        {
+            classPool.insertClassPath(new LoaderClassPath(classLoader));
+        }
+    }
+    
+    static
+    {
+        initClassPool(null);
     }
     
     static
