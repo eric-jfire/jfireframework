@@ -6,7 +6,7 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.mvc.annotation.RequestHeader;
+import com.jfireframework.mvc.annotation.HeaderValue;
 import com.jfireframework.mvc.binder.ParamInfo;
 
 public class HeaderBinder extends AbstractDataBinder
@@ -21,10 +21,10 @@ public class HeaderBinder extends AbstractDataBinder
         String defaultValue = "";
         for (Annotation each : info.getAnnotations())
         {
-            if (each instanceof RequestHeader)
+            if (each instanceof HeaderValue)
             {
-                headerName = ((RequestHeader) each).value();
-                defaultValue = ((RequestHeader) each).defaultValue();
+                headerName = ((HeaderValue) each).value();
+                defaultValue = ((HeaderValue) each).defaultValue();
                 break;
             }
         }

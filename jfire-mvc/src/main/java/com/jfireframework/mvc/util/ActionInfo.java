@@ -27,6 +27,11 @@ public class ActionInfo
     private String              token;
     private ViewRender          viewRender;
     
+    public void setHeaders(String[] headers)
+    {
+        
+    }
+    
     public ViewRender getViewRender()
     {
         return viewRender;

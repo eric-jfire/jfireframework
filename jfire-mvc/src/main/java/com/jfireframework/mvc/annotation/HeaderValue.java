@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-public @interface RequestHeader
+public @interface HeaderValue
 {
     /**
      * header的名称，如果不填写默认为参数名字

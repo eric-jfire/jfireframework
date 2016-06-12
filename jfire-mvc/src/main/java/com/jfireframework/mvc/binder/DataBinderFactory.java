@@ -18,7 +18,7 @@ import javax.servlet.http.HttpSession;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.mvc.annotation.CookieValue;
-import com.jfireframework.mvc.annotation.RequestHeader;
+import com.jfireframework.mvc.annotation.HeaderValue;
 import com.jfireframework.mvc.binder.impl.BooleanBinder;
 import com.jfireframework.mvc.binder.impl.CalendarBinder;
 import com.jfireframework.mvc.binder.impl.CookieBinder;
@@ -114,7 +114,7 @@ public class DataBinderFactory
         }
         for (Annotation each : info.getAnnotations())
         {
-            if (each instanceof RequestHeader)
+            if (each instanceof HeaderValue)
             {
                 return new HeaderBinder(info, cycleSet);
             }

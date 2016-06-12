@@ -64,4 +64,6 @@ public @interface RequestMapping
      */
     public String token() default "";
     
+    public String[] headers() default {};
+    
 }
