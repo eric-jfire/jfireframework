@@ -2,8 +2,6 @@ package com.jfireframework.mvc.core;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -12,18 +10,59 @@ import com.jfireframework.baseutil.exception.UnSupportException;
 
 public final class ActionCenter
 {
-    private final Map<String, Action> getActions     = new HashMap<String, Action>();
-    private final Action[]            rest_get_actions;
-    private final Map<String, Action> postActions    = new HashMap<String, Action>();
-    private final Action[]            rest_post_actions;
-    private final Map<String, Action> putActions     = new HashMap<String, Action>();
-    private final Action[]            rest_put_actions;
-    private final Map<String, Action> deleteActions  = new HashMap<String, Action>();
-    private final Action[]            rest_delete_actions;
+    private final ActionClassify      getAction;
+    private final ActionClassify      postAction;
+    private final ActionClassify      delAction;
+    private final ActionClassify      putAction;
     private final Map<String, Action> tokenActionMap = new HashMap<>();
+    
+    class ActionClassify
+    {
+        private final Action[]              restActions;
+        private final Map<String, Action[]> pathActionMap;
+        
+        public ActionClassify(Action[] restActions, Map<String, Action[]> pathActionMap)
+        {
+            this.restActions = restActions;
+            this.pathActionMap = pathActionMap;
+        }
+        
+        public Action get(HttpServletRequest request)
+        {
+            String path = request.getRequestURI();
+            Action[] actions = pathActionMap.get(path);
+            if (actions != null)
+            {
+                for (Action action : actions)
+                {
+                    if (action.getHeaderRule().permit(request))
+                    {
+                        return action;
+                    }
+                }
+            }
+            for (Action action : restActions)
+            {
+                if (action.getHeaderRule().permit(request) && action.getRestfulRule().match(path))
+                {
+                    return action;
+                }
+            }
+            return null;
+        }
+    }
     
     public ActionCenter(Action[] actions)
     {
+        
+        Map<String, Action[]> getActions = new HashMap<String, Action[]>();
+        Map<String, Action[]> postActions = new HashMap<String, Action[]>();
+        Map<String, Action[]> putActions = new HashMap<String, Action[]>();
+        Map<String, Action[]> deleteActions = new HashMap<String, Action[]>();
+        Set<Action> rest_get_actions_set = new HashSet<Action>();
+        Set<Action> rest_post_actions_set = new HashSet<Action>();
+        Set<Action> rest_put_actions_set = new HashSet<Action>();
+        Set<Action> rest_delete_actions_set = new HashSet<Action>();
         for (Action each : actions)
         {
             if (tokenActionMap.containsKey(each.getToken()))
@@ -31,10 +70,6 @@ public final class ActionCenter
                 throw new UnSupportException(StringUtil.format("Action的token值是不能重复的。请检查{}和{}", each.getMethod().toGenericString(), tokenActionMap.get(each.getToken()).getMethod().toGenericString()));
             }
         }
-        List<Action> rest_get_actions_list = new LinkedList<Action>();
-        List<Action> rest_post_actions_list = new LinkedList<Action>();
-        List<Action> rest_put_actions_list = new LinkedList<Action>();
-        List<Action> rest_delete_actions_list = new LinkedList<Action>();
         for (Action each : actions)
         {
             switch (each.getRequestMethod())
@@ -42,149 +77,117 @@ public final class ActionCenter
                 case GET:
                     if (each.isRest())
                     {
-                        rest_get_actions_list.add(each);
+                        if (rest_get_actions_set.add(each) == false)
+                        {
+                            throw new UnSupportException(StringUtil.format("url:{}存在重复，请检查{}", each.getRequestUrl(), each.getMethod()));
+                        }
                     }
                     else
                     {
-                        if (getActions.containsKey(each.getRequestUrl()))
-                        {
-                            throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), getActions.get(each.getRequestUrl()).getMethod().toGenericString()));
-                        }
-                        getActions.put(each.getRequestUrl(), each);
+                        dealWithRepet(getActions, each);
                     }
                     break;
                 case POST:
                     if (each.isRest())
                     {
-                        rest_post_actions_list.add(each);
+                        if (rest_post_actions_set.add(each) == false)
+                        {
+                            throw new UnSupportException(StringUtil.format("url:{}存在重复，请检查{}", each.getRequestUrl(), each.getMethod()));
+                        }
                     }
                     else
                     {
-                        if (postActions.containsKey(each.getRequestUrl()))
-                        {
-                            throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), postActions.get(each.getRequestUrl()).getMethod().toGenericString()));
-                        }
-                        postActions.put(each.getRequestUrl(), each);
+                        dealWithRepet(postActions, each);
                     }
                     break;
                 case PUT:
                     if (each.isRest())
                     {
-                        rest_put_actions_list.add(each);
+                        if (rest_put_actions_set.add(each) == false)
+                        {
+                            throw new UnSupportException(StringUtil.format("url:{}存在重复，请检查{}", each.getRequestUrl(), each.getMethod()));
+                        }
                     }
                     else
                     {
-                        if (putActions.containsKey(each.getRequestUrl()))
-                        {
-                            throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), putActions.get(each.getRequestUrl()).getMethod().toGenericString()));
-                        }
-                        putActions.put(each.getRequestUrl(), each);
+                        dealWithRepet(putActions, each);
                     }
                     break;
                 case DELETE:
                     if (each.isRest())
                     {
-                        rest_delete_actions_list.add(each);
+                        if (rest_delete_actions_set.add(each) == false)
+                        {
+                            throw new UnSupportException(StringUtil.format("url:{}存在重复，请检查{}", each.getRequestUrl(), each.getMethod()));
+                        }
                     }
                     else
                     {
-                        if (deleteActions.containsKey(each.getRequestUrl()))
-                        {
-                            throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", each.getMethod().toGenericString(), deleteActions.get(each.getRequestUrl()).getMethod().toGenericString()));
-                        }
-                        deleteActions.put(each.getRequestUrl(), each);
+                        dealWithRepet(deleteActions, each);
                     }
                     break;
             }
         }
-        checkRepetition(rest_get_actions_list);
-        checkRepetition(rest_post_actions_list);
-        checkRepetition(rest_put_actions_list);
-        checkRepetition(rest_delete_actions_list);
-        rest_get_actions = rest_get_actions_list.toArray(new Action[0]);
-        rest_post_actions = rest_post_actions_list.toArray(new Action[0]);
-        rest_delete_actions = rest_delete_actions_list.toArray(new Action[0]);
-        rest_put_actions = rest_put_actions_list.toArray(new Action[0]);
+        getAction = new ActionClassify(rest_get_actions_set.toArray(new Action[rest_get_actions_set.size()]), getActions);
+        postAction = new ActionClassify(rest_post_actions_set.toArray(new Action[rest_post_actions_set.size()]), postActions);
+        delAction = new ActionClassify(rest_delete_actions_set.toArray(new Action[rest_delete_actions_set.size()]), deleteActions);
+        putAction = new ActionClassify(rest_put_actions_set.toArray(new Action[rest_put_actions_set.size()]), putActions);
     }
     
-    /**
-     * 检查是否存在重复的url。返回false表示没有重复。
-     * 
-     * @param restActions
-     * @return
-     */
-    private void checkRepetition(List<Action> restActions)
+    private void dealWithRepet(Map<String, Action[]> actionMap, Action target)
     {
-        Set<String> set = new HashSet<String>();
-        for (Action each : restActions)
+        
+        if (actionMap.containsKey(target.getRequestUrl()))
         {
-            if (set.add(each.getRequestUrl()) == false)
+            Action[] tmp = actionMap.get(target.getRequestUrl());
+            boolean repetition = false;
+            Action repetAction = null;
+            for (Action action : tmp)
             {
-                throw new UnSupportException(StringUtil.format("url:{}存在重复，请检查{}", each.getRequestUrl(), each.getMethod()));
+                if (action.getHeaderRule().equals(target.getHeaderRule()))
+                {
+                    repetAction = action;
+                    repetition = true;
+                    break;
+                }
             }
+            if (repetition)
+            {
+                throw new RuntimeException(StringUtil.format("url存在重复，请检查{}和{}", target.getMethod().toGenericString(), repetAction.getMethod().toGenericString()));
+            }
+            else
+            {
+                Action[] result = new Action[tmp.length + 1];
+                System.arraycopy(tmp, 0, result, 0, tmp.length);
+                result[result.length - 1] = target;
+                actionMap.put(target.getRequestUrl(), result);
+            }
+        }
+        else
+        {
+            actionMap.put(target.getRequestUrl(), new Action[] { target });
         }
     }
     
     public Action getAction(HttpServletRequest request)
     {
         String method = request.getMethod();
-        String path = request.getRequestURI();
         Action action = null;
         if (method.equals("GET"))
         {
-            action = getActions.get(path);
-            if (action == null)
-            {
-                for (Action each : rest_get_actions)
-                {
-                    if (each.getRestfulRule().match(path))
-                    {
-                        return each;
-                    }
-                }
-            }
+            return getAction.get(request);
         }
         else if (method.equals("POST"))
         {
-            action = postActions.get(path);
-            if (action == null)
-            {
-                for (Action each : rest_post_actions)
-                {
-                    if (each.getRestfulRule().match(path))
-                    {
-                        return each;
-                    }
-                }
-            }
+            return postAction.get(request);
         }
         else if (method.equals("PUT"))
         {
-            action = putActions.get(path);
-            if (action == null)
-            {
-                for (Action each : rest_put_actions)
-                {
-                    if (each.getRestfulRule().match(path))
-                    {
-                        return each;
-                    }
-                }
-            }
+            return putAction.get(request);
         }
         else if (method.equals("DELETE"))
         {
-            action = deleteActions.get(path);
-            if (action == null)
-            {
-                for (Action each : rest_delete_actions)
-                {
-                    if (each.getRestfulRule().match(path))
-                    {
-                        return each;
-                    }
-                }
-            }
+            return delAction.get(request);
         }
         return action;
     }

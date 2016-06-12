@@ -26,10 +26,16 @@ public class ActionInfo
     private ActionInterceptor[] interceptors;
     private String              token;
     private ViewRender          viewRender;
+    private HeaderRule          headerRule;
     
     public void setHeaders(String[] headers)
     {
-        
+        headerRule = new HeaderRule(headers);
+    }
+    
+    public HeaderRule getHeaderRule()
+    {
+        return headerRule;
     }
     
     public ViewRender getViewRender()

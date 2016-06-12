@@ -17,7 +17,6 @@ import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.aop.AopUtil;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.context.util.AnnotationUtil;
-import com.jfireframework.mvc.annotation.Header;
 import com.jfireframework.mvc.annotation.RequestMapping;
 import com.jfireframework.mvc.annotation.RequestParam;
 import com.jfireframework.mvc.binder.DataBinder;
@@ -57,12 +56,7 @@ public class ActionFactory
         actionInfo.setDataBinders(generateBinders(method));
         actionInfo.setReadStream(requestMapping.readStream());
         actionInfo.setEntity(bean.getInstance());
-        Header header = AnnotationUtil.getAnnotation(Header.class, method);
-        if (header != null)
-        {
-            actionInfo.setHeaderName(header.name());
-            actionInfo.setHeaderValue(header.value());
-        }
+        actionInfo.setHeaders(requestMapping.headers());
         if (requestMapping.resultType() == ResultType.Class_Head)
         {
             throw new UnSupportException(StringUtil.format("需要明确指定方法的返回类型，请检查{}.{}", method.getDeclaringClass().getName(), method.getName()));
@@ -100,14 +94,12 @@ public class ActionFactory
                 {
                     for (DataBinder each : actionInfo.getDataBinders())
                     {
-                        if (
-                            each instanceof HttpSessionBinder //
-                                    || each instanceof HttpRequestBinder //
-                                    || each instanceof HttpResponseBinder //
-                                    || each instanceof ServletContextBinder //
-                                    || each instanceof CookieBinder //
-                                    || each instanceof HeaderBinder
-                        )
+                        if (each instanceof HttpSessionBinder //
+                                || each instanceof HttpRequestBinder //
+                                || each instanceof HttpResponseBinder //
+                                || each instanceof ServletContextBinder //
+                                || each instanceof CookieBinder //
+                                || each instanceof HeaderBinder)
                         {
                             continue;
                         }

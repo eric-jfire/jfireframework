@@ -12,6 +12,7 @@ import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
 import com.jfireframework.mvc.rest.RestfulRule;
 import com.jfireframework.mvc.util.ActionInfo;
 import com.jfireframework.mvc.util.ContentType;
+import com.jfireframework.mvc.util.HeaderRule;
 import com.jfireframework.mvc.util.RequestMethod;
 import com.jfireframework.mvc.viewrender.ViewRender;
 import sun.reflect.MethodAccessor;
@@ -42,9 +43,11 @@ public class Action
     private final ActionInterceptor[] interceptors;
     private final String              token;
     private final ViewRender          viewRender;
+    private final HeaderRule          headerRule;
     
     public Action(ActionInfo info)
     {
+        headerRule = info.getHeaderRule();
         viewRender = info.getViewRender();
         actionEntity = info.getEntity();
         dataBinders = info.getDataBinders();
@@ -188,4 +191,35 @@ public class Action
         return token;
     }
     
+    public HeaderRule getHeaderRule()
+    {
+        return headerRule;
+    }
+    
+    @Override
+    public int hashCode()
+    {
+        return 0;
+    }
+    
+    @Override
+    public boolean equals(Object target)
+    {
+        if (target instanceof Action)
+        {
+            Action tmp = (Action) target;
+            if (tmp.getRequestUrl().equals(requestUrl) && tmp.getHeaderRule().equals(headerRule))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
 }
