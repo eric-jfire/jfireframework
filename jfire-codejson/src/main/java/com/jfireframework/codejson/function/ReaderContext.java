@@ -75,7 +75,7 @@ public class ReaderContext
     static
     {
         ClassPool.doPruning = true;
-        classPool.insertClassPath(new ClassClassPath(ReaderContext.class));
+        classPool.appendClassPath(new ClassClassPath(ReaderContext.class));
         classPool.importPackage("com.jfireframework.codejson.function");
         classPool.importPackage("com.jfireframework.codejson.stringpattern");
         classPool.importPackage("com.jfireframework.codejson");

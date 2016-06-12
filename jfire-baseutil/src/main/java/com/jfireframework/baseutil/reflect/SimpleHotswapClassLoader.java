@@ -2,6 +2,8 @@ package com.jfireframework.baseutil.reflect;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.exception.JustThrowException;
 
@@ -12,12 +14,14 @@ public class SimpleHotswapClassLoader extends ClassLoader
     private static final ConcurrentHashMap<String, Object> paracLockMap = new ConcurrentHashMap<String, Object>();
     private final String                                   reloadPackage;
     private final File                                     reloadPathFile;
+    private final String                                   reloadPackageForClass;
     
     public SimpleHotswapClassLoader(String reloadPath, String reloadPackage)
     {
         parent = Thread.currentThread().getContextClassLoader();
         this.reloadPackage = reloadPackage;
         reloadPathFile = new File(reloadPath);
+        reloadPackageForClass = reloadPath.replace('/', '.');
     }
     
     public Class<?> loadClass(String name) throws ClassNotFoundException
@@ -80,5 +84,26 @@ public class SimpleHotswapClassLoader extends ClassLoader
             }
         }
         return result;
+    }
+    
+    public URL getResource(String name)
+    {
+        if (name.startsWith(reloadPackageForClass) && name.endsWith(".class"))
+        {
+            System.out.println("sadasd");
+            File file = new File(reloadPathFile, name);
+            try
+            {
+                return file.toURI().toURL();
+            }
+            catch (MalformedURLException e)
+            {
+                return parent.getResource(name);
+            }
+        }
+        else
+        {
+            return parent.getResource(name);
+        }
     }
 }

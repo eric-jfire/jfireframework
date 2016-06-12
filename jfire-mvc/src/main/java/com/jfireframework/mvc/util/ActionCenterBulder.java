@@ -40,8 +40,8 @@ public class ActionCenterBulder
             SimpleHotswapClassLoader classLoader = new SimpleHotswapClassLoader(reloadPath, reloadPackage);
             jfireContext.addSingletonEntity(classLoader.getClass().getName(), classLoader);
             jfireContext.setClassLoader(classLoader);
+            AopUtil.initClassPool(classLoader);
         }
-        AopUtil.initClassPool();
         jfireContext.readConfig(config);
         jfireContext.addPackageNames("com.jfireframework.sql");
         jfireContext.addSingletonEntity("servletContext", servletContext);

@@ -19,7 +19,8 @@
 		<module>jfire-test</module>
 		<module>jfire-template</module>
     <module>jfire-data-mongodb</module>
-  </modules>
+    <module>wx</module>
+	</modules>
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>

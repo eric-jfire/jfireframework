@@ -26,6 +26,7 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
+import javassist.LoaderClassPath;
 import javassist.NotFoundException;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.AttributeInfo;
@@ -47,18 +48,38 @@ public class AopUtil
         initClassPool();
     }
     
-    public static void initClassPool()
+    public static void initClassPool(ClassLoader classLoader)
     {
-        
         classPool = new ClassPool();
         ClassPool.doPruning = true;
         classPool.importPackage("com.jfireframework.context.aop");
         classPool.importPackage("com.jfireframework.baseutil.tx");
         try
         {
-            classPool.insertClassPath(new ClassClassPath(AopUtil.class));
-            classPool.insertClassPath("com.jfireframework.context.aop");
-            classPool.insertClassPath("com.jfireframework.baseutil.tx");
+            classPool.insertClassPath(new LoaderClassPath(classLoader));
+            classPool.appendClassPath(new ClassClassPath(AopUtil.class));
+            classPool.appendClassPath("com.jfireframework.context.aop");
+            classPool.appendClassPath("com.jfireframework.baseutil.tx");
+            txManagerCtClass = classPool.get(TransactionManager.class.getName());
+            acManagerCtClass = classPool.get(AutoCloseManager.class.getName());
+        }
+        catch (NotFoundException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    public static void initClassPool()
+    {
+        classPool = new ClassPool();
+        ClassPool.doPruning = true;
+        classPool.importPackage("com.jfireframework.context.aop");
+        classPool.importPackage("com.jfireframework.baseutil.tx");
+        try
+        {
+            classPool.appendClassPath(new ClassClassPath(AopUtil.class));
+            classPool.appendClassPath("com.jfireframework.context.aop");
+            classPool.appendClassPath("com.jfireframework.baseutil.tx");
             txManagerCtClass = classPool.get(TransactionManager.class.getName());
             acManagerCtClass = classPool.get(AutoCloseManager.class.getName());
         }
@@ -170,7 +191,7 @@ public class AopUtil
      */
     private static void enhanceBean(Bean bean, ClassLoader classLoader) throws NotFoundException, CannotCompileException, ClassNotFoundException
     {
-        classPool.insertClassPath(new ClassClassPath(bean.getType()));
+        classPool.appendClassPath(new ClassClassPath(bean.getType()));
         CtClass parentCc = classPool.get(bean.getType().getName());
         /**
          * 名字最后跟上时间戳，这样可以保证名字唯一，也就是可以生成不同子类而不冲突

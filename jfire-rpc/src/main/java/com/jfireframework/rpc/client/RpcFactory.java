@@ -50,8 +50,8 @@ public class RpcFactory
 			ClassPool.doPruning = true;
 			ClassPool classPool = ClassPool.getDefault();
 			classPool.importPackage("com.jfireframework.rpc.client");
-			classPool.insertClassPath(new ClassClassPath(interfaceClass));
-			classPool.insertClassPath(new ClassClassPath(RpcFactory.class));
+			classPool.appendClassPath(new ClassClassPath(interfaceClass));
+			classPool.appendClassPath(new ClassClassPath(RpcFactory.class));
 			CtClass targetCc = classPool.makeClass(interfaceClass.getSimpleName() + System.nanoTime() + Thread.currentThread().getName());
 			CtClass interfacecc = classPool.get(interfaceClass.getName());
 			targetCc.addInterface(interfacecc);

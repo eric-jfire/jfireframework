@@ -60,7 +60,7 @@ public class WriterContext
     static
     {
         ClassPool.doPruning = true;
-        classPool.insertClassPath(new ClassClassPath(WriterContext.class));
+        classPool.appendClassPath(new ClassClassPath(WriterContext.class));
         classPool.importPackage("com.jfireframework.codejson.function");
         classPool.importPackage("com.jfireframework.codejson");
         classPool.importPackage("com.jfireframework.codejson.tracker");

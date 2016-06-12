@@ -61,13 +61,13 @@ public class InterfaceMapperFactory
     static
     {
         ClassPool.doPruning = true;
-        classPool.insertClassPath(new ClassClassPath(InterfaceMapperFactory.class));
+        classPool.appendClassPath(new ClassClassPath(InterfaceMapperFactory.class));
         classPool.importPackage("com.jfireframework.sql");
         classPool.importPackage("com.jfireframework.baseutil.collection");
         classPool.importPackage("com.jfireframework.sql.function");
         classPool.importPackage("java.sql");
         classPool.importPackage("java.util");
-        classPool.insertClassPath(new ClassClassPath(SqlSession.class));
+        classPool.appendClassPath(new ClassClassPath(SqlSession.class));
     }
     
     /**
