@@ -17,7 +17,7 @@ import com.jfireframework.context.util.AliasFor;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-@Resource(shareable = false)
+@Resource(shareable = true)
 public @interface Controller
 {
     /**
