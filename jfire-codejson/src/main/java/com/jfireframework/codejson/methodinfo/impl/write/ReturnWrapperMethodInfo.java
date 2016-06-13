@@ -41,8 +41,9 @@ public class ReturnWrapperMethodInfo extends AbstractWriteMethodInfo
             {
                 str += "\tString value_tmp_1 = " + fieldName + ";\n";
                 str += "\tvalue_tmp_1 = value_tmp_1.replace(\"\\\\\",\"\\\\\\\\\");\n";
-                str += "\tvalue_tmp_1 = value_tmp_1.replace(\"\\r\\n\",\"\\\\r\\\\n\");\n";
                 str += "\tvalue_tmp_1 = value_tmp_1.replace(\"\\\"\",\"\\\\\\\"\");\n";
+                str += "\tvalue_tmp_1 = value_tmp_1.replace(\"\\r\",\"\\\\r\");\n";
+                str += "\tvalue_tmp_1 = value_tmp_1.replace(\"\\n\",\"\\\\n\");\n";
                 str += "\tcache.append(\"\\\"" + fieldName + "\\\":\\\"\").append(value_tmp_1).append(\"\\\",\");\n";
             }
             else if (returnType == Character.class)
