@@ -10,18 +10,32 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 public class SimpleHotswapClassLoader extends ClassLoader
 {
     private ClassLoader                                    parent;
-    private ConcurrentHashMap<String, Class<?>>            classMap     = new ConcurrentHashMap<String, Class<?>>();
-    private static final ConcurrentHashMap<String, Object> paracLockMap = new ConcurrentHashMap<String, Object>();
-    private final String                                   reloadPackage;
+    private ConcurrentHashMap<String, Class<?>>            classMap                    = new ConcurrentHashMap<String, Class<?>>();
+    private static final ConcurrentHashMap<String, Object> paracLockMap                = new ConcurrentHashMap<String, Object>();
     private final File                                     reloadPathFile;
-    private final String                                   reloadPackageForClass;
+    private String[]                                       reloadPackages              = new String[0];
+    private String[]                                       reloadPackageForClassFiless = new String[0];
+    private String[]                                       excludePackages             = new String[0];
     
-    public SimpleHotswapClassLoader(String reloadPath, String reloadPackage)
+    public SimpleHotswapClassLoader(String reloadPath)
     {
         parent = Thread.currentThread().getContextClassLoader();
-        this.reloadPackage = reloadPackage;
         reloadPathFile = new File(reloadPath);
-        reloadPackageForClass = reloadPath.replace('/', '.');
+    }
+    
+    public void setReloadPackages(String... reloadPackages)
+    {
+        this.reloadPackages = reloadPackages;
+        reloadPackageForClassFiless = new String[reloadPackages.length];
+        for (int i = 0; i < reloadPackages.length; i++)
+        {
+            reloadPackageForClassFiless[i] = reloadPackages[i].replace(".", "/");
+        }
+    }
+    
+    public void setExcludePackages(String... excludePackages)
+    {
+        this.excludePackages = excludePackages;
     }
     
     public Class<?> loadClass(String name) throws ClassNotFoundException
@@ -32,22 +46,38 @@ public class SimpleHotswapClassLoader extends ClassLoader
         }
         synchronized (getClassLoadingLock(name))
         {
-            if (name.startsWith(reloadPackage))
+            for (String reloadPackage : reloadPackages)
             {
-                try
+                if (name.startsWith(reloadPackage))
                 {
-                    File file = new File(reloadPathFile, name.replace(".", "/") + ".class");
-                    FileInputStream inputStream = new FileInputStream(file);
-                    byte[] src = new byte[inputStream.available()];
-                    inputStream.read(src);
-                    inputStream.close();
-                    Class<?> c = defineClass(name, src, 0, src.length);
-                    classMap.put(name, c);
-                    return c;
-                }
-                catch (Exception e)
-                {
-                    throw new JustThrowException(e);
+                    boolean canLoad = true;
+                    for (String excludePackage : excludePackages)
+                    {
+                        if (name.startsWith(excludePackage))
+                        {
+                            canLoad = false;
+                            break;
+                        }
+                    }
+                    if (canLoad == false)
+                    {
+                        continue;
+                    }
+                    try
+                    {
+                        File file = new File(reloadPathFile, name.replace(".", "/") + ".class");
+                        FileInputStream inputStream = new FileInputStream(file);
+                        byte[] src = new byte[inputStream.available()];
+                        inputStream.read(src);
+                        inputStream.close();
+                        Class<?> c = defineClass(name, src, 0, src.length);
+                        classMap.put(name, c);
+                        return c;
+                    }
+                    catch (Exception e)
+                    {
+                        throw new JustThrowException(e);
+                    }
                 }
             }
             // First, check if the class has already been loaded
@@ -88,22 +118,22 @@ public class SimpleHotswapClassLoader extends ClassLoader
     
     public URL getResource(String name)
     {
-        if (name.startsWith(reloadPackageForClass) && name.endsWith(".class"))
+        for (String reloadPackageForClass : reloadPackageForClassFiless)
         {
-            System.out.println("sadasd");
-            File file = new File(reloadPathFile, name);
-            try
+            if (name.startsWith(reloadPackageForClass) && name.endsWith(".class"))
             {
-                return file.toURI().toURL();
+                File file = new File(reloadPathFile, name);
+                try
+                {
+                    return file.toURI().toURL();
+                }
+                catch (MalformedURLException e)
+                {
+                    return parent.getResource(name);
+                }
             }
-            catch (MalformedURLException e)
-            {
-                return parent.getResource(name);
-            }
+            
         }
-        else
-        {
-            return parent.getResource(name);
-        }
+        return parent.getResource(name);
     }
 }

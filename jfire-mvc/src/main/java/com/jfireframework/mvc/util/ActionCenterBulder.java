@@ -37,8 +37,14 @@ public class ActionCenterBulder
             Verify.True(config.contains("reloadPackage"), "开发模式为true，此时应该配置reloadPackage内容");
             Verify.True(config.contains("reloadPath"), "开发模式为true，此时应该配置monitorPath内容");
             String reloadPackage = config.getWString("reloadPackage");
+            String excludePackage = config.getWString("excludePackage");
             String reloadPath = config.getWString("reloadPath");
-            SimpleHotswapClassLoader classLoader = new SimpleHotswapClassLoader(reloadPath, reloadPackage);
+            SimpleHotswapClassLoader classLoader = new SimpleHotswapClassLoader(reloadPath);
+            classLoader.setReloadPackages(reloadPackage.split(","));
+            if (excludePackage != null)
+            {
+                classLoader.setExcludePackages(excludePackage.split(","));
+            }
             jfireContext.addSingletonEntity(classLoader.getClass().getName(), classLoader);
             jfireContext.setClassLoader(classLoader);
             AopUtil.initClassPool(classLoader);
