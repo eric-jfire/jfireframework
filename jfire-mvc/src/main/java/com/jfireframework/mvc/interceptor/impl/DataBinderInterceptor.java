@@ -30,52 +30,24 @@ public class DataBinderInterceptor implements ActionInterceptor
     @Override
     public boolean interceptor(HttpServletRequest request, HttpServletResponse response, Action action)
     {
-        if (request.getMethod().equals("PUT"))
+        Map<String, String> map = mapLocal.get();
+        map.clear();
+        if (action.isReadStream() == false)
         {
-            String value = (String) request.getAttribute(DATABINDERKEY);
-            String[] params = value.split("&");
-            Map<String, String> map = mapLocal.get();
-            map.clear();
-            for (String each : params)
+            Enumeration<String> names = request.getParameterNames();
+            String name = null;
+            while (names.hasMoreElements())
             {
-                String[] kv = each.split("=");
-                if (kv.length == 2)
-                {
-                    map.put(kv[0], kv[1]);
-                }
-                else
-                {
-                    map.put(kv[0], null);
-                }
+                name = names.nextElement();
+                map.put(name, request.getParameter(name));
             }
-            if (action.isRest())
-            {
-                action.getRestfulRule().getObtain(request.getRequestURI(), map);
-            }
-            request.setAttribute(DATABINDERKEY, buildParams(action, request, map, response));
-            return true;
         }
-        else
+        if (action.isRest())
         {
-            Map<String, String> map = mapLocal.get();
-            map.clear();
-            if (action.isReadStream() == false)
-            {
-                Enumeration<String> names = request.getParameterNames();
-                String name = null;
-                while (names.hasMoreElements())
-                {
-                    name = names.nextElement();
-                    map.put(name, request.getParameter(name));
-                }
-            }
-            if (action.isRest())
-            {
-                action.getRestfulRule().getObtain(request.getRequestURI(), map);
-            }
-            request.setAttribute(DATABINDERKEY, buildParams(action, request, map, response));
-            return true;
+            action.getRestfulRule().getObtain(request.getRequestURI(), map);
         }
+        request.setAttribute(DATABINDERKEY, buildParams(action, request, map, response));
+        return true;
     }
     
     private Object[] buildParams(Action action, HttpServletRequest request, Map<String, String> map, HttpServletResponse response)
@@ -95,7 +67,7 @@ public class DataBinderInterceptor implements ActionInterceptor
     {
         return "*";
     }
-
+    
     @Override
     public String tokenRule()
     {
