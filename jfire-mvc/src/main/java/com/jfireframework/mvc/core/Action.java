@@ -3,7 +3,6 @@ package com.jfireframework.mvc.core;
 import java.lang.reflect.Method;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.mvc.binder.DataBinder;
@@ -12,7 +11,6 @@ import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
 import com.jfireframework.mvc.rest.RestfulRule;
 import com.jfireframework.mvc.util.ActionInfo;
-import com.jfireframework.mvc.util.ChangeMethodRequest;
 import com.jfireframework.mvc.util.ContentType;
 import com.jfireframework.mvc.util.HeaderRule;
 import com.jfireframework.mvc.util.RequestMethod;
@@ -46,7 +44,6 @@ public class Action
     private final String              token;
     private final ViewRender          viewRender;
     private final HeaderRule          headerRule;
-    private static final String       DEFAULT_METHOD_PREFIX = "_method";
     
     public Action(ActionInfo info)
     {
@@ -106,11 +103,6 @@ public class Action
     
     public void render(HttpServletRequest request, HttpServletResponse response)
     {
-        if (request.getMethod().equals("POST") && StringUtil.isNotBlank(request.getParameter(DEFAULT_METHOD_PREFIX)))
-        {
-            String method = request.getParameter(DEFAULT_METHOD_PREFIX).toUpperCase();
-            request = new ChangeMethodRequest(method, request);
-        }
         for (ActionInterceptor each : interceptors)
         {
             if (each.interceptor(request, response, this) == false)
