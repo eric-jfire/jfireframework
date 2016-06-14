@@ -324,7 +324,7 @@ public class Bean
     
     public boolean needEnhance()
     {
-        if (enHanceAnnos.size() > 0 || txMethods.size() > 0 || acMethods.size() > 0)
+        if (enHanceAnnos.size() > 0 || txMethods.size() > 0 || acMethods.size() > 0 || cacheMethods.size() > 0)
         {
             return true;
         }

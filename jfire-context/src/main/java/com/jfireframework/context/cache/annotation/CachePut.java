@@ -18,12 +18,19 @@ public @interface CachePut
      * 
      * @return
      */
-    public String key() default "";
+    public String key();
     
     /**
      * 缓存名称
      * 
      * @return
      */
-    public String value();
+    public String cacheName();
+    
+    /**
+     * 进行缓存操作的条件
+     * 
+     * @return
+     */
+    public String condition() default "";
 }

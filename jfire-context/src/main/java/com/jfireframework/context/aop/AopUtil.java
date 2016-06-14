@@ -8,6 +8,8 @@ import java.util.Map;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.collection.set.LightSet;
+import com.jfireframework.baseutil.el.ElException;
+import com.jfireframework.baseutil.el.ElExplain;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
@@ -220,7 +222,7 @@ public class AopUtil
         {
             String cacheFieldName = "cache_" + System.nanoTime();
             addField(childCc, cacheManagerCtClass, cacheFieldName);
-            
+            addCacheToMethod(childCc, cacheFieldName, bean.getCacheMethods().toArray(new Method[bean.getCacheMethods().size()]));
         }
         if (bean.getEnHanceAnnos().size() > 0)
         {
@@ -471,22 +473,151 @@ public class AopUtil
         }
     }
     
-    private static void addCacheToMethod(CtClass targetCc, String cacheFieldName, Method[] cacheMethods)
+    private static void addCacheToMethod(CtClass targetCc, String cacheFieldName, Method[] cacheMethods) throws CannotCompileException, NotFoundException
     {
         for (Method each : cacheMethods)
         {
-            if (AnnotationUtil.isPresent(CacheGet.class, each))
+            try
             {
-                CacheGet cacheGet = AnnotationUtil.getAnnotation(CacheGet.class, each);
                 String[] names = getParamNames(each);
+                Class<?>[] types = each.getParameterTypes();
+                CtMethod originMethod = getCtMethod(each, targetCc);
+                CtMethod newTargetMethod = copyMethod(originMethod, targetCc);
+                originMethod.setName(each.getName() + "_" + System.nanoTime());
+                newTargetMethod.setModifiers(originMethod.getModifiers());
+                targetCc.addMethod(newTargetMethod);
+                String methodBody = null;
+                if (AnnotationUtil.isPresent(CacheGet.class, each))
+                {
+                    if (each.getReturnType() == Void.class)
+                    {
+                        throw new ElException(StringUtil.format("使用CacheGet注解的方法必须有返回值，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()));
+                    }
+                    CacheGet cacheGet = AnnotationUtil.getAnnotation(CacheGet.class, each);
+                    String key = cacheGet.key();
+                    String finalKey = ElExplain.createValue(key, names, types);
+                    String cacheName = cacheGet.cacheName();
+                    String condition = cacheGet.condition();
+                    if (condition.equals(""))
+                    {
+                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody += "Object result = _cache.get(($w)" + finalKey + ");\n";
+                        methodBody += "if(result!=null)\n{return ($r)result;}\n";
+                        methodBody += "else\n{\n";
+                        methodBody += "result = " + originMethod.getName() + "($$);\n";
+                        methodBody += "_cache.put(($w)" + finalKey + ",result);\n";
+                        methodBody += "return ($r)result;\n}\n}";
+                    }
+                    else
+                    {
+                        condition = ElExplain.createVarIf(condition, names, types);
+                        methodBody = "{\nif(" + condition + ")\n{\n";
+                        methodBody += "\tcom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");;\n";
+                        methodBody += "\tObject result = _cache.get(($w)" + finalKey + ");\n";
+                        methodBody += "\tif(result!=null){return ($r)result;}\n";
+                        methodBody += "\telse\n\t{\n";
+                        methodBody += "\t\tresult = " + originMethod.getName() + "($$);\n";
+                        methodBody += "\t\t_cache.put(($w)" + finalKey + ",result);\n";
+                        methodBody += "\t\treturn ($r)result;\n";
+                        methodBody += "\t}\n";
+                        methodBody += "}\nelse\n{\n";
+                        methodBody += "return ($r)" + originMethod.getName() + "($$);\n";
+                        methodBody += "}\n";
+                        methodBody += "}";
+                    }
+                    
+                }
+                else if (AnnotationUtil.isPresent(CachePut.class, each))
+                {
+                    if (each.getReturnType() == Void.class)
+                    {
+                        throw new ElException(StringUtil.format("使用CacheGet注解的方法必须有返回值，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()));
+                    }
+                    CachePut cachePut = AnnotationUtil.getAnnotation(CachePut.class, each);
+                    String key = cachePut.key();
+                    String finalKey = ElExplain.createValue(key, names, types);
+                    String cacheName = cachePut.cacheName();
+                    String condition = cachePut.condition();
+                    if (condition.equals(""))
+                    {
+                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody += "Object result = " + originMethod.getName() + "($$);\n";
+                        methodBody += "_cache.put(($w)" + finalKey + ",result);\n";
+                        methodBody += "return ($r)result;\n}";
+                    }
+                    else
+                    {
+                        condition = ElExplain.createVarIf(condition, names, types);
+                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody += "if(" + condition + ")\n{\n";
+                        methodBody += "\tObject result = " + originMethod.getName() + "($$);\n";
+                        methodBody += "\t_cache.put(($w)" + finalKey + ",result);\n";
+                        methodBody += "\treturn ($r)result;\n";
+                        methodBody += "}\nelse\n{\n";
+                        methodBody += "return ($r)" + originMethod.getName() + "($$);\n";
+                        methodBody += "}\n";
+                        methodBody += "}";
+                    }
+                }
+                else
+                {
+                    boolean hasReturn = (each.getReturnType() != void.class);
+                    CacheDelete cacheDelete = AnnotationUtil.getAnnotation(CacheDelete.class, each);
+                    String key = cacheDelete.key();
+                    String finalKey = ElExplain.createValue(key, names, types);
+                    String cacheName = cacheDelete.cacheName();
+                    String condition = cacheDelete.condition();
+                    if (condition.equals(""))
+                    {
+                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        if (hasReturn)
+                        {
+                            methodBody += "Object result = " + originMethod.getName() + "($1);\n";
+                            methodBody += "_cache.remove(($w)" + finalKey + ");\n";
+                            methodBody += "return ($r)result;\n}";
+                        }
+                        else
+                        {
+                            methodBody += originMethod.getName() + "($1);\n";
+                            methodBody += "_cache.remove(($w)" + finalKey + ");\n";
+                            methodBody += "}";
+                        }
+                    }
+                    else
+                    {
+                        condition = ElExplain.createVarIf(condition, names, types);
+                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody += "if(" + condition + ")\n{\n";
+                        if (hasReturn)
+                        {
+                            methodBody += "\tObject result =" + originMethod.getName() + "($1);\n";
+                            methodBody += "\t_cache.remove(($w)" + finalKey + ");\n";
+                            methodBody += "\treturn ($r)result;\n";
+                        }
+                        else
+                        {
+                            methodBody += originMethod.getName() + "($1);\n";
+                            methodBody += "\t_cache.remove(($w)" + finalKey + ");\n";
+                        }
+                        methodBody += "}\nelse\n{\n";
+                        if (hasReturn)
+                        {
+                            methodBody += "return ($r)" + originMethod.getName() + "($1);\n";
+                        }
+                        else
+                        {
+                            methodBody += originMethod.getName() + "($$);\n";
+                        }
+                        methodBody += "}\n";
+                        methodBody += "}";
+                    }
+                }
+                logger.trace("缓存方法{}的内容是\n{}\n", each.toString(), methodBody);
+                newTargetMethod.setBody(methodBody);
             }
-            else if (AnnotationUtil.isPresent(CachePut.class, each))
+            catch (ElException e)
             {
-                
-            }
-            else
-            {
-                
+                throw new UnSupportException(StringUtil.format("构造缓存方法异常，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()), e);
             }
         }
     }
@@ -663,30 +794,31 @@ public class AopUtil
         Verify.False(method.getDeclaringClass().isInterface(), "使用反射获取方法形参名称的时候，方法必须是在类的方法不能是接口方法，请检查{}.{}", method.getDeclaringClass(), method.getName());
         try
         {
-            CtClass ctClass = classPool.get(method.getDeclaringClass().getName());
-            LightSet<CtClass> set = new LightSet<CtClass>();
-            for (Class<?> each : method.getParameterTypes())
-            {
-                set.add(classPool.get(each.getName()));
-            }
-            if (set.size() == 0)
-            {
-                return new String[0];
-            }
-            try
-            {
-                CtMethod cm = ctClass.getDeclaredMethod(method.getName(), set.toArray(CtClass.class));
-                return getParamNames(cm);
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
+            return getParamNames(getCtMethod(method, null));
         }
-        catch (NotFoundException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
+    }
+    
+    private static CtMethod getCtMethod(Method method, CtClass cc) throws NotFoundException
+    {
+        CtClass ctClass;
+        if (cc == null)
+        {
+            ctClass = classPool.get(method.getDeclaringClass().getName());
+        }
+        else
+        {
+            ctClass = cc;
+        }
+        LightSet<CtClass> set = new LightSet<CtClass>();
+        for (Class<?> each : method.getParameterTypes())
+        {
+            set.add(classPool.get(each.getName()));
+        }
+        return ctClass.getDeclaredMethod(method.getName(), set.toArray(CtClass.class));
     }
     
     /**
