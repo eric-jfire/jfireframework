@@ -434,6 +434,7 @@ public class ElExplain
                 value = expression.substring(index + 1, next);
                 cache.append(buildParam(value, names, types));
                 index = next;
+                continue;
             }
             else if (c == '\'')
             {
@@ -443,22 +444,22 @@ public class ElExplain
                     throw new UnSupportException("key的规则有问题，缺少了一边的'\"'");
                 }
                 cache.append('"');
-                for (int i = index; i < next; i++)
+                for (int i = index + 1; i < next; i++)
                 {
                     cache.append(expression.charAt(i));
                 }
                 cache.append('"');
                 index = next + 1;
-                break;
+                continue;
             }
             else
             {
                 cache.append(c);
                 index += 1;
-                break;
+                continue;
             }
         }
-        return cache.toString();
+        return '(' + cache.toString() + ')';
     }
     
 }

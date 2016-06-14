@@ -142,10 +142,11 @@ public class AopUtil
                     bean.addAcMethod(method);
                     logger.trace("发现自动关闭方法{}", method.toString());
                 }
-                else if (AnnotationUtil.isPresent(CachePut.class, method) || AnnotationUtil.isPresent(CacheGet.class, method) || AnnotationUtil.isPresent(CacheDelete.class, method))
+                if (AnnotationUtil.isPresent(CachePut.class, method) || AnnotationUtil.isPresent(CacheGet.class, method) || AnnotationUtil.isPresent(CacheDelete.class, method))
                 {
                     Verify.True(Modifier.isPublic(method.getModifiers()) || Modifier.isProtected(method.getModifiers()), "方法{}.{}有缓存注解,访问类型必须是public或protected", method.getDeclaringClass(), method.getName());
                     bean.addCacheMethod(method);
+                    logger.trace("发现缓存方法{}", method.toString());
                 }
             }
         }

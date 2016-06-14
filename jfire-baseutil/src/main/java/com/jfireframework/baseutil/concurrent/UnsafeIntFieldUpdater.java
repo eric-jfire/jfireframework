@@ -40,7 +40,7 @@ public class UnsafeIntFieldUpdater<T>
     {
         do
         {
-            int oldValue = unsafe.getInt(holder, offset);
+            int oldValue = unsafe.getIntVolatile(holder, offset);
             int newValue = oldValue + add;
             if (unsafe.compareAndSwapInt(holder, offset, oldValue, newValue))
             {

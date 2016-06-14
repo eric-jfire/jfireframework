@@ -1,6 +1,7 @@
 package com.jfireframework.context.cache.support;
 
 import java.util.concurrent.ConcurrentHashMap;
+import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.context.cache.Cache;
 
 public class HashMapCache implements Cache
