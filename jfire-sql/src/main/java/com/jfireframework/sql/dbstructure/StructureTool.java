@@ -15,6 +15,10 @@ public class StructureTool
             {
                 return dbTypeMap.get(field.getFieldType()).getDbType();
             }
+            else if (length == -2 && field.getFieldType() == String.class)
+            {
+                return "text";
+            }
             else
             {
                 return dbTypeMap.get(field.getFieldType()).getDbType(length);
