@@ -31,7 +31,10 @@ public class MetaData
             String dbColName = each.getName();
             if (each.isAnnotationPresent(Column.class))
             {
-                dbColName = each.getAnnotation(Column.class).name();
+                if (each.getAnnotation(Column.class).name().equals("") == false)
+                {
+                    dbColName = each.getAnnotation(Column.class).name();
+                }
             }
             fieldColumnMap.put(each.getName(), dbColName);
         }

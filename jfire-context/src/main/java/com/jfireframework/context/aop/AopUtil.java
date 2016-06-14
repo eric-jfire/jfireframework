@@ -8,6 +8,9 @@ import java.util.Map;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.collection.set.LightSet;
+import com.jfireframework.baseutil.el.ElException;
+import com.jfireframework.baseutil.el.ElExplain;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -19,6 +22,10 @@ import com.jfireframework.context.aop.annotation.AutoCloseResource;
 import com.jfireframework.context.aop.annotation.EnhanceClass;
 import com.jfireframework.context.aop.annotation.Transaction;
 import com.jfireframework.context.bean.Bean;
+import com.jfireframework.context.cache.CacheManager;
+import com.jfireframework.context.cache.annotation.CacheDelete;
+import com.jfireframework.context.cache.annotation.CacheGet;
+import com.jfireframework.context.cache.annotation.CachePut;
 import com.jfireframework.context.util.AnnotationUtil;
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
@@ -41,6 +48,7 @@ public class AopUtil
     private static ClassPool classPool = ClassPool.getDefault();
     private static CtClass   txManagerCtClass;
     private static CtClass   acManagerCtClass;
+    private static CtClass   cacheManagerCtClass;
     private static Logger    logger    = ConsoleLogFactory.getLogger();
     
     static
@@ -56,12 +64,16 @@ public class AopUtil
         classPool.importPackage("com.jfireframework.baseutil.tx");
         try
         {
-            classPool.insertClassPath(new LoaderClassPath(classLoader));
+            if (classLoader != null)
+            {
+                classPool.insertClassPath(new LoaderClassPath(classLoader));
+            }
             classPool.appendClassPath(new ClassClassPath(AopUtil.class));
             classPool.appendClassPath("com.jfireframework.context.aop");
             classPool.appendClassPath("com.jfireframework.baseutil.tx");
             txManagerCtClass = classPool.get(TransactionManager.class.getName());
             acManagerCtClass = classPool.get(AutoCloseManager.class.getName());
+            cacheManagerCtClass = classPool.get(CacheManager.class.getName());
         }
         catch (NotFoundException e)
         {
@@ -71,22 +83,7 @@ public class AopUtil
     
     public static void initClassPool()
     {
-        classPool = new ClassPool();
-        ClassPool.doPruning = true;
-        classPool.importPackage("com.jfireframework.context.aop");
-        classPool.importPackage("com.jfireframework.baseutil.tx");
-        try
-        {
-            classPool.appendClassPath(new ClassClassPath(AopUtil.class));
-            classPool.appendClassPath("com.jfireframework.context.aop");
-            classPool.appendClassPath("com.jfireframework.baseutil.tx");
-            txManagerCtClass = classPool.get(TransactionManager.class.getName());
-            acManagerCtClass = classPool.get(AutoCloseManager.class.getName());
-        }
-        catch (NotFoundException e)
-        {
-            throw new RuntimeException(e);
-        }
+        initClassPool(null);
     }
     
     /**
@@ -99,7 +96,7 @@ public class AopUtil
     {
         try
         {
-            initTxAndAcMethods(beanMap);
+            initTxAndAcAndCacheMethods(beanMap);
             initAopbeanSet(beanMap);
             for (Bean bean : beanMap.values())
             {
@@ -117,11 +114,11 @@ public class AopUtil
     }
     
     /**
-     * 循环所有的bean，确定每一个bean需要进行事务增强的方法和自动关闭资源的方法,并且在bean中添加这些方法的信息
+     * 循环所有的bean，确定每一个bean需要进行事务增强的方法,自动关闭资源和缓存管理的方法,并且在bean中添加这些方法的信息
      * 
      * @param beanMap
      */
-    private static void initTxAndAcMethods(Map<String, Bean> beanMap)
+    private static void initTxAndAcAndCacheMethods(Map<String, Bean> beanMap)
     {
         for (Bean bean : beanMap.values())
         {
@@ -144,6 +141,11 @@ public class AopUtil
                     Verify.True(Modifier.isPublic(method.getModifiers()) || Modifier.isProtected(method.getModifiers()), "方法{}.{}有自动关闭注解,访问类型必须是public或protected", method.getDeclaringClass(), method.getName());
                     bean.addAcMethod(method);
                     logger.trace("发现自动关闭方法{}", method.toString());
+                }
+                else if (AnnotationUtil.isPresent(CachePut.class, method) || AnnotationUtil.isPresent(CacheGet.class, method) || AnnotationUtil.isPresent(CacheDelete.class, method))
+                {
+                    Verify.True(Modifier.isPublic(method.getModifiers()) || Modifier.isProtected(method.getModifiers()), "方法{}.{}有缓存注解,访问类型必须是public或protected", method.getDeclaringClass(), method.getName());
+                    bean.addCacheMethod(method);
                 }
             }
         }
@@ -215,6 +217,12 @@ public class AopUtil
             String acFieldName = "ac_" + System.nanoTime();
             addField(childCc, acManagerCtClass, acFieldName);
             addAcToMethod(childCc, acFieldName, bean.getAcMethods().toArray(Method.class));
+        }
+        if (bean.getCacheMethods().size() > 0)
+        {
+            String cacheFieldName = "cache_" + System.nanoTime();
+            addField(childCc, cacheManagerCtClass, cacheFieldName);
+            addCacheToMethod(childCc, cacheFieldName, bean.getCacheMethods().toArray(new Method[bean.getCacheMethods().size()]));
         }
         if (bean.getEnHanceAnnos().size() > 0)
         {
@@ -465,6 +473,167 @@ public class AopUtil
         }
     }
     
+    private static void addCacheToMethod(CtClass targetCc, String cacheFieldName, Method[] cacheMethods) throws CannotCompileException, NotFoundException
+    {
+        for (Method each : cacheMethods)
+        {
+            try
+            {
+                String[] names = getParamNames(each);
+                Class<?>[] types = each.getParameterTypes();
+                CtMethod originMethod = getCtMethod(each, targetCc);
+                CtMethod newTargetMethod = copyMethod(originMethod, targetCc);
+                originMethod.setName(each.getName() + "_" + System.nanoTime());
+                newTargetMethod.setModifiers(originMethod.getModifiers());
+                targetCc.addMethod(newTargetMethod);
+                String methodBody = null;
+                if (AnnotationUtil.isPresent(CacheGet.class, each))
+                {
+                    if (each.getReturnType() == Void.class)
+                    {
+                        throw new ElException(StringUtil.format("使用CacheGet注解的方法必须有返回值，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()));
+                    }
+                    CacheGet cacheGet = AnnotationUtil.getAnnotation(CacheGet.class, each);
+                    String key = cacheGet.key();
+                    String finalKey = ElExplain.createValue(key, names, types);
+                    String cacheName = cacheGet.cacheName();
+                    String condition = cacheGet.condition();
+                    if (condition.equals(""))
+                    {
+                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody += "Object result = _cache.get(($w)" + finalKey + ");\n";
+                        methodBody += "if(result!=null)\n{return ($r)result;}\n";
+                        methodBody += "else\n{\n";
+                        methodBody += "result = " + originMethod.getName() + "($$);\n";
+                        methodBody += "_cache.put(($w)" + finalKey + ",result);\n";
+                        methodBody += "return ($r)result;\n}\n}";
+                    }
+                    else
+                    {
+                        condition = ElExplain.createVarIf(condition, names, types);
+                        methodBody = "{\nif(" + condition + ")\n{\n";
+                        methodBody += "\tcom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");;\n";
+                        methodBody += "\tObject result = _cache.get(($w)" + finalKey + ");\n";
+                        methodBody += "\tif(result!=null){return ($r)result;}\n";
+                        methodBody += "\telse\n\t{\n";
+                        methodBody += "\t\tresult = " + originMethod.getName() + "($$);\n";
+                        methodBody += "\t\t_cache.put(($w)" + finalKey + ",result);\n";
+                        methodBody += "\t\treturn ($r)result;\n";
+                        methodBody += "\t}\n";
+                        methodBody += "}\nelse\n{\n";
+                        methodBody += "return ($r)" + originMethod.getName() + "($$);\n";
+                        methodBody += "}\n";
+                        methodBody += "}";
+                    }
+                    
+                }
+                else if (AnnotationUtil.isPresent(CachePut.class, each))
+                {
+                    if (each.getReturnType() == Void.class)
+                    {
+                        throw new ElException(StringUtil.format("使用CacheGet注解的方法必须有返回值，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()));
+                    }
+                    CachePut cachePut = AnnotationUtil.getAnnotation(CachePut.class, each);
+                    String key = cachePut.key();
+                    String finalKey = ElExplain.createValue(key, names, types);
+                    String cacheName = cachePut.cacheName();
+                    String condition = cachePut.condition();
+                    if (condition.equals(""))
+                    {
+                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody += "Object result = " + originMethod.getName() + "($$);\n";
+                        methodBody += "_cache.put(($w)" + finalKey + ",result);\n";
+                        methodBody += "return ($r)result;\n}";
+                    }
+                    else
+                    {
+                        condition = ElExplain.createVarIf(condition, names, types);
+                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody += "if(" + condition + ")\n{\n";
+                        methodBody += "\tObject result = " + originMethod.getName() + "($$);\n";
+                        methodBody += "\t_cache.put(($w)" + finalKey + ",result);\n";
+                        methodBody += "\treturn ($r)result;\n";
+                        methodBody += "}\nelse\n{\n";
+                        methodBody += "return ($r)" + originMethod.getName() + "($$);\n";
+                        methodBody += "}\n";
+                        methodBody += "}";
+                    }
+                }
+                else
+                {
+                    boolean hasReturn = (each.getReturnType() != void.class);
+                    CacheDelete cacheDelete = AnnotationUtil.getAnnotation(CacheDelete.class, each);
+                    String key = cacheDelete.key();
+                    String finalKey = ElExplain.createValue(key, names, types);
+                    String cacheName = cacheDelete.cacheName();
+                    String condition = cacheDelete.condition();
+                    if (condition.equals(""))
+                    {
+                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        if (hasReturn)
+                        {
+                            methodBody += "Object result = " + originMethod.getName() + "($1);\n";
+                            methodBody += "_cache.remove(($w)" + finalKey + ");\n";
+                            methodBody += "return ($r)result;\n}";
+                        }
+                        else
+                        {
+                            methodBody += originMethod.getName() + "($1);\n";
+                            methodBody += "_cache.remove(($w)" + finalKey + ");\n";
+                            methodBody += "}";
+                        }
+                    }
+                    else
+                    {
+                        condition = ElExplain.createVarIf(condition, names, types);
+                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody += "if(" + condition + ")\n{\n";
+                        if (hasReturn)
+                        {
+                            methodBody += "\tObject result =" + originMethod.getName() + "($1);\n";
+                            methodBody += "\t_cache.remove(($w)" + finalKey + ");\n";
+                            methodBody += "\treturn ($r)result;\n";
+                        }
+                        else
+                        {
+                            methodBody += originMethod.getName() + "($1);\n";
+                            methodBody += "\t_cache.remove(($w)" + finalKey + ");\n";
+                        }
+                        methodBody += "}\nelse\n{\n";
+                        if (hasReturn)
+                        {
+                            methodBody += "return ($r)" + originMethod.getName() + "($1);\n";
+                        }
+                        else
+                        {
+                            methodBody += originMethod.getName() + "($$);\n";
+                        }
+                        methodBody += "}\n";
+                        methodBody += "}";
+                    }
+                }
+                logger.trace("缓存方法{}的内容是\n{}\n", each.toString(), methodBody);
+                newTargetMethod.setBody(methodBody);
+            }
+            catch (ElException e)
+            {
+                throw new UnSupportException(StringUtil.format("构造缓存方法异常，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()), e);
+            }
+        }
+    }
+    
+    public static int getParamNameIndex(String inject, String[] paramNames)
+    {
+        for (int i = 0; i < paramNames.length; i++)
+        {
+            if (paramNames[i].equals(inject))
+            {
+                return i;
+            }
+        }
+        throw new RuntimeException("给定的参数" + inject + "不在参数列表中");
+    }
+    
     private static CtClass[] getParamTypes(Method method) throws NotFoundException
     {
         CtClass[] paramClasses = new CtClass[method.getParameterTypes().length];
@@ -625,30 +794,31 @@ public class AopUtil
         Verify.False(method.getDeclaringClass().isInterface(), "使用反射获取方法形参名称的时候，方法必须是在类的方法不能是接口方法，请检查{}.{}", method.getDeclaringClass(), method.getName());
         try
         {
-            CtClass ctClass = classPool.get(method.getDeclaringClass().getName());
-            LightSet<CtClass> set = new LightSet<CtClass>();
-            for (Class<?> each : method.getParameterTypes())
-            {
-                set.add(classPool.get(each.getName()));
-            }
-            if (set.size() == 0)
-            {
-                return new String[0];
-            }
-            try
-            {
-                CtMethod cm = ctClass.getDeclaredMethod(method.getName(), set.toArray(CtClass.class));
-                return getParamNames(cm);
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
+            return getParamNames(getCtMethod(method, null));
         }
-        catch (NotFoundException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
+    }
+    
+    private static CtMethod getCtMethod(Method method, CtClass cc) throws NotFoundException
+    {
+        CtClass ctClass;
+        if (cc == null)
+        {
+            ctClass = classPool.get(method.getDeclaringClass().getName());
+        }
+        else
+        {
+            ctClass = cc;
+        }
+        LightSet<CtClass> set = new LightSet<CtClass>();
+        for (Class<?> each : method.getParameterTypes())
+        {
+            set.add(classPool.get(each.getName()));
+        }
+        return ctClass.getDeclaredMethod(method.getName(), set.toArray(CtClass.class));
     }
     
     /**
