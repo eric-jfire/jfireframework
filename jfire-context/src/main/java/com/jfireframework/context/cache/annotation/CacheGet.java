@@ -7,6 +7,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * 这个注解表示会使用方法的入参作为key的规则参数，方法的返回值值作为缓存值存入
+ * 
+ * @author linbin
+ *
+ */
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
@@ -18,19 +24,13 @@ public @interface CacheGet
      * 
      * @return
      */
-    public String key();
+    public String key() default "";
     
     /**
-     * 规则
+     * 缓存名称
      * 
      * @return
      */
     public String value();
     
-    /**
-     * 具体使用的cache名称
-     * 
-     * @return
-     */
-    public String cache();
 }

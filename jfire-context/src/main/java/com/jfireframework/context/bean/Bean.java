@@ -2,6 +2,8 @@ package com.jfireframework.context.bean;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -59,6 +61,7 @@ public class Bean
     private LightSet<Method>                     txMethods       = new LightSet<Method>();
     /** 该bean的自动关闭资源方法 */
     private LightSet<Method>                     acMethods       = new LightSet<Method>();
+    private List<Method>                         cacheMethods    = new LinkedList<Method>();
     /**
      * 该Bean是否可以进行修改。如果是使用外部对象进行bean初始化，由于使用了外部对象，此时不应该再对该类进行aop操作。
      * 同样的，针对该Bean的分析也不应该进行，因为是外部对象，所以其内部的对其他对象的引用不由容器负责。因为不会生成新对象，也就没有注入分析的必要
@@ -336,4 +339,13 @@ public class Bean
         this.postConstructMethod = postConstructMethod;
     }
     
+    public void addCacheMethod(Method method)
+    {
+        cacheMethods.add(method);
+    }
+    
+    public List<Method> getCacheMethods()
+    {
+        return cacheMethods;
+    }
 }

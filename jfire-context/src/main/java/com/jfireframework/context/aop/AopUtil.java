@@ -8,6 +8,7 @@ import java.util.Map;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.collection.set.LightSet;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -19,6 +20,10 @@ import com.jfireframework.context.aop.annotation.AutoCloseResource;
 import com.jfireframework.context.aop.annotation.EnhanceClass;
 import com.jfireframework.context.aop.annotation.Transaction;
 import com.jfireframework.context.bean.Bean;
+import com.jfireframework.context.cache.CacheManager;
+import com.jfireframework.context.cache.annotation.CacheDelete;
+import com.jfireframework.context.cache.annotation.CacheGet;
+import com.jfireframework.context.cache.annotation.CachePut;
 import com.jfireframework.context.util.AnnotationUtil;
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
@@ -41,6 +46,7 @@ public class AopUtil
     private static ClassPool classPool = ClassPool.getDefault();
     private static CtClass   txManagerCtClass;
     private static CtClass   acManagerCtClass;
+    private static CtClass   cacheManagerCtClass;
     private static Logger    logger    = ConsoleLogFactory.getLogger();
     
     static
@@ -56,12 +62,16 @@ public class AopUtil
         classPool.importPackage("com.jfireframework.baseutil.tx");
         try
         {
-            classPool.insertClassPath(new LoaderClassPath(classLoader));
+            if (classLoader != null)
+            {
+                classPool.insertClassPath(new LoaderClassPath(classLoader));
+            }
             classPool.appendClassPath(new ClassClassPath(AopUtil.class));
             classPool.appendClassPath("com.jfireframework.context.aop");
             classPool.appendClassPath("com.jfireframework.baseutil.tx");
             txManagerCtClass = classPool.get(TransactionManager.class.getName());
             acManagerCtClass = classPool.get(AutoCloseManager.class.getName());
+            cacheManagerCtClass = classPool.get(CacheManager.class.getName());
         }
         catch (NotFoundException e)
         {
@@ -71,22 +81,7 @@ public class AopUtil
     
     public static void initClassPool()
     {
-        classPool = new ClassPool();
-        ClassPool.doPruning = true;
-        classPool.importPackage("com.jfireframework.context.aop");
-        classPool.importPackage("com.jfireframework.baseutil.tx");
-        try
-        {
-            classPool.appendClassPath(new ClassClassPath(AopUtil.class));
-            classPool.appendClassPath("com.jfireframework.context.aop");
-            classPool.appendClassPath("com.jfireframework.baseutil.tx");
-            txManagerCtClass = classPool.get(TransactionManager.class.getName());
-            acManagerCtClass = classPool.get(AutoCloseManager.class.getName());
-        }
-        catch (NotFoundException e)
-        {
-            throw new RuntimeException(e);
-        }
+        initClassPool(null);
     }
     
     /**
@@ -99,7 +94,7 @@ public class AopUtil
     {
         try
         {
-            initTxAndAcMethods(beanMap);
+            initTxAndAcAndCacheMethods(beanMap);
             initAopbeanSet(beanMap);
             for (Bean bean : beanMap.values())
             {
@@ -117,11 +112,11 @@ public class AopUtil
     }
     
     /**
-     * 循环所有的bean，确定每一个bean需要进行事务增强的方法和自动关闭资源的方法,并且在bean中添加这些方法的信息
+     * 循环所有的bean，确定每一个bean需要进行事务增强的方法,自动关闭资源和缓存管理的方法,并且在bean中添加这些方法的信息
      * 
      * @param beanMap
      */
-    private static void initTxAndAcMethods(Map<String, Bean> beanMap)
+    private static void initTxAndAcAndCacheMethods(Map<String, Bean> beanMap)
     {
         for (Bean bean : beanMap.values())
         {
@@ -144,6 +139,11 @@ public class AopUtil
                     Verify.True(Modifier.isPublic(method.getModifiers()) || Modifier.isProtected(method.getModifiers()), "方法{}.{}有自动关闭注解,访问类型必须是public或protected", method.getDeclaringClass(), method.getName());
                     bean.addAcMethod(method);
                     logger.trace("发现自动关闭方法{}", method.toString());
+                }
+                else if (AnnotationUtil.isPresent(CachePut.class, method) || AnnotationUtil.isPresent(CacheGet.class, method) || AnnotationUtil.isPresent(CacheDelete.class, method))
+                {
+                    Verify.True(Modifier.isPublic(method.getModifiers()) || Modifier.isProtected(method.getModifiers()), "方法{}.{}有缓存注解,访问类型必须是public或protected", method.getDeclaringClass(), method.getName());
+                    bean.addCacheMethod(method);
                 }
             }
         }
@@ -215,6 +215,12 @@ public class AopUtil
             String acFieldName = "ac_" + System.nanoTime();
             addField(childCc, acManagerCtClass, acFieldName);
             addAcToMethod(childCc, acFieldName, bean.getAcMethods().toArray(Method.class));
+        }
+        if (bean.getCacheMethods().size() > 0)
+        {
+            String cacheFieldName = "cache_" + System.nanoTime();
+            addField(childCc, cacheManagerCtClass, cacheFieldName);
+            
         }
         if (bean.getEnHanceAnnos().size() > 0)
         {
@@ -463,6 +469,38 @@ public class AopUtil
                 ctMethod.addCatch("{((AutoCloseManager)" + acFieldName + ").close();throw $e;}", exCc);
             }
         }
+    }
+    
+    private static void addCacheToMethod(CtClass targetCc, String cacheFieldName, Method[] cacheMethods)
+    {
+        for (Method each : cacheMethods)
+        {
+            if (AnnotationUtil.isPresent(CacheGet.class, each))
+            {
+                CacheGet cacheGet = AnnotationUtil.getAnnotation(CacheGet.class, each);
+                String[] names = getParamNames(each);
+            }
+            else if (AnnotationUtil.isPresent(CachePut.class, each))
+            {
+                
+            }
+            else
+            {
+                
+            }
+        }
+    }
+    
+    public static int getParamNameIndex(String inject, String[] paramNames)
+    {
+        for (int i = 0; i < paramNames.length; i++)
+        {
+            if (paramNames[i].equals(inject))
+            {
+                return i;
+            }
+        }
+        throw new RuntimeException("给定的参数" + inject + "不在参数列表中");
     }
     
     private static CtClass[] getParamTypes(Method method) throws NotFoundException
