@@ -25,7 +25,7 @@ public @interface CachePut
      * 
      * @return
      */
-    public String cacheName();
+    public String cacheName() default "default";
     
     /**
      * 进行缓存操作的条件

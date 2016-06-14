@@ -94,7 +94,7 @@ public class JfireContextImpl implements JfireContext
                     String beanName = each.getBeanName();
                     String className = each.getClassName();
                     boolean prototype = each.isPrototype();
-                    addBean(beanName, prototype, Class.forName(className));
+                    addBean(beanName, prototype, classLoader.loadClass(className));
                     Map<String, String> dependencies = each.getDependencies();
                     Map<String, String> params = each.getParams();
                     if (dependencies.size() > 0 || params.size() > 0 || each.getPostConstructMethod() != null)
