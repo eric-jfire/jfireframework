@@ -27,6 +27,28 @@ public class ActionInfo
     private String              token;
     private ViewRender          viewRender;
     private HeaderRule          headerRule;
+    private boolean             hasCookie;
+    private boolean             hasHeaders;
+    
+    public boolean isHasCookie()
+    {
+        return hasCookie;
+    }
+    
+    public void setHasCookie(boolean hasCookie)
+    {
+        this.hasCookie = hasCookie;
+    }
+    
+    public boolean isHasHeaders()
+    {
+        return hasHeaders;
+    }
+    
+    public void setHasHeaders(boolean hasHeaders)
+    {
+        this.hasHeaders = hasHeaders;
+    }
     
     public void setHeaders(String[] headers)
     {

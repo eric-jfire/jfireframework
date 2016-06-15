@@ -44,6 +44,8 @@ public class Action
     private final String              token;
     private final ViewRender          viewRender;
     private final HeaderRule          headerRule;
+    private final boolean             hasCookie;
+    private final boolean             hasHeader;
     
     public Action(ActionInfo info)
     {
@@ -60,6 +62,8 @@ public class Action
         method = info.getMethod();
         resultType = info.getResultType();
         token = info.getToken();
+        hasCookie = info.isHasCookie();
+        hasHeader = info.isHasCookie();
         if ("".equals(info.getContentType()))
         {
             switch (resultType)
@@ -222,4 +226,15 @@ public class Action
             return false;
         }
     }
+    
+    public boolean hasCookie()
+    {
+        return hasCookie;
+    }
+    
+    public boolean hasHeader()
+    {
+        return hasHeader;
+    }
+    
 }

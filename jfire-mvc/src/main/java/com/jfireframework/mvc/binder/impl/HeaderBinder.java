@@ -6,13 +6,16 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.reflect.trans.Transfer;
+import com.jfireframework.baseutil.reflect.trans.TransferFactory;
 import com.jfireframework.mvc.annotation.HeaderValue;
 import com.jfireframework.mvc.binder.ParamInfo;
 
 public class HeaderBinder extends AbstractDataBinder
 {
-    private final String headerName;
-    private final String defaultValue;
+    private final String   headerName;
+    private final String   defaultValue;
+    private final Transfer transfer;
     
     public HeaderBinder(ParamInfo info, Set<Class<?>> cycleSet)
     {
@@ -38,6 +41,7 @@ public class HeaderBinder extends AbstractDataBinder
         }
         this.headerName = headerName;
         this.defaultValue = defaultValue;
+        transfer = TransferFactory.get((Class<?>) info.getEntityClass());
     }
     
     @Override
@@ -46,11 +50,15 @@ public class HeaderBinder extends AbstractDataBinder
         String value = request.getHeader(headerName);
         if (StringUtil.isNotBlank(value))
         {
-            return value;
+            return transfer.trans(value);
+        }
+        else if (StringUtil.isNotBlank(defaultValue))
+        {
+            return transfer.trans(defaultValue);
         }
         else
         {
-            return defaultValue;
+            return null;
         }
     }
     

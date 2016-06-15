@@ -6,6 +6,9 @@ import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.reflect.trans.Transfer;
+import com.jfireframework.baseutil.reflect.trans.TransferFactory;
 import com.jfireframework.mvc.annotation.CookieValue;
 import com.jfireframework.mvc.binder.ParamInfo;
 
@@ -13,6 +16,7 @@ public class CookieBinder extends AbstractDataBinder
 {
     private final String cookieName;
     private final String defaultValue;
+    private Transfer     transfer;
     
     public CookieBinder(ParamInfo info, Set<Class<?>> cycleSet)
     {
@@ -38,6 +42,7 @@ public class CookieBinder extends AbstractDataBinder
         }
         this.cookieName = cookieName;
         this.defaultValue = defaultValue;
+        transfer = TransferFactory.get((Class<?>) info.getEntityClass());
     }
     
     @Override
@@ -55,11 +60,15 @@ public class CookieBinder extends AbstractDataBinder
         }
         if (target != null)
         {
-            return target.getValue();
+            return transfer.trans(target.getValue());
+        }
+        else if (StringUtil.isNotBlank(defaultValue))
+        {
+            return transfer.trans(defaultValue);
         }
         else
         {
-            return defaultValue;
+            return null;
         }
     }
     
