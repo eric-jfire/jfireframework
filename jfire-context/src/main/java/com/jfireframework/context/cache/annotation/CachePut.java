@@ -18,7 +18,7 @@ public @interface CachePut
      * 
      * @return
      */
-    public String key();
+    public String value();
     
     /**
      * 缓存名称

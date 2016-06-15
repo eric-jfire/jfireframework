@@ -495,7 +495,7 @@ public class AopUtil
                         throw new ElException(StringUtil.format("使用CacheGet注解的方法必须有返回值，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()));
                     }
                     CacheGet cacheGet = AnnotationUtil.getAnnotation(CacheGet.class, each);
-                    String key = cacheGet.key();
+                    String key = cacheGet.value();
                     String finalKey = ElExplain.createValue(key, names, types);
                     String cacheName = cacheGet.cacheName();
                     String condition = cacheGet.condition();
@@ -535,7 +535,7 @@ public class AopUtil
                         throw new ElException(StringUtil.format("使用CacheGet注解的方法必须有返回值，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()));
                     }
                     CachePut cachePut = AnnotationUtil.getAnnotation(CachePut.class, each);
-                    String key = cachePut.key();
+                    String key = cachePut.value();
                     String finalKey = ElExplain.createValue(key, names, types);
                     String cacheName = cachePut.cacheName();
                     String condition = cachePut.condition();
@@ -564,7 +564,7 @@ public class AopUtil
                 {
                     boolean hasReturn = (each.getReturnType() != void.class);
                     CacheDelete cacheDelete = AnnotationUtil.getAnnotation(CacheDelete.class, each);
-                    String key = cacheDelete.key();
+                    String key = cacheDelete.value();
                     String finalKey = ElExplain.createValue(key, names, types);
                     String cacheName = cacheDelete.cacheName();
                     String condition = cacheDelete.condition();
@@ -616,7 +616,7 @@ public class AopUtil
                 logger.trace("缓存方法{}的内容是\n{}\n", each.toString(), methodBody);
                 newTargetMethod.setBody(methodBody);
             }
-            catch (ElException e)
+            catch (Exception e)
             {
                 throw new UnSupportException(StringUtil.format("构造缓存方法异常，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()), e);
             }

@@ -425,7 +425,7 @@ public class ElExplain
             char c = expression.charAt(index);
             if (c == '$')
             {
-                int next = expression.indexOf(' ');
+                int next = expression.indexOf(' ',index);
                 String value;
                 if (next == -1)
                 {
