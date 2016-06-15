@@ -31,5 +31,14 @@ public class CacheTest
         cacheTarget.remove(5);
         second = cacheTarget.get(5);
         Assert.assertFalse(house == second);
+        String first = cacheTarget.get();
+        String seconde = cacheTarget.get();
+        Assert.assertTrue(first == seconde);
+        cacheTarget.put();
+        seconde = cacheTarget.get();
+        Assert.assertFalse(first == seconde);
+        first = cacheTarget.get();
+        Assert.assertTrue(first == seconde);
+        
     }
 }

@@ -1,6 +1,7 @@
 package com.jfireframework.context.test.function.cachetest;
 
 import javax.annotation.Resource;
+import com.jfireframework.baseutil.code.RandomString;
 import com.jfireframework.context.cache.annotation.CacheDelete;
 import com.jfireframework.context.cache.annotation.CacheGet;
 import com.jfireframework.context.cache.annotation.CachePut;
@@ -26,5 +27,20 @@ public class CacheTarget
     public void remove(int id)
     {
         ;
+    }
+    
+    @CacheGet("'abclist'")
+    public String get()
+    {
+        System.out.println("setarray");
+        return RandomString.randomString(4);
+    }
+    
+    @CachePut("'abc'")
+    @CacheDelete("'abclist'")
+    public String put()
+    {
+        System.out.println("put");
+        return "abc";
     }
 }

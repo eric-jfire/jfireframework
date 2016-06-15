@@ -526,9 +526,10 @@ public class AopUtil
                         methodBody += "}\n";
                         methodBody += "}";
                     }
-                    
+                    logger.trace("缓存方法{}的内容是\n{}\n", each.toString(), methodBody);
+                    newTargetMethod.setBody(methodBody);
                 }
-                else if (AnnotationUtil.isPresent(CachePut.class, each))
+                if (AnnotationUtil.isPresent(CachePut.class, each))
                 {
                     if (each.getReturnType() == Void.class)
                     {
@@ -559,8 +560,10 @@ public class AopUtil
                         methodBody += "}\n";
                         methodBody += "}";
                     }
+                    logger.trace("缓存方法{}的内容是\n{}\n", each.toString(), methodBody);
+                    newTargetMethod.setBody(methodBody);
                 }
-                else
+                if (AnnotationUtil.isPresent(CacheDelete.class, each))
                 {
                     boolean hasReturn = (each.getReturnType() != void.class);
                     CacheDelete cacheDelete = AnnotationUtil.getAnnotation(CacheDelete.class, each);
@@ -573,13 +576,13 @@ public class AopUtil
                         methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
                         if (hasReturn)
                         {
-                            methodBody += "Object result = " + originMethod.getName() + "($1);\n";
+                            methodBody += "Object result = " + originMethod.getName() + "($$);\n";
                             methodBody += "_cache.remove(($w)" + finalKey + ");\n";
                             methodBody += "return ($r)result;\n}";
                         }
                         else
                         {
-                            methodBody += originMethod.getName() + "($1);\n";
+                            methodBody += originMethod.getName() + "($$);\n";
                             methodBody += "_cache.remove(($w)" + finalKey + ");\n";
                             methodBody += "}";
                         }
@@ -591,19 +594,19 @@ public class AopUtil
                         methodBody += "if(" + condition + ")\n{\n";
                         if (hasReturn)
                         {
-                            methodBody += "\tObject result =" + originMethod.getName() + "($1);\n";
+                            methodBody += "\tObject result =" + originMethod.getName() + "($$);\n";
                             methodBody += "\t_cache.remove(($w)" + finalKey + ");\n";
                             methodBody += "\treturn ($r)result;\n";
                         }
                         else
                         {
-                            methodBody += originMethod.getName() + "($1);\n";
+                            methodBody += originMethod.getName() + "($$);\n";
                             methodBody += "\t_cache.remove(($w)" + finalKey + ");\n";
                         }
                         methodBody += "}\nelse\n{\n";
                         if (hasReturn)
                         {
-                            methodBody += "return ($r)" + originMethod.getName() + "($1);\n";
+                            methodBody += "return ($r)" + originMethod.getName() + "($$);\n";
                         }
                         else
                         {
@@ -612,9 +615,10 @@ public class AopUtil
                         methodBody += "}\n";
                         methodBody += "}";
                     }
+                    logger.trace("缓存方法{}的内容是\n{}\n", each.toString(), methodBody);
+                    newTargetMethod.setBody(methodBody);
                 }
-                logger.trace("缓存方法{}的内容是\n{}\n", each.toString(), methodBody);
-                newTargetMethod.setBody(methodBody);
+                
             }
             catch (Exception e)
             {
