@@ -506,7 +506,14 @@ public class AopUtil
                         methodBody += "if(result!=null)\n{return ($r)result;}\n";
                         methodBody += "else\n{\n";
                         methodBody += "result = " + originMethod.getName() + "($$);\n";
-                        methodBody += "_cache.put(($w)" + finalKey + ",result);\n";
+                        if (cacheGet.timeToLive() == -1)
+                        {
+                            methodBody += "_cache.put(($w)" + finalKey + ",result);\n";
+                        }
+                        else
+                        {
+                            methodBody += "_cache.put(($w)" + finalKey + ",result," + cacheGet.timeToLive() + ");\n";
+                        }
                         methodBody += "return ($r)result;\n}\n}";
                     }
                     else
@@ -518,7 +525,14 @@ public class AopUtil
                         methodBody += "\tif(result!=null){return ($r)result;}\n";
                         methodBody += "\telse\n\t{\n";
                         methodBody += "\t\tresult = " + originMethod.getName() + "($$);\n";
-                        methodBody += "\t\t_cache.put(($w)" + finalKey + ",result);\n";
+                        if (cacheGet.timeToLive() == -1)
+                        {
+                            methodBody += "\t\t_cache.put(($w)" + finalKey + ",result);\n";
+                        }
+                        else
+                        {
+                            methodBody += "\t\t_cache.put(($w)" + finalKey + ",result," + cacheGet.timeToLive() + ");\n";
+                        }
                         methodBody += "\t\treturn ($r)result;\n";
                         methodBody += "\t}\n";
                         methodBody += "}\nelse\n{\n";
@@ -544,7 +558,14 @@ public class AopUtil
                     {
                         methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
                         methodBody += "Object result = " + originMethod.getName() + "($$);\n";
-                        methodBody += "_cache.put(($w)" + finalKey + ",result);\n";
+                        if (cachePut.timeToLive() == -1)
+                        {
+                            methodBody += "_cache.put(($w)" + finalKey + ",result);\n";
+                        }
+                        else
+                        {
+                            methodBody += "_cache.put(($w)" + finalKey + ",result," + cachePut.timeToLive() + ");\n";
+                        }
                         methodBody += "return ($r)result;\n}";
                     }
                     else
@@ -553,7 +574,14 @@ public class AopUtil
                         methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
                         methodBody += "if(" + condition + ")\n{\n";
                         methodBody += "\tObject result = " + originMethod.getName() + "($$);\n";
-                        methodBody += "\t_cache.put(($w)" + finalKey + ",result);\n";
+                        if (cachePut.timeToLive() == -1)
+                        {
+                            methodBody += "\t_cache.put(($w)" + finalKey + ",result);\n";
+                        }
+                        else
+                        {
+                            methodBody += "\t_cache.put(($w)" + finalKey + ",result," + cachePut.timeToLive() + ");\n";
+                        }
                         methodBody += "\treturn ($r)result;\n";
                         methodBody += "}\nelse\n{\n";
                         methodBody += "return ($r)" + originMethod.getName() + "($$);\n";

@@ -13,7 +13,9 @@ public class ConcurrentHashMapCacheManager implements CacheManager
     @PostConstruct
     public void init()
     {
-        cacheMap.put("default", new HashMapCache());
+        HashMapCache cache = new HashMapCache();
+        cache.setName("default");
+        cacheMap.put("default", cache);
     }
     
     @Override
