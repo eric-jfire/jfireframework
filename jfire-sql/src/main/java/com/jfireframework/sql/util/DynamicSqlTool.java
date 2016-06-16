@@ -568,7 +568,7 @@ public class DynamicSqlTool
                 formatSql += " limit ?,?";
                 querySql = formatSql;
                 String[] newParamNames = new String[paramTypes.length];
-                System.arraycopy(paramNames, 0, newParamNames, 0, paramTypes.length);
+                System.arraycopy(paramNames, 0, newParamNames, 0, paramTypes.length - 1);
                 newParamNames[newParamNames.length - 1] = pageParamName;
                 queryParam = buildParams(formatSql, variateNames.toArray(new String[0]), newParamNames, paramTypes);
             }
