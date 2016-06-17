@@ -27,20 +27,10 @@ import com.jfireframework.mvc.binder.field.array.ArrayWBooleanField;
 import com.jfireframework.mvc.binder.field.array.ArrayWDoubleField;
 import com.jfireframework.mvc.binder.field.array.ArrayWFloatField;
 import com.jfireframework.mvc.binder.field.array.ArrayWLongField;
-import com.jfireframework.mvc.binder.field.impl.BooleanField;
+import com.jfireframework.mvc.binder.field.impl.BaseField;
 import com.jfireframework.mvc.binder.field.impl.CalendarField;
 import com.jfireframework.mvc.binder.field.impl.DateField;
-import com.jfireframework.mvc.binder.field.impl.DoubleField;
-import com.jfireframework.mvc.binder.field.impl.FloatField;
-import com.jfireframework.mvc.binder.field.impl.IntField;
-import com.jfireframework.mvc.binder.field.impl.IntegerField;
-import com.jfireframework.mvc.binder.field.impl.LongField;
 import com.jfireframework.mvc.binder.field.impl.ObjectBinderField;
-import com.jfireframework.mvc.binder.field.impl.StringField;
-import com.jfireframework.mvc.binder.field.impl.WBooleanField;
-import com.jfireframework.mvc.binder.field.impl.WDoubleField;
-import com.jfireframework.mvc.binder.field.impl.WFloatField;
-import com.jfireframework.mvc.binder.field.impl.WLongField;
 
 public class FieldFactory
 {
@@ -49,20 +39,20 @@ public class FieldFactory
     {
         try
         {
-            binderMap.put(boolean.class, BooleanField.class.getConstructor(String.class, Field.class, Set.class));
+            binderMap.put(boolean.class, BaseField.class.getConstructor(String.class, Field.class, Set.class));
             binderMap.put(Calendar.class, CalendarField.class.getConstructor(String.class, Field.class, Set.class));
             binderMap.put(java.util.Date.class, DateField.class.getConstructor(String.class, Field.class, Set.class));
             binderMap.put(Date.class, DateField.class.getConstructor(String.class, Field.class, Set.class));
-            binderMap.put(double.class, DoubleField.class.getConstructor(String.class, Field.class, Set.class));
-            binderMap.put(float.class, FloatField.class.getConstructor(String.class, Field.class, Set.class));
-            binderMap.put(Integer.class, IntegerField.class.getConstructor(String.class, Field.class, Set.class));
-            binderMap.put(int.class, IntField.class.getConstructor(String.class, Field.class, Set.class));
-            binderMap.put(long.class, LongField.class.getConstructor(String.class, Field.class, Set.class));
-            binderMap.put(String.class, StringField.class.getConstructor(String.class, Field.class, Set.class));
-            binderMap.put(Boolean.class, WBooleanField.class.getConstructor(String.class, Field.class, Set.class));
-            binderMap.put(Double.class, WDoubleField.class.getConstructor(String.class, Field.class, Set.class));
-            binderMap.put(Float.class, WFloatField.class.getConstructor(String.class, Field.class, Set.class));
-            binderMap.put(Long.class, WLongField.class.getConstructor(String.class, Field.class, Set.class));
+            binderMap.put(double.class, BaseField.class.getConstructor(String.class, Field.class, Set.class));
+            binderMap.put(float.class, BaseField.class.getConstructor(String.class, Field.class, Set.class));
+            binderMap.put(Integer.class, BaseField.class.getConstructor(String.class, Field.class, Set.class));
+            binderMap.put(int.class, BaseField.class.getConstructor(String.class, Field.class, Set.class));
+            binderMap.put(long.class, BaseField.class.getConstructor(String.class, Field.class, Set.class));
+            binderMap.put(String.class, BaseField.class.getConstructor(String.class, Field.class, Set.class));
+            binderMap.put(Boolean.class, BaseField.class.getConstructor(String.class, Field.class, Set.class));
+            binderMap.put(Double.class, BaseField.class.getConstructor(String.class, Field.class, Set.class));
+            binderMap.put(Float.class, BaseField.class.getConstructor(String.class, Field.class, Set.class));
+            binderMap.put(Long.class, BaseField.class.getConstructor(String.class, Field.class, Set.class));
             binderMap.put(boolean[].class, ArrayBooleanField.class.getConstructor(String.class, Field.class, Set.class));
             binderMap.put(double[].class, ArrayDoubleField.class.getConstructor(String.class, Field.class, Set.class));
             binderMap.put(float[].class, ArrayFloatField.class.getConstructor(String.class, Field.class, Set.class));
