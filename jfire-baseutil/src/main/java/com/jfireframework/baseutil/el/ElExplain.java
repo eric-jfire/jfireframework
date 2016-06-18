@@ -407,7 +407,8 @@ public class ElExplain
     }
     
     /**
-     * 构造一个值表达式。比如'abc'+$user.name 那么就会被转化为"abc"+user.getName()
+     * 构造一个值表达式。比如'abc'+$user.name
+     * 那么就会被转化为"abc"+user.getName(),并且user会被替换为正确的，如$1这样的表达。以方便在javassist中使用
      * 
      * @param expression
      * @param names
@@ -425,7 +426,7 @@ public class ElExplain
             char c = expression.charAt(index);
             if (c == '$')
             {
-                int next = expression.indexOf(' ',index);
+                int next = expression.indexOf(' ', index);
                 String value;
                 if (next == -1)
                 {
