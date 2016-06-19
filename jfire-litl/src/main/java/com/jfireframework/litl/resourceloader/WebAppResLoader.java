@@ -1,28 +1,24 @@
 package com.jfireframework.litl.resourceloader;
 
 import java.io.File;
+import javax.servlet.ServletContext;
 import com.jfireframework.litl.TplCenter;
 import com.jfireframework.litl.template.Template;
 import com.jfireframework.litl.template.impl.FileTemplate;
 
-public class FileResLoader extends AbstractResLoader
+public class WebAppResLoader extends AbstractResLoader
 {
-    private final File root;
+    private final ServletContext servletContext;
     
-    public FileResLoader(File root)
+    public WebAppResLoader(ServletContext servletContext)
     {
-        this.root = root;
-    }
-    
-    public FileResLoader(String path)
-    {
-        root = new File(path);
+        this.servletContext = servletContext;
     }
     
     @Override
     protected Template buildTemplate(String name, TplCenter tplCenter)
     {
-        return new FileTemplate(new File(root, name), tplCenter);
+        return new FileTemplate(new File(servletContext.getRealPath(name)), tplCenter);
     }
     
 }

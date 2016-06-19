@@ -51,11 +51,7 @@ public class RenderBuilder
         CtClass tpl_render_interface = classPool.get(TplRender.class.getName());
         CtClass target = classPool.makeClass("tpl_render_" + System.nanoTime());
         target.setInterfaces(new CtClass[] { tpl_render_interface });
-        CtField ctField = new CtField(classPool.get(TplCenter.class.getName()), "_tplCenter", target);
-        target.addField(ctField);
-        CtConstructor constructor = new CtConstructor(new CtClass[] { classPool.get(TplCenter.class.getName()) }, target);
-        constructor.setBody("{this._tplCenter = $1;}");
-        target.addConstructor(constructor);
+        addFieldAndConstructor(target);
         String methodBody = "{\njava.lang.StringBuilder _builder  = new StringBuilder();\n";
         for (Entry<String, Object> entry : data.entrySet())
         {
@@ -67,7 +63,7 @@ public class RenderBuilder
         StringCache methodCache = new StringCache(128);
         boolean isInMethod = false;
         boolean isInContent = false;
-        TplCenter tplCenter = template.geTplCenter();
+        TplCenter tplCenter = template.getTplCenter();
         for (LineInfo line : template.getContent())
         {
             index = 0;
@@ -144,7 +140,7 @@ public class RenderBuilder
                             {
                                 String[] varAndFormat = var.split(",");
                                 VarInfo info = analyse(varAndFormat[0], data, line);
-                                methodBody += "_builder.append(com.jfireframework.litl.format.FormatRegister.get(" + info.rootType.getName() + ".class).format(" + info.varChain + "," + varAndFormat[1] + "));\n";
+                                methodBody += "_builder.append(com.jfireframework.litl.format.FormatRegister.get(" + info.rootType.getName() + ".class).format(($w)" + info.varChain + "," + varAndFormat[1] + "));\n";
                                 index = end + tplCenter.getVarEndFlag().length();
                                 continue;
                             }
@@ -192,7 +188,7 @@ public class RenderBuilder
                                 cache.deleteLast();
                             }
                             cache.append('}');
-                            methodBody += "com.jfireframework.litl.function.FunctionRegister.get(\"" + functionName + "\").call(" + cache.toString() + ",$1,_builder,_tplCenter);\n";
+                            methodBody += "com.jfireframework.litl.function.FunctionRegister.get(\"" + functionName + "\").call(" + cache.toString() + ",$1,_builder,_template);\n";
                             index = end + tplCenter.getFunctionEndFlag().length();
                             continue;
                         }
@@ -220,7 +216,16 @@ public class RenderBuilder
         logger.trace("为模板{}生成的方法体是\n{}\n", template.getName(), methodBody);
         ctMethod.setBody(methodBody);
         target.addMethod(ctMethod);
-        return (TplRender) target.toClass().getConstructor(TplCenter.class).newInstance(template.geTplCenter());
+        return (TplRender) target.toClass().getConstructor(Template.class).newInstance(template);
+    }
+    
+    private static void addFieldAndConstructor(CtClass target) throws CannotCompileException, NotFoundException
+    {
+        CtField ctField = new CtField(classPool.get(Template.class.getName()), "_template", target);
+        target.addField(ctField);
+        CtConstructor constructor = new CtConstructor(new CtClass[] { classPool.get(Template.class.getName()) }, target);
+        constructor.setBody("{this._template = $1;}");
+        target.addConstructor(constructor);
     }
     
     private static boolean isDirectParam(String var)

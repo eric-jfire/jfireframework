@@ -1,4 +1,4 @@
-package com.jfireframework.litl.template;
+package com.jfireframework.litl.template.impl;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -8,6 +8,8 @@ import java.util.Map;
 import com.jfireframework.baseutil.LineReader;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.litl.TplCenter;
+import com.jfireframework.litl.template.LineInfo;
+import com.jfireframework.litl.template.Template;
 import com.jfireframework.litl.tplrender.RenderBuilder;
 import com.jfireframework.litl.tplrender.TplRender;
 
@@ -108,7 +110,7 @@ public class FileTemplate implements Template
     }
     
     @Override
-    public TplCenter geTplCenter()
+    public TplCenter getTplCenter()
     {
         return tplCenter;
     }
@@ -117,6 +119,18 @@ public class FileTemplate implements Template
     public String getName()
     {
         return file.getName();
+    }
+    
+    @Override
+    public String getFilePath()
+    {
+        return file.getAbsolutePath();
+    }
+    
+    @Override
+    public String getDirPath()
+    {
+        return file.getParentFile().getAbsolutePath();
     }
     
 }

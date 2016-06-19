@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.litl.format.impl.DateFormat;
+import com.jfireframework.litl.format.impl.NumberFormat;
 
 public class FormatRegister
 {
@@ -13,6 +14,13 @@ public class FormatRegister
     static
     {
         formats.put(Date.class, new DateFormat());
+        formats.put(java.sql.Date.class, new DateFormat());
+        formats.put(Integer.class, new NumberFormat());
+        formats.put(Float.class, new NumberFormat());
+        formats.put(Double.class, new NumberFormat());
+        formats.put(int.class, new NumberFormat());
+        formats.put(float.class, new NumberFormat());
+        formats.put(double.class, new NumberFormat());
     }
     
     public static Format get(Class<?> type)

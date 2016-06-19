@@ -18,349 +18,349 @@ public class TransferFactory
         map.put(short.class, new shortTrans());
         map.put(byte.class, new byteTrans());
         map.put(char.class, new charTrans());
+        map.put(String.class, new StringTrans());
         map.put(Integer.class, new IntegerTrans());
-        map.put(Long.class, new LongTrans());
-        map.put(Short.class, new ShortTrans());
-        map.put(Byte.class, new ByteTrans());
-        map.put(Float.class, new FloatTrans());
-        map.put(Double.class, new DoubleTrans());
+        map.put(Long.class, new WLongTrans());
+        map.put(Short.class, new WShortTrans());
+        map.put(Byte.class, new WByteTrans());
+        map.put(Float.class, new WFloatTrans());
+        map.put(Double.class, new WDoubleTrans());
         map.put(Character.class, new CharacterTrans());
-        map.put(Boolean.class, new BooleanTrans());
-        
+        map.put(Boolean.class, new WBooleanTrans());
     }
     
     public static Transfer get(Class<?> type)
     {
         return map.get(type);
     }
-}
-
-class IntegerTrans implements Transfer
-{
     
-    @Override
-    public Object trans(String value)
+    static class intTransfer implements Transfer
     {
-        if (StringUtil.isNotBlank(value))
+        
+        @Override
+        public Object trans(String value)
         {
             return Integer.valueOf(value);
         }
-        else
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
         {
-            return null;
+            unsafe.putInt(entity, offset, Integer.parseInt(value));
+        }
+        
+    }
+    
+    static class IntegerTrans implements Transfer
+    {
+        
+        @Override
+        public Object trans(String value)
+        {
+            if (StringUtil.isNotBlank(value))
+            {
+                return Integer.valueOf(value);
+            }
+            else
+            {
+                return null;
+            }
+        }
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
+        {
+            unsafe.putObject(entity, offset, trans(value));
+        }
+        
+    }
+    
+    static class WByteTrans implements Transfer
+    {
+        
+        @Override
+        public Object trans(String value)
+        {
+            if (StringUtil.isNotBlank(value))
+            {
+                return Byte.valueOf(value);
+            }
+            else
+            {
+                return null;
+            }
+        }
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
+        {
+            unsafe.putObject(entity, offset, trans(value));
+        }
+        
+    }
+    
+    static class CharacterTrans implements Transfer
+    {
+        
+        @Override
+        public Object trans(String value)
+        {
+            if (StringUtil.isNotBlank(value))
+            {
+                return Character.valueOf(value.charAt(0));
+            }
+            else
+            {
+                return null;
+            }
+        }
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
+        {
+            unsafe.putObject(entity, offset, trans(value));
+        }
+        
+    }
+    
+    static class WLongTrans implements Transfer
+    {
+        @Override
+        public Object trans(String value)
+        {
+            if (StringUtil.isNotBlank(value))
+            {
+                return Long.valueOf(value);
+            }
+            else
+            {
+                return null;
+            }
+        }
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
+        {
+            unsafe.putObject(entity, offset, trans(value));
         }
     }
     
-    @Override
-    public void setValue(Object entity, long offset, String value)
+    static class WShortTrans implements Transfer
     {
-        unsafe.putObject(entity, offset, trans(value));
-    }
-    
-}
-
-class ByteTrans implements Transfer
-{
-    
-    @Override
-    public Object trans(String value)
-    {
-        if (StringUtil.isNotBlank(value))
+        @Override
+        public Object trans(String value)
         {
-            return Byte.valueOf(value);
+            if (StringUtil.isNotBlank(value))
+            {
+                return Short.valueOf(value);
+            }
+            else
+            {
+                return null;
+            }
         }
-        else
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
         {
-            return null;
+            unsafe.putObject(entity, offset, trans(value));
         }
     }
     
-    @Override
-    public void setValue(Object entity, long offset, String value)
+    static class WBooleanTrans implements Transfer
     {
-        unsafe.putObject(entity, offset, trans(value));
-    }
-    
-}
-
-class CharacterTrans implements Transfer
-{
-    
-    @Override
-    public Object trans(String value)
-    {
-        if (StringUtil.isNotBlank(value))
+        @Override
+        public Object trans(String value)
         {
-            return Character.valueOf(value.charAt(0));
+            if (StringUtil.isNotBlank(value))
+            {
+                return Boolean.valueOf(value);
+            }
+            else
+            {
+                return null;
+            }
         }
-        else
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
         {
-            return null;
+            unsafe.putObject(entity, offset, trans(value));
         }
     }
     
-    @Override
-    public void setValue(Object entity, long offset, String value)
+    static class WDoubleTrans implements Transfer
     {
-        unsafe.putObject(entity, offset, trans(value));
+        @Override
+        public Object trans(String value)
+        {
+            if (StringUtil.isNotBlank(value))
+            {
+                return Double.valueOf(value);
+            }
+            else
+            {
+                return null;
+            }
+        }
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
+        {
+            unsafe.putObject(entity, offset, trans(value));
+        }
     }
     
-}
-
-class LongTrans implements Transfer
-{
-    @Override
-    public Object trans(String value)
+    static class WFloatTrans implements Transfer
     {
-        if (StringUtil.isNotBlank(value))
+        @Override
+        public Object trans(String value)
+        {
+            if (StringUtil.isNotBlank(value))
+            {
+                return Float.valueOf(value);
+            }
+            else
+            {
+                return null;
+            }
+        }
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
+        {
+            unsafe.putObject(entity, offset, trans(value));
+        }
+    }
+    
+    static class StringTrans implements Transfer
+    {
+        
+        @Override
+        public Object trans(String value)
+        {
+            return value;
+        }
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
+        {
+            unsafe.putObject(entity, offset, trans(value));
+        }
+        
+    }
+    
+    static class longTransfer implements Transfer
+    {
+        
+        @Override
+        public Object trans(String value)
         {
             return Long.valueOf(value);
         }
-        else
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
         {
-            return null;
+            unsafe.putLong(entity, offset, Long.parseLong(value));
         }
+        
     }
     
-    @Override
-    public void setValue(Object entity, long offset, String value)
+    static class booleanTransfer implements Transfer
     {
-        unsafe.putObject(entity, offset, trans(value));
-    }
-}
-
-class ShortTrans implements Transfer
-{
-    @Override
-    public Object trans(String value)
-    {
-        if (StringUtil.isNotBlank(value))
-        {
-            return Short.valueOf(value);
-        }
-        else
-        {
-            return null;
-        }
-    }
-    
-    @Override
-    public void setValue(Object entity, long offset, String value)
-    {
-        unsafe.putObject(entity, offset, trans(value));
-    }
-}
-
-class BooleanTrans implements Transfer
-{
-    @Override
-    public Object trans(String value)
-    {
-        if (StringUtil.isNotBlank(value))
+        
+        @Override
+        public Object trans(String value)
         {
             return Boolean.valueOf(value);
         }
-        else
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
         {
-            return null;
+            unsafe.putBoolean(entity, offset, Boolean.parseBoolean(value));
+        }
+        
+    }
+    
+    static class doubleTransfer implements Transfer
+    {
+        
+        @Override
+        public Object trans(String value)
+        {
+            return Integer.valueOf(value);
+        }
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
+        {
+            unsafe.putDouble(entity, offset, Double.parseDouble(value));
+        }
+        
+    }
+    
+    static class floatTransfer implements Transfer
+    {
+        
+        @Override
+        public Object trans(String value)
+        {
+            return Integer.valueOf(value);
+        }
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
+        {
+            unsafe.putFloat(entity, offset, Float.parseFloat(value));
+        }
+        
+    }
+    
+    static class shortTrans implements Transfer
+    {
+        public Object trans(String value)
+        {
+            return Short.valueOf(value);
+        }
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
+        {
+            unsafe.putShort(entity, offset, Short.parseShort(value));
         }
     }
     
-    @Override
-    public void setValue(Object entity, long offset, String value)
+    static class charTrans implements Transfer
     {
-        unsafe.putObject(entity, offset, trans(value));
-    }
-}
-
-class DoubleTrans implements Transfer
-{
-    @Override
-    public Object trans(String value)
-    {
-        if (StringUtil.isNotBlank(value))
+        
+        @Override
+        public Object trans(String value)
         {
-            return Double.valueOf(value);
+            return Character.valueOf(value.charAt(0));
         }
-        else
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
         {
-            return null;
+            unsafe.putChar(entity, offset, value.charAt(0));
         }
     }
     
-    @Override
-    public void setValue(Object entity, long offset, String value)
+    static class byteTrans implements Transfer
     {
-        unsafe.putObject(entity, offset, trans(value));
-    }
-}
-
-class FloatTrans implements Transfer
-{
-    @Override
-    public Object trans(String value)
-    {
-        if (StringUtil.isNotBlank(value))
+        
+        @Override
+        public Object trans(String value)
         {
-            return Float.valueOf(value);
+            return Byte.valueOf(value);
         }
-        else
+        
+        @Override
+        public void setValue(Object entity, long offset, String value)
         {
-            return null;
+            unsafe.putByte(entity, offset, Byte.parseByte(value));
         }
-    }
-    
-    @Override
-    public void setValue(Object entity, long offset, String value)
-    {
-        unsafe.putObject(entity, offset, trans(value));
-    }
-}
-
-class StringTrans implements Transfer
-{
-    
-    @Override
-    public Object trans(String value)
-    {
-        return value;
-    }
-    
-    @Override
-    public void setValue(Object entity, long offset, String value)
-    {
-        unsafe.putObject(entity, offset, trans(value));
-    }
-    
-}
-
-class longTransfer implements Transfer
-{
-    
-    @Override
-    public Object trans(String value)
-    {
-        return Long.valueOf(value);
-    }
-    
-    @Override
-    public void setValue(Object entity, long offset, String value)
-    {
-        unsafe.putLong(entity, offset, Long.parseLong(value));
-    }
-    
-}
-
-class booleanTransfer implements Transfer
-{
-    
-    @Override
-    public Object trans(String value)
-    {
-        return Boolean.valueOf(value);
-    }
-    
-    @Override
-    public void setValue(Object entity, long offset, String value)
-    {
-        unsafe.putBoolean(entity, offset, Boolean.parseBoolean(value));
-    }
-    
-}
-
-class doubleTransfer implements Transfer
-{
-    
-    @Override
-    public Object trans(String value)
-    {
-        return Integer.valueOf(value);
-    }
-    
-    @Override
-    public void setValue(Object entity, long offset, String value)
-    {
-        unsafe.putDouble(entity, offset, Double.parseDouble(value));
-    }
-    
-}
-
-class intTransfer implements Transfer
-{
-    
-    @Override
-    public Object trans(String value)
-    {
-        return Integer.valueOf(value);
-    }
-    
-    @Override
-    public void setValue(Object entity, long offset, String value)
-    {
-        unsafe.putInt(entity, offset, Integer.parseInt(value));
-    }
-    
-}
-
-class floatTransfer implements Transfer
-{
-    
-    @Override
-    public Object trans(String value)
-    {
-        return Integer.valueOf(value);
-    }
-    
-    @Override
-    public void setValue(Object entity, long offset, String value)
-    {
-        unsafe.putFloat(entity, offset, Float.parseFloat(value));
-    }
-    
-}
-
-class shortTrans implements Transfer
-{
-    public Object trans(String value)
-    {
-        return Short.valueOf(value);
-    }
-    
-    @Override
-    public void setValue(Object entity, long offset, String value)
-    {
-        unsafe.putShort(entity, offset, Short.parseShort(value));
-    }
-}
-
-class charTrans implements Transfer
-{
-    
-    @Override
-    public Object trans(String value)
-    {
-        return Character.valueOf(value.charAt(0));
-    }
-    
-    @Override
-    public void setValue(Object entity, long offset, String value)
-    {
-        unsafe.putChar(entity, offset, value.charAt(0));
-    }
-}
-
-class byteTrans implements Transfer
-{
-    
-    @Override
-    public Object trans(String value)
-    {
-        return Byte.valueOf(value);
-    }
-    
-    @Override
-    public void setValue(Object entity, long offset, String value)
-    {
-        unsafe.putByte(entity, offset, Byte.parseByte(value));
     }
 }

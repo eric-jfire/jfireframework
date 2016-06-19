@@ -3,13 +3,13 @@ package com.jfireframework.litl.resourceloader;
 import com.jfireframework.litl.TplCenter;
 import com.jfireframework.litl.template.Template;
 
-public interface TlResLoader
+public interface TplResLoader
 {
     /**
      * 使用名称定位一个模板文件
      * 
-     * @param name
+     * @param path
      * @return
      */
-    public Template loadTemplate(String name, TplCenter tplCenter);
+    public Template loadTemplate(String path, TplCenter tplCenter);
 }
