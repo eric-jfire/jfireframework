@@ -7,12 +7,15 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import com.jfireframework.litl.resourceloader.FileResLoader;
+import com.jfireframework.litl.resourceloader.TlResLoader;
+import com.jfireframework.litl.tplrender.TplRender;
 import javassist.CannotCompileException;
 import javassist.NotFoundException;
 
 public class TplTest
 {
-    public static void main(String[] args) throws FileNotFoundException, SecurityException, NoSuchFieldException, NotFoundException, CannotCompileException, InstantiationException, IllegalAccessException
+    public static void main(String[] args) throws FileNotFoundException, SecurityException, NoSuchFieldException, NotFoundException, CannotCompileException, InstantiationException, IllegalAccessException, InterruptedException
     {
         // LineReader lineReader = new LineReader(new File("tmp.tl"),
         // Charset.forName("utf8"));
@@ -36,7 +39,14 @@ public class TplTest
         data.put("persons", persons);
         data.put("title", "题目");
         data.put("today", new Date());
-        TplRender render = new TplCenter(new File("E:/jfireframekwork/jfire-template/")).get("tmp.tl", data);
-        System.out.println(render.render(data));
+        TlResLoader loader = new FileResLoader("E:/jfireframekwork/jfire-template/");
+        TplCenter center = new TplCenter(loader);
+        for (int i = 0; i < 2; i++)
+        {
+            System.out.println("第" + (i + 1) + "次渲染的结果");
+            String value = center.load("tmp.tl").render(data);
+            System.out.println(value);
+            Thread.sleep(10000);
+        }
     }
 }
