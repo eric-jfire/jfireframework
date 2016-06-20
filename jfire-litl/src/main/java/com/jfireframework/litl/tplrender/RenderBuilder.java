@@ -13,6 +13,7 @@ import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.litl.TplCenter;
 import com.jfireframework.litl.template.LineInfo;
 import com.jfireframework.litl.template.Template;
+import com.jfireframework.litl.varaccess.VarAccess;
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
 import javassist.ClassPool;
@@ -27,10 +28,22 @@ public class RenderBuilder
 {
     private ClassPool           classPool = new ClassPool();
     private final static Logger logger    = ConsoleLogFactory.getLogger();
+    private ClassLoader         classLoader;
+    private VarAccess           varAccess;
     
     public RenderBuilder(ClassLoader classLoader)
     {
+        if (classLoader == null)
+        {
+            this.classLoader = Thread.currentThread().getContextClassLoader();
+        }
+        else
+        {
+            this.classLoader = classLoader;
+        }
         initClassPool(classLoader);
+        varAccess = new VarAccess(classPool, classLoader);
+        
     }
     
     public void initClassPool(ClassLoader classLoader)
@@ -242,15 +255,17 @@ public class RenderBuilder
             throw new UnSupportException(StringUtil.format("为模板:{}生成渲染类错误，以下是方法体，请检查\n{}\n", template.getPath(), methodBody), e);
         }
         target.addMethod(ctMethod);
-        return (TplRender) target.toClass().getConstructor(Template.class).newInstance(template);
+        return (TplRender) target.toClass(classLoader, null).getConstructor(Template.class, VarAccess.class).newInstance(template, varAccess);
     }
     
     private void addFieldAndConstructor(CtClass target) throws CannotCompileException, NotFoundException
     {
         CtField ctField = new CtField(classPool.get(Template.class.getName()), "_template", target);
         target.addField(ctField);
-        CtConstructor constructor = new CtConstructor(new CtClass[] { classPool.get(Template.class.getName()) }, target);
-        constructor.setBody("{this._template = $1;}");
+        ctField = new CtField(classPool.get(VarAccess.class.getName()), "_varaccess", target);
+        target.addField(ctField);
+        CtConstructor constructor = new CtConstructor(new CtClass[] { classPool.get(Template.class.getName()), classPool.get(VarAccess.class.getName()) }, target);
+        constructor.setBody("{this._template = $1;this._varaccess=$2;}");
         target.addConstructor(constructor);
     }
     
