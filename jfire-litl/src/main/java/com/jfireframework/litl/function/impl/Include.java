@@ -16,6 +16,7 @@ public class Include implements Function
         int line = (Integer) params[params.length - 1];
         try
         {
+            path = path.replace('/', '\\');
             template = template.load(path);
         }
         catch (Exception e)

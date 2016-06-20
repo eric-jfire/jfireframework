@@ -4,6 +4,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
+import com.jfireframework.baseutil.simplelog.Logger;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
@@ -14,6 +16,7 @@ public class VarAccess
     
     private ClassPool                                classPool;
     private ClassLoader                              classLoader;
+    private static final Logger                      logger      = ConsoleLogFactory.getLogger();
     
     public VarAccess(ClassPool classPool, ClassLoader classLoader)
     {
@@ -30,9 +33,14 @@ public class VarAccess
      */
     public Object getValue(String key, String varName, Object target)
     {
+        if (target == null)
+        {
+            return null;
+        }
         FieldAccesser fieldAccesser = accesserMap.get(key);
         if (fieldAccesser == null)
         {
+            // 这个地方的锁应该分配给每一个key一个，类似于classloader中的思路
             synchronized (accesserMap)
             {
                 if (accesserMap.containsKey(key))
@@ -49,9 +57,10 @@ public class VarAccess
                         CtMethod ctMethod = new CtMethod(classPool.get(Object.class.getName()), "getValue", new CtClass[] { classPool.get(Object.class.getName()) }, targetcc);
                         StringCache cache = new StringCache();
                         cache.append('{');
-                        cache.append("($r)((").append(target.getClass().getName()).append(")$1)");
+                        cache.append("return ($r)((").append(target.getClass().getName()).append(")$1)");
                         cache.append(ReflectUtil.buildGetMethod(varName, target.getClass()));
                         cache.append(";}");
+                        logger.trace("为参数:{}生成的获取代码是{}", key, cache.toString());
                         ctMethod.setBody(cache.toString());
                         targetcc.addMethod(ctMethod);
                         fieldAccesser = (FieldAccesser) targetcc.toClass(classLoader, null).newInstance();
@@ -64,7 +73,14 @@ public class VarAccess
                 }
             }
         }
-        return fieldAccesser.getValue(target);
+        try
+        {
+            return fieldAccesser.getValue(target);
+        }
+        catch (NullPointerException e)
+        {
+            return null;
+        }
         
     }
 }

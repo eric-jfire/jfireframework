@@ -133,6 +133,7 @@ public class FileTemplate implements Template
             String rootPath = tplCenter.getRootPath();
             String filePath = file.getParentFile().getAbsolutePath() + File.separatorChar + name;
             String keyPath = filePath.substring(rootPath.length());
+          
             return tplCenter.load(keyPath);
         }
     }

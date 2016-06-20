@@ -10,6 +10,7 @@ import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
+import com.jfireframework.litl.Person;
 import com.jfireframework.litl.TplCenter;
 import com.jfireframework.litl.template.LineInfo;
 import com.jfireframework.litl.template.Template;
@@ -123,15 +124,7 @@ public class RenderBuilder
                             else
                             {
                                 String tmp_method = context.substring(index + tplCenter.getMethodStartFlag().length(), end);
-                                if (tmp_method.trim().startsWith("for") && tmp_method.contains(" in "))
-                                {
-                                    tmp_method = tmp_method.trim();
-                                    // 假定认为此时的语法应该是for(user in userlist)这种模式
-                                    String tmp_var = tmp_method.substring(4, tmp_method.indexOf(' ', 4));
-                                    int tmp_start_flag = tmp_method.indexOf(" in ") + 4;
-                                    String tmp_list = tmp_method.substring(tmp_start_flag, tmp_method.indexOf(')', tmp_start_flag));
-                                    
-                                }
+                                tmp_method = tmp_method.trim();
                                 methodCache.append(tmp_method);
                                 isInMethod = false;
                                 methodBody += methodCache.toString() + ";\n";
@@ -159,8 +152,33 @@ public class RenderBuilder
                                 var = var.trim();
                                 if (var.indexOf(",") == -1)
                                 {
-                                    VarInfo info = analyse(var, data, line);
-                                    methodBody += "_builder.append(" + info.varChain + ");\n";
+                                    // VarInfo info = analyse(var, data, line);
+                                    String targetObjectName = null;
+                                    String invokeChain = null;
+                                    String[] tmp_var_list = var.split("\\.");
+                                    if (tmp_var_list[0].indexOf('[') != -1)
+                                    {
+                                        targetObjectName = tmp_var_list[0];
+                                        String tmp_target_real_var = targetObjectName.substring(0, targetObjectName.indexOf('['));
+                                        invokeChain = "invokeProxy" + var.substring(tmp_var_list[0].length());
+                                        if (data.get(tmp_target_real_var).getClass().isArray() == false)
+                                        {
+                                            int start = targetObjectName.indexOf('[');
+                                            targetObjectName = tmp_target_real_var + ".get(" + targetObjectName.substring(start + 1, targetObjectName.indexOf(']', start)) + ")";
+                                        }
+                                    }
+                                    else if (tmp_var_list.length >= 2 && tmp_var_list[1].indexOf("get(") != -1)
+                                    {
+                                        targetObjectName = tmp_var_list[0] + '.' + tmp_var_list[1];
+                                        // +1是那个.的长度
+                                        invokeChain = "invokeProxy" + var.substring(tmp_var_list[0].length() + tmp_var_list[1].length() + 1);
+                                    }
+                                    else
+                                    {
+                                        targetObjectName = tmp_var_list[0];
+                                        invokeChain = var;
+                                    }
+                                    methodBody += "_builder.append(_varaccess.getValue(\"" + template.getPath() + '_' + var + "\",\"" + invokeChain + "\"," + targetObjectName + "));\n";
                                     index = end + tplCenter.getVarEndFlag().length();
                                     continue;
                                 }
