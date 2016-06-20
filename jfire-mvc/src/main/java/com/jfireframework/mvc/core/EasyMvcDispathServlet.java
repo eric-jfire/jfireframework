@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
+import com.jfireframework.mvc.core.action.Action;
 import com.jfireframework.mvc.util.ChangeMethodRequest;
 
 /**

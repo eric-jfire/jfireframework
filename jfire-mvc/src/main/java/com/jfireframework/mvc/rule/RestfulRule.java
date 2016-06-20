@@ -1,29 +1,48 @@
-package com.jfireframework.mvc.rest;
+package com.jfireframework.mvc.rule;
 
 import java.util.Map;
+import com.jfireframework.baseutil.collection.set.LightSet;
 
 public class RestfulRule
 {
-    
-    public static void main(String[] args)
-    {
-        String[] tmp = "user/*/*".split("\\*");
-        for (String each : tmp)
-        {
-            System.out.println(each);
-        }
-    }
     
     private final String[] names;
     private final String[] rules;
     private final int      lastRuleLength;
     private final boolean  endWithAsterisk;
     private final int      valueLength;
-    private final String   url;
     
-    public RestfulRule(String rule, String[] names)
+    public RestfulRule(String url)
     {
-        url = rule;
+        LightSet<String> set = new LightSet<String>();
+        StringBuilder builder = new StringBuilder();
+        int pre = 0, index = 0;
+        do
+        {
+            index = url.indexOf("{", pre);
+            if (index <= 0)
+            {
+                break;
+            }
+            else
+            {
+                builder.append(url.substring(pre, index)).append("*");
+                pre = index + 1;
+                index = url.indexOf("}", pre);
+                if (index <= 0)
+                {
+                    throw new RuntimeException("");
+                }
+                else
+                {
+                    set.add(url.substring(pre, index));
+                    pre = index + 1;
+                }
+            }
+        } while (true);
+        builder.append(url.substring(pre));
+        String rule = builder.toString();
+        names = set.toArray(String.class);
         rules = rule.split("\\*");
         if (rule.endsWith("*"))
         {
@@ -36,12 +55,6 @@ public class RestfulRule
             valueLength = rules.length - 1;
         }
         lastRuleLength = rules[rules.length - 1].length();
-        this.names = names;
-    }
-    
-    public String getUrl()
-    {
-        return url;
     }
     
     public boolean match(String url)

@@ -2,16 +2,23 @@ package com.jfireframework.litl;
 
 import com.jfireframework.litl.resourceloader.TplResLoader;
 import com.jfireframework.litl.template.Template;
-import javassist.ClassPool;
+import com.jfireframework.litl.tplrender.RenderBuilder;
 
 public class TplCenter extends TempLateConfig
 {
-    private final TplResLoader tplResLoader;
+    private final TplResLoader  tplResLoader;
+    private final RenderBuilder renderBuilder;
     
     public TplCenter(TplResLoader tlResLoader)
     {
-        ClassPool.doPruning = true;
         this.tplResLoader = tlResLoader;
+        renderBuilder = new RenderBuilder(null);
+    }
+    
+    public TplCenter(TplResLoader tplResLoader, ClassLoader classLoader)
+    {
+        this.tplResLoader = tplResLoader;
+        renderBuilder = new RenderBuilder(classLoader);
     }
     
     public Template load(String name)
@@ -22,6 +29,11 @@ public class TplCenter extends TempLateConfig
     public String getRootPath()
     {
         return tplResLoader.getRootPath();
+    }
+    
+    public RenderBuilder getBuilder()
+    {
+        return renderBuilder;
     }
     
 }

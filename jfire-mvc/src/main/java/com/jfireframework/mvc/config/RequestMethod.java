@@ -1,4 +1,4 @@
-package com.jfireframework.mvc.util;
+package com.jfireframework.mvc.config;
 
 public enum RequestMethod
 {

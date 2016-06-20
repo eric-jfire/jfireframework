@@ -11,7 +11,6 @@ import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.litl.TplCenter;
 import com.jfireframework.litl.template.LineInfo;
 import com.jfireframework.litl.template.Template;
-import com.jfireframework.litl.tplrender.RenderBuilder;
 import com.jfireframework.litl.tplrender.TplRender;
 
 public class FileTemplate implements Template
@@ -87,7 +86,7 @@ public class FileTemplate implements Template
                 {
                     try
                     {
-                        render = RenderBuilder.build(data, this);
+                        render = tplCenter.getBuilder().build(data, this);
                     }
                     catch (Exception e)
                     {
@@ -104,7 +103,7 @@ public class FileTemplate implements Template
                 {
                     try
                     {
-                        render = RenderBuilder.build(data, this);
+                        render = tplCenter.getBuilder().build(data, this);
                     }
                     catch (Exception e)
                     {

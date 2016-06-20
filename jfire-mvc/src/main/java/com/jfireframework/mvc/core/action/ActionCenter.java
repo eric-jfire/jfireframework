@@ -1,4 +1,4 @@
-package com.jfireframework.mvc.core;
+package com.jfireframework.mvc.core.action;
 
 import java.util.HashMap;
 import java.util.HashSet;

@@ -7,7 +7,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.mvc.binder.DataBinder;
-import com.jfireframework.mvc.core.Action;
+import com.jfireframework.mvc.core.action.Action;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
 
 @Resource

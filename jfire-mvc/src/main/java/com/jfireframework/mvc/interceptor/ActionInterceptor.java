@@ -3,7 +3,7 @@ package com.jfireframework.mvc.interceptor;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.order.Order;
-import com.jfireframework.mvc.core.Action;
+import com.jfireframework.mvc.core.action.Action;
 
 /**
  * 方法拦截器接口。方法拦截器有两个地方可以定义规则，这两个规则是并行生效的。

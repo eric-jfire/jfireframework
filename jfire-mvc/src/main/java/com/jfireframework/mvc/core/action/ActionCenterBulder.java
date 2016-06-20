@@ -1,4 +1,4 @@
-package com.jfireframework.mvc.util;
+package com.jfireframework.mvc.core.action;
 
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -18,12 +18,8 @@ import com.jfireframework.context.bean.Bean;
 import com.jfireframework.context.util.AnnotationUtil;
 import com.jfireframework.mvc.annotation.Controller;
 import com.jfireframework.mvc.annotation.RequestMapping;
-import com.jfireframework.mvc.core.Action;
-import com.jfireframework.mvc.core.ActionCenter;
-import com.jfireframework.mvc.core.ActionInitListener;
 import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
 import com.jfireframework.mvc.interceptor.impl.UploadInterceptor;
-import com.jfireframework.mvc.viewrender.RenderFactory;
 
 public class ActionCenterBulder
 {
@@ -32,6 +28,7 @@ public class ActionCenterBulder
     {
         boolean devMode = config.containsKey("devMode") ? config.getBoolean("devMode") : false;
         JfireContext jfireContext = new JfireContextImpl();
+        ClassLoader classLoader;
         if (devMode)
         {
             Verify.True(config.contains("reloadPackage"), "开发模式为true，此时应该配置reloadPackage内容");
@@ -39,35 +36,33 @@ public class ActionCenterBulder
             String reloadPackage = config.getWString("reloadPackage");
             String excludePackage = config.getWString("excludePackage");
             String reloadPath = config.getWString("reloadPath");
-            SimpleHotswapClassLoader classLoader = new SimpleHotswapClassLoader(reloadPath);
-            classLoader.setReloadPackages(reloadPackage.split(","));
+            classLoader = new SimpleHotswapClassLoader(reloadPath);
+            ((SimpleHotswapClassLoader) classLoader).setReloadPackages(reloadPackage.split(","));
             if (excludePackage != null)
             {
-                classLoader.setExcludePackages(excludePackage.split(","));
+                ((SimpleHotswapClassLoader) classLoader).setExcludePackages(excludePackage.split(","));
             }
             jfireContext.addSingletonEntity(classLoader.getClass().getName(), classLoader);
             jfireContext.setClassLoader(classLoader);
             AopUtil.initClassPool(classLoader);
             JsonTool.initClassPool(classLoader);
         }
+        else
+        {
+            classLoader = Thread.currentThread().getContextClassLoader();
+        }
         jfireContext.readConfig(config);
         jfireContext.addPackageNames("com.jfireframework.sql");
         jfireContext.addSingletonEntity("servletContext", servletContext);
-        jfireContext.addSingletonEntity(BeetlKit.class.getName(), new BeetlKit());
         jfireContext.addBean(DataBinderInterceptor.class);
         jfireContext.addBean(UploadInterceptor.class);
-        boolean report = config.getWBoolean("report") == null ? false : config.getBoolean("report");
-        if (report)
-        {
-            jfireContext.addBean(ReportMdActionListener.class);
-        }
-        return new ActionCenter(generateActions(servletContext.getContextPath(), jfireContext, new RenderFactory(Charset.forName(encode))).toArray(new Action[0]));
+        return new ActionCenter(generateActions(servletContext.getContextPath(), jfireContext, Charset.forName(encode), classLoader).toArray(new Action[0]));
     }
     
     /**
      * 初始化Beancontext容器，并且抽取其中的ActionClass注解的类，将action实例化
      */
-    private static List<Action> generateActions(String contextUrl, JfireContext jfireContext, RenderFactory renderFactory)
+    private static List<Action> generateActions(String contextUrl, JfireContext jfireContext, Charset charset, ClassLoader classLoader)
     {
         Bean[] beans = jfireContext.getBeanByAnnotation(Controller.class);
         Bean[] listenerBeans = jfireContext.getBeanByInterface(ActionInitListener.class);
@@ -80,7 +75,7 @@ public class ActionCenterBulder
         List<Action> list = new ArrayList<Action>();
         for (Bean each : beans)
         {
-            list.addAll(generateActions(each, listeners, jfireContext, contextUrl, renderFactory));
+            list.addAll(generateActions(each, listeners, jfireContext, contextUrl, charset, classLoader));
         }
         return list;
     }
@@ -94,7 +89,7 @@ public class ActionCenterBulder
      * @param jfireContext
      * @return
      */
-    private static List<Action> generateActions(Bean bean, ActionInitListener[] listeners, JfireContext jfireContext, String contextUrl, RenderFactory renderFactory)
+    private static List<Action> generateActions(Bean bean, ActionInitListener[] listeners, JfireContext jfireContext, String contextUrl, Charset charset, ClassLoader classLoader)
     {
         Class<?> src = bean.getOriginType();
         String requestUrl = contextUrl;
@@ -110,7 +105,7 @@ public class ActionCenterBulder
         {
             if (AnnotationUtil.isPresent(RequestMapping.class, each))
             {
-                Action action = ActionFactory.buildAction(each, requestUrl, bean, jfireContext, renderFactory);
+                Action action = ActionFactory.buildAction(each, requestUrl, bean, jfireContext, charset, classLoader);
                 list.add(action);
                 for (ActionInitListener listener : listeners)
                 {

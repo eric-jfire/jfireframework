@@ -1,6 +1,5 @@
 package com.jfireframework.litl;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Date;
 import java.util.HashMap;
@@ -9,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import com.jfireframework.litl.resourceloader.FileResLoader;
 import com.jfireframework.litl.resourceloader.TplResLoader;
-import com.jfireframework.litl.tplrender.TplRender;
 import javassist.CannotCompileException;
 import javassist.NotFoundException;
 

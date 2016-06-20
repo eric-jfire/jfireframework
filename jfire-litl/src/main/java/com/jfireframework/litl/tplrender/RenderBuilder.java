@@ -25,14 +25,15 @@ import javassist.NotFoundException;
 
 public class RenderBuilder
 {
-    private static ClassPool    classPool = new ClassPool();
+    private ClassPool           classPool = new ClassPool();
     private final static Logger logger    = ConsoleLogFactory.getLogger();
-    static
+    
+    public RenderBuilder(ClassLoader classLoader)
     {
-        initClassPool(null);
+        initClassPool(classLoader);
     }
     
-    public static void initClassPool(ClassLoader classLoader)
+    public void initClassPool(ClassLoader classLoader)
     {
         ClassPool.doPruning = true;
         classPool.importPackage("com.jfireframework.litl");
@@ -46,7 +47,7 @@ public class RenderBuilder
     }
     
     @SuppressWarnings("unchecked")
-    public static TplRender build(Map<String, Object> data, Template template) throws NotFoundException, CannotCompileException, IllegalArgumentException, SecurityException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException
+    public TplRender build(Map<String, Object> data, Template template) throws NotFoundException, CannotCompileException, IllegalArgumentException, SecurityException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException
     {
         CtClass tpl_render_interface = classPool.get(TplRender.class.getName());
         CtClass target = classPool.makeClass("tpl_render_" + System.nanoTime());
@@ -66,46 +67,24 @@ public class RenderBuilder
         TplCenter tplCenter = template.getTplCenter();
         for (LineInfo line : template.getContent())
         {
-            index = 0;
-            String context = line.getContent();
-            while (index < context.length())
+            try
             {
-                char c = context.charAt(index);
-                if (isInMethod)
+                index = 0;
+                String context = line.getContent();
+                while (index < context.length())
                 {
-                    int end = context.indexOf(tplCenter.getMethodEndFlag());
-                    if (end == -1)
+                    char c = context.charAt(index);
+                    if (isInMethod)
                     {
-                        methodCache.append(context);
-                        break;
-                    }
-                    else
-                    {
-                        methodCache.append(context.substring(0, end));
-                        isInMethod = false;
-                        methodBody += methodCache.toString() + ";\n";
-                        methodCache.clear();
-                        index = end + tplCenter.getMethodEndFlag().length();
-                        continue;
-                    }
-                }
-                if (c == tplCenter.get_methodStartFlag())
-                {
-                    if (context.indexOf(tplCenter.getMethodStartFlag(), index) == index)
-                    {
-                        isInContent = false;
-                        isInMethod = true;
-                        methodBody += "_builder.append(\"" + contextCache.toString() + "\");\n";
-                        contextCache.clear();
-                        int end = context.indexOf(tplCenter.getMethodEndFlag(), index + tplCenter.getMethodStartFlag().length());
+                        int end = context.indexOf(tplCenter.getMethodEndFlag());
                         if (end == -1)
                         {
-                            methodCache.append(context.substring(index + tplCenter.getMethodStartFlag().length()));
+                            methodCache.append(context);
                             break;
                         }
                         else
                         {
-                            methodCache.append(context.substring(index + tplCenter.getMethodStartFlag().length(), end));
+                            methodCache.append(context.substring(0, end));
                             isInMethod = false;
                             methodBody += methodCache.toString() + ";\n";
                             methodCache.clear();
@@ -113,114 +92,160 @@ public class RenderBuilder
                             continue;
                         }
                     }
-                }
-                if (c == tplCenter.get_varStartFlag())
-                {
-                    if (context.indexOf(tplCenter.getVarStartFlag(), index) == index)
+                    if (c == tplCenter.get_methodStartFlag())
                     {
-                        methodBody += "_builder.append(\"" + contextCache.toString() + "\");\n";
-                        contextCache.clear();
-                        int end = context.indexOf(tplCenter.getVarEndFlag(), index + tplCenter.getVarStartFlag().length());
-                        if (end == -1)
+                        if (context.indexOf(tplCenter.getMethodStartFlag(), index) == index)
                         {
-                            throw new UnSupportException(StringUtil.format("获取参数需要在一行内闭合，请检查第{}行", line.getLine()));
-                        }
-                        else
-                        {
-                            context = context.trim();
-                            String var = context.substring(index + tplCenter.getVarStartFlag().length(), end);
-                            if (var.indexOf(",") == -1)
+                            isInContent = false;
+                            isInMethod = true;
+                            String append = contextCache.toString().replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n");
+                            methodBody += "_builder.append(\"" + append + "\");\n";
+                            contextCache.clear();
+                            int end = context.indexOf(tplCenter.getMethodEndFlag(), index + tplCenter.getMethodStartFlag().length());
+                            if (end == -1)
                             {
-                                VarInfo info = analyse(var, data, line);
-                                methodBody += "_builder.append(" + info.varChain + ");\n";
-                                index = end + tplCenter.getVarEndFlag().length();
-                                continue;
+                                methodCache.append(context.substring(index + tplCenter.getMethodStartFlag().length()));
+                                break;
                             }
                             else
                             {
-                                String[] varAndFormat = var.split(",");
-                                VarInfo info = analyse(varAndFormat[0], data, line);
-                                methodBody += "_builder.append(com.jfireframework.litl.format.FormatRegister.get(" + info.rootType.getName() + ".class).format(($w)" + info.varChain + "," + varAndFormat[1] + "));\n";
-                                index = end + tplCenter.getVarEndFlag().length();
+                                String tmp_method = context.substring(index + tplCenter.getMethodStartFlag().length(), end);
+                                if (tmp_method.trim().startsWith("for") && tmp_method.contains(" in "))
+                                {
+                                    tmp_method = tmp_method.trim();
+                                    // 假定认为此时的语法应该是for(user in userlist)这种模式
+                                    String tmp_var = tmp_method.substring(4, tmp_method.indexOf(' ', 4));
+                                    int tmp_start_flag = tmp_method.indexOf(" in ") + 4;
+                                    String tmp_list = tmp_method.substring(tmp_start_flag, tmp_method.indexOf(')', tmp_start_flag));
+                                    
+                                }
+                                methodCache.append(tmp_method);
+                                isInMethod = false;
+                                methodBody += methodCache.toString() + ";\n";
+                                methodCache.clear();
+                                index = end + tplCenter.getMethodEndFlag().length();
                                 continue;
                             }
                         }
                     }
-                }
-                if (c == tplCenter.get_functionStartFlag())
-                {
-                    if (context.indexOf(tplCenter.getFunctionStartFlag(), index) == index)
+                    if (c == tplCenter.get_varStartFlag())
                     {
-                        context = context.trim();
-                        int end = context.indexOf(tplCenter.getFunctionEndFlag(), index + tplCenter.getFunctionStartFlag().length());
-                        if (end == -1)
+                        if (context.indexOf(tplCenter.getVarStartFlag(), index) == index)
                         {
-                            throw new UnSupportException(StringUtil.format("调用方法需要在一行内闭合，请检查第{}行", line.getLine()));
-                        }
-                        else
-                        {
-                            String function = context.substring(index + tplCenter.getFunctionStartFlag().length(), end);
-                            int start_function = function.indexOf('(');
-                            int end_function = function.indexOf(')', start_function);
-                            if (start_function == -1 || end_function == -1)
+                            String append = contextCache.toString().replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n");
+                            methodBody += "_builder.append(\"" + append + "\");\n";
+                            contextCache.clear();
+                            int end = context.indexOf(tplCenter.getVarEndFlag(), index + tplCenter.getVarStartFlag().length());
+                            if (end == -1)
                             {
-                                throw new UnSupportException(StringUtil.format("方法没有用(或者),请检查第{}行", line.getLine()));
+                                throw new UnSupportException(StringUtil.format("获取参数需要在一行内闭合，请检查第{}行", line.getLine()));
                             }
-                            String functionName = function.substring(0, start_function);
-                            String var = function.substring(start_function + 1, end_function);
-                            String[] tmp = var.split(",");
-                            StringCache cache = new StringCache();
-                            cache.append("new Object[]{");
-                            for (String each : tmp)
+                            else
                             {
-                                if (isDirectParam(each))
+                                String var = context.substring(index + tplCenter.getVarStartFlag().length(), end);
+                                var = var.trim();
+                                if (var.indexOf(",") == -1)
                                 {
-                                    cache.append(each).append(',');
+                                    VarInfo info = analyse(var, data, line);
+                                    methodBody += "_builder.append(" + info.varChain + ");\n";
+                                    index = end + tplCenter.getVarEndFlag().length();
+                                    continue;
                                 }
                                 else
                                 {
-                                    VarInfo _info = analyse(each, data, line);
-                                    cache.append(_info.varChain).append(',');
+                                    String[] varAndFormat = var.split(",");
+                                    VarInfo info = analyse(varAndFormat[0], data, line);
+                                    methodBody += "_builder.append(com.jfireframework.litl.format.FormatRegister.get(" + info.rootType.getName() + ".class).format(($w)" + info.varChain + "," + varAndFormat[1] + "));\n";
+                                    index = end + tplCenter.getVarEndFlag().length();
+                                    continue;
                                 }
                             }
-                            cache.append("($w)").append(line.getLine()).appendComma();
-                            if (cache.isCommaLast())
-                            {
-                                cache.deleteLast();
-                            }
-                            cache.append('}');
-                            methodBody += "com.jfireframework.litl.function.FunctionRegister.get(\"" + functionName + "\").call(" + cache.toString() + ",$1,_builder,_template);\n";
-                            index = end + tplCenter.getFunctionEndFlag().length();
-                            continue;
                         }
                     }
-                }
-                else
-                {
+                    if (c == tplCenter.get_functionStartFlag())
+                    {
+                        if (context.indexOf(tplCenter.getFunctionStartFlag(), index) == index)
+                        {
+                            int end = context.indexOf(tplCenter.getFunctionEndFlag(), index + tplCenter.getFunctionStartFlag().length());
+                            if (end == -1)
+                            {
+                                throw new UnSupportException(StringUtil.format("调用方法需要在一行内闭合，请检查第{}行", line.getLine()));
+                            }
+                            else
+                            {
+                                String function = context.substring(index + tplCenter.getFunctionStartFlag().length(), end);
+                                function = function.trim();
+                                int start_function = function.indexOf('(');
+                                int end_function = function.indexOf(')', start_function);
+                                if (start_function == -1 || end_function == -1)
+                                {
+                                    throw new UnSupportException(StringUtil.format("方法没有用(或者),请检查第{}行", line.getLine()));
+                                }
+                                String functionName = function.substring(0, start_function);
+                                String var = function.substring(start_function + 1, end_function);
+                                String[] tmp = var.split(",");
+                                StringCache cache = new StringCache();
+                                cache.append("new Object[]{");
+                                for (String each : tmp)
+                                {
+                                    if (isDirectParam(each))
+                                    {
+                                        cache.append(each).append(',');
+                                    }
+                                    else
+                                    {
+                                        VarInfo _info = analyse(each, data, line);
+                                        cache.append(_info.varChain).append(',');
+                                    }
+                                }
+                                cache.append("($w)").append(line.getLine()).appendComma();
+                                if (cache.isCommaLast())
+                                {
+                                    cache.deleteLast();
+                                }
+                                cache.append('}');
+                                methodBody += "com.jfireframework.litl.function.FunctionRegister.get(\"" + functionName + "\").call(" + cache.toString() + ",$1,_builder,_template);\n";
+                                index = end + tplCenter.getFunctionEndFlag().length();
+                                continue;
+                            }
+                        }
+                    }
                     isInContent = true;
                     contextCache.append(c);
                     index += 1;
                 }
-            }
-            if (isInContent)
-            {
-                if (contextCache.count() > 0)
+                if (isInContent)
                 {
-                    methodBody += "_builder.append(\"" + contextCache.toString() + "\");\n";
-                    contextCache.clear();
+                    if (contextCache.count() > 0)
+                    {
+                        String append = contextCache.toString().replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n");
+                        methodBody += "_builder.append(\"" + append + "\");\n";
+                        contextCache.clear();
+                    }
+                    methodBody += "_builder.append(\"\\r\\n\");\n";
                 }
-                methodBody += "_builder.append(\"\\r\\n\");\n";
+            }
+            catch (Exception e)
+            {
+                throw new UnSupportException(StringUtil.format("渲染有异常，请检查第{}行", line.getLine()), e);
             }
         }
         methodBody += "return _builder.toString();\n}";
         CtMethod ctMethod = new CtMethod(classPool.get(String.class.getName()), "render", new CtClass[] { classPool.get(Map.class.getName()) }, target);
         logger.trace("为模板{}生成的方法体是\n{}\n", template.getPath(), methodBody);
-        ctMethod.setBody(methodBody);
+        try
+        {
+            ctMethod.setBody(methodBody);
+        }
+        catch (Exception e)
+        {
+            throw new UnSupportException(StringUtil.format("为模板:{}生成渲染类错误，以下是方法体，请检查\n{}\n", template.getPath(), methodBody), e);
+        }
         target.addMethod(ctMethod);
         return (TplRender) target.toClass().getConstructor(Template.class).newInstance(template);
     }
     
-    private static void addFieldAndConstructor(CtClass target) throws CannotCompileException, NotFoundException
+    private void addFieldAndConstructor(CtClass target) throws CannotCompileException, NotFoundException
     {
         CtField ctField = new CtField(classPool.get(Template.class.getName()), "_template", target);
         target.addField(ctField);
@@ -229,7 +254,7 @@ public class RenderBuilder
         target.addConstructor(constructor);
     }
     
-    private static boolean isDirectParam(String var)
+    private boolean isDirectParam(String var)
     {
         if (var.charAt(0) == '"')
         {
@@ -334,8 +359,8 @@ public class RenderBuilder
                 {
                     varInfo.varChain = "((" + varType.getName() + ")" + varName + ".[" + num_index + "])" + ReflectUtil.buildGetMethod(var, varType);
                 }
-                varInfo.rootType = ReflectUtil.getFinalReturnType(var, varType);
             }
+            varInfo.rootType = ReflectUtil.getFinalReturnType(var, varType);
             return varInfo;
         }
         catch (Exception e)

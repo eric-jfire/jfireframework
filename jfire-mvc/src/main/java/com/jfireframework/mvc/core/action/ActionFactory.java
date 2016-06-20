@@ -1,7 +1,8 @@
-package com.jfireframework.mvc.util;
+package com.jfireframework.mvc.core.action;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,9 +30,8 @@ import com.jfireframework.mvc.binder.impl.HttpResponseBinder;
 import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
 import com.jfireframework.mvc.binder.impl.ServletContextBinder;
 import com.jfireframework.mvc.config.ResultType;
-import com.jfireframework.mvc.core.Action;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
-import com.jfireframework.mvc.rest.RestfulUrlTool;
+import com.jfireframework.mvc.rule.RestfulRule;
 import com.jfireframework.mvc.viewrender.RenderFactory;
 
 public class ActionFactory
@@ -47,7 +47,7 @@ public class ActionFactory
      * @param rootRequestPath 顶级请求路径，实际的请求路径为顶级请求路径/方法请求路径
      * @param beanContext
      */
-    public static Action buildAction(Method method, String requestPath, Bean bean, JfireContext jfireContext, RenderFactory renderFactory)
+    public static Action buildAction(Method method, String requestPath, Bean bean, JfireContext jfireContext, Charset charset, ClassLoader classLoader)
     {
         ActionInfo actionInfo = new ActionInfo();
         actionInfo.setMethod(method);
@@ -62,7 +62,7 @@ public class ActionFactory
             throw new UnSupportException(StringUtil.format("需要明确指定方法的返回类型，请检查{}.{}", method.getDeclaringClass().getName(), method.getName()));
         }
         actionInfo.setResultType(requestMapping.resultType());
-        actionInfo.setViewRender(renderFactory.getViewRender(actionInfo.getResultType()));
+        actionInfo.setViewRender(RenderFactory.getViewRender(actionInfo.getResultType(), charset, classLoader));
         actionInfo.setContentType(requestMapping.contentType());
         actionInfo.setToken(requestMapping.token());
         if (actionInfo.getToken().equals(""))
@@ -94,19 +94,21 @@ public class ActionFactory
                 {
                     for (DataBinder each : actionInfo.getDataBinders())
                     {
-                        if (each instanceof HttpSessionBinder //
-                                || each instanceof HttpRequestBinder //
-                                || each instanceof HttpResponseBinder //
-                                || each instanceof ServletContextBinder //
-                                || each instanceof CookieBinder //
-                                || each instanceof HeaderBinder)
+                        if (
+                            each instanceof HttpSessionBinder //
+                                    || each instanceof HttpRequestBinder //
+                                    || each instanceof HttpResponseBinder //
+                                    || each instanceof ServletContextBinder //
+                                    || each instanceof CookieBinder //
+                                    || each instanceof HeaderBinder
+                        )
                         {
                             continue;
                         }
                         requestPath += "/{" + each.getParamName() + "}";
                     }
                 }
-                actionInfo.setRestfulRule(RestfulUrlTool.build(requestPath));
+                actionInfo.setRestfulRule(new RestfulRule(requestPath));
             }
             else
             {

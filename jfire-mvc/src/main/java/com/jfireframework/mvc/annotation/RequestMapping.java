@@ -5,8 +5,8 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import com.jfireframework.mvc.config.RequestMethod;
 import com.jfireframework.mvc.config.ResultType;
-import com.jfireframework.mvc.util.RequestMethod;
 
 /**
  * 表示该方法是一个action方法

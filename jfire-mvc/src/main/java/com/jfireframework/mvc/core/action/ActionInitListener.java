@@ -1,4 +1,4 @@
-package com.jfireframework.mvc.core;
+package com.jfireframework.mvc.core.action;
 
 public interface ActionInitListener
 {

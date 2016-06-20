@@ -1,4 +1,4 @@
-package com.jfireframework.mvc.core;
+package com.jfireframework.mvc.core.action;
 
 import java.lang.reflect.Method;
 import javax.servlet.http.HttpServletRequest;
@@ -6,14 +6,13 @@ import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.mvc.binder.DataBinder;
+import com.jfireframework.mvc.config.ContentType;
+import com.jfireframework.mvc.config.RequestMethod;
 import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
-import com.jfireframework.mvc.rest.RestfulRule;
-import com.jfireframework.mvc.util.ActionInfo;
-import com.jfireframework.mvc.util.ContentType;
-import com.jfireframework.mvc.util.HeaderRule;
-import com.jfireframework.mvc.util.RequestMethod;
+import com.jfireframework.mvc.rule.HeaderRule;
+import com.jfireframework.mvc.rule.RestfulRule;
 import com.jfireframework.mvc.viewrender.ViewRender;
 import sun.reflect.MethodAccessor;
 
@@ -70,6 +69,9 @@ public class Action
             {
                 case Json:
                     contentType = ContentType.JSON;
+                    break;
+                case Litl:
+                    contentType = ContentType.HTML;
                     break;
                 case Beetl:
                     contentType = ContentType.HTML;

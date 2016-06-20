@@ -12,7 +12,7 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.mvc.binder.UploadItem;
-import com.jfireframework.mvc.core.Action;
+import com.jfireframework.mvc.core.action.Action;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
 
 @Resource
