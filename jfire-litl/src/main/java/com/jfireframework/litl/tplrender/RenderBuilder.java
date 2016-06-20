@@ -1,16 +1,18 @@
 package com.jfireframework.litl.tplrender;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.LinkedBlockingDeque;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.litl.Person;
 import com.jfireframework.litl.TplCenter;
 import com.jfireframework.litl.template.LineInfo;
 import com.jfireframework.litl.template.Template;
@@ -27,10 +29,13 @@ import javassist.NotFoundException;
 
 public class RenderBuilder
 {
-    private ClassPool           classPool = new ClassPool();
-    private final static Logger logger    = ConsoleLogFactory.getLogger();
+    private ClassPool           classPool  = new ClassPool();
+    private final static Logger logger     = ConsoleLogFactory.getLogger();
     private ClassLoader         classLoader;
     private VarAccess           varAccess;
+    private static final int    for_flag   = 1;
+    private static final int    if_flag    = 2;
+    private static final int    other_flag = 3;
     
     public RenderBuilder(ClassLoader classLoader)
     {
@@ -68,17 +73,14 @@ public class RenderBuilder
         target.setInterfaces(new CtClass[] { tpl_render_interface });
         addFieldAndConstructor(target);
         String methodBody = "{\njava.lang.StringBuilder _builder  = new StringBuilder();\n";
-        for (Entry<String, Object> entry : data.entrySet())
-        {
-            String typeName = ReflectUtil.getTypeName(entry.getValue().getClass());
-            methodBody += typeName + " " + entry.getKey() + " = (" + typeName + ")$1.get(\"" + entry.getKey() + "\");\n";
-        }
         int index = 0;
         StringCache contextCache = new StringCache(128);
         StringCache methodCache = new StringCache(128);
-        boolean isInMethod = false;
         boolean isInContent = false;
         TplCenter tplCenter = template.getTplCenter();
+        Set<String> names = new HashSet<String>();
+        Deque<Integer> stack = new LinkedBlockingDeque<Integer>();
+        String forin_each;
         for (LineInfo line : template.getContent())
         {
             try
@@ -88,45 +90,58 @@ public class RenderBuilder
                 while (index < context.length())
                 {
                     char c = context.charAt(index);
-                    if (isInMethod)
-                    {
-                        int end = context.indexOf(tplCenter.getMethodEndFlag());
-                        if (end == -1)
-                        {
-                            methodCache.append(context);
-                            break;
-                        }
-                        else
-                        {
-                            methodCache.append(context.substring(0, end));
-                            isInMethod = false;
-                            methodBody += methodCache.toString() + ";\n";
-                            methodCache.clear();
-                            index = end + tplCenter.getMethodEndFlag().length();
-                            continue;
-                        }
-                    }
                     if (c == tplCenter.get_methodStartFlag())
                     {
                         if (context.indexOf(tplCenter.getMethodStartFlag(), index) == index)
                         {
                             isInContent = false;
-                            isInMethod = true;
                             String append = contextCache.toString().replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n");
-                            methodBody += "_builder.append(\"" + append + "\");\n";
+                            if (StringUtil.isNotBlank(append))
+                            {
+                                methodBody += "_builder.append(\"" + append + "\");\n";
+                            }
                             contextCache.clear();
                             int end = context.indexOf(tplCenter.getMethodEndFlag(), index + tplCenter.getMethodStartFlag().length());
                             if (end == -1)
                             {
-                                methodCache.append(context.substring(index + tplCenter.getMethodStartFlag().length()));
-                                break;
+                                throw new UnSupportException(StringUtil.format("方法书写需要在一行内闭合，请检查第{}行", line.getLine()));
                             }
                             else
                             {
                                 String tmp_method = context.substring(index + tplCenter.getMethodStartFlag().length(), end);
                                 tmp_method = tmp_method.trim();
+                                if (tmp_method.equals("}"))
+                                {
+                                    stack.pop();
+                                }
+                                if (tmp_method.startsWith("for("))
+                                {
+                                    stack.push(for_flag);
+                                    int in_index = tmp_method.indexOf(" in ");
+                                    int forin_end_index = tmp_method.indexOf("){", in_index);
+                                    forin_each = tmp_method.substring(4, in_index);
+                                    String forin_array = tmp_method.substring(in_index + 4, forin_end_index);
+                                    StringCache cache = new StringCache();
+                                    if (names.add(forin_array))
+                                    {
+                                        cache.append("Object[] ").append(forin_array).append(" =(Object[]) $1.get(\"").append(forin_array).append("\");\n");
+                                    }
+                                    else
+                                    {
+                                        cache.append(forin_array).append(" =(Object[]) $1.get(\"").append(forin_array).append("\");\n");
+                                    }
+                                    cache.append("if(").append(forin_array).append(" == null ){throw new NullPointerException(\"参数:" + forin_array + "为空，请检查模板:" + template.getPath() + "的第" + line.getLine() + "行\");}\n");
+                                    cache.append("for(int i=0;i<").append(forin_array).append(".length;i++){\n");
+                                    cache.append("Object ").append(forin_each).append(" = ").append(forin_array).append("[i];\n");
+                                    tmp_method = cache.toString() + tmp_method.substring(forin_end_index + 2);
+                                }
+                                else if (tmp_method.startsWith("if("))
+                                {
+                                    stack.push(if_flag);
+                                    String condition = tmp_method.substring(3, tmp_method.lastIndexOf("){"));
+                                    tmp_method = "if(" + buildAccess(condition, stack, template, line) + "!=null){";
+                                }
                                 methodCache.append(tmp_method);
-                                isInMethod = false;
                                 methodBody += methodCache.toString() + ";\n";
                                 methodCache.clear();
                                 index = end + tplCenter.getMethodEndFlag().length();
@@ -139,7 +154,10 @@ public class RenderBuilder
                         if (context.indexOf(tplCenter.getVarStartFlag(), index) == index)
                         {
                             String append = contextCache.toString().replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n");
-                            methodBody += "_builder.append(\"" + append + "\");\n";
+                            if (StringUtil.isNotBlank(append))
+                            {
+                                methodBody += "_builder.append(\"" + append + "\");\n";
+                            }
                             contextCache.clear();
                             int end = context.indexOf(tplCenter.getVarEndFlag(), index + tplCenter.getVarStartFlag().length());
                             if (end == -1)
@@ -150,46 +168,9 @@ public class RenderBuilder
                             {
                                 String var = context.substring(index + tplCenter.getVarStartFlag().length(), end);
                                 var = var.trim();
-                                if (var.indexOf(",") == -1)
-                                {
-                                    // VarInfo info = analyse(var, data, line);
-                                    String targetObjectName = null;
-                                    String invokeChain = null;
-                                    String[] tmp_var_list = var.split("\\.");
-                                    if (tmp_var_list[0].indexOf('[') != -1)
-                                    {
-                                        targetObjectName = tmp_var_list[0];
-                                        String tmp_target_real_var = targetObjectName.substring(0, targetObjectName.indexOf('['));
-                                        invokeChain = "invokeProxy" + var.substring(tmp_var_list[0].length());
-                                        if (data.get(tmp_target_real_var).getClass().isArray() == false)
-                                        {
-                                            int start = targetObjectName.indexOf('[');
-                                            targetObjectName = tmp_target_real_var + ".get(" + targetObjectName.substring(start + 1, targetObjectName.indexOf(']', start)) + ")";
-                                        }
-                                    }
-                                    else if (tmp_var_list.length >= 2 && tmp_var_list[1].indexOf("get(") != -1)
-                                    {
-                                        targetObjectName = tmp_var_list[0] + '.' + tmp_var_list[1];
-                                        // +1是那个.的长度
-                                        invokeChain = "invokeProxy" + var.substring(tmp_var_list[0].length() + tmp_var_list[1].length() + 1);
-                                    }
-                                    else
-                                    {
-                                        targetObjectName = tmp_var_list[0];
-                                        invokeChain = var;
-                                    }
-                                    methodBody += "_builder.append(_varaccess.getValue(\"" + template.getPath() + '_' + var + "\",\"" + invokeChain + "\"," + targetObjectName + "));\n";
-                                    index = end + tplCenter.getVarEndFlag().length();
-                                    continue;
-                                }
-                                else
-                                {
-                                    String[] varAndFormat = var.split(",");
-                                    VarInfo info = analyse(varAndFormat[0], data, line);
-                                    methodBody += "_builder.append(com.jfireframework.litl.format.FormatRegister.get(" + info.rootType.getName() + ".class).format(($w)" + info.varChain + "," + varAndFormat[1] + "));\n";
-                                    index = end + tplCenter.getVarEndFlag().length();
-                                    continue;
-                                }
+                                methodBody +="_builder.append("+ buildAccess(var, stack, template, line)+");\n";
+                                index = end + tplCenter.getVarEndFlag().length();
+                                continue;
                             }
                         }
                     }
@@ -274,6 +255,39 @@ public class RenderBuilder
         }
         target.addMethod(ctMethod);
         return (TplRender) target.toClass(classLoader, null).getConstructor(Template.class, VarAccess.class).newInstance(template, varAccess);
+    }
+    
+    private String buildAccess(String var, Deque<Integer> stack, Template template, LineInfo line)
+    {
+        String realVar;
+        String format = null;
+        if (var.indexOf(",") != -1)
+        {
+            realVar = var.split(",")[0];
+            format = var.split(",")[1];
+        }
+        else
+        {
+            realVar = var;
+        }
+        String targetObjectName = null;
+        String[] tmp_var_list = realVar.split("\\.");
+        if (stack.contains(for_flag))
+        {
+            targetObjectName = tmp_var_list[0];
+        }
+        else
+        {
+            targetObjectName = "$1.get(\"" + tmp_var_list[0] + "\")";
+        }
+        if (var.indexOf(",") == -1)
+        {
+            return "_varaccess.getValue(\"" + template.getPath() + '_' + realVar + "\",\"" + realVar + "\"," + targetObjectName + "," + line.getLine() + ")";
+        }
+        else
+        {
+            return "com.jfireframework.litl.format.FormatRegister.format(_varaccess.getValue(\"" + template.getPath() + '_' + realVar + "\",\"" + realVar + "\"," + targetObjectName + "," + line.getLine() + ")," + format + ")";
+        }
     }
     
     private void addFieldAndConstructor(CtClass target) throws CannotCompileException, NotFoundException

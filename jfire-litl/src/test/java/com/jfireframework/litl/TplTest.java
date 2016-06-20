@@ -6,8 +6,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.litl.resourceloader.FileResLoader;
 import com.jfireframework.litl.resourceloader.TplResLoader;
+import com.jfireframework.litl.template.Template;
 import javassist.CannotCompileException;
 import javassist.NotFoundException;
 
@@ -30,17 +32,24 @@ public class TplTest
         List<Person> persons = new LinkedList<Person>();
         Person person = new Person();
         person.setName("林斌");
-//        data.put("person", person);
+        // data.put("person", person);
         persons.add(person);
         person = new Person();
         person.setName("小静");
         persons.add(person);
-        data.put("persons", persons);
+        data.put("persons", persons.toArray());
         data.put("title", "题目");
         data.put("today", new Date());
         TplResLoader loader = new FileResLoader("E:/jfireframework/jfire-litl/");
         TplCenter center = new TplCenter(loader);
-        String value = center.load("/tpl/tmp.tl").render(data);
-        System.out.println(value);
+        Template template = center.load("/tpl/tmp.tl");
+        String value;
+        Timewatch timewatch = new Timewatch();
+        for (int i = 0; i < 200000; i++)
+        {
+            template.render(data);
+        }
+        timewatch.end();
+        System.out.println(timewatch.getTotal());
     }
 }

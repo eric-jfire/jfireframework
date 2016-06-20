@@ -1,6 +1,7 @@
 package com.jfireframework.litl.template.impl;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,6 +13,8 @@ import com.jfireframework.litl.TplCenter;
 import com.jfireframework.litl.template.LineInfo;
 import com.jfireframework.litl.template.Template;
 import com.jfireframework.litl.tplrender.TplRender;
+import javassist.CannotCompileException;
+import javassist.NotFoundException;
 
 public class FileTemplate implements Template
 {
@@ -34,6 +37,50 @@ public class FileTemplate implements Template
         this.tplCenter = tplCenter;
         devMode = tplCenter.isDevMode();
         content = buildLineInfos();
+        try
+        {
+            render = tplCenter.getBuilder().build(null, this);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (SecurityException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (NotFoundException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (CannotCompileException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (InstantiationException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (IllegalAccessException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (InvocationTargetException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (NoSuchMethodException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
     
     @Override
@@ -133,7 +180,7 @@ public class FileTemplate implements Template
             String rootPath = tplCenter.getRootPath();
             String filePath = file.getParentFile().getAbsolutePath() + File.separatorChar + name;
             String keyPath = filePath.substring(rootPath.length());
-          
+            
             return tplCenter.load(keyPath);
         }
     }

@@ -1,14 +1,10 @@
-<#
-<!--做有个约定，参数要么是从data中获取，要么-->
-for(person in persons)
-{ 
-#>
-hello:${person.name}
-<#
-}
-#>
-<~include("include/a.tl")~>
-这是标题:${title},名字是${person.name}
+<# for(person in persons){ #>
+<# if(person){#>
+你好:${person.name}
+<# }#>
+<# } #>
+题目是:${title}
+<# if(today){#>
 今天是:${today,"yyyy-MM-dd"}
-
-<#if(has())#>
+<#}#>
+<~include("include/a.tl")~>

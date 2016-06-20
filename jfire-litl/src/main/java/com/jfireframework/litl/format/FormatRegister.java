@@ -23,16 +23,16 @@ public class FormatRegister
         formats.put(double.class, new NumberFormat());
     }
     
-    public static Format get(Class<?> type)
+    public static String format(Object target, String pattern)
     {
-        Format format = formats.get(type);
+        Format format = formats.get(target.getClass());
         if (format == null)
         {
-            throw new UnSupportException("格式化类型:" + type.getName() + "不存在，请检查");
+            throw new UnSupportException("格式化类型:" + target.getClass().getName() + "不存在，请检查");
         }
         else
         {
-            return format;
+            return format.format(target, pattern);
         }
     }
 }

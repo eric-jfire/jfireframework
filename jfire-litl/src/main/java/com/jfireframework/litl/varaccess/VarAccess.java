@@ -17,11 +17,27 @@ public class VarAccess
     private ClassPool                                classPool;
     private ClassLoader                              classLoader;
     private static final Logger                      logger      = ConsoleLogFactory.getLogger();
+    private ConcurrentHashMap<String, Object>        keyMap      = new ConcurrentHashMap<String, Object>();
     
     public VarAccess(ClassPool classPool, ClassLoader classLoader)
     {
         this.classPool = classPool;
         this.classLoader = classLoader;
+    }
+    
+    private Object getParalLock(String key)
+    {
+        Object lock = keyMap.get(key);
+        if (lock != null)
+        {
+            return lock;
+        }
+        lock = new Object();
+        if (keyMap.putIfAbsent(key, lock) == null)
+        {
+            return lock;
+        }
+        return keyMap.get(key);
     }
     
     /**
@@ -31,7 +47,7 @@ public class VarAccess
      * @param template
      * @return
      */
-    public Object getValue(String key, String varName, Object target)
+    public Object getValue(String key, String varName, Object target, int line)
     {
         if (target == null)
         {
@@ -41,7 +57,7 @@ public class VarAccess
         if (fieldAccesser == null)
         {
             // 这个地方的锁应该分配给每一个key一个，类似于classloader中的思路
-            synchronized (accesserMap)
+            synchronized (getParalLock(key))
             {
                 if (accesserMap.containsKey(key))
                 {

@@ -366,7 +366,7 @@ public class ElExplain
      * @param varType
      * @return
      */
-    private static String getFinalValue(String prefix, Class<?> varType)
+    public static String getFinalValue(String prefix, Class<?> varType)
     {
         if (varType.isPrimitive())
         {
