@@ -3,6 +3,7 @@ package com.jfireframework.baseutil.reflect;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
@@ -264,8 +265,18 @@ public final class ReflectUtil
                 Verify.True(right != -1, "构建javabean的get或is方法出现异常,给定的字符串:{}不符合解析规则.请检查代码{}", name, CodeLocation.getCodeLocation(2));
                 int num = Integer.parseInt(tmp.substring(left + 1, right));
                 cache.append("get").append(tmp.substring(0, 1).toUpperCase()).append(tmp.substring(1, left));
-                cache.append("()").append('[').append(num).append(']');
-                rootType = rootType.getDeclaredField(tmp).getType().getComponentType();
+                tmp = tmp.substring(0, left);
+                Class<?> type = rootType.getDeclaredField(tmp).getType();
+                if (type.isArray())
+                {
+                    cache.append("()").append('[').append(num).append(']');
+                    rootType = type.getComponentType();
+                }
+                else
+                {
+                    cache.append("()").append(".get(").append(num).append(')');
+                    rootType = (Class<?>) ((ParameterizedType) rootType.getDeclaredField(tmp).getGenericType()).getActualTypeArguments()[0];
+                }
             }
             else
             {
@@ -334,14 +345,12 @@ public final class ReflectUtil
         {
             for (Method each : ckass.getDeclaredMethods())
             {
-                if (
-                    Modifier.isPublic(each.getModifiers()) == false //
-                            || each.getParameterTypes().length > 0//
-                            || (each.getName().startsWith("get") | each.getName().startsWith("is")) == false //
-                            || each.getReturnType().equals(Void.class)//
-                            || each.getName().equals("get") //
-                            || each.getName().equals("is")
-                )
+                if (Modifier.isPublic(each.getModifiers()) == false //
+                        || each.getParameterTypes().length > 0//
+                        || (each.getName().startsWith("get") | each.getName().startsWith("is")) == false //
+                        || each.getReturnType().equals(Void.class)//
+                        || each.getName().equals("get") //
+                        || each.getName().equals("is"))
                 {
                     continue;
                 }
@@ -369,12 +378,10 @@ public final class ReflectUtil
         {
             for (Method each : ckass.getDeclaredMethods())
             {
-                if (
-                    Modifier.isPublic(each.getModifiers()) == false//
-                            || each.getParameterTypes().length != 1//
-                            || each.getName().startsWith("set") == false//
-                            || each.getName().equals("set")
-                )
+                if (Modifier.isPublic(each.getModifiers()) == false//
+                        || each.getParameterTypes().length != 1//
+                        || each.getName().startsWith("set") == false//
+                        || each.getName().equals("set"))
                 {
                     continue;
                 }
@@ -465,6 +472,30 @@ public final class ReflectUtil
             }
         } while (ckass != Object.class);
         throw new UnSupportException("找不到对应的方法");
+    }
+    
+    /**
+     * 获取一个类型在源代码中的字符串形式。比如一个type是一个int数组，则返回 int[]
+     * 
+     * @param type
+     * @return
+     */
+    public static String getTypeName(Class<?> type)
+    {
+        if (type.isArray() == false)
+        {
+            return type.getName();
+        }
+        else
+        {
+            String result = "";
+            do
+            {
+                type = type.getComponentType();
+                result += "[]";
+            } while (type.isArray());
+            return type.getName() + result;
+        }
     }
 }
 

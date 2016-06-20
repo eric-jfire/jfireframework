@@ -38,5 +38,12 @@ public class DemoCache implements Cache
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public void put(Object key, Object value, int timeToLive)
+    {
+        // TODO Auto-generated method stub
+        
+    }
     
 }

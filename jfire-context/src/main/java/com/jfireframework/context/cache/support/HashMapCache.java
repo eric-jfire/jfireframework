@@ -1,12 +1,18 @@
 package com.jfireframework.context.cache.support;
 
 import java.util.concurrent.ConcurrentHashMap;
-import com.jfireframework.codejson.JsonTool;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.context.cache.Cache;
 
 public class HashMapCache implements Cache
 {
     private ConcurrentHashMap<Object, Object> map = new ConcurrentHashMap<Object, Object>();
+    private String                            name;
+    
+    public void setName(String name)
+    {
+        this.name = name;
+    }
     
     @Override
     public void put(Object key, Object value)
@@ -35,8 +41,13 @@ public class HashMapCache implements Cache
     @Override
     public String getName()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return name;
+    }
+    
+    @Override
+    public void put(Object key, Object value, int timeToLive)
+    {
+        throw new UnSupportException("该cache不支持设置缓存超时时间");
     }
     
 }

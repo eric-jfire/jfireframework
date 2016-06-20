@@ -19,29 +19,19 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.mvc.annotation.CookieValue;
 import com.jfireframework.mvc.annotation.HeaderValue;
-import com.jfireframework.mvc.binder.impl.BooleanBinder;
+import com.jfireframework.mvc.binder.impl.BaseBinder;
 import com.jfireframework.mvc.binder.impl.CalendarBinder;
 import com.jfireframework.mvc.binder.impl.CookieBinder;
 import com.jfireframework.mvc.binder.impl.CustomVoBinder;
 import com.jfireframework.mvc.binder.impl.DateBinder;
-import com.jfireframework.mvc.binder.impl.DoubleBinder;
-import com.jfireframework.mvc.binder.impl.FloatBinder;
 import com.jfireframework.mvc.binder.impl.HeaderBinder;
 import com.jfireframework.mvc.binder.impl.HttpRequestBinder;
 import com.jfireframework.mvc.binder.impl.HttpResponseBinder;
 import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
-import com.jfireframework.mvc.binder.impl.IntBinder;
-import com.jfireframework.mvc.binder.impl.IntegerBinder;
-import com.jfireframework.mvc.binder.impl.LongBinder;
 import com.jfireframework.mvc.binder.impl.ParamMapBinder;
 import com.jfireframework.mvc.binder.impl.ServletContextBinder;
 import com.jfireframework.mvc.binder.impl.SqlDateBinder;
-import com.jfireframework.mvc.binder.impl.StringBinder;
 import com.jfireframework.mvc.binder.impl.UploadBinder;
-import com.jfireframework.mvc.binder.impl.WBooleanBinder;
-import com.jfireframework.mvc.binder.impl.WDoubleBinder;
-import com.jfireframework.mvc.binder.impl.WFloatBinder;
-import com.jfireframework.mvc.binder.impl.WLongBinder;
 
 public class DataBinderFactory
 {
@@ -51,26 +41,26 @@ public class DataBinderFactory
     {
         try
         {
-            constructorMap.put(boolean.class, BooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(boolean.class, BaseBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(Calendar.class, CalendarBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(java.util.Date.class, DateBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(Date.class, SqlDateBinder.class.getConstructor(ParamInfo.class, Set.class));
-            constructorMap.put(double.class, DoubleBinder.class.getConstructor(ParamInfo.class, Set.class));
-            constructorMap.put(float.class, FloatBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(double.class, BaseBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(float.class, BaseBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(HttpServletRequest.class, HttpRequestBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(HttpServletResponse.class, HttpResponseBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(HttpSession.class, HttpSessionBinder.class.getConstructor(ParamInfo.class, Set.class));
-            constructorMap.put(int.class, IntBinder.class.getConstructor(ParamInfo.class, Set.class));
-            constructorMap.put(Integer.class, IntegerBinder.class.getConstructor(ParamInfo.class, Set.class));
-            constructorMap.put(long.class, LongBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(int.class, BaseBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(Integer.class, BaseBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(long.class, BaseBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(Map.class, ParamMapBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(ServletContext.class, ServletContextBinder.class.getConstructor(ParamInfo.class, Set.class));
-            constructorMap.put(String.class, StringBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(String.class, BaseBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(UploadItem.class, UploadBinder.class.getConstructor(ParamInfo.class, Set.class));
-            constructorMap.put(Boolean.class, WBooleanBinder.class.getConstructor(ParamInfo.class, Set.class));
-            constructorMap.put(Double.class, WDoubleBinder.class.getConstructor(ParamInfo.class, Set.class));
-            constructorMap.put(Float.class, WFloatBinder.class.getConstructor(ParamInfo.class, Set.class));
-            constructorMap.put(Long.class, WLongBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(Boolean.class, BaseBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(Double.class, BaseBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(Float.class, BaseBinder.class.getConstructor(ParamInfo.class, Set.class));
+            constructorMap.put(Long.class, BaseBinder.class.getConstructor(ParamInfo.class, Set.class));
         }
         catch (NoSuchMethodException | SecurityException e)
         {

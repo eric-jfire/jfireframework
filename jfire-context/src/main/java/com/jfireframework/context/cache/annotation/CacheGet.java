@@ -40,4 +40,11 @@ public @interface CacheGet
      */
     public String condition() default "";
     
+    /**
+     * 该缓存读取的有效期限。如果是-1，代表缓存不会自动超期释放
+     * 
+     * @return
+     */
+    public int timeToLive() default -1;
+    
 }
