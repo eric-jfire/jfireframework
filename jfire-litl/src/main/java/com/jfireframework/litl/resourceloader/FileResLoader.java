@@ -20,9 +20,15 @@ public class FileResLoader extends AbstractResLoader
     }
     
     @Override
-    protected Template buildTemplate(String name, TplCenter tplCenter)
+    protected Template buildTemplate(String path, TplCenter tplCenter)
     {
-        return new FileTemplate(new File(root, name), tplCenter);
+        return new FileTemplate(new File(root, path), path, tplCenter);
+    }
+    
+    @Override
+    public String getRootPath()
+    {
+        return root.getAbsolutePath();
     }
     
 }

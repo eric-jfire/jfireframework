@@ -183,6 +183,7 @@ public class RenderBuilder
                                     cache.append(_info.varChain).append(',');
                                 }
                             }
+                            cache.append("($w)").append(line.getLine()).appendComma();
                             if (cache.isCommaLast())
                             {
                                 cache.deleteLast();
@@ -213,7 +214,7 @@ public class RenderBuilder
         }
         methodBody += "return _builder.toString();\n}";
         CtMethod ctMethod = new CtMethod(classPool.get(String.class.getName()), "render", new CtClass[] { classPool.get(Map.class.getName()) }, target);
-        logger.trace("为模板{}生成的方法体是\n{}\n", template.getName(), methodBody);
+        logger.trace("为模板{}生成的方法体是\n{}\n", template.getPath(), methodBody);
         ctMethod.setBody(methodBody);
         target.addMethod(ctMethod);
         return (TplRender) target.toClass().getConstructor(Template.class).newInstance(template);

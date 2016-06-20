@@ -12,4 +12,12 @@ public interface TplResLoader
      * @return
      */
     public Template loadTemplate(String path, TplCenter tplCenter);
+    
+    /**
+     * 返回模板查询的根目录
+     * 所有的模板都会在这个根目录下进行查找
+     * 
+     * @return
+     */
+    public String getRootPath();
 }

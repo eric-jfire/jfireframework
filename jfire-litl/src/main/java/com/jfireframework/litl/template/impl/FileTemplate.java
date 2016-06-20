@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import com.jfireframework.baseutil.LineReader;
+import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.litl.TplCenter;
 import com.jfireframework.litl.template.LineInfo;
@@ -21,10 +22,16 @@ public class FileTemplate implements Template
     private final TplCenter    tplCenter;
     private volatile TplRender render;
     private final boolean      devMode;
+    private final String       path;
     
-    public FileTemplate(File file, TplCenter tplCenter)
+    public FileTemplate(File file, String path, TplCenter tplCenter)
     {
         this.file = file;
+        if (this.file.exists() == false)
+        {
+            throw new UnSupportException(StringUtil.format("找不到模板文件:{},模板查找根目录是:{}", path, tplCenter.getRootPath()));
+        }
+        this.path = path;
         this.tplCenter = tplCenter;
         devMode = tplCenter.isDevMode();
         content = buildLineInfos();
@@ -116,21 +123,25 @@ public class FileTemplate implements Template
     }
     
     @Override
-    public String getName()
+    public Template load(String name)
     {
-        return file.getName();
+        if (name.charAt(0) == '/')
+        {
+            return tplCenter.load(name);
+        }
+        else
+        {
+            String rootPath = tplCenter.getRootPath();
+            String filePath = file.getParentFile().getAbsolutePath() + File.separatorChar + name;
+            String keyPath = filePath.substring(rootPath.length());
+            return tplCenter.load(keyPath);
+        }
     }
     
     @Override
-    public String getFilePath()
+    public String getPath()
     {
-        return file.getAbsolutePath();
-    }
-    
-    @Override
-    public String getDirPath()
-    {
-        return file.getParentFile().getAbsolutePath();
+        return path;
     }
     
 }

@@ -39,14 +39,9 @@ public class TplTest
         data.put("persons", persons);
         data.put("title", "题目");
         data.put("today", new Date());
-        TplResLoader loader = new FileResLoader("E:/jfireframekwork/jfire-litl");
+        TplResLoader loader = new FileResLoader("E:/jfireframework/jfire-litl/");
         TplCenter center = new TplCenter(loader);
-        for (int i = 0; i < 2; i++)
-        {
-            System.out.println("第" + (i + 1) + "次渲染的结果");
-            String value = center.load("tmp.tl").render(data);
-            System.out.println(value);
-            Thread.sleep(10000);
-        }
+        String value = center.load("/tpl/tmp.tl").render(data);
+        System.out.println(value);
     }
 }

@@ -6,6 +6,6 @@ hello:${persons[i].name}
 <#
 }
 #>
-<~include("a.tl")~>
+<~include("include/a.tl")~>
 这是标题:${title}
 今天是:${today,"yyyy-MM-dd"}

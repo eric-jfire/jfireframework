@@ -7,19 +7,13 @@ public interface Template
 {
     public LineInfo[] getContent();
     
-    /**
-     * 返回模板文件自身的文件路径
-     * 
-     * @return
-     */
-    public String getFilePath();
+    public Template load(String name);
     
     /**
      * 返回模板文件所在文件夹的路径
      * 
      * @return
      */
-    public String getDirPath();
     
     public boolean isModified();
     
@@ -27,5 +21,10 @@ public interface Template
     
     public TplCenter getTplCenter();
     
-    public String getName();
+    /**
+     * 模板的查询路径。也就是模板对应的key。这是不包含查询根目录的
+     * 
+     * @return
+     */
+    public String getPath();
 }
