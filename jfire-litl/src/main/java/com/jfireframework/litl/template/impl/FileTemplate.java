@@ -1,20 +1,22 @@
 package com.jfireframework.litl.template.impl;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 import com.jfireframework.baseutil.LineReader;
 import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.litl.TplCenter;
+import com.jfireframework.litl.output.OutPutBuilder;
+import com.jfireframework.litl.output.Output;
 import com.jfireframework.litl.template.LineInfo;
 import com.jfireframework.litl.template.Template;
-import com.jfireframework.litl.tplrender.TplRender;
-import javassist.CannotCompileException;
-import javassist.NotFoundException;
 
 public class FileTemplate implements Template
 {
@@ -22,9 +24,9 @@ public class FileTemplate implements Template
     private LineInfo[]         content;
     private volatile long      lastModifyTime;
     private final TplCenter    tplCenter;
-    private volatile TplRender render;
     private final boolean      devMode;
     private final String       path;
+    private final Output       output;
     
     public FileTemplate(File file, String path, TplCenter tplCenter)
     {
@@ -39,47 +41,13 @@ public class FileTemplate implements Template
         content = buildLineInfos();
         try
         {
-            render = tplCenter.getBuilder().build(null, this);
+            // render = tplCenter.getBuilder().build(null, this);
+            output = new OutPutBuilder().build(buildLineInfos0(), this);
         }
-        catch (IllegalArgumentException e)
+        catch (Exception e)
         {
-            // TODO Auto-generated catch block
             e.printStackTrace();
-        }
-        catch (SecurityException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        catch (NotFoundException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        catch (CannotCompileException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        catch (InstantiationException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        catch (IllegalAccessException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        catch (InvocationTargetException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        catch (NoSuchMethodException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new JustThrowException(e);
         }
     }
     
@@ -116,6 +84,22 @@ public class FileTemplate implements Template
         return lines.toArray(new LineInfo[lines.size()]);
     }
     
+    public Queue<LineInfo> buildLineInfos0()
+    {
+        LineReader reader = new LineReader(file, Charset.forName("utf8"));
+        String value = null;
+        int line = 1;
+        Queue<LineInfo> lines = new LinkedBlockingQueue<LineInfo>();
+        while ((value = reader.readLine()) != null)
+        {
+            LineInfo lineContext = new LineInfo(line, value);
+            lines.add(lineContext);
+            line += 1;
+        }
+        reader.close();
+        return lines;
+    }
+    
     @Override
     public boolean isModified()
     {
@@ -125,41 +109,44 @@ public class FileTemplate implements Template
     @Override
     public String render(Map<String, Object> data)
     {
-        if (render == null)
-        {
-            synchronized (tplCenter)
-            {
-                if (render == null)
-                {
-                    try
-                    {
-                        render = tplCenter.getBuilder().build(data, this);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new UnSupportException("生成渲染类时异常", e);
-                    }
-                }
-            }
-        }
-        if (devMode && isModified())
-        {
-            synchronized (tplCenter)
-            {
-                if (isModified())
-                {
-                    try
-                    {
-                        render = tplCenter.getBuilder().build(data, this);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new UnSupportException("生成渲染类时异常", e);
-                    }
-                }
-            }
-        }
-        return render.render(data);
+        // if (render == null)
+        // {
+        // synchronized (tplCenter)
+        // {
+        // if (render == null)
+        // {
+        // try
+        // {
+        // render = tplCenter.getBuilder().build(data, this);
+        // }
+        // catch (Exception e)
+        // {
+        // throw new UnSupportException("生成渲染类时异常", e);
+        // }
+        // }
+        // }
+        // }
+        // if (devMode && isModified())
+        // {
+        // synchronized (tplCenter)
+        // {
+        // if (isModified())
+        // {
+        // try
+        // {
+        // render = tplCenter.getBuilder().build(data, this);
+        // }
+        // catch (Exception e)
+        // {
+        // throw new UnSupportException("生成渲染类时异常", e);
+        // }
+        // }
+        // }
+        // }
+        // return render.render(data);
+        StringCache cache = new StringCache();
+        output.output(cache, data);
+        return cache.toString();
     }
     
     @Override

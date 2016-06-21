@@ -1,23 +1,22 @@
 package com.jfireframework.litl.output.impl;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.litl.output.Output;
 
-public class HtmlOutPut implements Output
+public class CombinationOutput implements Output
 {
-    private final String content;
-    
-    public HtmlOutPut(String content)
-    {
-        this.content = content;
-    }
+    private List<Output> outputs = new LinkedList<Output>();
     
     @Override
     public void output(StringCache cache, Map<String, Object> data)
     {
-        cache.append(content);
+        for (Output output : outputs)
+        {
+            output.output(cache, data);
+        }
     }
     
     @Override
@@ -30,7 +29,7 @@ public class HtmlOutPut implements Output
     @Override
     public void addOutput(Output outPut)
     {
-        throw new UnSupportException("");
+        outputs.add(outPut);
     }
     
 }

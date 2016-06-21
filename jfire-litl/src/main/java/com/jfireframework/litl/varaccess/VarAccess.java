@@ -14,16 +14,10 @@ public class VarAccess
 {
     private ConcurrentHashMap<String, FieldAccesser> accesserMap = new ConcurrentHashMap<String, FieldAccesser>();
     
-    private ClassPool                                classPool;
+    private ClassPool                                classPool   = ClassPool.getDefault();
     private ClassLoader                              classLoader;
     private static final Logger                      logger      = ConsoleLogFactory.getLogger();
     private ConcurrentHashMap<String, Object>        keyMap      = new ConcurrentHashMap<String, Object>();
-    
-    public VarAccess(ClassPool classPool, ClassLoader classLoader)
-    {
-        this.classPool = classPool;
-        this.classLoader = classLoader;
-    }
     
     private Object getParalLock(String key)
     {

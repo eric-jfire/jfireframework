@@ -40,16 +40,13 @@ public class TplTest
         data.put("persons", persons.toArray());
         data.put("title", "题目");
         data.put("today", new Date());
+        data.put("stringparam", "12");
+        data.put("iparam", 12);
+        data.put("dparam", 56.36);
         TplResLoader loader = new FileResLoader("E:/jfireframework/jfire-litl/");
         TplCenter center = new TplCenter(loader);
         Template template = center.load("/tpl/tmp.tl");
-        String value;
-        Timewatch timewatch = new Timewatch();
-        for (int i = 0; i < 200000; i++)
-        {
-            template.render(data);
-        }
-        timewatch.end();
-        System.out.println(timewatch.getTotal());
+        String value = template.render(data);
+        System.out.println(value);
     }
 }

@@ -1,10 +1,13 @@
 <# for(person in persons){ #>
-<# if(person){#>
 你好:${person.name}
-<# }#>
 <# } #>
+<#if(stringparam == "12"){#>
 题目是:${title}
-<# if(today){#>
-今天是:${today,"yyyy-MM-dd"}
 <#}#>
-<~include("include/a.tl")~>
+<#if(iparam == 12){#>
+题目是:${title}
+<#}#>
+<#if(dparam == 56.36){#>
+题目是:${title}
+<#}#>
+今天是:${today,yyyy-MM-dd}
