@@ -13,6 +13,7 @@ import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
+import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.litl.TplCenter;
 import com.jfireframework.litl.template.LineInfo;
 import com.jfireframework.litl.template.Template;
@@ -29,13 +30,12 @@ import javassist.NotFoundException;
 
 public class RenderBuilder
 {
-    private ClassPool           classPool  = new ClassPool();
-    private final static Logger logger     = ConsoleLogFactory.getLogger();
+    private ClassPool           classPool = new ClassPool();
+    private final static Logger logger    = ConsoleLogFactory.getLogger();
     private ClassLoader         classLoader;
     private VarAccess           varAccess;
-    private static final int    for_flag   = 1;
-    private static final int    if_flag    = 2;
-    private static final int    other_flag = 3;
+    private static final int    for_flag  = 1;
+    private static final int    if_flag   = 2;
     
     public RenderBuilder(ClassLoader classLoader)
     {
@@ -76,11 +76,10 @@ public class RenderBuilder
         int index = 0;
         StringCache contextCache = new StringCache(128);
         StringCache methodCache = new StringCache(128);
-        boolean isInContent = false;
         TplCenter tplCenter = template.getTplCenter();
         Set<String> names = new HashSet<String>();
         Deque<Integer> stack = new LinkedBlockingDeque<Integer>();
-        String forin_each;
+        String forin_each = null;
         for (LineInfo line : template.getContent())
         {
             try
@@ -94,7 +93,6 @@ public class RenderBuilder
                     {
                         if (context.indexOf(tplCenter.getMethodStartFlag(), index) == index)
                         {
-                            isInContent = false;
                             String append = contextCache.toString().replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n");
                             if (StringUtil.isNotBlank(append))
                             {
@@ -112,13 +110,19 @@ public class RenderBuilder
                                 tmp_method = tmp_method.trim();
                                 if (tmp_method.equals("}"))
                                 {
-                                    stack.pop();
+                                    if (stack.pop() == for_flag)
+                                    {
+                                        forin_each = null;
+                                    }
+                                    continue;
                                 }
                                 if (tmp_method.startsWith("for("))
                                 {
                                     stack.push(for_flag);
                                     int in_index = tmp_method.indexOf(" in ");
+                                    Verify.True(in_index != -1, "for语句的表达式没有正确包含in。请检查模板：{}的第{}行", template.getPath(), line.getLine());
                                     int forin_end_index = tmp_method.indexOf("){", in_index);
+                                    Verify.True(forin_end_index != -1, "for语句的表达式没有以){结束。请检查模板：{}的第{}行", template.getPath(), line.getLine());
                                     forin_each = tmp_method.substring(4, in_index);
                                     String forin_array = tmp_method.substring(in_index + 4, forin_end_index);
                                     StringCache cache = new StringCache();
@@ -139,7 +143,7 @@ public class RenderBuilder
                                 {
                                     stack.push(if_flag);
                                     String condition = tmp_method.substring(3, tmp_method.lastIndexOf("){"));
-                                    tmp_method = "if(" + buildAccess(condition, stack, template, line) + "!=null){";
+                                    tmp_method = "if(" + buildAccess(condition, stack, template, line, forin_each) + "!=null){";
                                 }
                                 methodCache.append(tmp_method);
                                 methodBody += methodCache.toString() + ";\n";
@@ -168,7 +172,7 @@ public class RenderBuilder
                             {
                                 String var = context.substring(index + tplCenter.getVarStartFlag().length(), end);
                                 var = var.trim();
-                                methodBody +="_builder.append("+ buildAccess(var, stack, template, line)+");\n";
+                                methodBody += "_builder.append(" + buildAccess(var, stack, template, line, forin_each) + ");\n";
                                 index = end + tplCenter.getVarEndFlag().length();
                                 continue;
                             }
@@ -222,20 +226,16 @@ public class RenderBuilder
                             }
                         }
                     }
-                    isInContent = true;
                     contextCache.append(c);
                     index += 1;
                 }
-                if (isInContent)
+                if (contextCache.count() > 0)
                 {
-                    if (contextCache.count() > 0)
-                    {
-                        String append = contextCache.toString().replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n");
-                        methodBody += "_builder.append(\"" + append + "\");\n";
-                        contextCache.clear();
-                    }
-                    methodBody += "_builder.append(\"\\r\\n\");\n";
+                    String append = contextCache.toString().replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n");
+                    methodBody += "_builder.append(\"" + append + "\");\n";
+                    contextCache.clear();
                 }
+                methodBody += "_builder.append(\"\\r\\n\");\n";
             }
             catch (Exception e)
             {
@@ -257,10 +257,21 @@ public class RenderBuilder
         return (TplRender) target.toClass(classLoader, null).getConstructor(Template.class, VarAccess.class).newInstance(template, varAccess);
     }
     
-    private String buildAccess(String var, Deque<Integer> stack, Template template, LineInfo line)
+    /**
+     * 通过传入求值表达式和相关的上下文信息。返回当前情况下的求值语句
+     * 
+     * @param var
+     * @param stack
+     * @param template
+     * @param line
+     * @param forin_each
+     * @return
+     */
+    private String buildAccess(String var, Deque<Integer> stack, Template template, LineInfo line, String forin_each)
     {
         String realVar;
         String format = null;
+        // 使用逗号间隔，代表着存在格式化需求
         if (var.indexOf(",") != -1)
         {
             realVar = var.split(",")[0];
@@ -272,15 +283,16 @@ public class RenderBuilder
         }
         String targetObjectName = null;
         String[] tmp_var_list = realVar.split("\\.");
-        if (stack.contains(for_flag))
+        targetObjectName = tmp_var_list[0];
+        if (stack.contains(for_flag) && targetObjectName.equals(forin_each))
         {
-            targetObjectName = tmp_var_list[0];
+            ;
         }
         else
         {
             targetObjectName = "$1.get(\"" + tmp_var_list[0] + "\")";
         }
-        if (var.indexOf(",") == -1)
+        if (format == null)
         {
             return "_varaccess.getValue(\"" + template.getPath() + '_' + realVar + "\",\"" + realVar + "\"," + targetObjectName + "," + line.getLine() + ")";
         }
