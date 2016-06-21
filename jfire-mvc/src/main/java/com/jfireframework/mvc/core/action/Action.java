@@ -70,9 +70,6 @@ public class Action
                 case Json:
                     contentType = ContentType.JSON;
                     break;
-                case Litl:
-                    contentType = ContentType.HTML;
-                    break;
                 case Beetl:
                     contentType = ContentType.HTML;
                     break;

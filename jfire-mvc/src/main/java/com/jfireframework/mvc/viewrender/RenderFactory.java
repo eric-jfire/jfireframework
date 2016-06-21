@@ -18,7 +18,6 @@ public class RenderFactory
     private static Constructor<?>              none;
     private static Constructor<?>              redirect;
     private static Constructor<?>              string;
-    private static Constructor<?>              litl;
     private static Map<ResultType, ViewRender> map = new HashMap<>();
     
     public static void clear()
@@ -38,7 +37,6 @@ public class RenderFactory
             none = Class.forName("com.jfireframework.mvc.viewrender.impl.NoneRender").getConstructor(Charset.class, ClassLoader.class);
             redirect = Class.forName("com.jfireframework.mvc.viewrender.impl.RedirectRender").getConstructor(Charset.class, ClassLoader.class);
             string = Class.forName("com.jfireframework.mvc.viewrender.impl.StringRender").getConstructor(Charset.class, ClassLoader.class);
-            litl = Class.forName("com.jfireframework.mvc.viewrender.impl.LitlRender").getConstructor(Charset.class, ClassLoader.class);
         }
         catch (NoSuchMethodException | SecurityException | ClassNotFoundException e)
         {
@@ -57,9 +55,6 @@ public class RenderFactory
             }
             switch (resultType)
             {
-                case Litl:
-                    viewRender = (ViewRender) litl.newInstance(charset, classLoader);
-                    break;
                 case Beetl:
                     viewRender = (ViewRender) beetl.newInstance(charset, classLoader);
                     break;
