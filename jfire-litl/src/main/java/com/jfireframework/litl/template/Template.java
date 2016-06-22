@@ -1,11 +1,12 @@
 package com.jfireframework.litl.template;
 
 import java.util.Map;
+import java.util.Queue;
 import com.jfireframework.litl.TplCenter;
 
 public interface Template
 {
-    public LineInfo[] getContent();
+    public Queue<LineInfo> getContent();
     
     public Template load(String name);
     

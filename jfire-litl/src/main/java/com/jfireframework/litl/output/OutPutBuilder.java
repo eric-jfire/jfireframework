@@ -8,14 +8,14 @@ import com.jfireframework.litl.TplCenter;
 import com.jfireframework.litl.output.impl.CombinationOutput;
 import com.jfireframework.litl.output.impl.ForinOutput;
 import com.jfireframework.litl.output.impl.HtmlOutPut;
-import com.jfireframework.litl.output.impl.IfEqualOutput;
+import com.jfireframework.litl.output.impl.IfEqualOrNonequalOutput;
 import com.jfireframework.litl.output.impl.VarOutput;
 import com.jfireframework.litl.template.LineInfo;
 import com.jfireframework.litl.template.Template;
 
 public class OutPutBuilder
 {
-    public Output build(Queue<LineInfo> lineQueue, Template template)
+    public static Output build(Queue<LineInfo> lineQueue, Template template)
     {
         TplCenter tplCenter = template.getTplCenter();
         StringCache htmlCache = new StringCache();
@@ -40,28 +40,23 @@ public class OutPutBuilder
                     }
                     else
                     {
-                        String method = context.substring(index + tplCenter.getMethodStartFlag().length(), end);
-                        method = method.trim();
+                        String method = context.substring(index + tplCenter.getMethodStartFlag().length(), end).trim();
                         if (method.startsWith("for("))
                         {
-                            result.addOutput(new ForinOutput(method, lineInfo, this, lineQueue, template));
+                            result.addOutput(new ForinOutput(method, lineInfo, lineQueue, template));
                             continue nextline;
                         }
                         else if (method.startsWith("if("))
                         {
-                            if (method.contains(" == "))
+                            if (method.contains(" == ") || method.contains(" != "))
                             {
-                                
-                            }
-                            else if (method.contains(" != "))
-                            {
+                                result.addOutput(new IfEqualOrNonequalOutput(method, lineInfo, lineQueue, template));
                                 
                             }
                             else if (method.contains(" > "))
                             {
                                 
                             }
-                            result.addOutput(new IfEqualOutput(method, lineInfo, this, lineQueue, template));
                             continue nextline;
                         }
                         else if (method.equals("}"))
@@ -84,16 +79,11 @@ public class OutPutBuilder
                     {
                         throw new UnSupportException(StringUtil.format("获取参数需要在一行内闭合，请检查第{}行", lineInfo.getLine()));
                     }
-                    String var = context.substring(index + tplCenter.getVarStartFlag().length(), end);
-                    var = var.trim();
+                    String var = context.substring(index + tplCenter.getVarStartFlag().length(), end).trim();
                     VarOutput varOutput = new VarOutput(var, lineInfo);
                     result.addOutput(varOutput);
                     index = end + tplCenter.getVarEndFlag().length();
                     continue;
-                }
-                if (c == tplCenter.get_functionStartFlag() && context.indexOf(tplCenter.getFunctionStartFlag(), index) == index)
-                {
-                    int end = context.indexOf(tplCenter.getFunctionEndFlag(), index + tplCenter.getFunctionStartFlag().length());
                 }
                 htmlCache.append(c);
                 index += 1;

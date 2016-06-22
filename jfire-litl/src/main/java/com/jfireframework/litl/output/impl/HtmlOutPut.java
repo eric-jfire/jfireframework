@@ -21,13 +21,6 @@ public class HtmlOutPut implements Output
     }
     
     @Override
-    public void outputWithTempParam(StringCache cache, Map<String, Object> data)
-    {
-        // TODO Auto-generated method stub
-        
-    }
-    
-    @Override
     public void addOutput(Output outPut)
     {
         throw new UnSupportException("");
