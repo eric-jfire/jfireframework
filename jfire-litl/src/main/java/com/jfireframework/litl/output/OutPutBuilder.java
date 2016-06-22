@@ -1,6 +1,6 @@
 package com.jfireframework.litl.output;
 
-import java.util.Queue;
+import java.util.Deque;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.UnSupportException;
@@ -21,7 +21,7 @@ import com.jfireframework.litl.template.Template;
 
 public class OutPutBuilder
 {
-    public static Output build(Queue<LineInfo> lineQueue, Template template)
+    public static Output build(Deque<LineInfo> lineQueue, Template template)
     {
         TplCenter tplCenter = template.getTplCenter();
         StringCache htmlCache = new StringCache();
@@ -49,7 +49,11 @@ public class OutPutBuilder
                     }
                     else
                     {
-                        String method = context.substring(index + tplCenter.getMethodStartFlag().length(), end).trim();
+                        String method = context.substring(index + tplCenter.getMethodStartFlag().length(), end);
+                        String leftLine = context.substring(end + tplCenter.getMethodEndFlag().length());
+                        LineInfo newline = new LineInfo(lineInfo.getLine(), leftLine);
+                        lineQueue.addFirst(newline);
+                        method = method.trim();
                         if (method.startsWith("for("))
                         {
                             result.addOutput(new ForinOutput(method, lineInfo, lineQueue, template));
@@ -103,7 +107,7 @@ public class OutPutBuilder
         return result;
     }
     
-    private static Output handleIf(String method, LineInfo lineInfo, Queue<LineInfo> lineQueue, Template template)
+    private static Output handleIf(String method, LineInfo lineInfo, Deque<LineInfo> lineQueue, Template template)
     {
         if (method.contains(" == "))
         {

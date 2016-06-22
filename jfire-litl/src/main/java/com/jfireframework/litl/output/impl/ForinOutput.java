@@ -1,8 +1,8 @@
 package com.jfireframework.litl.output.impl;
 
 import java.util.Collection;
+import java.util.Deque;
 import java.util.Map;
-import java.util.Queue;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.litl.output.OutPutBuilder;
@@ -16,7 +16,7 @@ public class ForinOutput implements Output
     private final String forin_array;
     private final Output content;
     
-    public ForinOutput(String method, LineInfo line, Queue<LineInfo> lineinfoQueue, Template template)
+    public ForinOutput(String method, LineInfo line, Deque<LineInfo> lineinfoQueue, Template template)
     {
         int in_index = method.indexOf(" in ");
         Verify.True(in_index != -1, "for语句的表达式没有正确包含in。请检查模板：{}的第{}行", template.getPath(), line.getLine());

@@ -1,7 +1,7 @@
 package com.jfireframework.litl.output.impl;
 
+import java.util.Deque;
 import java.util.Map;
-import java.util.Queue;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.litl.output.impl.util.ParamType;
 import com.jfireframework.litl.template.LineInfo;
@@ -10,7 +10,7 @@ import com.jfireframework.litl.template.Template;
 public class IfSeOutput extends IfCompareOutput
 {
     
-    public IfSeOutput(String condition, LineInfo line, Queue<LineInfo> lineinfoQueue, Template template)
+    public IfSeOutput(String condition, LineInfo line, Deque<LineInfo> lineinfoQueue, Template template)
     {
         super(condition, " <= ", line, lineinfoQueue, template);
     }

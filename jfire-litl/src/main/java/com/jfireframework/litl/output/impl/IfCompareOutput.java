@@ -1,6 +1,6 @@
 package com.jfireframework.litl.output.impl;
 
-import java.util.Queue;
+import java.util.Deque;
 import com.jfireframework.litl.output.OutPutBuilder;
 import com.jfireframework.litl.output.Output;
 import com.jfireframework.litl.output.impl.util.ParamType;
@@ -19,7 +19,7 @@ public abstract class IfCompareOutput implements Output
     protected final String    varKeyForData;
     protected final Output    content;
     
-    public IfCompareOutput(String condition, String compare, LineInfo line, Queue<LineInfo> lineinfoQueue, Template template)
+    public IfCompareOutput(String condition, String compare, LineInfo line, Deque<LineInfo> lineinfoQueue, Template template)
     {
         String var;
         if (condition.charAt(2) == ' ')

@@ -4,6 +4,7 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import com.jfireframework.baseutil.LineReader;
 import com.jfireframework.baseutil.StringUtil;
@@ -39,7 +40,7 @@ public class FileTemplate implements Template
         content = getContent();
         try
         {
-            output = OutPutBuilder.build(new LinkedBlockingQueue<LineInfo>(content), this);
+            output = OutPutBuilder.build(new LinkedBlockingDeque<LineInfo>(content), this);
         }
         catch (Exception e)
         {
@@ -93,7 +94,7 @@ public class FileTemplate implements Template
                 {
                     try
                     {
-                        output = OutPutBuilder.build(new LinkedBlockingQueue<LineInfo>(getContent()), this);
+                        output = OutPutBuilder.build(new LinkedBlockingDeque<LineInfo>(getContent()), this);
                     }
                     catch (Exception e)
                     {
