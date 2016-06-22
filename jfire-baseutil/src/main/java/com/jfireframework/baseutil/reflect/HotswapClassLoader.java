@@ -14,21 +14,22 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import com.jfireframework.baseutil.concurrent.ParalLock;
 import com.jfireframework.baseutil.exception.JustThrowException;
 
 public class HotswapClassLoader extends ClassLoader
 {
-    private final ClassLoader                              parent;
-    private String[]                                       reloadPackages    = new String[0];
-    private File[]                                         reloadPaths       = new File[0];
+    private final ClassLoader                         parent;
+    private String[]                                  reloadPackages    = new String[0];
+    private File[]                                    reloadPaths       = new File[0];
     // 需要被重载的Class
-    private final ConcurrentHashMap<String, Class<?>>      reloadClassMap    = new ConcurrentHashMap<String, Class<?>>();
+    private final ConcurrentHashMap<String, Class<?>> reloadClassMap    = new ConcurrentHashMap<String, Class<?>>();
     // 不需要被重载的，不可变的Class。无论是自定义的还是系统的，都在这个地方
-    private final ConcurrentHashMap<String, Class<?>>      immutableClassMap = new ConcurrentHashMap<String, Class<?>>();
-    private static final ConcurrentHashMap<String, Object> paracLockMap      = new ConcurrentHashMap<String, Object>();
-    private static final Map<String, classInfo>            classInfos        = new HashMap<String, classInfo>();
+    private final ConcurrentHashMap<String, Class<?>> immutableClassMap = new ConcurrentHashMap<String, Class<?>>();
+    private static final Map<String, classInfo>       classInfos        = new HashMap<String, classInfo>();
     // 排除在外的路径，该路径下的类不会进入自定义的加载流程
-    private final Set<String>                              excludeClasses    = new HashSet<String>();
+    private final Set<String>                         excludeClasses    = new HashSet<String>();
+    private static final ParalLock                    PARAL_LOCK        = new ParalLock();
     
     static class classInfo
     {
@@ -123,21 +124,6 @@ public class HotswapClassLoader extends ClassLoader
         }
     }
     
-    protected Object getClassLoadingLock(String name)
-    {
-        Object result = paracLockMap.get(name);
-        if (result == null)
-        {
-            Object tmp = new Object();
-            result = paracLockMap.putIfAbsent(name, tmp);
-            if (result == null)
-            {
-                result = tmp;
-            }
-        }
-        return result;
-    }
-    
     public Class<?> loadClass(String name) throws ClassNotFoundException
     {
         Class<?> c = null;
@@ -151,7 +137,7 @@ public class HotswapClassLoader extends ClassLoader
         {
             return c;
         }
-        synchronized (getClassLoadingLock(name))
+        synchronized (PARAL_LOCK.getLock(name))
         {
             boolean exclude = false;
             if (excludeClasses.contains(name))

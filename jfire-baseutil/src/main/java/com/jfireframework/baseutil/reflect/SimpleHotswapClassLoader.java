@@ -5,17 +5,18 @@ import java.io.FileInputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.ConcurrentHashMap;
+import com.jfireframework.baseutil.concurrent.ParalLock;
 import com.jfireframework.baseutil.exception.JustThrowException;
 
 public class SimpleHotswapClassLoader extends ClassLoader
 {
-    private ClassLoader                                    parent;
-    private ConcurrentHashMap<String, Class<?>>            classMap                    = new ConcurrentHashMap<String, Class<?>>();
-    private static final ConcurrentHashMap<String, Object> paracLockMap                = new ConcurrentHashMap<String, Object>();
-    private final File                                     reloadPathFile;
-    private String[]                                       reloadPackages              = new String[0];
-    private String[]                                       reloadPackageForClassFiless = new String[0];
-    private String[]                                       excludePackages             = new String[0];
+    private ClassLoader                         parent;
+    private ConcurrentHashMap<String, Class<?>> classMap                    = new ConcurrentHashMap<String, Class<?>>();
+    private final File                          reloadPathFile;
+    private String[]                            reloadPackages              = new String[0];
+    private String[]                            reloadPackageForClassFiless = new String[0];
+    private String[]                            excludePackages             = new String[0];
+    private static final ParalLock              PARAL_LOCK                  = new ParalLock();
     
     public SimpleHotswapClassLoader(String reloadPath)
     {
@@ -44,7 +45,7 @@ public class SimpleHotswapClassLoader extends ClassLoader
         {
             return classMap.get(name);
         }
-        synchronized (getClassLoadingLock(name))
+        synchronized (PARAL_LOCK.getLock(name))
         {
             for (String reloadPackage : reloadPackages)
             {
@@ -99,21 +100,6 @@ public class SimpleHotswapClassLoader extends ClassLoader
             classMap.put(name, c);
             return c;
         }
-    }
-    
-    protected Object getClassLoadingLock(String name)
-    {
-        Object result = paracLockMap.get(name);
-        if (result == null)
-        {
-            Object tmp = new Object();
-            result = paracLockMap.putIfAbsent(name, tmp);
-            if (result == null)
-            {
-                result = tmp;
-            }
-        }
-        return result;
     }
     
     public URL getResource(String name)
