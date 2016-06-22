@@ -57,30 +57,7 @@ public class OutPutBuilder
                         }
                         else if (method.startsWith("if("))
                         {
-                            if (method.contains(" == "))
-                            {
-                                result.addOutput(new IfEqualOutput(method, lineInfo, lineQueue, template));
-                            }
-                            else if (method.contains(" != "))
-                            {
-                                result.addOutput(new IfNonEqualOutput(method, lineInfo, lineQueue, template));
-                            }
-                            else if (method.contains(" > "))
-                            {
-                                result.addOutput(new IfLtOutput(method, lineInfo, lineQueue, template));
-                            }
-                            else if (method.contains(" >= "))
-                            {
-                                result.addOutput(new IfLeOutput(method, lineInfo, lineQueue, template));
-                            }
-                            else if (method.contains(" < "))
-                            {
-                                result.addOutput(new IfStOutput(method, lineInfo, lineQueue, template));
-                            }
-                            else if (method.contains(" <= "))
-                            {
-                                result.addOutput(new IfSeOutput(method, lineInfo, lineQueue, template));
-                            }
+                            result.addOutput(handleIf(method, lineInfo, lineQueue, template));
                             continue nextline;
                         }
                         else if (method.equals("}"))
@@ -88,9 +65,13 @@ public class OutPutBuilder
                             result.shirk();
                             return result;
                         }
+                        else if (method.endsWith("{}"))
+                        {
+                            result.addOutput(new FunctionOutput(method, lineInfo, template));
+                        }
                         else
                         {
-                            throw new UnSupportException("未识别的语法");
+                            throw new UnSupportException(StringUtil.format("未识别的语法，请检查模板:{}第{}行", template.getPath(), lineInfo.getLine()));
                         }
                     }
                 }
@@ -113,22 +94,6 @@ public class OutPutBuilder
                     index = end + tplCenter.getVarEndFlag().length();
                     continue;
                 }
-                if (c == tplCenter.get_functionStartFlag() && context.indexOf(tplCenter.getFunctionStartFlag(), index) == index)
-                {
-                    String append = htmlCache.toString();
-                    if (StringUtil.isNotBlank(append))
-                    {
-                        result.addOutput(new HtmlOutPut(append));
-                    }
-                    htmlCache.clear();
-                    int end = context.indexOf(tplCenter.getFunctionEndFlag(), index + tplCenter.getFunctionStartFlag().length());
-                    if (end == -1)
-                    {
-                        throw new UnSupportException(StringUtil.format("自定义方法需要在一行内闭合，请检查第{}行", lineInfo.getLine()));
-                    }
-                    String function = context.substring(index + tplCenter.getFunctionStartFlag().length(), end).trim();
-                    result.addOutput(new FunctionOutput(function, lineInfo, template));
-                }
                 htmlCache.append(c);
                 index += 1;
             }
@@ -138,4 +103,35 @@ public class OutPutBuilder
         return result;
     }
     
+    private static Output handleIf(String method, LineInfo lineInfo, Queue<LineInfo> lineQueue, Template template)
+    {
+        if (method.contains(" == "))
+        {
+            return new IfEqualOutput(method, lineInfo, lineQueue, template);
+        }
+        else if (method.contains(" != "))
+        {
+            return new IfNonEqualOutput(method, lineInfo, lineQueue, template);
+        }
+        else if (method.contains(" > "))
+        {
+            return new IfLtOutput(method, lineInfo, lineQueue, template);
+        }
+        else if (method.contains(" >= "))
+        {
+            return new IfLeOutput(method, lineInfo, lineQueue, template);
+        }
+        else if (method.contains(" < "))
+        {
+            return new IfStOutput(method, lineInfo, lineQueue, template);
+        }
+        else if (method.contains(" <= "))
+        {
+            return new IfSeOutput(method, lineInfo, lineQueue, template);
+        }
+        else
+        {
+            throw new UnSupportException(StringUtil.format("无法确认的if语句类型。请检查模板:{}的第{}行", template.getPath(), lineInfo.getLine()));
+        }
+    }
 }

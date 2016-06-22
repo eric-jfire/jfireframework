@@ -25,6 +25,7 @@ public class ForinOutput implements Output
         forin_each = method.substring(4, in_index);
         forin_array = method.substring(in_index + 4, forin_end_index);
         content = OutPutBuilder.build(lineinfoQueue, template);
+        content.shirk();
     }
     
     @Override
@@ -54,12 +55,11 @@ public class ForinOutput implements Output
     {
         throw new UnsupportedOperationException();
     }
-
+    
     @Override
     public void shirk()
     {
-        // TODO Auto-generated method stub
-        
+        throw new UnsupportedOperationException();
     }
     
 }

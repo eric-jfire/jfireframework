@@ -61,6 +61,7 @@ public abstract class IfCompareOutput implements Output
             paramInteger = Integer.valueOf(condition_param);
         }
         content = OutPutBuilder.build(lineinfoQueue, template);
+        content.shirk();
     }
     
     @Override

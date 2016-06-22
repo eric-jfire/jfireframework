@@ -7,7 +7,14 @@ public class DateFormat implements Format
 {
     private ThreadLocal<SimpleDateFormat> formats;
     
-    public DateFormat(final String pattern)
+    @Override
+    public String format(Object data)
+    {
+        return formats.get().format(data);
+    }
+    
+    @Override
+    public void setPattern(final String pattern)
     {
         formats = new ThreadLocal<SimpleDateFormat>() {
             protected SimpleDateFormat initialValue()
@@ -17,10 +24,5 @@ public class DateFormat implements Format
         };
     }
     
-    @Override
-    public String format(Object data)
-    {
-        return formats.get().format(data);
-    }
     
 }

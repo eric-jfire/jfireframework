@@ -7,7 +7,14 @@ public class NumberFormat implements Format
 {
     private ThreadLocal<DecimalFormat> formats;
     
-    public NumberFormat(final String pattern)
+    @Override
+    public String format(Object data)
+    {
+        return formats.get().format(data);
+    }
+    
+    @Override
+    public void setPattern(final String pattern)
     {
         formats = new ThreadLocal<DecimalFormat>() {
             protected DecimalFormat initialValue()
@@ -16,11 +23,4 @@ public class NumberFormat implements Format
             }
         };
     }
-    
-    @Override
-    public String format(Object data)
-    {
-        return formats.get().format(data);
-    }
-    
 }

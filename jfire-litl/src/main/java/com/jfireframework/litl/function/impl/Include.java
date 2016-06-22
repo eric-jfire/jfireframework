@@ -12,7 +12,15 @@ public class Include implements Function
 {
     private Template template;
     
-    public Include(Object[] params, LineInfo lineInfo, Template template)
+    @Override
+    public void call(Map<String, Object> data, StringCache cache)
+    {
+        String append = template.render(data);
+        cache.append(append);
+    }
+    
+    @Override
+    public void init(Object[] params, LineInfo lineInfo, Template template)
     {
         String path = (String) params[0];
         try
@@ -24,13 +32,6 @@ public class Include implements Function
         {
             throw new UnSupportException(StringUtil.format("找不到模板:{},请检查模板:{}的第{}行", path, template.getPath(), lineInfo.getLine()));
         }
-    }
-    
-    @Override
-    public void call(Map<String, Object> data, StringCache cache)
-    {
-        String append = template.render(data);
-        cache.append(append);
     }
     
 }

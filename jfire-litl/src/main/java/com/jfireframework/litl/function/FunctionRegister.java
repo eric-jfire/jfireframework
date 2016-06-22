@@ -1,34 +1,24 @@
 package com.jfireframework.litl.function;
 
-import java.lang.reflect.Constructor;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
-import com.jfireframework.litl.function.impl.Include;
 import com.jfireframework.litl.template.LineInfo;
 import com.jfireframework.litl.template.Template;
 
 public class FunctionRegister
 {
-    private static Map<String, Constructor<? extends Function>> funcs = new HashMap<String, Constructor<? extends Function>>();
+    private static Map<String, Class<? extends Function>> funcs = new ConcurrentHashMap<String, Class<? extends Function>>();
     
-    static
+    public static void register(String functionName, Class<? extends Function> type)
     {
-        try
-        {
-            funcs.put("include", Include.class.getConstructor(Object[].class, LineInfo.class, Template.class));
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        
+        funcs.put(functionName, type);
     }
     
     public static Function get(String name, Object[] params, LineInfo info, Template template)
     {
-        Constructor<? extends Function> constructor = funcs.get(name);
+        Class<? extends Function> constructor = funcs.get(name);
         if (constructor == null)
         {
             throw new UnSupportException("方法" + name + "不存在，请检查");
@@ -37,7 +27,9 @@ public class FunctionRegister
         {
             try
             {
-                return constructor.newInstance(params, info, template);
+                Function function = constructor.newInstance();
+                function.init(params, info, template);
+                return function;
             }
             catch (Exception e)
             {

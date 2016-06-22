@@ -1,11 +1,14 @@
 package com.jfireframework.litl.output.impl;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.litl.format.Format;
-import com.jfireframework.litl.format.impl.DateFormat;
+import com.jfireframework.litl.format.NameFormatRegister;
+import com.jfireframework.litl.format.impl.TypeFormat;
 import com.jfireframework.litl.output.Output;
 import com.jfireframework.litl.template.LineInfo;
 import com.jfireframework.litl.template.Template;
@@ -20,29 +23,42 @@ public class VarOutput implements Output
     
     public VarOutput(String method, LineInfo info, Template template)
     {
+        String var;
         if (method.contains(","))
         {
             String[] spl = method.split(",");
-            String[] tmp = spl[0].split("\\.");
-            varName = tmp[0];
+            varName = spl[0].split("\\.")[0];
+            var = spl[0];
             String pattern = spl[1];
             if (pattern.charAt(0) == '"')
             {
-                format = new DateFormat(pattern.substring(1, pattern.length() - 1).trim());
-            }
-            else if (pattern.startsWith("dateFormat="))
-            {
-                pattern = pattern.substring(11, pattern.length() - 1).trim();
-                format = new DateFormat(pattern);
-            }
-            else if (pattern.startsWith("numberFormat="))
-            {
-                pattern = pattern.substring(13, pattern.length() - 1).trim();
-                format = new DateFormat(pattern);
+                format = new TypeFormat();
+                format.setPattern(pattern.substring(1, pattern.length() - 1).trim());
             }
             else
             {
-                throw new UnSupportException(StringUtil.format("无法识别的格式化类型，请检查模板:{}的第{}行", template.getPath(), info.getLine()));
+                for (Entry<String, Class<? extends Format>> entry : NameFormatRegister.getFormats().entrySet())
+                {
+                    if (pattern.startsWith(entry.getKey()) && pattern.contains("="))
+                    {
+                        // +1是因为有等于号
+                        pattern = pattern.substring(entry.getKey().length() + 2, pattern.length() - 1).trim();
+                        try
+                        {
+                            format = entry.getValue().newInstance();
+                        }
+                        catch (Exception e)
+                        {
+                            throw new JustThrowException(e);
+                        }
+                        format.setPattern(pattern);
+                        break;
+                    }
+                }
+                if (format == null)
+                {
+                    throw new UnSupportException(StringUtil.format("未识别的格式化方法，请检查模板:{}第{}行", template.getPath(), info.getLine()));
+                }
             }
             isFormat = true;
         }
@@ -50,9 +66,10 @@ public class VarOutput implements Output
         {
             String[] tmp = method.split("\\.");
             varName = tmp[0];
+            var = method;
             isFormat = false;
         }
-        varAccess = new VarAccess(template.getPath(), varName, info);
+        varAccess = new VarAccess(template.getPath(), var, info);
     }
     
     @Override

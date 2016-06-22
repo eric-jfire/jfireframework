@@ -46,13 +46,6 @@ public class TplTest
         TplResLoader loader = new FileResLoader("E:/jfireframework/jfire-litl/");
         TplCenter center = new TplCenter(loader);
         Template template = center.load("/tpl/tmp.tl");
-        template.render(data);
-        Timewatch timewatch = new Timewatch();
-        for (int i = 0; i < 1000; i++)
-        {
-            
-        }
-        timewatch.end();
-        System.out.println(timewatch.getTotal());
+        System.out.println(template.render(data));
     }
 }

@@ -35,15 +35,16 @@ public class VarAccess
     public VarAccess(String templatePath, String var, LineInfo lineInfo)
     {
         this.templatePath = templatePath;
-        this.var = var;
         this.lineInfo = lineInfo;
-        if (var.endsWith("!"))
+        if (var.charAt(var.length() - 1) == '!')
         {
             safe = true;
+            this.var = var.substring(0, var.length() - 1);
         }
         else
         {
             safe = false;
+            this.var = var;
         }
     }
     

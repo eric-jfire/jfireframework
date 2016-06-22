@@ -3,6 +3,13 @@ package com.jfireframework.litl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.Set;
+import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.litl.format.Format;
+import com.jfireframework.litl.format.NameFormatRegister;
+import com.jfireframework.litl.format.TypeFormatRegister;
+import com.jfireframework.litl.function.Function;
+import com.jfireframework.litl.function.FunctionRegister;
 
 public class TempLateConfig
 {
@@ -12,9 +19,6 @@ public class TempLateConfig
     protected String  varStartFlag;
     protected char    _varStartFlag;
     protected String  varEndFlag;
-    protected String  functionStartFlag;
-    protected char    _functionStartFlag;
-    protected String  functionEndFlag;
     protected boolean devMode;
     
     public TempLateConfig()
@@ -46,6 +50,7 @@ public class TempLateConfig
         
     }
     
+    @SuppressWarnings("unchecked")
     private void config(Properties properties)
     {
         String value;
@@ -59,17 +64,6 @@ public class TempLateConfig
         if (value != null)
         {
             methodEndFlag = value;
-        }
-        value = properties.getProperty("functionStartFlag");
-        if (value != null)
-        {
-            functionStartFlag = value;
-            _functionStartFlag = value.charAt(0);
-        }
-        value = properties.getProperty("functionEndFlag");
-        if (value != null)
-        {
-            functionEndFlag = value;
         }
         value = properties.getProperty("varStartFlag");
         if (value != null)
@@ -86,6 +80,49 @@ public class TempLateConfig
         if (value != null)
         {
             devMode = Boolean.parseBoolean(value);
+        }
+        Set<String> names = properties.stringPropertyNames();
+        for (String each : names)
+        {
+            if (each.startsWith("FT."))
+            {
+                String formatClassName = properties.getProperty(each);
+                try
+                {
+                    String formatName = each.substring(3);
+                    NameFormatRegister.register(formatName, (Class<? extends Format>) Class.forName(formatClassName));
+                }
+                catch (ClassNotFoundException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
+            else if (each.startsWith("FTC."))
+            {
+                String formatClassName = properties.getProperty(each);
+                try
+                {
+                    String formatType = each.substring(4);
+                    TypeFormatRegister.register(Class.forName(formatType), (Class<? extends Format>) Class.forName(formatClassName));
+                }
+                catch (ClassNotFoundException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
+            else if (each.startsWith("FN."))
+            {
+                String functionName = each.substring(3);
+                String functionClassName = properties.getProperty(each);
+                try
+                {
+                    FunctionRegister.register(functionName, (Class<? extends Function>) Class.forName(functionClassName));
+                }
+                catch (ClassNotFoundException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
         }
     }
     
@@ -122,21 +159,6 @@ public class TempLateConfig
     public String getVarEndFlag()
     {
         return varEndFlag;
-    }
-    
-    public String getFunctionStartFlag()
-    {
-        return functionStartFlag;
-    }
-    
-    public char get_functionStartFlag()
-    {
-        return _functionStartFlag;
-    }
-    
-    public String getFunctionEndFlag()
-    {
-        return functionEndFlag;
     }
     
     public boolean isDevMode()

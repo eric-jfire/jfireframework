@@ -23,14 +23,14 @@ public class FunctionOutput implements Output
         {
             int start = function.indexOf('(');
             String functionName = function.substring(0, start);
-            int end = function.lastIndexOf(')');
+            int end = function.lastIndexOf("{}") - 1;
             String[] params = function.substring(start + 1, end).trim().split(",");
             List<Object> tmp = new LinkedList<Object>();
             for (String param : params)
             {
                 if (param.charAt(0) == '"')
                 {
-                    Verify.True(param.charAt(param.length() - 1) == '"', "字符串参数需要完整闭合，请检查木板{}的第{}行", template.getPath(), lineInfo.getLine());
+                    Verify.True(param.charAt(param.length() - 1) == '"', "字符串参数需要完整闭合，请检查模板{}的第{}行", template.getPath(), lineInfo.getLine());
                     tmp.add(param.substring(1, param.length() - 1));
                     continue;
                 }
