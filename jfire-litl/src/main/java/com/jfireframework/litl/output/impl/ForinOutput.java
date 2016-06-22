@@ -54,5 +54,12 @@ public class ForinOutput implements Output
     {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void shirk()
+    {
+        // TODO Auto-generated method stub
+        
+    }
     
 }

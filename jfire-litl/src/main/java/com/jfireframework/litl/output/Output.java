@@ -8,4 +8,6 @@ public interface Output
     public void output(StringCache cache, Map<String, Object> data);
     
     public void addOutput(Output outPut);
+    
+    public void shirk();
 }

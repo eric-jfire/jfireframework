@@ -8,7 +8,8 @@ import com.jfireframework.litl.output.Output;
 
 public class CombinationOutput implements Output
 {
-    private List<Output> outputs = new LinkedList<Output>();
+    private List<Output> tmp = new LinkedList<Output>();
+    private Output[]     outputs;
     
     @Override
     public void output(StringCache cache, Map<String, Object> data)
@@ -19,11 +20,28 @@ public class CombinationOutput implements Output
         }
     }
     
-    
     @Override
     public void addOutput(Output outPut)
     {
-        outputs.add(outPut);
+        if (outPut instanceof CombinationOutput)
+        {
+            if (((CombinationOutput) outPut).getOutputs().length == 0)
+            {
+                return;
+            }
+        }
+        tmp.add(outPut);
+    }
+    
+    @Override
+    public void shirk()
+    {
+        outputs = tmp.toArray(new Output[tmp.size()]);
+    }
+    
+    public Output[] getOutputs()
+    {
+        return outputs;
     }
     
 }

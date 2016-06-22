@@ -1,7 +1,7 @@
 package com.jfireframework.litl.function;
 
 import java.util.Map;
-import com.jfireframework.litl.template.Template;
+import com.jfireframework.baseutil.collection.StringCache;
 
 public interface Function
 {
@@ -13,5 +13,5 @@ public interface Function
      * @param builder
      * @param template
      */
-    public void call(Object[] params, Map<String, Object> data, StringBuilder builder, Template template);
+    public void call(Map<String, Object> data, StringCache cache);
 }

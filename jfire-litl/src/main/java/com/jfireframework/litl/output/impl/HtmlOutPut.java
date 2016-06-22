@@ -25,5 +25,11 @@ public class HtmlOutPut implements Output
     {
         throw new UnSupportException("");
     }
+
+    @Override
+    public void shirk()
+    {
+        
+    }
     
 }

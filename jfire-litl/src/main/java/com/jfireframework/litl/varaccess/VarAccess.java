@@ -1,37 +1,50 @@
 package com.jfireframework.litl.varaccess;
 
-import java.util.concurrent.ConcurrentHashMap;
+import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
+import com.jfireframework.litl.template.LineInfo;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
+import javassist.LoaderClassPath;
 
 public class VarAccess
 {
-    private ConcurrentHashMap<String, FieldAccesser> accesserMap = new ConcurrentHashMap<String, FieldAccesser>();
     
-    private ClassPool                                classPool   = ClassPool.getDefault();
-    private ClassLoader                              classLoader;
-    private static final Logger                      logger      = ConsoleLogFactory.getLogger();
-    private ConcurrentHashMap<String, Object>        keyMap      = new ConcurrentHashMap<String, Object>();
+    private static ClassPool classPool = ClassPool.getDefault();
     
-    private Object getParalLock(String key)
+    public static void initClassPool(ClassLoader classLoader)
     {
-        Object lock = keyMap.get(key);
-        if (lock != null)
+        classPool = new ClassPool();
+        classPool.insertClassPath(new LoaderClassPath(classLoader));
+        ClassPool.doPruning = true;
+    }
+    
+    private Object                 lock   = new Object();
+    private final String           templatePath;
+    private final String           var;
+    private final LineInfo         lineInfo;
+    private volatile FieldAccesser fieldAccesser;
+    private final boolean          safe;
+    private static final Logger    logger = ConsoleLogFactory.getLogger();
+    
+    public VarAccess(String templatePath, String var, LineInfo lineInfo)
+    {
+        this.templatePath = templatePath;
+        this.var = var;
+        this.lineInfo = lineInfo;
+        if (var.endsWith("!"))
         {
-            return lock;
+            safe = true;
         }
-        lock = new Object();
-        if (keyMap.putIfAbsent(key, lock) == null)
+        else
         {
-            return lock;
+            safe = false;
         }
-        return keyMap.get(key);
     }
     
     /**
@@ -41,44 +54,44 @@ public class VarAccess
      * @param template
      * @return
      */
-    public Object getValue(String key, String varName, Object target, int line)
+    public Object getValue(Object target)
     {
         if (target == null)
         {
-            return null;
+            if (safe)
+            {
+                return null;
+            }
+            else
+            {
+                throw new NullPointerException(StringUtil.format("请检查模板{}的第{}行，参数为null", templatePath, lineInfo.getLine()));
+            }
         }
-        FieldAccesser fieldAccesser = accesserMap.get(key);
         if (fieldAccesser == null)
         {
-            // 这个地方的锁应该分配给每一个key一个，类似于classloader中的思路
-            synchronized (getParalLock(key))
+            synchronized (lock)
             {
-                if (accesserMap.containsKey(key))
-                {
-                    fieldAccesser = accesserMap.get(key);
-                }
-                else
+                if (fieldAccesser == null)
                 {
                     try
                     {
                         CtClass intercc = classPool.get(FieldAccesser.class.getName());
-                        CtClass targetcc = classPool.makeClass(varName.replace("\\.", "_") + '_' + System.nanoTime());
+                        CtClass targetcc = classPool.makeClass(var.replace("\\.", "_") + '_' + System.nanoTime());
                         targetcc.setInterfaces(new CtClass[] { intercc });
                         CtMethod ctMethod = new CtMethod(classPool.get(Object.class.getName()), "getValue", new CtClass[] { classPool.get(Object.class.getName()) }, targetcc);
                         StringCache cache = new StringCache();
                         cache.append('{');
                         cache.append("return ($r)((").append(target.getClass().getName()).append(")$1)");
-                        cache.append(ReflectUtil.buildGetMethod(varName, target.getClass()));
+                        cache.append(ReflectUtil.buildGetMethod(var, target.getClass()));
                         cache.append(";}");
-                        logger.trace("为参数:{}生成的获取代码是{}", key, cache.toString());
+                        logger.trace("为模板:{}第{}行的参数:{}生成的代码是{}", templatePath, lineInfo.getLine(), var, cache.toString());
                         ctMethod.setBody(cache.toString());
                         targetcc.addMethod(ctMethod);
-                        fieldAccesser = (FieldAccesser) targetcc.toClass(classLoader, null).newInstance();
-                        accesserMap.putIfAbsent(key, fieldAccesser);
+                        fieldAccesser = (FieldAccesser) targetcc.toClass().newInstance();
                     }
                     catch (Exception e)
                     {
-                        throw new UnSupportException("", e);
+                        throw new UnSupportException(StringUtil.format("请检查模板{}的第{}行", templatePath, lineInfo.getLine()), e);
                     }
                 }
             }
@@ -89,7 +102,14 @@ public class VarAccess
         }
         catch (NullPointerException e)
         {
-            return null;
+            if (safe)
+            {
+                return null;
+            }
+            else
+            {
+                throw new NullPointerException(StringUtil.format("请检查模板{}的第{}行，参数为null", templatePath, lineInfo.getLine()));
+            }
         }
         
     }
