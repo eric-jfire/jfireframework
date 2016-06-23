@@ -32,6 +32,10 @@ public class ForinOutput implements Output
     public void output(StringCache cache, Map<String, Object> data)
     {
         Object array = data.get(forin_array);
+        if (array == null)
+        {
+            return;
+        }
         if (array instanceof Collection<?>)
         {
             for (Object each : (Collection<?>) array)

@@ -21,12 +21,12 @@
 			<groupId>com.jfireframework</groupId>
 			<artifactId>litl</artifactId>
 			<version>1.0-SNAPSHOT</version>
-			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>com.ibeetl</groupId>
 			<artifactId>beetl</artifactId>
 			<version>2.4.3</version>
+			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>

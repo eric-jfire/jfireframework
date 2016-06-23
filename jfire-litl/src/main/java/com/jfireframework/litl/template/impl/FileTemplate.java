@@ -117,7 +117,7 @@ public class FileTemplate implements Template
     @Override
     public Template load(String name)
     {
-        if (name.charAt(0) == '/')
+        if (name.charAt(0) == '\\')
         {
             return tplCenter.load(name);
         }

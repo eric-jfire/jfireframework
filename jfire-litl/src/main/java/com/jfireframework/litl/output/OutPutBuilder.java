@@ -72,6 +72,7 @@ public class OutPutBuilder
                         else if (method.endsWith("{}"))
                         {
                             result.addOutput(new FunctionOutput(method, lineInfo, template));
+                            continue nextline;
                         }
                         else
                         {
@@ -102,6 +103,15 @@ public class OutPutBuilder
                 index += 1;
             }
             htmlCache.append("\r\n");
+        }
+        if (htmlCache.count() != 0)
+        {
+            String append = htmlCache.toString();
+            if (StringUtil.isNotBlank(append))
+            {
+                result.addOutput(new HtmlOutPut(append));
+            }
+            htmlCache.clear();
         }
         result.shirk();
         return result;
