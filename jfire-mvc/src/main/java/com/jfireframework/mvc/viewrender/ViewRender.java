@@ -9,5 +9,4 @@ public interface ViewRender
      * 对视图进行渲染
      */
     public void render(HttpServletRequest request, HttpServletResponse response, Object result) throws Throwable;
-    
 }
