@@ -48,6 +48,11 @@ public class VarAccess
         }
     }
     
+    public boolean safeMode()
+    {
+        return safe;
+    }
+    
     /**
      * key的格式是 模板路径_参数名称
      * 

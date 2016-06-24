@@ -20,9 +20,15 @@ public class VarOutput implements Output
     private final VarAccess varAccess;
     private Format          format;
     private final boolean   isFormat;
+    private final LineInfo  lineInfo;
+    private final String    method;
+    private final Template  template;
     
     public VarOutput(String method, LineInfo info, Template template)
     {
+        this.template = template;
+        this.method = method;
+        lineInfo = info;
         String var;
         if (method.contains(","))
         {
@@ -76,13 +82,25 @@ public class VarOutput implements Output
     public void output(StringCache cache, Map<String, Object> data)
     {
         Object target = data.get(varName);
+        Object value = varAccess.getValue(target);
+        if (value == null)
+        {
+            if (varAccess.safeMode())
+            {
+                return;
+            }
+            else
+            {
+                throw new NullPointerException(StringUtil.format("参数不存在，请检查模板:{}第{}行的参数:{}", template.getPath(), lineInfo.getLine(), method));
+            }
+        }
         if (isFormat)
         {
-            cache.append(format.format(varAccess.getValue(target)));
+            cache.append(format.format(value));
         }
         else
         {
-            cache.append(varAccess.getValue(target));
+            cache.append(value);
         }
     }
     
