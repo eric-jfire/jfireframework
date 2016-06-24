@@ -6,7 +6,7 @@ import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 
-public class ElExplain
+public class JelExplain
 {
     /**
      * 将表达式进行解析。比如user.age >15会被生成(user !=null) &&
@@ -18,9 +18,9 @@ public class ElExplain
      * @return
      * @throws NoSuchFieldException
      * @throws SecurityException
-     * @throws ElException
+     * @throws JelException
      */
-    public static String createVarIf(String conditionStatment, String[] paramNames, Class<?>[] types) throws ElException
+    public static String createVarIf(String conditionStatment, String[] paramNames, Class<?>[] types) throws JelException
     {
         conditionStatment = conditionStatment.trim();
         StringCache cache = new StringCache();
@@ -35,32 +35,7 @@ public class ElExplain
         while (flag < conditionStatment.length())
         {
             c = conditionStatment.charAt(flag);
-            if (c == '$')
-            {
-                int varStart = flag + 1;
-                flag = getEndFlag(conditionStatment, flag);
-                String var = null;
-                if (flag < conditionStatment.length() - 1 && conditionStatment.charAt(flag) == '(' && conditionStatment.charAt(flag + 1) == ')')
-                {
-                    flag += 2;
-                    var = conditionStatment.substring(varStart, flag);
-                }
-                else if (flag < conditionStatment.length() - 1 && conditionStatment.charAt(flag) == '(')
-                {
-                    flag = conditionStatment.indexOf(')', flag) + 1;
-                    Verify.False(flag == -1, "sql语句存在异常，请检查{}", conditionStatment);
-                    var = conditionStatment.substring(varStart, flag);
-                    
-                }
-                else
-                {
-                    var = conditionStatment.substring(varStart, flag);
-                }
-                transVar = buildParam(var, paramNames, types);
-                varType = getParamType(var, paramNames, types);
-                continue;
-            }
-            else if (c == '>' || c == '<' || c == '!' || c == '=')
+            if (c == '>' || c == '<' || c == '!' || c == '=')
             {
                 if (conditionStatment.charAt(flag + 1) == '=')
                 {
@@ -100,15 +75,39 @@ public class ElExplain
                 flag++;
                 continue;
             }
-            else if (c == '\'')
+            else if (c == '\"')
             {
-                int end = conditionStatment.indexOf('\'', flag);
+                int end = conditionStatment.indexOf('\"', flag);
                 param = conditionStatment.substring(flag + 1, end);
                 createStatement(param, cache, transVar, varType, condition);
                 transVar = null;
                 condition = null;
                 param = null;
                 flag = end + 1;
+                continue;
+            }
+            else if (transVar == null)
+            {
+                int varStart = flag;
+                flag = getEndFlag(conditionStatment, flag);
+                String var = null;
+                if (flag < conditionStatment.length() - 1 && conditionStatment.charAt(flag) == '(' && conditionStatment.charAt(flag + 1) == ')')
+                {
+                    flag += 2;
+                    var = conditionStatment.substring(varStart, flag);
+                }
+                else if (flag < conditionStatment.length() - 1 && conditionStatment.charAt(flag) == '(')
+                {
+                    flag = conditionStatment.indexOf(')', flag) + 1;
+                    Verify.False(flag == -1, "el表达式存在异常，请检查{}", conditionStatment);
+                    var = conditionStatment.substring(varStart, flag);
+                }
+                else
+                {
+                    var = conditionStatment.substring(varStart, flag);
+                }
+                transVar = buildParam(var, paramNames, types);
+                varType = getParamType(var, paramNames, types);
                 continue;
             }
             // 如果都不是上面的那些字符，就意味着可能是数字或者是布尔值。（在输入正确的情况下，故意输错不说。）
@@ -150,9 +149,9 @@ public class ElExplain
      * @param paramTypes
      * @param originalSql
      * @return
-     * @throws ElException
+     * @throws JelException
      */
-    private static Class<?> getParamType(String inject, String[] paramNames, Class<?>[] paramTypes) throws ElException
+    private static Class<?> getParamType(String inject, String[] paramNames, Class<?>[] paramTypes) throws JelException
     {
         try
         {
@@ -172,23 +171,40 @@ public class ElExplain
         }
         catch (Exception e)
         {
-            throw new ElException(e);
+            throw new JelException(e);
         }
         
     }
     
     /**
-     * 从start处开始，在sql中遇到一些特定字符则返回当前的位置
+     * 从start处开始，遇到一些特定字符时直接返回。
+     * 特定字符包含
+     * >,<,!,=,#,+,-,(,),[,],还有逗号和空格
+     * 如果始终没有遇到结束字符，则最终返回字符串的长度
      * 
-     * @param sql
+     * @param str
      * @param start
      * @return
      */
-    private static int getEndFlag(String sql, int start)
+    private static int getEndFlag(String str, int start)
     {
-        while (start < sql.length())
+        while (start < str.length())
         {
-            if (sql.charAt(start) == '>' || sql.charAt(start) == '<' || sql.charAt(start) == '!' || sql.charAt(start) == '=' || sql.charAt(start) == ' ' || sql.charAt(start) == ',' || sql.charAt(start) == '#' || sql.charAt(start) == '+' || sql.charAt(start) == '-' || sql.charAt(start) == '(' || sql.charAt(start) == ')' || sql.charAt(start) == ']' || sql.charAt(start) == '[')
+            if (
+                str.charAt(start) == '>' //
+                        || str.charAt(start) == '<' //
+                        || str.charAt(start) == '!' //
+                        || str.charAt(start) == '=' //
+                        || str.charAt(start) == ' ' //
+                        || str.charAt(start) == ',' //
+                        || str.charAt(start) == '#' //
+                        || str.charAt(start) == '+' //
+                        || str.charAt(start) == '-' //
+                        || str.charAt(start) == '(' //
+                        || str.charAt(start) == ')' //
+                        || str.charAt(start) == ']' //
+                        || str.charAt(start) == '['
+            )
             {
                 break;
             }
@@ -208,9 +224,9 @@ public class ElExplain
      * @param paramTypes
      * @param originalSql
      * @return
-     * @throws ElException
+     * @throws JelException
      */
-    private static String buildParam(String inject, String[] paramNames, Class<?>[] paramTypes) throws ElException
+    private static String buildParam(String inject, String[] paramNames, Class<?>[] paramTypes) throws JelException
     {
         boolean before = false;
         boolean after = false;
@@ -260,7 +276,7 @@ public class ElExplain
             }
             catch (Exception e)
             {
-                throw new ElException(e);
+                throw new JelException(e);
             }
         }
     }
@@ -414,9 +430,9 @@ public class ElExplain
      * @param names
      * @param types
      * @return
-     * @throws ElException
+     * @throws JelException
      */
-    public static String createValue(String expression, String[] names, Class<?>[] types) throws ElException
+    public static String createValue(String expression, String[] names, Class<?>[] types) throws JelException
     {
         StringCache cache = new StringCache();
         int length = expression.length();
@@ -424,39 +440,30 @@ public class ElExplain
         while (index < length)
         {
             char c = expression.charAt(index);
-            if (c == '$')
+            if (c == '\"')
             {
-                int next = expression.indexOf(' ', index);
-                String value;
-                if (next == -1)
-                {
-                    next = length;
-                }
-                value = expression.substring(index + 1, next);
-                cache.append(buildParam(value, names, types));
-                index = next;
-                continue;
-            }
-            else if (c == '\'')
-            {
-                int next = expression.indexOf('\'', index + 1);
-                if (next == -1)
+                int end = expression.indexOf('\"', index + 1);
+                if (end == -1)
                 {
                     throw new UnSupportException("key的规则有问题，缺少了一边的'\"'");
                 }
-                cache.append('"');
-                for (int i = index + 1; i < next; i++)
-                {
-                    cache.append(expression.charAt(i));
-                }
-                cache.append('"');
-                index = next + 1;
+                cache.append(expression.substring(index, end + 1));
+                index = end + 1;
+                continue;
+            }
+            else if (c == ' ' || c == '+' || c == '-' || c == '*' || c == '/')
+            {
+                cache.append(c);
+                index += 1;
                 continue;
             }
             else
             {
-                cache.append(c);
-                index += 1;
+                int end = getEndFlag(expression, index);
+                String value;
+                value = expression.substring(index, end);
+                cache.append(buildParam(value, names, types));
+                index = end;
                 continue;
             }
         }

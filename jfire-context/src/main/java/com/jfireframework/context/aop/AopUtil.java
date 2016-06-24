@@ -8,8 +8,8 @@ import java.util.Map;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.collection.set.LightSet;
-import com.jfireframework.baseutil.el.ElException;
-import com.jfireframework.baseutil.el.ElExplain;
+import com.jfireframework.baseutil.el.JelException;
+import com.jfireframework.baseutil.el.JelExplain;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
@@ -492,11 +492,11 @@ public class AopUtil
                 {
                     if (each.getReturnType() == Void.class)
                     {
-                        throw new ElException(StringUtil.format("使用CacheGet注解的方法必须有返回值，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()));
+                        throw new JelException(StringUtil.format("使用CacheGet注解的方法必须有返回值，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()));
                     }
                     CacheGet cacheGet = AnnotationUtil.getAnnotation(CacheGet.class, each);
                     String key = cacheGet.value();
-                    String finalKey = ElExplain.createValue(key, names, types);
+                    String finalKey = JelExplain.createValue(key, names, types);
                     String cacheName = cacheGet.cacheName();
                     String condition = cacheGet.condition();
                     if (condition.equals(""))
@@ -518,7 +518,7 @@ public class AopUtil
                     }
                     else
                     {
-                        condition = ElExplain.createVarIf(condition, names, types);
+                        condition = JelExplain.createVarIf(condition, names, types);
                         methodBody = "{\nif(" + condition + ")\n{\n";
                         methodBody += "\tcom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");;\n";
                         methodBody += "\tObject result = _cache.get(($w)" + finalKey + ");\n";
@@ -547,11 +547,11 @@ public class AopUtil
                 {
                     if (each.getReturnType() == Void.class)
                     {
-                        throw new ElException(StringUtil.format("使用CacheGet注解的方法必须有返回值，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()));
+                        throw new JelException(StringUtil.format("使用CacheGet注解的方法必须有返回值，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()));
                     }
                     CachePut cachePut = AnnotationUtil.getAnnotation(CachePut.class, each);
                     String key = cachePut.value();
-                    String finalKey = ElExplain.createValue(key, names, types);
+                    String finalKey = JelExplain.createValue(key, names, types);
                     String cacheName = cachePut.cacheName();
                     String condition = cachePut.condition();
                     if (condition.equals(""))
@@ -570,7 +570,7 @@ public class AopUtil
                     }
                     else
                     {
-                        condition = ElExplain.createVarIf(condition, names, types);
+                        condition = JelExplain.createVarIf(condition, names, types);
                         methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
                         methodBody += "if(" + condition + ")\n{\n";
                         methodBody += "\tObject result = " + originMethod.getName() + "($$);\n";
@@ -596,7 +596,7 @@ public class AopUtil
                     boolean hasReturn = (each.getReturnType() != void.class);
                     CacheDelete cacheDelete = AnnotationUtil.getAnnotation(CacheDelete.class, each);
                     String key = cacheDelete.value();
-                    String finalKey = ElExplain.createValue(key, names, types);
+                    String finalKey = JelExplain.createValue(key, names, types);
                     String cacheName = cacheDelete.cacheName();
                     String condition = cacheDelete.condition();
                     if (condition.equals(""))
@@ -617,7 +617,7 @@ public class AopUtil
                     }
                     else
                     {
-                        condition = ElExplain.createVarIf(condition, names, types);
+                        condition = JelExplain.createVarIf(condition, names, types);
                         methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
                         methodBody += "if(" + condition + ")\n{\n";
                         if (hasReturn)

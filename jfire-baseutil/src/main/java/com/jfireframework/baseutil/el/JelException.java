@@ -1,18 +1,18 @@
 package com.jfireframework.baseutil.el;
 
-public class ElException extends Exception
+public class JelException extends Exception
 {
     /**
      * 
      */
     private static final long serialVersionUID = 1L;
     
-    public ElException(Throwable e)
+    public JelException(Throwable e)
     {
         super(e);
     }
     
-    public ElException(String msg)
+    public JelException(String msg)
     {
         super(msg);
     }
