@@ -30,7 +30,6 @@ public class RenderFactory
     {
         try
         {
-            beetl = Class.forName("com.jfireframework.mvc.viewrender.impl.BeetlRender").getConstructor(Charset.class, ClassLoader.class);
             bytes = Class.forName("com.jfireframework.mvc.viewrender.impl.BytesRender").getConstructor(Charset.class, ClassLoader.class);
             html = Class.forName("com.jfireframework.mvc.viewrender.impl.HtmlRender").getConstructor(Charset.class, ClassLoader.class);
             json = Class.forName("com.jfireframework.mvc.viewrender.impl.JsonRender").getConstructor(Charset.class, ClassLoader.class);
@@ -61,6 +60,10 @@ public class RenderFactory
                     viewRender = (ViewRender) litl.newInstance(charset, classLoader);
                     break;
                 case Beetl:
+                    if (beetl == null)
+                    {
+                        beetl = Class.forName("com.jfireframework.mvc.viewrender.impl.BeetlRender").getConstructor(Charset.class, ClassLoader.class);
+                    }
                     viewRender = (ViewRender) beetl.newInstance(charset, classLoader);
                     break;
                 case Bytes:
@@ -92,7 +95,7 @@ public class RenderFactory
             map.put(resultType, viewRender);
             return viewRender;
         }
-        catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+        catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException | ClassNotFoundException e)
         {
             throw new UnSupportException("", e);
         }

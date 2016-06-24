@@ -82,7 +82,7 @@ public class VarAccess
                         CtMethod ctMethod = new CtMethod(classPool.get(Object.class.getName()), "getValue", new CtClass[] { classPool.get(Object.class.getName()) }, targetcc);
                         StringCache cache = new StringCache();
                         cache.append('{');
-                        cache.append("return ($r)((").append(target.getClass().getName()).append(")$1)");
+                        cache.append("return ($w)((").append(target.getClass().getName()).append(")$1)");
                         cache.append(ReflectUtil.buildGetMethod(var, target.getClass()));
                         cache.append(";}");
                         logger.trace("为模板:{}第{}行的参数:{}生成的代码是{}", templatePath, lineInfo.getLine(), var, cache.toString());
