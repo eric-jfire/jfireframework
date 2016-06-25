@@ -21,6 +21,7 @@ import com.jfireframework.litl.template.Template;
 
 public class OutPutBuilder
 {
+    
     public static Output build(Deque<LineInfo> lineQueue, Template template)
     {
         TplCenter tplCenter = template.getTplCenter();
@@ -36,7 +37,7 @@ public class OutPutBuilder
                 char c = context.charAt(index);
                 if (c == tplCenter.get_methodStartFlag() && context.indexOf(tplCenter.getMethodStartFlag(), index) == index)
                 {
-                    String append = htmlCache.toString();
+                    String append = htmlCache.toString().trim();
                     if (StringUtil.isNotBlank(append))
                     {
                         result.addOutput(new HtmlOutPut(append));
@@ -51,8 +52,11 @@ public class OutPutBuilder
                     {
                         String method = context.substring(index + tplCenter.getMethodStartFlag().length(), end);
                         String leftLine = context.substring(end + tplCenter.getMethodEndFlag().length());
-                        LineInfo newline = new LineInfo(lineInfo.getLine(), leftLine);
-                        lineQueue.addFirst(newline);
+                        if (StringUtil.isNotBlank(leftLine.trim()))
+                        {
+                            LineInfo newline = new LineInfo(lineInfo.getLine(), leftLine);
+                            lineQueue.addFirst(newline);
+                        }
                         method = method.trim();
                         if (method.startsWith("for("))
                         {
@@ -103,6 +107,12 @@ public class OutPutBuilder
                 index += 1;
             }
             htmlCache.append("\r\n");
+            String append = htmlCache.toString();
+            if (StringUtil.isNotBlank(append))
+            {
+                result.addOutput(new HtmlOutPut(append));
+            }
+            htmlCache.clear();
         }
         if (htmlCache.count() != 0)
         {

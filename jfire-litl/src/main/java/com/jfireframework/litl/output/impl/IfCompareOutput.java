@@ -1,6 +1,8 @@
 package com.jfireframework.litl.output.impl;
 
 import java.util.Deque;
+import java.util.Map;
+import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.litl.output.OutPutBuilder;
 import com.jfireframework.litl.output.Output;
 import com.jfireframework.litl.output.impl.util.ParamType;
@@ -18,6 +20,7 @@ public abstract class IfCompareOutput implements Output
     protected final VarAccess varAccess;
     protected final String    varKeyForData;
     protected final Output    content;
+    protected Output          elseContent;
     
     public IfCompareOutput(String condition, String compare, LineInfo line, Deque<LineInfo> lineinfoQueue, Template template)
     {
@@ -62,6 +65,36 @@ public abstract class IfCompareOutput implements Output
         }
         content = OutPutBuilder.build(lineinfoQueue, template);
         content.shirk();
+        LineInfo lineInfo = lineinfoQueue.getFirst();
+        int start = lineInfo.getContent().indexOf(template.getTplCenter().getMethodStartFlag());
+        if (start != -1)
+        {
+            int elseIndex = lineInfo.getContent().indexOf("else{");
+            end = lineInfo.getContent().indexOf(template.getTplCenter().getMethodEndFlag());
+            if (elseIndex != -1 && start < elseIndex && elseIndex < end)
+            {
+                lineinfoQueue.poll();
+                elseContent = OutPutBuilder.build(lineinfoQueue, template);
+            }
+            else
+            {
+                elseContent = null;
+            }
+        }
+    }
+    
+    protected abstract boolean doIf(Map<String, Object> data);
+    
+    public void output(StringCache cache, Map<String, Object> data)
+    {
+        if (doIf(data))
+        {
+            content.output(cache, data);
+        }
+        if (elseContent != null)
+        {
+            elseContent.output(cache, data);
+        }
     }
     
     @Override

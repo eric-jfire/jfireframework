@@ -2,7 +2,6 @@ package com.jfireframework.litl.output.impl;
 
 import java.util.Deque;
 import java.util.Map;
-import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.litl.output.Output;
 import com.jfireframework.litl.output.impl.util.ParamType;
 import com.jfireframework.litl.template.LineInfo;
@@ -17,29 +16,37 @@ public class IfLtOutput extends IfCompareOutput
     }
     
     @Override
-    public void output(StringCache cache, Map<String, Object> data)
+    public void addOutput(Output outPut)
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    protected boolean doIf(Map<String, Object> data)
     {
         Object target = data.get(varKeyForData);
         if (type == ParamType.INT)
         {
             if ((Integer) varAccess.getValue(target) > paramInteger)
             {
-                content.output(cache, data);
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
         else
         {
             if ((Double) varAccess.getValue(target) > paramDouble)
             {
-                content.output(cache, data);
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
-    }
-    
-    @Override
-    public void addOutput(Output outPut)
-    {
-        throw new UnsupportedOperationException();
     }
     
 }
