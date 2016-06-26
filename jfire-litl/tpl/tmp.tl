@@ -6,7 +6,11 @@
  题目1是:${title}
 题目2是:${title}
 													<%}%>
-<%if(iparam != 12){%>题目4是:${title}
+<%if(iparam == 13){%>
+题目4是:${title}
+<%}%>
+<%else if(iparam == 12){%>
+题目4是elseif 的输出
 <%}%>
 <%else{%>
 这里是else输出

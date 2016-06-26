@@ -186,25 +186,23 @@ public class JelExplain
      * @param start
      * @return
      */
-    private static int getEndFlag(String str, int start)
+    public static int getEndFlag(String str, int start)
     {
         while (start < str.length())
         {
-            if (
-                str.charAt(start) == '>' //
-                        || str.charAt(start) == '<' //
-                        || str.charAt(start) == '!' //
-                        || str.charAt(start) == '=' //
-                        || str.charAt(start) == ' ' //
-                        || str.charAt(start) == ',' //
-                        || str.charAt(start) == '#' //
-                        || str.charAt(start) == '+' //
-                        || str.charAt(start) == '-' //
-                        || str.charAt(start) == '(' //
-                        || str.charAt(start) == ')' //
-                        || str.charAt(start) == ']' //
-                        || str.charAt(start) == '['
-            )
+            if (str.charAt(start) == '>' //
+                    || str.charAt(start) == '<' //
+                    || str.charAt(start) == '!' //
+                    || str.charAt(start) == '=' //
+                    || str.charAt(start) == ' ' //
+                    || str.charAt(start) == ',' //
+                    || str.charAt(start) == '#' //
+                    || str.charAt(start) == '+' //
+                    || str.charAt(start) == '-' //
+                    || str.charAt(start) == '(' //
+                    || str.charAt(start) == ')' //
+                    || str.charAt(start) == ']' //
+                    || str.charAt(start) == '[')
             {
                 break;
             }

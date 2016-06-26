@@ -70,7 +70,7 @@ public class VarAccess
             }
             else
             {
-                throw new NullPointerException(StringUtil.format("请检查模板{}的第{}行，参数为null", templatePath, lineInfo.getLine()));
+                throw new NullPointerException(StringUtil.format("请检查模板{}的第{}行，参数{}为null", templatePath, lineInfo.getLine(), var));
             }
         }
         if (fieldAccesser == null)

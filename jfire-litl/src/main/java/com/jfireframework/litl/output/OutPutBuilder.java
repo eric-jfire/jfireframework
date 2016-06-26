@@ -127,7 +127,7 @@ public class OutPutBuilder
         return result;
     }
     
-    private static Output handleIf(String method, LineInfo lineInfo, Deque<LineInfo> lineQueue, Template template)
+    public static Output handleIf(String method, LineInfo lineInfo, Deque<LineInfo> lineQueue, Template template)
     {
         if (method.contains(" == "))
         {
