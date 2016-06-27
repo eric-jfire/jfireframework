@@ -27,12 +27,15 @@ public class SummerId implements Uid
     private void testLimit()
     {
         AtomicInteger count = new AtomicInteger(0);
+        int i = 0;
         long base = System.currentTimeMillis();
-        while (System.currentTimeMillis() == base)
+        while (i < 16777215)
         {
             count.incrementAndGet();
+            i += 1;
         }
-        if (count.get() >= 0x00ffffff)
+        long result = System.currentTimeMillis();
+        if (result == base)
         {
             throw new UnSupportException("当前服务器可以在一毫秒内产生太多id，超出了算法计算能力，不能使用该算法");
         }

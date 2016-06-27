@@ -449,7 +449,7 @@ public class JelExplain
                 index = end + 1;
                 continue;
             }
-            else if (c == ' ' || c == '+' || c == '-' || c == '*' || c == '/')
+            else if (c == ' ' || c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')')
             {
                 cache.append(c);
                 index += 1;
