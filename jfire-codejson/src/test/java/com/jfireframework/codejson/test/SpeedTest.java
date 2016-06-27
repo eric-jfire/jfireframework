@@ -41,15 +41,15 @@ public class SpeedTest extends Support
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-            JSON.toJSONString(data);
+            JSON.toJSONString(data,SerializerFeature.DisableCircularReferenceDetect);
         }
         timewatch.end();
         logger.info("fastjson输出耗时：{}", timewatch.getTotal());
         timewatch.start();
         for (int i = 0; i < count; i++)
         {
-//            JsonTool.write(data);
-             strategy.write(data);
+            JsonTool.write(data);
+//             strategy.write(data);
         }
         timewatch.end();
         logger.info("codejson输出耗时：{}", timewatch.getTotal());
