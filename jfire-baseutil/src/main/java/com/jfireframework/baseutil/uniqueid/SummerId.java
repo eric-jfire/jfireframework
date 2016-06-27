@@ -47,7 +47,7 @@ public class SummerId implements Uid
     public long generateLong()
     {
         byte[] result = generateBytes();
-        long tmp = result[0] << 56;
+        long tmp = ((long) result[0] & 0xff) << 56;
         tmp |= ((long) result[1] & 0xff) << 48;
         tmp |= ((long) result[2] & 0xff) << 40;
         tmp |= ((long) result[3] & 0xff) << 32;

@@ -10,5 +10,7 @@ public interface Uid
     
     public String generate();
     
+    public long generateLong();
+    
     public String generateDigits();
 }
