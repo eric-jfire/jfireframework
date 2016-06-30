@@ -5,6 +5,10 @@ public interface Timeout
     
     public void invoke();
     
+    public Timeout next();
+    
+    public void setNext(Timeout next);
+    
     public Timer timer();
     
     /**

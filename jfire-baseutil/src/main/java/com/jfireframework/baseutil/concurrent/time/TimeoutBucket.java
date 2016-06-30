@@ -1,39 +1,32 @@
 package com.jfireframework.baseutil.concurrent.time;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Queue;
 
 public class TimeoutBucket
 {
-    private List<Timeout> timeouts = new LinkedList<Timeout>();
+    private Timeout timeout;
     
     public void addTimeout(Timeout timeout)
     {
-        timeouts.add(timeout);
+        timeout.setNext(this.timeout);
+        this.timeout = timeout;
     }
     
-    public List<Timeout> getAll()
+    public void out(Queue<Timeout> timeouts)
     {
-        return timeouts;
-    }
-    
-    public void clear()
-    {
-        timeouts.clear();
+        while (timeout != null)
+        {
+            timeouts.add(timeout);
+            timeout = timeout.next();
+        }
     }
     
     public void expire(TimeoutHandler handler)
     {
-        if (timeouts != null)
+        while (timeout != null)
         {
-            for (Timeout each : timeouts)
-            {
-                if (each.isCanceled() == false)
-                {
-                    handler.handle(each);
-                }
-            }
-            timeouts.clear();
+            handler.handle(timeout);
+            timeout = timeout.next();
         }
     }
 }

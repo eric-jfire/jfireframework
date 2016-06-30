@@ -12,39 +12,34 @@ import com.jfireframework.baseutil.concurrent.time.Timer;
 public class TimerTest
 {
     @Test
-    @Ignore
     public void test() throws InterruptedException
     {
-        Timer timer = new FixedCapacityWheelTimer(20, 500);
+        Timer timer = new FixedCapacityWheelTimer(2048, 1);
         final long t0 = System.currentTimeMillis();
-        timer.addTask(
-                new TimeTask() {
-                    
-                    @Override
-                    public void invoke()
-                    {
-                        System.out.println(System.currentTimeMillis() - t0);
-                    }
-                }, 1, TimeUnit.SECONDS
-        );
+        timer.addTask(new TimeTask() {
+            
+            @Override
+            public void invoke()
+            {
+                System.out.println(System.currentTimeMillis() - t0);
+            }
+        }, 1, TimeUnit.SECONDS);
         Thread.sleep(2000);
     }
     
     @Test
     public void test2() throws InterruptedException
     {
-        Timer timer = new HierarchyWheelTimer(new int[] { 4, 2, 2 }, 100, new DefaultTimeoutHandler());
+        Timer timer = new HierarchyWheelTimer(new int[] { 700, 2, 2 }, 1, new DefaultTimeoutHandler());
         final long t0 = System.currentTimeMillis();
-        timer.addTask(
-                new TimeTask() {
-                    
-                    @Override
-                    public void invoke()
-                    {
-                        System.out.println(System.currentTimeMillis() - t0);
-                    }
-                }, 500, TimeUnit.MILLISECONDS
-        );
+        timer.addTask(new TimeTask() {
+            
+            @Override
+            public void invoke()
+            {
+                System.out.println("耗时：" + (System.currentTimeMillis() - t0));
+            }
+        },800, TimeUnit.MILLISECONDS);
         Thread.sleep(2000);
     }
 }

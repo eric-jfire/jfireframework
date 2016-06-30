@@ -6,6 +6,7 @@ public class DefaultTimeout implements Timeout
     private final Timer      timer;
     private final long       deadline;
     private final TimeTask   task;
+    private Timeout          next;
     
     public DefaultTimeout(Timer timer, TimeTask task, long deadline)
     {
@@ -42,6 +43,18 @@ public class DefaultTimeout implements Timeout
     public long deadline()
     {
         return deadline;
+    }
+    
+    @Override
+    public Timeout next()
+    {
+        return next;
+    }
+    
+    @Override
+    public void setNext(Timeout next)
+    {
+        this.next = next;
     }
     
 }

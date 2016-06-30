@@ -22,6 +22,7 @@ public class FixedCapacityWheelTimer implements Timer
     private static final int                                            NOT_START     = 0;
     private static final int                                            STARTED       = 1;
     private static final UnsafeIntFieldUpdater<FixedCapacityWheelTimer> state_updater = new UnsafeIntFieldUpdater<FixedCapacityWheelTimer>(FixedCapacityWheelTimer.class, "state");
+    private long                                                        startTime;
     
     public FixedCapacityWheelTimer(int tickCount, long tickDuration)
     {
@@ -55,6 +56,7 @@ public class FixedCapacityWheelTimer implements Timer
         {
             if (state_updater.compareAndSwap(this, NOT_START, STARTED))
             {
+                startTime = System.nanoTime();
                 new Thread(this).start();
             }
         }
@@ -66,12 +68,42 @@ public class FixedCapacityWheelTimer implements Timer
         stop = true;
     }
     
+    private void waitToNextTick()
+    {
+        long deadline = (tickNow + 1) * nanoTickDuration;
+        for (;;)
+        {
+            final long currentTime = System.nanoTime() - startTime;
+            // long sleepTimeMs = (deadline - currentTime + 999999) / 1000000;
+            //
+            // if (sleepTimeMs <= 0)
+            // {
+            // return;
+            // }
+            //
+            // try
+            // {
+            // Thread.sleep(sleepTimeMs);
+            // }
+            // catch (InterruptedException ignored)
+            // {
+            // ;
+            // }
+            long sleedTimeNano = deadline - currentTime;
+            if (sleedTimeNano < 0)
+            {
+                return;
+            }
+            LockSupport.parkNanos(sleedTimeNano);
+        }
+    }
+    
     @Override
     public void run()
     {
         while (stop == false)
         {
-            LockSupport.parkNanos(nanoTickDuration);
+            waitToNextTick();
             TimeoutBucket bucket = buckets[(int) (tickNow & mask)];
             bucket.expire(handler);
             while (timeouts.isEmpty() == false)
