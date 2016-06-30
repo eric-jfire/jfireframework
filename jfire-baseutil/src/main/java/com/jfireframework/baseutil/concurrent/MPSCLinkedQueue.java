@@ -115,6 +115,10 @@ public class MPSCLinkedQueue<E> implements Queue<E>
         return offer(e);
     }
     
+    /**
+     * 往尾部插入一个节点。
+     * 需要注意，头结点所对应的是废弃的值，是没有意义的
+     */
     @Override
     public boolean offer(E value)
     {
@@ -134,6 +138,9 @@ public class MPSCLinkedQueue<E> implements Queue<E>
         throw UNSUPPOR_RUNTIME_EXCEPTION;
     }
     
+    /**
+     * 取出对列头部的一个值。如果对列为空，则返回null
+     */
     @Override
     public E poll()
     {
@@ -211,6 +218,11 @@ public class MPSCLinkedQueue<E> implements Queue<E>
             nextUpdater.orderSet(this, null);
         }
         
+        /**
+         * 返回该节点的值，并且设置该节点的值为null。因为该值已经被人取走了。
+         * 
+         * @return
+         */
         public E returnAndClear()
         {
             E result = value;

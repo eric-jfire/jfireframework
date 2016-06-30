@@ -18,7 +18,7 @@ public class DirectByteBufPool extends ByteBufPool<ByteBuffer>
     {
         if (INSTANCE == null)
         {
-            synchronized (HeapByteBufPool.class)
+            synchronized (DirectByteBufPool.class)
             {
                 if (INSTANCE == null)
                 {
