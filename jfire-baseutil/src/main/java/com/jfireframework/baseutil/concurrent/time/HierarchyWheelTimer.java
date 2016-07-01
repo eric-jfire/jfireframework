@@ -1,36 +1,23 @@
 package com.jfireframework.baseutil.concurrent.time;
 
 import java.util.concurrent.TimeUnit;
-import com.jfireframework.baseutil.concurrent.MPSCLinkedQueue;
-import com.jfireframework.baseutil.concurrent.UnsafeIntFieldUpdater;
 import com.jfireframework.baseutil.exception.UnSupportException;
 
-public class HierarchyWheelTimer implements Timer
+public class HierarchyWheelTimer extends AbstractTimer
 {
-    private final MPSCLinkedQueue<Timeout>                          timeouts      = new MPSCLinkedQueue<Timeout>();
-    private final TimeoutBucket[][]                                 buckets;
-    private final int                                               hierarchy;
-    private final int[]                                             masks;
-    private final long[]                                            tickNows;
-    private volatile boolean                                        stop          = false;
-    private final TimeoutHandler                                    handler;
-    private final long                                              nanoTickDuration;
-    private final long[]                                            durations;
-    private final long[]                                            capacity;
-    private volatile int                                            state         = NOT_START;
-    private static final int                                        NOT_START     = 0;
-    private static final int                                        STARTED       = 1;
-    private static final UnsafeIntFieldUpdater<HierarchyWheelTimer> state_updater = new UnsafeIntFieldUpdater<HierarchyWheelTimer>(HierarchyWheelTimer.class, "state");
-    private long                                                    startTime;
+    private final TimeoutBucket[][] buckets;
+    private final int               hierarchy;
+    private final int[]             masks;
+    private final long[]            tickNows;
+    private final long[]            durations;
+    private final long[]            capacity;
     
-    public HierarchyWheelTimer(int[] hierarchies, long tickDuration, TimeoutHandler handler)
+    public HierarchyWheelTimer(int[] hierarchies, long tickDuration, TimeUnit unit, TimeoutHandler handler)
     {
+        super(tickDuration, unit, handler);
         hierarchy = hierarchies.length;
         durations = new long[hierarchy];
         capacity = new long[hierarchy];
-        durations[0] = tickDuration;
-        this.handler = handler;
-        nanoTickDuration = TimeUnit.MILLISECONDS.toNanos(tickDuration);
         masks = new int[hierarchy];
         tickNows = new long[hierarchy];
         buckets = new TimeoutBucket[hierarchies.length][];
@@ -52,12 +39,12 @@ public class HierarchyWheelTimer implements Timer
                 buckets[i][j] = new TimeoutBucket();
             }
         }
-        durations[0] = tickDuration;
+        durations[0] = this.tickDuration;
         capacity[0] = durations[0] * buckets[0].length;
         for (int i = 1; i < hierarchy; i++)
         {
             durations[i] = durations[i - 1] * buckets[i - 1].length;
-            capacity[i] = durations[i] * buckets[i].length;
+            capacity[i] = durations[i] * (buckets[i].length + 1);
         }
         
     }
@@ -65,13 +52,13 @@ public class HierarchyWheelTimer implements Timer
     @Override
     public Timeout addTask(TimeTask task, long delay, TimeUnit unit)
     {
-        Timeout timeout = new DefaultTimeout(this, task, unit.toMillis(delay) + System.currentTimeMillis());
-        if (unit.toMillis(delay) > durations[hierarchy - 1])
+        start();
+        Timeout timeout = new DefaultTimeout(this, task, unit.toNanos(delay) + currentTime());
+        if (unit.toNanos(delay) > capacity[hierarchy - 1])
         {
             throw new UnSupportException("超时范围超出了timer的范围");
         }
         timeouts.add(timeout);
-        start();
         return timeout;
     }
     
@@ -82,48 +69,11 @@ public class HierarchyWheelTimer implements Timer
     }
     
     @Override
-    public void start()
-    {
-        if (state == NOT_START)
-        {
-            if (state_updater.compareAndSwap(this, NOT_START, STARTED))
-            {
-                startTime = System.nanoTime();
-                new Thread(this).start();
-            }
-        }
-    }
-    
-    private void waitToNextTick()
-    {
-        long deadline = (tickNows[0] + 1) * nanoTickDuration;
-        for (;;)
-        {
-            final long currentTime = System.nanoTime() - startTime;
-            long sleepTimeMs = (deadline - currentTime + 999999) / 1000000;
-            
-            if (sleepTimeMs <= 0)
-            {
-                return;
-            }
-            
-            try
-            {
-                Thread.sleep(sleepTimeMs);
-            }
-            catch (InterruptedException ignored)
-            {
-                ;
-            }
-        }
-    }
-    
-    @Override
     public void run()
     {
         while (stop == false)
         {
-            waitToNextTick();
+            waitToNextTick(tickNows[0]);
             int index = (int) (tickNows[0] & masks[0]);
             TimeoutBucket bucket = buckets[0][index];
             bucket.expire(handler);
@@ -149,7 +99,7 @@ public class HierarchyWheelTimer implements Timer
             while (timeouts.isEmpty() == false)
             {
                 Timeout timeout = timeouts.poll();
-                long left = timeout.deadline() - System.currentTimeMillis();
+                long left = timeout.deadline() - currentTime();
                 if (left < 0)
                 {
                     handler.handle(timeout);

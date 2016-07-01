@@ -1,39 +1,24 @@
 package com.jfireframework.baseutil.concurrent.time;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
-import com.jfireframework.baseutil.concurrent.MPSCLinkedQueue;
-import com.jfireframework.baseutil.concurrent.UnsafeIntFieldUpdater;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.verify.Verify;
 
-public class FixedCapacityWheelTimer implements Timer
+public class FixedCapacityWheelTimer extends AbstractTimer
 {
-    private MPSCLinkedQueue<Timeout>                                    timeouts      = new MPSCLinkedQueue<Timeout>();
-    private final long                                                  nanoTickDuration;
-    private final long                                                  millTickDuration;
-    private final int                                                   tickCount;
-    private final TimeoutHandler                                        handler;
-    private long                                                        tickNow       = 0;
-    private final TimeoutBucket[]                                       buckets;
-    private final int                                                   mask;
-    private volatile boolean                                            stop          = false;
-    private volatile int                                                state         = NOT_START;
-    private static final int                                            NOT_START     = 0;
-    private static final int                                            STARTED       = 1;
-    private static final UnsafeIntFieldUpdater<FixedCapacityWheelTimer> state_updater = new UnsafeIntFieldUpdater<FixedCapacityWheelTimer>(FixedCapacityWheelTimer.class, "state");
-    private long                                                        startTime;
+    private final int             tickCount;
+    private long                  tickNow = 0;
+    private final TimeoutBucket[] buckets;
+    private final int             mask;
     
-    public FixedCapacityWheelTimer(int tickCount, long tickDuration)
+    public FixedCapacityWheelTimer(int tickCount, long tickDuration, TimeUnit unit)
     {
-        this(tickCount, tickDuration, new DefaultTimeoutHandler());
+        this(tickCount, tickDuration, unit, new DefaultTimeoutHandler());
     }
     
-    public FixedCapacityWheelTimer(int tickCount, long tickDuration, TimeoutHandler handler)
+    public FixedCapacityWheelTimer(int tickCount, long tickDuration, TimeUnit unit, TimeoutHandler handler)
     {
-        this.handler = handler;
-        nanoTickDuration = TimeUnit.MILLISECONDS.toNanos(tickDuration);
-        millTickDuration = tickDuration;
+        super(tickDuration, unit, handler);
         int tmp = 1;
         while (tmp < tickCount && tmp > 0)
         {
@@ -50,72 +35,23 @@ public class FixedCapacityWheelTimer implements Timer
     }
     
     @Override
-    public void start()
-    {
-        if (state == NOT_START)
-        {
-            if (state_updater.compareAndSwap(this, NOT_START, STARTED))
-            {
-                startTime = System.nanoTime();
-                new Thread(this).start();
-            }
-        }
-    }
-    
-    @Override
-    public void stop()
-    {
-        stop = true;
-    }
-    
-    private void waitToNextTick()
-    {
-        long deadline = (tickNow + 1) * nanoTickDuration;
-        for (;;)
-        {
-            final long currentTime = System.nanoTime() - startTime;
-            // long sleepTimeMs = (deadline - currentTime + 999999) / 1000000;
-            //
-            // if (sleepTimeMs <= 0)
-            // {
-            // return;
-            // }
-            //
-            // try
-            // {
-            // Thread.sleep(sleepTimeMs);
-            // }
-            // catch (InterruptedException ignored)
-            // {
-            // ;
-            // }
-            long sleedTimeNano = deadline - currentTime;
-            if (sleedTimeNano < 0)
-            {
-                return;
-            }
-            LockSupport.parkNanos(sleedTimeNano);
-        }
-    }
-    
-    @Override
     public void run()
     {
         while (stop == false)
         {
-            waitToNextTick();
+            waitToNextTick(tickNow);
             TimeoutBucket bucket = buckets[(int) (tickNow & mask)];
             bucket.expire(handler);
             while (timeouts.isEmpty() == false)
             {
                 Timeout timeout = timeouts.poll();
-                long left = timeout.deadline() - System.currentTimeMillis();
+                long left = timeout.deadline() - currentTime();
                 if (left < 0)
                 {
                     handler.handle(timeout);
                     continue;
                 }
-                long posi = left / millTickDuration;
+                long posi = left / tickDuration;
                 posi = posi == 0 ? 1 : posi;
                 int index = (int) ((tickNow + posi) & mask);
                 buckets[index].addTimeout(timeout);
@@ -129,8 +65,8 @@ public class FixedCapacityWheelTimer implements Timer
     public Timeout addTask(TimeTask task, long delay, TimeUnit unit)
     {
         start();
-        Timeout timeout = new DefaultTimeout(this, task, unit.toMillis(delay) + System.currentTimeMillis());
-        if (unit.toMillis(delay) / millTickDuration > tickCount)
+        Timeout timeout = new DefaultTimeout(this, task, unit.toNanos(delay) + currentTime());
+        if (unit.toNanos(delay) > tickCount * tickDuration)
         {
             throw new UnSupportException("超时范围超出了timer的范围");
         }

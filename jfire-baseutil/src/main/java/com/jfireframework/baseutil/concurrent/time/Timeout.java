@@ -12,7 +12,7 @@ public interface Timeout
     public Timer timer();
     
     /**
-     * 返回该任务的毫秒级延迟时间
+     * 返回该任务距离timer的启动时间的距离纳秒时间
      * 
      * @return
      */
