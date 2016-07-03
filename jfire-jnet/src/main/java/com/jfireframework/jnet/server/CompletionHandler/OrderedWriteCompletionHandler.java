@@ -101,9 +101,10 @@ public class OrderedWriteCompletionHandler implements WriteCompletionHandler
             wrapPoint = readCompletionHandler.cursor();
             // 一定要尝试写下一个。
             // 否则的话，因为写完成器的版本号没有更新，而其他线程尝试失败，写完成又不写下一个的话，就会导致数据没有线程要写出，进而活锁。
+            // 这里会出现的活锁原因是cpu时间片的失去，导致在上面三行代码执行完毕之前，通道中的数据又都满了。并且尝试写出都已经失败。基本上这里面所有涉及到序号变更的地方都需要考虑双重检查。
             if (nextCursor < wrapPoint)
             {
-                ServerInternalTask next = (ServerInternalTask) channelInfo.getDataVolatile(nextCursor);
+                ServerInternalTask next = (ServerInternalTask) channelInfo.getData(nextCursor);
                 next.write(nextCursor);
             }
         }
