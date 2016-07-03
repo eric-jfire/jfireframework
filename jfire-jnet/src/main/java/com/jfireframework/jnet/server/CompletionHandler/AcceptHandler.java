@@ -45,27 +45,33 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
         workMode = serverConfig.getWorkMode();
         asyncTaskCenter = new AsyncTaskCenter(serverConfig.getAsyncThreadSize(), workMode);
         EntryAction[] actions = new EntryAction[serverConfig.getAsyncThreadSize()];
-        Thread[] threads = new Thread[actions.length];
         for (int i = 0; i < actions.length; i++)
         {
             actions[i] = new ServerInternalResultAction();
-            threads[i] = new Thread(actions[i]);
         }
         WaitStrategy waitStrategy = null;
         switch (serverConfig.getWaitMode())
         {
             case BLOCK:
                 waitStrategy = new BlockWaitStrategy();
+                disruptor = new Disruptor(serverConfig.getAsyncCapacity(), waitStrategy, actions, Disruptor.ComplexMult, serverConfig.getAsyncThreadSize());
                 break;
             case PARK:
+                Thread[] threads = new Thread[actions.length];
+                for (int i = 0; i < threads.length; i++)
+                {
+                    threads[i] = new Thread(actions[i]);
+                }
                 waitStrategy = new ParkWaitStrategy(threads);
+                disruptor = new Disruptor(serverConfig.getAsyncCapacity(), actions, threads, waitStrategy);
                 break;
+            default:
+                throw new UnSupportException("不应该走到这一步");
         }
         if (serverConfig.getAsyncCapacity() <= serverConfig.getAsyncThreadSize() * serverConfig.getChannelCapacity())
         {
             throw new UnSupportException("异步任务的容量必须大于异步线程数乘以通道容量的结果");
         }
-        disruptor = new Disruptor(serverConfig.getAsyncCapacity(), actions, threads, waitStrategy);
     }
     
     public void stop()

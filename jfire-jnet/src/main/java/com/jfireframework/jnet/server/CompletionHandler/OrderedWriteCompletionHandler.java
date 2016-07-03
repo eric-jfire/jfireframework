@@ -15,14 +15,14 @@ import com.jfireframework.jnet.server.util.WriteMode;
 @Resource
 public class OrderedWriteCompletionHandler implements WriteCompletionHandler
 {
-    private volatile long                     cursor                      = 0;
+    private volatile long                     cursor      = 0;
     private final ReadCompletionHandler       readCompletionHandler;
-    private long                              wrapPoint                   = 0;
-    private static final int                  retryPermit                 = 2;
+    private long                              wrapPoint   = 0;
+    private static final int                  retryPermit = 2;
     private final ServerChannel               channelInfo;
     private final WriteMode                   writeMode;
-    private final BatchWriteCompletionHandler batchWriteCompletionHandler = new BatchWriteCompletionHandler();
-    private static final Logger               logger                      = ConsoleLogFactory.getLogger();
+    private final BatchWriteCompletionHandler batchWriteCompletionHandler;
+    private static final Logger               logger      = ConsoleLogFactory.getLogger();
     private final int                         maxBatchWriteNum;
     
     public OrderedWriteCompletionHandler(ReadCompletionHandler readCompletionHandler, ServerChannel channelInfo, WriteMode writeMode, int maxBatchWriteNum)
@@ -31,6 +31,14 @@ public class OrderedWriteCompletionHandler implements WriteCompletionHandler
         this.channelInfo = channelInfo;
         this.writeMode = writeMode;
         this.maxBatchWriteNum = maxBatchWriteNum;
+        if (writeMode == WriteMode.SINGLE_WRITE)
+        {
+            batchWriteCompletionHandler = null;
+        }
+        else
+        {
+            batchWriteCompletionHandler = new BatchWriteCompletionHandler();
+        }
     }
     
     public long cursor()

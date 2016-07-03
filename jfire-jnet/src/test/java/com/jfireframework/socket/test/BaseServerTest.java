@@ -7,8 +7,8 @@ import com.jfireframework.baseutil.collection.buffer.DirectByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
+import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.decodec.LineBasedFrameDecodec;
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
@@ -27,7 +27,7 @@ public class BaseServerTest
         ServerConfig config = new ServerConfig();
         // 服务端监听的端口
         config.setPort(81);
-        config.setWorkMode(WorkMode.ASYNC_WITHOUT_ORDER);
+        config.setWorkMode(WorkMode.ASYNC_WITH_ORDER);
         config.setInitListener(new myInitListener());
         // 设置包解码器。包解码器用来从tcp的数据流中截取出一个完整的tcp报文
         // 这个解码器是行解码器。使用换行符进行报文切割

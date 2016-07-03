@@ -14,10 +14,17 @@ public class ServerConfig
     // 服务器的启动端口
     private int                 port;
     private DisruptorWaitMode   waitMode         = DisruptorWaitMode.PARK;
-    private int                 socketThreadSize = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
-    private int                 asyncThreadSize  = Runtime.getRuntime().availableProcessors() / 2 == 0 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
+    /**
+     * 处理socket事件的起始线程数。如果线程池模式选择固定线程数模式的话，则这个数值就是线程数的值。如果线程池模式选择cache模式的话，则这个数值是初始线程数。
+     */
+    private int                 socketThreadSize = Runtime.getRuntime().availableProcessors();
+    /**
+     * 异步处理线程数。这个数字是disruptor的处理线程数。如果异步任务执行时间较长，适当增大该数字可以得到吞吐量的提升。
+     */
+    private int                 asyncThreadSize  = Runtime.getRuntime().availableProcessors();
     private WorkMode            workMode         = WorkMode.SYNC_WITH_ORDER;
     private WriteMode           writeMode        = WriteMode.BATCH_WRITE;
+    private ExecutorMode        executorMode     = ExecutorMode.CACHED;
     private int                 maxBatchWriteNum = 10;
     private int                 channelCapacity  = 16;
     private int                 asyncCapacity    = 1024;
@@ -133,6 +140,16 @@ public class ServerConfig
     {
         this.channelCapacity = channelCapacity;
         return this;
+    }
+    
+    public ExecutorMode getExecutorMode()
+    {
+        return executorMode;
+    }
+    
+    public void setExecutorMode(ExecutorMode executorMode)
+    {
+        this.executorMode = executorMode;
     }
     
 }
