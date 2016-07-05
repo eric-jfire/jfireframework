@@ -59,6 +59,7 @@ public class ObjectSerializer implements LicpSerializer
      * 如果对象不为null，分以下两种情况：
      * 1）如果对象类型已经注册过，则首先写入对象类型序号+1。然后开始序列化。
      * 2）如果对象类型没有注册过，首先写入1。紧接着写入类名的String的byte数组长度，然后写入byte数组内容。然后开始序列化
+     * 上面的思路存在可以优化的地方。在不为null的情况下，可以使用第一个bit是否为0来做判断。为0是类，为1是数组
      */
     @Override
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)

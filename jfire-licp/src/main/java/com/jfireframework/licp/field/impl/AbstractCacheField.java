@@ -50,7 +50,7 @@ public abstract class AbstractCacheField implements CacheField
             }
             this.arrayTypes = arrayTypes.toArray(new Class<?>[arrayTypes.size()]);
             // 如果是数组，那么本身的类型就是final的
-            finalField = true;
+            finalField = false;
         }
         else
         {
@@ -94,23 +94,28 @@ public abstract class AbstractCacheField implements CacheField
             buf.writeInt(Licp.NULL);
             return;
         }
-        // 如果已经是一维数组，则将数组内容输出
-        if (dimension == 1)
+        if (elementSameType)
         {
-            writeOneDimensionMember(arrayObject, buf, licp);
+            if (dimension == 1)
+            {
+                writeOneDimensionMember(arrayObject, buf, licp);
+            }
+            else
+            {
+                // 非一维数组都可以表示为一个object，同时低一维的数组且非一维数组也是一个object
+                Object[] array = (Object[]) arrayObject;
+                int length = array.length;
+                buf.writeInt(length + 1);
+                dimension -= 1;
+                for (int i = 0; i < length; i++)
+                {
+                    writeArray(array[i], dimension, buf, licp);
+                }
+            }
         }
-        // 如果不是一维数组，则将数组的每一个内容继续该循环
         else
         {
-            dimension--;
-            // 非一维数组都可以表示为一个object，同时低一维的数组且非一维数组也是一个object
-            Object[] array = (Object[]) arrayObject;
-            int length = array.length;
-            buf.writeInt(length + 1);
-            for (int i = 0; i < length; i++)
-            {
-                writeArray(array[i], dimension, buf, licp);
-            }
+            licp.serialize(arrayObject, buf);
         }
     }
     
@@ -134,26 +139,33 @@ public abstract class AbstractCacheField implements CacheField
     
     private Object readArray(int dimension, ByteBuf<?> buf, Licp licp)
     {
-        int length = buf.readInt();
-        if (length == Licp.NULL)
+        if (elementSameType)
         {
-            return null;
-        }
-        length -= 1;
-        // 如果维度是1，则按照个数读取内容，并且组装一维成数组返回
-        if (dimension == 1)
-        {
-            return readOneDimArray(length, buf, licp);
+            int length = buf.readInt();
+            if (length == Licp.NULL)
+            {
+                return null;
+            }
+            length -= 1;
+            // 如果维度是1，则按照个数读取内容，并且组装一维成数组返回
+            if (dimension == 1)
+            {
+                return readOneDimArray(length, buf, licp);
+            }
+            else
+            {
+                // 如果维度不是1，则分别读取每一个多维数组，采用递归的方式进行
+                Object[] arrayObject = (Object[]) Array.newInstance(arrayTypes[this.dim - dimension], length);
+                for (int i = 0; i < length; i++)
+                {
+                    arrayObject[i] = readArray(dimension - 1, buf, licp);
+                }
+                return arrayObject;
+            }
         }
         else
         {
-            // 如果维度不是1，则分别读取每一个多维数组，采用递归的方式进行
-            Object[] arrayObject = (Object[]) Array.newInstance(arrayTypes[this.dim - dimension], length);
-            for (int i = 0; i < length; i++)
-            {
-                arrayObject[i] = readArray(dimension - 1, buf, licp);
-            }
-            return arrayObject;
+            return licp.deserialize(buf);
         }
     }
     

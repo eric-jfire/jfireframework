@@ -1,6 +1,9 @@
 package com.jfireframework.licp;
 
+import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.licp.serializer.SerializerFactory;
+import com.jfireframework.licp.util.ClassNoWriter;
 
 public class Licp
 {
@@ -15,6 +18,28 @@ public class Licp
         {
             collect = new ObjectCollect();
         }
+    }
+    
+    public void serialize(Object src, ByteBuf<?> buf)
+    {
+        if (src == null)
+        {
+            buf.writeInt(Licp.NULL);
+            return;
+        }
+        ClassNoWriter.writeClassNo(src.getClass(), buf, this);
+        SerializerFactory.get(src.getClass()).serialize(src, buf, this);
+    }
+    
+    public Object deserialize(ByteBuf<?> buf)
+    {
+        int classNo = buf.readInt();
+        if (classNo == NULL)
+        {
+            return null;
+        }
+        Class<?> type = ClassNoWriter.readClassNo(buf, classNo, this);
+        return SerializerFactory.get(type).deserialize(buf, this);
     }
     
     public int addClassNo(Class<?> type)

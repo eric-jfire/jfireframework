@@ -47,11 +47,20 @@ public class ObjectField extends AbstractCacheField
         Object value = unsafe.getObject(holder, offset);
         if (finalField)
         {
+            if (value == null)
+            {
+                buf.writeInt(Licp.NULL);
+                return;
+            }
+            else
+            {
+                buf.writeInt(Licp.EXIST);
+            }
             objectSerializer.serialize(value, buf, licp);
         }
         else
         {
-            SerializerFactory.get(value.getClass()).serialize(value, buf, licp);
+            licp.serialize(value, buf);
         }
     }
     
@@ -65,57 +74,27 @@ public class ObjectField extends AbstractCacheField
     {
         if (finalField)
         {
+            int Null = buf.readInt();
+            if (Null == Licp.NULL)
+            {
+                return null;
+            }
             return objectSerializer.deserialize(buf, licp);
         }
         else
         {
-            return desc(buf, licp);
+            return licp.deserialize(buf);
         }
-    }
-    
-    private Object desc(ByteBuf<?> buf, Licp licp)
-    {
-        int classNo = buf.readInt();
-        if (classNo == 0)
-        {
-            return null;
-        }
-        classNo -= 1;
-        Class<?> type;
-        if (classNo == 0)
-        {
-            int length = buf.readInt();
-            byte[] nameBytes = new byte[length];
-            buf.get(nameBytes, length);
-            type = licp.loadClass(new String(nameBytes));
-        }
-        else
-        {
-            type = licp.loadClass(classNo);
-        }
-        return SerializerFactory.get(type).deserialize(buf, licp);
     }
     
     @Override
     protected void writeOneDimensionMember(Object oneDimArray, ByteBuf<?> buf, Licp licp)
     {
-        if (oneDimArray == null)
-        {
-            buf.writeInt(Licp.NULL);
-            return;
-        }
         Object[] array = (Object[]) oneDimArray;
         buf.writeInt(array.length + 1);
         for (Object each : array)
         {
-            if (elementSameType)
-            {
-                rootSerializer.serialize(each, buf, licp);
-            }
-            else
-            {
-                SerializerFactory.get(each.getClass()).serialize(each, buf, licp);
-            }
+            rootSerializer.serialize(each, buf, licp);
         }
         
     }
@@ -125,19 +104,9 @@ public class ObjectField extends AbstractCacheField
     {
         Class<?> type = arrayTypes[arrayTypes.length - 1];
         Object[] array = (Object[]) Array.newInstance(type, length);
-        if (elementSameType)
+        for (int i = 0; i < length; i++)
         {
-            for (int i = 0; i < length; i++)
-            {
-                array[i] = rootSerializer.deserialize(buf, licp);
-            }
-        }
-        else
-        {
-            for (int i = 0; i < length; i++)
-            {
-                array[i] = desc(buf, licp);
-            }
+            array[i] = rootSerializer.deserialize(buf, licp);
         }
         return array;
     }
