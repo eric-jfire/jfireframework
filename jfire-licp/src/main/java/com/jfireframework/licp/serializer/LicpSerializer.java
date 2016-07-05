@@ -3,7 +3,7 @@ package com.jfireframework.licp.serializer;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
 
-public interface Serializer
+public interface LicpSerializer
 {
     
     /**

@@ -20,6 +20,8 @@ public abstract class AbstractCacheField implements CacheField
     protected final boolean       elementSameType;
     protected final int           dim;
     protected final Class<?>[]    arrayTypes;
+    protected final Class<?>      arrayRootType;
+    protected final boolean       finalField;
     
     public AbstractCacheField(Field field)
     {
@@ -28,7 +30,7 @@ public abstract class AbstractCacheField implements CacheField
         {
             array = true;
             Class<?> type = field.getType();
-            List<Class<?>> arrayTypes = new LinkedList<>();
+            List<Class<?>> arrayTypes = new LinkedList<Class<?>>();
             int dim = 0;
             while (type.isArray())
             {
@@ -37,6 +39,7 @@ public abstract class AbstractCacheField implements CacheField
                 arrayTypes.add(type);
             }
             this.dim = dim;
+            arrayRootType = type;
             if (Modifier.isFinal(type.getModifiers()))
             {
                 elementSameType = true;
@@ -46,13 +49,24 @@ public abstract class AbstractCacheField implements CacheField
                 elementSameType = false;
             }
             this.arrayTypes = arrayTypes.toArray(new Class<?>[arrayTypes.size()]);
+            // 如果是数组，那么本身的类型就是final的
+            finalField = true;
         }
         else
         {
+            arrayRootType = null;
             elementSameType = false;
             array = false;
             dim = 0;
             arrayTypes = null;
+            if (Modifier.isFinal(field.getType().getModifiers()))
+            {
+                finalField = true;
+            }
+            else
+            {
+                finalField = false;
+            }
         }
         
     }

@@ -7,6 +7,12 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * 对象类型序号注册中心。对象类型序号从2开始。
+ * 
+ * @author linbin
+ *
+ */
 public class ClassNoRegister
 {
     private Class<?>[] types  = new Class[300];
@@ -80,6 +86,12 @@ public class ClassNoRegister
         }
     }
     
+    /**
+     * 注册一个临时的类。如果该类已经注册过了，返回该类的序号。否则注册该类。并且返回0
+     * 
+     * @param type
+     * @return
+     */
     @SuppressWarnings("rawtypes")
     public int registerTemporary(Class<?> type)
     {
@@ -94,33 +106,33 @@ public class ClassNoRegister
         {
             if (types[i] == type)
             {
-                return i;
+                return i + 1;
             }
         }
         int index = nowCount;
         types[index] = type;
         nowCount++;
-        return 0 - index;
+        return 0;
     }
     
     /**
-     * 获取一个类型在类型注册中的顺序号，如果不存在返回-1.并且会将该类增加到系统中
+     * 获取一个类型在类型注册中的顺序号,顺序号从1开始，如果不存在返回0.并且会将该类增加到系统中
      * 
      * @param type
      * @return
      */
-    public int getIndex(Class<?> type)
+    public int indexOf(Class<?> type)
     {
         
         for (int i = 0; i < nowCount; i++)
         {
-            if (types[i].equals(type))
+            if (types[i] == type)
             {
                 return i + 1;
             }
         }
         registerTemporary(type);
-        return -1;
+        return 0;
     }
     
     public Class<?> getType(int index)
