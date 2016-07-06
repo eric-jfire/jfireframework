@@ -16,7 +16,9 @@ public class ByteSerializer implements LicpSerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        return buf.get();
+        Byte b = buf.get();
+        licp.putObject(b);
+        return b;
     }
     
 }

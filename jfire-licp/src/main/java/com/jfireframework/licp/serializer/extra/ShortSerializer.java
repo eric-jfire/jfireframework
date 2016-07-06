@@ -16,7 +16,9 @@ public class ShortSerializer implements LicpSerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        return buf.readShort();
+        Short s = buf.readShort();
+        licp.putObject(s);
+        return s;
     }
     
 }

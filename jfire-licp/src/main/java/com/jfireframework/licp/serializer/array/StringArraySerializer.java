@@ -36,6 +36,7 @@ public class StringArraySerializer extends AbstractArraySerializer
     {
         int length = buf.readInt();
         String[] array = new String[length];
+        licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
             int strLength = buf.readInt();
@@ -53,7 +54,7 @@ public class StringArraySerializer extends AbstractArraySerializer
                 else
                 {
                     byte[] src = new byte[strLength];
-                    buf.get(src, length);
+                    buf.get(src, strLength);
                     array[i] = new String(src, CHARSET);
                 }
             }

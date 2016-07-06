@@ -36,7 +36,7 @@ public class ObjectSerializer implements LicpSerializer
         List<Field> list = new LinkedList<Field>();
         for (Field each : fields)
         {
-            if (Modifier.isFinal(each.getModifiers()) || Modifier.isStatic(each.getModifiers()))
+            if (Modifier.isStatic(each.getModifiers()))
             {
                 continue;
             }
@@ -67,6 +67,8 @@ public class ObjectSerializer implements LicpSerializer
         try
         {
             Object holder = unsafe.allocateInstance(type);
+            licp.putObject(holder);
+            // 在这个地方把对象放入。在外面放入就来不及了
             for (CacheField each : fields)
             {
                 each.read(holder, buf, licp);

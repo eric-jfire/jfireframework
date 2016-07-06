@@ -1,14 +1,12 @@
 package com.jfireframework.licp;
 
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-
 public class ObjectCollect
 {
-    private IdentityHashMap<Object, Integer> objectMap = new IdentityHashMap<Object, Integer>();
-    private HashMap<Integer, Object>         idMap     = new HashMap<Integer, Object>();
-    private int                              sequence  = 0;
-    private final boolean                    cycleSupport;
+    // private IdentityHashMap<Object, Integer> objectMap = new
+    // IdentityHashMap<Object, Integer>();
+    private Object[]      objs     = new Object[20];
+    private int           sequence = 0;
+    private final boolean cycleSupport;
     
     public ObjectCollect(boolean cycleSupport)
     {
@@ -17,44 +15,55 @@ public class ObjectCollect
     
     public ObjectCollect()
     {
-        this(true);
+        cycleSupport = true;
     }
     
     /**
-     * 放入一个对象，如果对象已经存在于收集器中，就放回具体的id。否则返回null
+     * 放入一个对象，如果对象已经存在于收集器中，就放回具体的id,id从1开始。如果对象不存在，返回0
      * 
      * @param obj
      * @return
      */
-    public Integer put(Object obj)
+    public int put(Object obj)
     {
         if (cycleSupport == false)
         {
-            return null;
+            return 0;
         }
-        Integer result = objectMap.get(obj);
-        if (result == null)
+        for (int i = 0; i < objs.length; i++)
         {
-            objectMap.put(obj, sequence);
-            sequence += 1;
-            return null;
+            if (objs[i] == obj)
+            {
+                return i + 1;
+            }
+        }
+        if (sequence < objs.length)
+        {
+            objs[sequence] = obj;
         }
         else
         {
-            return result;
+            Object[] tmp = new Object[objs.length * 2];
+            System.arraycopy(objs, 0, tmp, 0, sequence);
+            objs = tmp;
+            objs[sequence] = obj;
         }
+        sequence += 1;
+        return 0;
     }
     
-    public Object get(Integer id)
+    public Object get(int id)
     {
-        return idMap.get(id);
+        return objs[id - 1];
     }
     
     public void clear()
     {
         sequence = 0;
-        idMap.clear();
-        objectMap.clear();
+        for (int i = 0; i < objs.length; i++)
+        {
+            objs[i] = null;
+        }
     }
     
 }

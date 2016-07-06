@@ -27,6 +27,7 @@ public class FloatArraySerializer extends AbstractArraySerializer
     {
         int length = buf.readInt();
         float[] array = new float[length];
+        licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
             array[i] = buf.readFloat();

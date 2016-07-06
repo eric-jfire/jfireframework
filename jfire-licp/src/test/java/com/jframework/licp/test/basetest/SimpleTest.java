@@ -21,4 +21,15 @@ public class SimpleTest
         Person result = (Person) licp.deserialize(buf);
         assertTrue(person.equals(result));
     }
+    
+    @Test
+    public void test2()
+    {
+        Licp licp = new Licp();
+        TestData data = new TestData();
+        ByteBuf<?> buf = HeapByteBuf.allocate(100);
+        licp.serialize(data, buf);
+        TestData result = (TestData) licp.deserialize(buf);
+        assertTrue(result.equals(data));
+    }
 }

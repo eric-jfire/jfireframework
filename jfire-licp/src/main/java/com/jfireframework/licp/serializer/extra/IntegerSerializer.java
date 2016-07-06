@@ -16,7 +16,9 @@ public class IntegerSerializer implements LicpSerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        return buf.readInt();
+        Integer i = buf.readInt();
+        licp.putObject(i);
+        return i;
     }
     
 }

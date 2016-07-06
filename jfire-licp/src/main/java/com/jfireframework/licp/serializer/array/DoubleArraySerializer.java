@@ -27,6 +27,7 @@ public class DoubleArraySerializer extends AbstractArraySerializer
     {
         int length = buf.readInt();
         double[] array = new double[length];
+        licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
             array[i] = buf.readDouble();

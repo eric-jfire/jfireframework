@@ -1,13 +1,12 @@
 package com.jfireframework.licp.field.impl;
 
 import java.lang.reflect.Field;
-import java.nio.charset.Charset;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
 
 public class StringField extends AbstractCacheField
 {
-    private static final Charset CHARSET = Charset.forName("utf8");
+    // private static final Charset CHARSET = Charset.forName("utf8");
     
     public StringField(Field field)
     {
@@ -24,9 +23,15 @@ public class StringField extends AbstractCacheField
         }
         else
         {
-            byte[] src = value.getBytes(CHARSET);
-            buf.writeInt(((src.length << 1) | 1));
-            buf.put(src);
+            // byte[] src = value.getBytes(CHARSET);
+            // buf.writeInt(((src.length << 1) | 1));
+            // buf.put(src);
+            int length = value.length();
+            buf.writeInt((length << 1) | 1);
+            for (int i = 0; i < length; i++)
+            {
+                buf.writeChar(value.charAt(i));
+            }
         }
     }
     
@@ -47,9 +52,15 @@ public class StringField extends AbstractCacheField
             }
             else
             {
-                byte[] src = new byte[length];
-                buf.get(src, length);
-                unsafe.putObject(holder, offset, new String(src, CHARSET));
+                // byte[] src = new byte[length];
+                // buf.get(src, length);
+                // unsafe.putObject(holder, offset, new String(src, CHARSET));
+                char[] src = new char[length];
+                for (int i = 0; i < length; i++)
+                {
+                    src[i] = buf.readChar();
+                }
+                unsafe.putObject(holder, offset, new String(src));
             }
         }
     }

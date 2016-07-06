@@ -16,7 +16,9 @@ public class FloatSerializer implements LicpSerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        return buf.readFloat();
+        Float f = buf.readFloat();
+        licp.putObject(f);
+        return f;
     }
     
 }

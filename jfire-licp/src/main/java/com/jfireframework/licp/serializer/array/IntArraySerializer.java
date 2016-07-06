@@ -27,6 +27,7 @@ public class IntArraySerializer extends AbstractArraySerializer
     {
         int length = buf.readInt();
         int[] array = new int[length];
+        licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
             array[i] = buf.readInt();

@@ -39,6 +39,7 @@ public class ObjectArraySerializer extends AbstractArraySerializer
     {
         int length = buf.readInt();
         Object[] array = (Object[]) Array.newInstance(elementType, length);
+        licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
             if (elementSameType)

@@ -1,6 +1,7 @@
 package com.jfireframework.licp;
 
 import java.nio.charset.Charset;
+import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
@@ -9,11 +10,12 @@ import com.jfireframework.licp.serializer.SerializerFactory;
 
 public class Licp
 {
-    private ObjectCollect        collect  = new ObjectCollect();
-    private ClassNoRegister      register = new ClassNoRegister();
-    private static final Charset CHARSET  = Charset.forName("utf8");
-    public static final int      NULL     = 0;
-    public static final int      EXIST    = 1;
+    private ObjectCollect                                    collect      = new ObjectCollect();
+    private ClassNoRegister                                  register     = new ClassNoRegister();
+    private static final Charset                             CHARSET      = Charset.forName("utf8");
+    public static final int                                  NULL         = 0;
+    public static final int                                  EXIST        = 1;
+    private static final ConcurrentHashMap<String, Class<?>> nameClassMap = new ConcurrentHashMap<>();
     
     public Licp()
     {
@@ -34,6 +36,11 @@ public class Licp
         _serialize(src, buf);
     }
     
+    public void register(Class<?> type)
+    {
+        register.register(type);
+    }
+    
     /**
      * 00代表为null
      * 01代表对象已经在收集器中，之后的数字代表对象在收集器中的id
@@ -50,12 +57,12 @@ public class Licp
             buf.writeInt(0);
             return;
         }
-        Integer result = collect.put(src);
-        if (result != null)
+        int id = collect.put(src);
+        if (id != 0)
         {
-            result = ((result << 2) | 1);
+            id = ((id << 2) | 1);
             // 已经在收集器中的对象不需要序列化，只要写入序号即可
-            buf.writeInt(result);
+            buf.writeInt(id);
             return;
         }
         Class<?> type = src.getClass();
@@ -82,16 +89,24 @@ public class Licp
             buf.writeInt(0);
             return;
         }
-        Integer result = collect.put(src);
-        if (result != null)
+        int id = collect.put(src);
+        if (id != 0)
         {
-            result = ((result << 2) | 1);
+            id = ((id << 2) | 1);
             // 已经在收集器中的对象不需要序列化，只要写入序号即可
-            buf.writeInt(result);
+            buf.writeInt(id);
             return;
         }
         buf.writeInt(2);
         serializer.serialize(src, buf, this);
+    }
+    
+    @SuppressWarnings("unchecked")
+    public <T> T deserialize(ByteBuf<?> buf, Class<T> type)
+    {
+        collect.clear();
+        register.clear();
+        return (T) _deserialize(buf);
     }
     
     public Object deserialize(ByteBuf<?> buf)
@@ -161,7 +176,17 @@ public class Licp
     {
         try
         {
-            return Class.forName(name);
+            Class<?> type = nameClassMap.get(name);
+            if (type == null)
+            {
+                type = Class.forName(name);
+                nameClassMap.put(name, type);
+                return type;
+            }
+            else
+            {
+                return type;
+            }
         }
         catch (ClassNotFoundException e)
         {
@@ -174,4 +199,8 @@ public class Licp
         return register.getType(classNo);
     }
     
+    public void putObject(Object x)
+    {
+        collect.put(x);
+    }
 }

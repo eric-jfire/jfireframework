@@ -27,6 +27,7 @@ public class BooleanArraySerializer extends AbstractArraySerializer
     {
         int length = buf.readInt();
         boolean[] array = new boolean[length];
+        licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
             array[i] = buf.readBoolean();

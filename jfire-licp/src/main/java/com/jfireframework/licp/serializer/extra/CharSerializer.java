@@ -16,7 +16,9 @@ public class CharSerializer implements LicpSerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        return buf.readChar();
+        Character c = buf.readChar();
+        licp.putObject(c);
+        return c;
     }
     
 }

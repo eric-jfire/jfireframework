@@ -35,6 +35,7 @@ public class WLongArraySerializer extends AbstractArraySerializer
     {
         int length = buf.readInt();
         Long[] array = new Long[length];
+        licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
             boolean exist = buf.get() == 1 ? true : false;

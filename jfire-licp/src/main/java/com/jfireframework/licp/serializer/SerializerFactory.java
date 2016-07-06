@@ -1,5 +1,6 @@
 package com.jfireframework.licp.serializer;
 
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.licp.serializer.array.BooleanArraySerializer;
 import com.jfireframework.licp.serializer.array.ByteArraySerializer;
@@ -22,6 +23,7 @@ import com.jfireframework.licp.serializer.array.WShortArraySerializer;
 import com.jfireframework.licp.serializer.extra.BooleanSerializer;
 import com.jfireframework.licp.serializer.extra.ByteSerializer;
 import com.jfireframework.licp.serializer.extra.CharSerializer;
+import com.jfireframework.licp.serializer.extra.DateSerializer;
 import com.jfireframework.licp.serializer.extra.DoubleSerializer;
 import com.jfireframework.licp.serializer.extra.FloatSerializer;
 import com.jfireframework.licp.serializer.extra.IntegerSerializer;
@@ -59,6 +61,8 @@ public class SerializerFactory
         serializerMap.put(Long.class, new LongSerializer());
         serializerMap.put(Float.class, new FloatSerializer());
         serializerMap.put(Double.class, new DoubleSerializer());
+        serializerMap.put(Date.class, new DateSerializer(false));
+        serializerMap.put(java.sql.Date.class, new DateSerializer(true));
     }
     
     public static LicpSerializer get(Class<?> type)

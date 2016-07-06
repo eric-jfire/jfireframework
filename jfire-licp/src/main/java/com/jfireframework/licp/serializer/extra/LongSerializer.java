@@ -16,7 +16,9 @@ public class LongSerializer implements LicpSerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        return buf.readLong();
+        Long l = buf.readLong();
+        licp.putObject(l);
+        return l;
     }
     
 }

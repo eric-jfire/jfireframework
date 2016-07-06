@@ -38,6 +38,7 @@ public class WBooleanArraySerializer extends AbstractArraySerializer
     {
         int length = buf.readInt();
         Boolean[] array = new Boolean[length];
+        licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
             byte b = buf.get();

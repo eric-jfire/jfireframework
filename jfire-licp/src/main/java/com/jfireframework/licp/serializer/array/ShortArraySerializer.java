@@ -27,6 +27,7 @@ public class ShortArraySerializer extends AbstractArraySerializer
     {
         int length = buf.readInt();
         short[] array = new short[length];
+        licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
             array[i] = buf.readShort();

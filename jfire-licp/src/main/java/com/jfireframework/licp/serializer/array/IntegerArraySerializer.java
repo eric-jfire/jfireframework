@@ -35,6 +35,7 @@ public class IntegerArraySerializer extends AbstractArraySerializer
     {
         int length = buf.readInt();
         Integer[] array = new Integer[length];
+        licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
             boolean exist = buf.get() == 1 ? true : false;

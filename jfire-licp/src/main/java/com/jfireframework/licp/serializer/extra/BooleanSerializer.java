@@ -25,10 +25,12 @@ public class BooleanSerializer implements LicpSerializer
     {
         if (buf.get() == 1)
         {
+            licp.putObject(true);
             return true;
         }
         else
         {
+            licp.putObject(false);
             return false;
         }
     }

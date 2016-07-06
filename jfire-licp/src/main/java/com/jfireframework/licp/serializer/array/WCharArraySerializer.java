@@ -35,6 +35,7 @@ public class WCharArraySerializer extends AbstractArraySerializer
     {
         int length = buf.readInt();
         Character[] array = new Character[length];
+        licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
             boolean exist = buf.get() == 1 ? true : false;

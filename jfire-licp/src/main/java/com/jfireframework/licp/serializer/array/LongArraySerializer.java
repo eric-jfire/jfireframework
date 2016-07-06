@@ -27,6 +27,7 @@ public class LongArraySerializer extends AbstractArraySerializer
     {
         int length = buf.readInt();
         long[] array = new long[length];
+        licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
             array[i] = buf.readLong();

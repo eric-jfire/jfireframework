@@ -16,7 +16,9 @@ public class DoubleSerializer implements LicpSerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        return buf.readDouble();
+        Double d = buf.readDouble();
+        licp.putObject(d);
+        return d;
     }
     
 }
