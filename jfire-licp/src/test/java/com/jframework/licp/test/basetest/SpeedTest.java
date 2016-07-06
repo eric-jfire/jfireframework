@@ -58,7 +58,7 @@ public class SpeedTest
             context.serialize(device, buf.clear());
         }
         long lbseCost = System.currentTimeMillis() - t0;
-        logger.info("lbse序列化耗时：{}", lbseCost);
+        logger.info("licp序列化耗时：{}", lbseCost);
         Kryo kryo = new Kryo();
         kryo.setReferences(true);
         Output output = null;
@@ -71,7 +71,7 @@ public class SpeedTest
         }
         long kryoCost = System.currentTimeMillis() - t0;
         logger.info("kryo序列化耗时{}", kryoCost);
-        logger.info("lbse比kryo快{},性能比是{}", (kryoCost - lbseCost), ((float) lbseCost / kryoCost));
+        logger.info("licp比kryo快{},性能比是{}", (kryoCost - lbseCost), ((float) lbseCost / kryoCost));
     }
     
     @Test
@@ -91,7 +91,7 @@ public class SpeedTest
             context.deserialize(buf);
         }
         long lbseCost = System.currentTimeMillis() - t0;
-        logger.info("lbse逆序列化耗时：{}", lbseCost);
+        logger.info("licp逆序列化耗时：{}", lbseCost);
         Kryo kryo = new Kryo();
         kryo.setReferences(true);
         Output output = null;
@@ -108,6 +108,6 @@ public class SpeedTest
         }
         long kryoCost = System.currentTimeMillis() - t0;
         logger.info("kryo逆序列化耗时{}", kryoCost);
-        logger.info("lbse比kryo快{},性能比是{}", (kryoCost - lbseCost), ((float) lbseCost / kryoCost));
+        logger.info("licp比kryo快{},性能比是{}", (kryoCost - lbseCost), ((float) lbseCost / kryoCost));
     }
 }
