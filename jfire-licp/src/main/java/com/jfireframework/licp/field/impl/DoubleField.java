@@ -13,42 +13,16 @@ public class DoubleField extends AbstractCacheField
     }
     
     @Override
-    protected void writeSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        buf.writeDouble(unsafe.getDouble(holder, offset));
+        double value = unsafe.getDouble(holder, offset);
+        buf.writeDouble(value);
     }
     
     @Override
-    protected void writeOneDimensionMember(Object oneDimArray, ByteBuf<?> buf, Licp licp)
-    {
-        if (oneDimArray == null)
-        {
-            buf.writeInt(Licp.NULL);
-            return;
-        }
-        double[] array = (double[]) oneDimArray;
-        buf.writeInt(array.length + 1);
-        for (double each : array)
-        {
-            buf.writeDouble(each);
-        }
-    }
-    
-    @Override
-    protected void readSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
         unsafe.putDouble(holder, offset, buf.readDouble());
-    }
-    
-    @Override
-    protected Object readOneDimArray(int length, ByteBuf<?> buf, Licp licp)
-    {
-        double[] array = new double[length];
-        for (int i = 0; i < array.length; i++)
-        {
-            array[i] = buf.readDouble();
-        }
-        return array;
     }
     
 }

@@ -59,13 +59,6 @@ public class FieldFactory
     public static final CacheField build(Field field)
     {
         Class<?> type = field.getType();
-        if (type.isArray())
-        {
-            while (type.isArray())
-            {
-                type = type.getSuperclass();
-            }
-        }
         Constructor<? extends CacheField> constructor = map.get(type);
         if (constructor != null)
         {

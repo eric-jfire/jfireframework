@@ -1,11 +1,13 @@
 package com.jfireframework.licp.field.impl;
 
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
 
 public class StringField extends AbstractCacheField
 {
+    private static final Charset CHARSET = Charset.forName("utf8");
     
     public StringField(Field field)
     {
@@ -13,76 +15,43 @@ public class StringField extends AbstractCacheField
     }
     
     @Override
-    protected void writeSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
         String value = (String) unsafe.getObject(holder, offset);
-        write(value, buf);
-    }
-    
-    private void write(String value, ByteBuf<?> buf)
-    {
         if (value == null)
         {
-            buf.writeInt(Licp.NULL);
-            return;
+            buf.writeInt(0);
         }
-        int length = value.length();
-        buf.writeInt(length + 1);
-        buf.writeString(value);
-        for (int i = 0; i < length; i++)
+        else
         {
-            buf.writeChar(value.charAt(i));
+            byte[] src = value.getBytes(CHARSET);
+            buf.writeInt(((src.length << 1) | 1));
+            buf.put(src);
         }
     }
     
     @Override
-    protected void writeOneDimensionMember(Object oneDimArray, ByteBuf<?> buf, Licp licp)
-    {
-        if (oneDimArray == null)
-        {
-            buf.writeInt(Licp.NULL);
-            return;
-        }
-        String[] array = (String[]) oneDimArray;
-        buf.writeInt(array.length + 1);
-        for (String each : array)
-        {
-            write(each, buf);
-        }
-        
-    }
-    
-    @Override
-    protected void readSingle(Object holder, ByteBuf<?> buf, Licp licp)
-    {
-        unsafe.putObject(holder, offset, read(buf));
-    }
-    
-    private String read(ByteBuf<?> buf)
+    public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
         int length = buf.readInt();
         if (length == 0)
         {
-            return null;
+            unsafe.putObject(holder, offset, null);
         }
-        length -= 1;
-        char[] value = new char[length];
-        for (int i = 0; i < length; i++)
+        else
         {
-            value[i] = buf.readChar();
+            length >>>= 1;
+            if (length == 0)
+            {
+                unsafe.putObject(holder, offset, "");
+            }
+            else
+            {
+                byte[] src = new byte[length];
+                buf.get(src, length);
+                unsafe.putObject(holder, offset, new String(src, CHARSET));
+            }
         }
-        return new String(value);
-    }
-    
-    @Override
-    protected Object readOneDimArray(int length, ByteBuf<?> buf, Licp licp)
-    {
-        String[] array = new String[length];
-        for (int i = 0; i < length; i++)
-        {
-            array[i] = read(buf);
-        }
-        return array;
     }
     
 }

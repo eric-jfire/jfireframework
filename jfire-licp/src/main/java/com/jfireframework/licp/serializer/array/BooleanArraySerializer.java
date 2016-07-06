@@ -3,22 +3,22 @@ package com.jfireframework.licp.serializer.array;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
 
-public class IntArraySerializer extends AbstractArraySerializer
+public class BooleanArraySerializer extends AbstractArraySerializer
 {
     
-    public IntArraySerializer()
+    public BooleanArraySerializer()
     {
-        super(int[].class);
+        super(boolean[].class);
     }
     
     @Override
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
-        int[] array = (int[]) src;
+        boolean[] array = (boolean[]) src;
         buf.writeInt(array.length);
-        for (int each : array)
+        for (boolean each : array)
         {
-            buf.writeInt(each);
+            buf.writeBoolean(each);
         }
     }
     
@@ -26,10 +26,10 @@ public class IntArraySerializer extends AbstractArraySerializer
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
         int length = buf.readInt();
-        int[] array = new int[length];
+        boolean[] array = new boolean[length];
         for (int i = 0; i < length; i++)
         {
-            array[i] = buf.readInt();
+            array[i] = buf.readBoolean();
         }
         return array;
     }

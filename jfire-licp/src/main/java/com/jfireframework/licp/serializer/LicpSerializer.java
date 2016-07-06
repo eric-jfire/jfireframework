@@ -8,6 +8,7 @@ public interface LicpSerializer
     
     /**
      * 将对象src序列化到cache中。
+     * 这里存在一个约束，当走到这一步开始序列话的时候，src不是null
      * 
      * @param src
      * @param cache
@@ -18,6 +19,7 @@ public interface LicpSerializer
     
     /**
      * 反序列化二进制字节到对象中去
+     * 这里存在一个约束，如果使用这个接口开始反序列化，意味着类型已知，并且不是null
      * 
      * @param target
      * @param cache

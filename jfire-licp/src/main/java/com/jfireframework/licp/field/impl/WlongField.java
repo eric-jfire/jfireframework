@@ -6,76 +6,39 @@ import com.jfireframework.licp.Licp;
 
 public class WlongField extends AbstractCacheField
 {
-
+    
     public WlongField(Field field)
     {
         super(field);
     }
     
     @Override
-    protected void writeSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        Long value = (Long) unsafe.getObject(holder, offset);
-        write(buf, value);
-    }
-    
-    private void write(ByteBuf<?> buf, Long value)
-    {
-        if (value == null)
+        Long d = (Long) unsafe.getObject(holder, offset);
+        if (d == null)
         {
-            buf.writeInt(Licp.NULL);
+            buf.put((byte) 0);
         }
         else
         {
-            buf.writeInt(Licp.EXIST);
-            buf.writeLong(value.longValue());
+            buf.put((byte) 1);
+            buf.writeLong(d);
         }
     }
     
     @Override
-    protected void writeOneDimensionMember(Object oneDimArray, ByteBuf<?> buf, Licp licp)
+    public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        if (oneDimArray == null)
-        {
-            buf.writeInt(Licp.NULL);
-            return;
-        }
-        Long[] array = (Long[]) oneDimArray;
-        buf.writeInt(array.length + 1);
-        for (Long each : array)
-        {
-            write(buf, each);
-        }
-    }
-    
-    @Override
-    protected void readSingle(Object holder, ByteBuf<?> buf, Licp licp)
-    {
-        unsafe.putObject(holder, offset, read(buf));
-    }
-    
-    private Long read(ByteBuf<?> buf)
-    {
-        boolean exist = buf.readInt() == Licp.EXIST;
+        boolean exist = buf.get() == 1 ? true : false;
         if (exist)
         {
-            return Long.valueOf(buf.readLong());
+            unsafe.putObject(holder, offset, buf.readLong());
         }
         else
         {
-            return null;
+            unsafe.putObject(holder, offset, null);
         }
-    }
-    
-    @Override
-    protected Object readOneDimArray(int length, ByteBuf<?> buf, Licp licp)
-    {
-        Long[] array = new Long[length];
-        for (int i = 0; i < array.length; i++)
-        {
-            array[i] = read(buf);
-        }
-        return array;
     }
     
 }

@@ -13,42 +13,16 @@ public class FloatField extends AbstractCacheField
     }
     
     @Override
-    protected void writeSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        buf.writeFloat(unsafe.getFloat(holder, offset));
+        float value = unsafe.getFloat(holder, offset);
+        buf.writeFloat(value);
     }
     
     @Override
-    protected void writeOneDimensionMember(Object oneDimArray, ByteBuf<?> buf, Licp licp)
-    {
-        if (oneDimArray == null)
-        {
-            buf.writeInt(Licp.NULL);
-            return;
-        }
-        float[] array = (float[]) oneDimArray;
-        buf.writeInt(array.length + 1);
-        for (float each : array)
-        {
-            buf.writeFloat(each);
-        }
-    }
-    
-    @Override
-    protected void readSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
         unsafe.putFloat(holder, offset, buf.readFloat());
-    }
-    
-    @Override
-    protected Object readOneDimArray(int length, ByteBuf<?> buf, Licp licp)
-    {
-        float[] array = new float[length];
-        for (int i = 0; i < array.length; i++)
-        {
-            array[i] = buf.readFloat();
-        }
-        return array;
     }
     
 }

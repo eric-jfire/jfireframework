@@ -3,22 +3,22 @@ package com.jfireframework.licp.serializer.array;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
 
-public class IntArraySerializer extends AbstractArraySerializer
+public class CharArraySerializer extends AbstractArraySerializer
 {
     
-    public IntArraySerializer()
+    public CharArraySerializer()
     {
-        super(int[].class);
+        super(char[].class);
     }
     
     @Override
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
-        int[] array = (int[]) src;
+        char[] array = (char[]) src;
         buf.writeInt(array.length);
-        for (int each : array)
+        for (char each : array)
         {
-            buf.writeInt(each);
+            buf.writeChar(each);
         }
     }
     
@@ -26,10 +26,10 @@ public class IntArraySerializer extends AbstractArraySerializer
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
         int length = buf.readInt();
-        int[] array = new int[length];
+        char[] array = new char[length];
         for (int i = 0; i < length; i++)
         {
-            array[i] = buf.readInt();
+            array[i] = buf.readChar();
         }
         return array;
     }

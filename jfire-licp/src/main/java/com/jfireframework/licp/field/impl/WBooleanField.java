@@ -14,84 +14,47 @@ public class WBooleanField extends AbstractCacheField
     }
     
     @Override
-    protected void writeSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
         Boolean value = (Boolean) unsafe.getObject(holder, offset);
-        write(buf, value);
-    }
-    
-    /**
-     * 写入值。0代表null，1代表true，2代表false
-     * 
-     * @param buf
-     * @param value
-     */
-    private void write(ByteBuf<?> buf, Boolean value)
-    {
         if (value == null)
         {
-            buf.writeInt(Licp.NULL);
+            buf.put((byte) 0);
+        }
+        else if (value == true)
+        {
+            buf.put((byte) 1);
+        }
+        else if (value == false)
+        {
+            buf.put((byte) 2);
         }
         else
         {
-            if (value)
-            {
-                buf.put((byte) 1);
-            }
-            else
-            {
-                buf.put((byte) 2);
-            }
+            throw new UnSupportException("not here");
         }
     }
     
     @Override
-    protected void writeOneDimensionMember(Object oneDimArray, ByteBuf<?> buf, Licp licp)
+    public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        if (oneDimArray == null)
+        byte b = buf.get();
+        if (b == 0)
         {
-            buf.writeInt(Licp.NULL);
-            return;
+            unsafe.putObject(holder, offset, null);
         }
-        Boolean[] array = (Boolean[]) oneDimArray;
-        buf.writeInt(array.length + 1);
-        for (Boolean each : array)
+        else if (b == 1)
         {
-            write(buf, each);
+            unsafe.putObject(holder, offset, true);
         }
-    }
-    
-    @Override
-    protected void readSingle(Object holder, ByteBuf<?> buf, Licp licp)
-    {
-        unsafe.putObject(holder, offset, read(buf));
-    }
-    
-    private Boolean read(ByteBuf<?> buf)
-    {
-        int result = buf.readInt();
-        switch (result)
+        else if (b == 2)
         {
-            case 0:
-                return null;
-            case 1:
-                return true;
-            case 2:
-                return false;
-            default:
-                throw new UnSupportException("");
+            unsafe.putObject(holder, offset, false);
         }
-    }
-    
-    @Override
-    protected Object readOneDimArray(int length, ByteBuf<?> buf, Licp licp)
-    {
-        Boolean[] array = new Boolean[length];
-        for (int i = 0; i < array.length; i++)
+        else
         {
-            array[i] = read(buf);
+            throw new UnSupportException("not here");
         }
-        return array;
     }
     
 }
