@@ -39,6 +39,12 @@ public class PerTest
     }
     
     @Test
+    public void longTest()
+    {
+        
+    }
+    
+    @Test
     public void test()
     {
         Device device = Builder();

@@ -69,9 +69,13 @@ public class Licp
         int classNo = register.indexOf(type);
         if (classNo == 0)
         {
-            byte[] nameBytes = type.getName().getBytes(CHARSET);
-            buf.writeInt(((nameBytes.length << 2) | 2));
-            buf.put(nameBytes);
+            String name = type.getName();
+            int length = name.length();
+            buf.writeInt(((length << 2) | 2));
+            for (int i = 0; i < length; i++)
+            {
+                buf.writeChar(name.charAt(i));
+            }
         }
         else
         {
@@ -132,9 +136,12 @@ public class Licp
         else if (flag == 2)
         {
             result >>>= 2;
-            byte[] src = new byte[result];
-            buf.get(src, result);
-            Class<?> type = loadClass(new String(src, CHARSET));
+            char[] src = new char[result];
+            for (int i = 0; i < src.length; i++)
+            {
+                src[i] = buf.readChar();
+            }
+            Class<?> type = loadClass(new String(src));
             return SerializerFactory.get(type).deserialize(buf, this);
         }
         else if (flag == 3)

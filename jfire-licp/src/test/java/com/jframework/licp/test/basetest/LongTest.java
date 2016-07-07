@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import org.junit.Test;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
+import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -51,11 +52,13 @@ public class LongTest
 		kryo.writeClassAndObject(output, new LongData2());
 		byte[] bb = output.toBytes();
 		logger.info("LongData序列化：kryo基础数据长度：{}", bb.length);
+		System.out.println(StringUtil.toHexString(bb));
 		Licp lbse = new Licp();
 		lbse.register(LongData2.class);
 		ByteBuf<?> buf = HeapByteBufPool.getInstance().get(100);
 		lbse.serialize(new LongData2(), buf);
 		logger.info("LongData序列化：lbse基础数据长度：" + buf.writeIndex());
+		System.out.println(StringUtil.toHexString(buf.toArray()));
 		logger.info("序列化长度减少{}", (bb.length - buf.writeIndex()));
 		
 	}

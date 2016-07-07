@@ -81,7 +81,7 @@ public class ClassNoRegister
      */
     public void register(Class<?> type)
     {
-        if (registerTemporary(type) < 0)
+        if (registerTemporary(type) == 0)
         {
             originCount++;
         }
