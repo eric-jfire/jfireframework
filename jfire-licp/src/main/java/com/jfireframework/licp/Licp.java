@@ -1,6 +1,5 @@
 package com.jfireframework.licp;
 
-import java.nio.charset.Charset;
 import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.exception.JustThrowException;
@@ -12,10 +11,9 @@ public class Licp
 {
     private ObjectCollect                                    collect      = new ObjectCollect();
     private ClassNoRegister                                  register     = new ClassNoRegister();
-    private static final Charset                             CHARSET      = Charset.forName("utf8");
     public static final int                                  NULL         = 0;
     public static final int                                  EXIST        = 1;
-    private static final ConcurrentHashMap<String, Class<?>> nameClassMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Class<?>> nameClassMap = new ConcurrentHashMap<String, Class<?>>();
     
     public Licp()
     {

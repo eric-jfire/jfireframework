@@ -16,6 +16,12 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.jfireframework</groupId>
+			<artifactId>jfire-fose</artifactId>
+			<version>1.0-SNAPSHOT</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.jfireframework</groupId>
 			<artifactId>jfire-baseutil</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
