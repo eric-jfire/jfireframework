@@ -1,4 +1,4 @@
-package com.jfireframework.fose.data;
+package com.jframework.licp.test.basetest.data;
 
 public class ArrayData
 {

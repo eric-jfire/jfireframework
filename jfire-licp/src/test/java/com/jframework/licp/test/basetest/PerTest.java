@@ -7,8 +7,8 @@ import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.fose.data.Device;
 import com.jfireframework.licp.Licp;
+import com.jframework.licp.test.basetest.data.Device;
 
 public class PerTest
 {

@@ -12,12 +12,12 @@ import com.jfire.test.rule.CustomRule;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBufPool;
 import com.jfireframework.baseutil.encrypt.AesUtil;
-import com.jfireframework.fose.data.ArrayData;
-import com.jfireframework.fose.data.BaseData;
-import com.jfireframework.fose.data.LongData;
-import com.jfireframework.fose.data.Person;
-import com.jfireframework.fose.data.WrapData;
 import com.jfireframework.licp.Licp;
+import com.jframework.licp.test.basetest.data.ArrayData;
+import com.jframework.licp.test.basetest.data.BaseData;
+import com.jframework.licp.test.basetest.data.LongData;
+import com.jframework.licp.test.basetest.data.Person;
+import com.jframework.licp.test.basetest.data.WrapData;
 
 public class RightTest
 {

@@ -1,4 +1,4 @@
-package com.jfireframework.fose.data;
+package com.jframework.licp.test.basetest.data;
 
 import java.util.ArrayList;
 import java.util.HashMap;

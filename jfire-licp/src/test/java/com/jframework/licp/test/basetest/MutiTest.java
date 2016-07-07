@@ -6,8 +6,8 @@ import com.jfire.test.rule.CustomRule;
 import com.jfire.test.rule.MutiThreadTest;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBufPool;
-import com.jfireframework.fose.data.Person;
 import com.jfireframework.licp.Licp;
+import com.jframework.licp.test.basetest.data.Person;
 
 public class MutiTest
 {

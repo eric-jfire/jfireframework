@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.jfireframework</groupId>
 		<artifactId>framework-parent</artifactId>
-		<version>1.0-SNAPSHOT</version>
+		<version>1.0</version>
 	</parent>
 	<packaging>jar</packaging>
 	<artifactId>framework-licp</artifactId>
@@ -16,14 +16,14 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.jfireframework</groupId>
-			<artifactId>jfire-fose</artifactId>
+			<artifactId>jfire-baseutil</artifactId>
 			<version>1.0-SNAPSHOT</version>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.jfireframework</groupId>
-			<artifactId>jfire-baseutil</artifactId>
+			<artifactId>jfire-fose</artifactId>
 			<version>1.0-SNAPSHOT</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.esotericsoftware</groupId>

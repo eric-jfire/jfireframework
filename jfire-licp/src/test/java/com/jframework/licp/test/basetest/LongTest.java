@@ -9,9 +9,9 @@ import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.fose.data.BaseData;
-import com.jfireframework.fose.data.LongData;
 import com.jfireframework.licp.Licp;
+import com.jframework.licp.test.basetest.data.BaseData;
+import com.jframework.licp.test.basetest.data.LongData;
 
 public class LongTest
 {

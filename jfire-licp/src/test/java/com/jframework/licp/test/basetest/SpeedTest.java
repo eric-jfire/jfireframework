@@ -12,9 +12,9 @@ import com.jfireframework.baseutil.collection.buffer.HeapByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.fose.Fose;
-import com.jfireframework.fose.data.Device;
-import com.jfireframework.fose.data.Person;
 import com.jfireframework.licp.Licp;
+import com.jframework.licp.test.basetest.data.Device;
+import com.jframework.licp.test.basetest.data.Person;
 
 public class SpeedTest
 {
