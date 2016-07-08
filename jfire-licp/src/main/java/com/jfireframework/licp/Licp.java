@@ -140,6 +140,7 @@ public class Licp
                 src[i] = buf.readChar();
             }
             Class<?> type = loadClass(new String(src));
+            register.registerTemporary(type);
             return SerializerFactory.get(type).deserialize(buf, this);
         }
         else if (flag == 3)

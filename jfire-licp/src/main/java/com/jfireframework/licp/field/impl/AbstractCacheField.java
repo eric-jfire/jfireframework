@@ -12,6 +12,7 @@ public abstract class AbstractCacheField implements CacheField
     protected static final Unsafe unsafe = ReflectUtil.getUnsafe();
     protected final long          offset;
     protected final boolean       finalField;
+    protected final String        fieldName;
     
     public AbstractCacheField(Field field)
     {
@@ -24,6 +25,11 @@ public abstract class AbstractCacheField implements CacheField
         {
             finalField = false;
         }
+        fieldName = field.getName();
     }
     
+    public String getName()
+    {
+        return fieldName;
+    }
 }
