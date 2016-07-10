@@ -12,68 +12,33 @@ public class IntegerField extends AbstractCacheField
     }
     
     @Override
-    protected void writeSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
         Integer value = (Integer) unsafe.getObject(holder, offset);
-        write(buf, value);
-    }
-    
-    private void write(ByteBuf<?> buf, Integer value)
-    {
         if (value == null)
         {
-            buf.writeInt(Licp.NULL);
+            buf.put((byte) 0);
         }
         else
         {
-            buf.writeInt(Licp.EXIST);
-            buf.writeInt(value.intValue());
+            buf.put((byte) 1);
+            buf.writeInt(value);
         }
     }
     
     @Override
-    protected void writeOneDimensionMember(Object oneDimArray, ByteBuf<?> buf, Licp licp)
+    public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        if (oneDimArray == null)
-        {
-            buf.writeInt(Licp.NULL);
-            return;
-        }
-        Integer[] array = (Integer[]) oneDimArray;
-        buf.writeInt(array.length + 1);
-        for (Integer each : array)
-        {
-            write(buf, each);
-        }
-    }
-    
-    @Override
-    protected void readSingle(Object holder, ByteBuf<?> buf, Licp licp)
-    {
-        unsafe.putObject(holder, offset, read(buf));
-    }
-    
-    private Integer read(ByteBuf<?> buf)
-    {
-        boolean exist = buf.readInt() == Licp.EXIST;
+        boolean exist = buf.get() == 1 ? true : false;
         if (exist)
         {
-            return Integer.valueOf(buf.readInt());
+            Integer value = buf.readInt();
+            unsafe.putObject(holder, offset, value);
         }
         else
         {
-            return null;
+            unsafe.putObject(holder, offset, null);
         }
     }
     
-    @Override
-    protected Object readOneDimArray(int length, ByteBuf<?> buf, Licp licp)
-    {
-        Integer[] array = new Integer[length];
-        for (int i = 0; i < array.length; i++)
-        {
-            array[i] = read(buf);
-        }
-        return array;
-    }
 }

@@ -13,69 +13,33 @@ public class WByteField extends AbstractCacheField
     }
     
     @Override
-    protected void writeSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        Byte value = (Byte) unsafe.getObject(holder, offset);
-        write(buf, value);
-    }
-    
-    private void write(ByteBuf<?> buf, Byte value)
-    {
-        if (value == null)
+        Byte b = (Byte) unsafe.getObject(holder, offset);
+        if (b == null)
         {
-            buf.writeInt(Licp.NULL);
+            buf.put((byte) 0);
         }
         else
         {
-            buf.writeInt(Licp.EXIST);
-            buf.put(value.byteValue());
+            buf.put((byte) 1);
+            buf.put(b);
         }
     }
     
     @Override
-    protected void writeOneDimensionMember(Object oneDimArray, ByteBuf<?> buf, Licp licp)
+    public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        if (oneDimArray == null)
+        byte b = buf.get();
+        if (b == 0)
         {
-            buf.writeInt(Licp.NULL);
-            return;
-        }
-        Byte[] array = (Byte[]) oneDimArray;
-        buf.writeInt(array.length + 1);
-        for (Byte each : array)
-        {
-            write(buf, each);
-        }
-    }
-    
-    @Override
-    protected void readSingle(Object holder, ByteBuf<?> buf, Licp licp)
-    {
-        unsafe.putObject(holder, offset, read(buf));
-    }
-    
-    private Byte read(ByteBuf<?> buf)
-    {
-        boolean exist = buf.readInt() == Licp.EXIST;
-        if (exist)
-        {
-            return Byte.valueOf(buf.get());
+            unsafe.putObject(holder, offset, null);
         }
         else
         {
-            return null;
+            b = buf.get();
+            unsafe.putObject(holder, offset, b);
         }
-    }
-    
-    @Override
-    protected Object readOneDimArray(int length, ByteBuf<?> buf, Licp licp)
-    {
-        Byte[] array = new Byte[length];
-        for (int i = 0; i < array.length; i++)
-        {
-            array[i] = read(buf);
-        }
-        return array;
     }
     
 }

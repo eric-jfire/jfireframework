@@ -13,42 +13,16 @@ public class IntField extends AbstractCacheField
     }
     
     @Override
-    protected void writeSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        buf.writeInt(unsafe.getInt(holder, offset));
+        int value = unsafe.getInt(holder, offset);
+        buf.writeInt(value);
     }
     
     @Override
-    protected void writeOneDimensionMember(Object oneDimArray, ByteBuf<?> buf, Licp licp)
-    {
-        if (oneDimArray == null)
-        {
-            buf.writeInt(Licp.NULL);
-            return;
-        }
-        int[] array = (int[]) oneDimArray;
-        buf.writeInt(array.length + 1);
-        for (int each : array)
-        {
-            buf.writeInt(each);
-        }
-    }
-    
-    @Override
-    protected void readSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
         unsafe.putInt(holder, offset, buf.readInt());
-    }
-    
-    @Override
-    protected Object readOneDimArray(int length, ByteBuf<?> buf, Licp licp)
-    {
-        int[] array = new int[length];
-        for (int i = 0; i < array.length; i++)
-        {
-            array[i] = buf.readInt();
-        }
-        return array;
     }
     
 }

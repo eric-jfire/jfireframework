@@ -21,6 +21,7 @@
 		<module>jfire-litl</module>
 		<module>jfire-data-mongodb</module>
 		<module>wx</module>
+		<module>jfire-licp</module>
 	</modules>
 	<dependencies>
 		<dependency>

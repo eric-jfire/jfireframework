@@ -13,68 +13,32 @@ public class WCharField extends AbstractCacheField
     }
     
     @Override
-    protected void writeSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        Character value = (Character) unsafe.getObject(holder, offset);
-        write(buf, value);
-    }
-    
-    private void write(ByteBuf<?> buf, Character value)
-    {
-        if (value == null)
+        Character character = (Character) unsafe.getObject(holder, offset);
+        if (character == null)
         {
-            buf.writeInt(Licp.NULL);
+            buf.put((byte) 0);
         }
         else
         {
-            buf.writeInt(Licp.EXIST);
-            buf.writeChar(value.charValue());
+            buf.put((byte) 1);
+            buf.writeChar(character);
         }
     }
     
     @Override
-    protected void writeOneDimensionMember(Object oneDimArray, ByteBuf<?> buf, Licp licp)
+    public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        if (oneDimArray == null)
+        boolean exist = buf.get() == 1 ? true : false;
+        if (exist == false)
         {
-            buf.writeInt(Licp.NULL);
-            return;
-        }
-        Character[] array = (Character[]) oneDimArray;
-        buf.writeInt(array.length + 1);
-        for (Character each : array)
-        {
-            write(buf, each);
-        }
-    }
-    
-    @Override
-    protected void readSingle(Object holder, ByteBuf<?> buf, Licp licp)
-    {
-        unsafe.putObject(holder, offset, read(buf));
-    }
-    
-    private Character read(ByteBuf<?> buf)
-    {
-        boolean exist = buf.readInt() == Licp.EXIST;
-        if (exist)
-        {
-            return Character.valueOf(buf.readChar());
+            unsafe.putObject(holder, offset, null);
         }
         else
         {
-            return null;
+            unsafe.putObject(holder, offset, buf.readChar());
         }
     }
     
-    @Override
-    protected Object readOneDimArray(int length, ByteBuf<?> buf, Licp licp)
-    {
-        Character[] array = new Character[length];
-        for (int i = 0; i < array.length; i++)
-        {
-            array[i] = read(buf);
-        }
-        return array;
-    }
 }

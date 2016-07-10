@@ -13,69 +13,32 @@ public class WFloatField extends AbstractCacheField
     }
     
     @Override
-    protected void writeSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        Float value = (Float) unsafe.getObject(holder, offset);
-        write(buf, value);
-    }
-    
-    private void write(ByteBuf<?> buf, Float value)
-    {
-        if (value == null)
+        Float d = (Float) unsafe.getObject(holder, offset);
+        if (d == null)
         {
-            buf.writeInt(Licp.NULL);
+            buf.put((byte) 0);
         }
         else
         {
-            buf.writeInt(Licp.EXIST);
-            buf.writeFloat(value.floatValue());
+            buf.put((byte) 1);
+            buf.writeFloat(d);
         }
     }
     
     @Override
-    protected void writeOneDimensionMember(Object oneDimArray, ByteBuf<?> buf, Licp licp)
+    public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        if (oneDimArray == null)
-        {
-            buf.writeInt(Licp.NULL);
-            return;
-        }
-        Float[] array = (Float[]) oneDimArray;
-        buf.writeInt(array.length + 1);
-        for (Float each : array)
-        {
-            write(buf, each);
-        }
-    }
-    
-    @Override
-    protected void readSingle(Object holder, ByteBuf<?> buf, Licp licp)
-    {
-        unsafe.putObject(holder, offset, read(buf));
-    }
-    
-    private Float read(ByteBuf<?> buf)
-    {
-        boolean exist = buf.readInt() == Licp.EXIST;
+        boolean exist = buf.get() == 1 ? true : false;
         if (exist)
         {
-            return Float.valueOf(buf.readFloat());
+            unsafe.putObject(holder, offset, buf.readFloat());
         }
         else
         {
-            return null;
+            unsafe.putObject(holder, offset, null);
         }
-    }
-    
-    @Override
-    protected Object readOneDimArray(int length, ByteBuf<?> buf, Licp licp)
-    {
-        Float[] array = new Float[length];
-        for (int i = 0; i < array.length; i++)
-        {
-            array[i] = read(buf);
-        }
-        return array;
     }
     
 }

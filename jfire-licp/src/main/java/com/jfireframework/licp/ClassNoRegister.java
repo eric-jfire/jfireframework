@@ -43,6 +43,7 @@ public class ClassNoRegister
         tmp.add(Boolean[].class);
         tmp.add(String[].class);
         tmp.add(Date.class);
+        tmp.add(java.sql.Date.class);
         tmp.add(Calendar.class);
         tmp.add(ArrayList.class);
         tmp.add(LinkedList.class);
@@ -80,7 +81,7 @@ public class ClassNoRegister
      */
     public void register(Class<?> type)
     {
-        if (registerTemporary(type) < 0)
+        if (registerTemporary(type) == 0)
         {
             originCount++;
         }

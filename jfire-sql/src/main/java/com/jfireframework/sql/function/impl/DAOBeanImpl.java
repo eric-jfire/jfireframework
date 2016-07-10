@@ -19,6 +19,7 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
+import com.jfireframework.baseutil.uniqueid.AutumnId;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.annotation.Id;
@@ -84,9 +85,16 @@ public class DAOBeanImpl implements DAOBean
                 if (idStrategy == IdStrategy.autoDecision)
                 {
                     Class<?> type = each.getType();
-                    if (type.equals(Integer.class) || type.equals(int.class) || type.equals(Long.class) || type.equals(long.class))
+                    if (type == Integer.class //
+                            || type == int.class //
+                            || type == long.class //
+                            || type == Long.class)
                     {
                         idStrategy = IdStrategy.autoIncrement;
+                    }
+                    else if (type == String.class)
+                    {
+                        idStrategy = IdStrategy.stringUid;
                     }
                     else
                     {
@@ -325,6 +333,11 @@ public class DAOBeanImpl implements DAOBean
         if (idValue == null)
         {
             // id值为null，执行插入操作
+            if (idStrategy == IdStrategy.stringUid)
+            {
+                String id = AutumnId.instance().generateDigits();
+                unsafe.putObject(entity, idOffset, id);
+            }
             insert(entity, connection);
         }
         else
@@ -471,22 +484,24 @@ public class DAOBeanImpl implements DAOBean
             }
             pStat.executeUpdate();
             ResultSet resultSet = pStat.getGeneratedKeys();
-            resultSet.next();
-            if (idField instanceof IntegerField)
+            if (resultSet.next())
             {
-                unsafe.putObject(entity, idOffset, resultSet.getInt(1));
-            }
-            else if (idField instanceof StringField)
-            {
-                unsafe.putObject(entity, idOffset, resultSet.getString(1));
-            }
-            else if (idField instanceof WLongField)
-            {
-                unsafe.putObject(entity, idOffset, resultSet.getLong(1));
-            }
-            else
-            {
-                throw new RuntimeException(StringUtil.format("id字段暂时支持Integer,Long,String.请检查{}", entity.getClass().getName()));
+                if (idField instanceof IntegerField)
+                {
+                    unsafe.putObject(entity, idOffset, resultSet.getInt(1));
+                }
+                else if (idField instanceof StringField)
+                {
+                    unsafe.putObject(entity, idOffset, resultSet.getString(1));
+                }
+                else if (idField instanceof WLongField)
+                {
+                    unsafe.putObject(entity, idOffset, resultSet.getLong(1));
+                }
+                else
+                {
+                    throw new RuntimeException(StringUtil.format("id字段暂时支持Integer,Long,String.请检查{}", entity.getClass().getName()));
+                }
             }
         }
         catch (Exception e)

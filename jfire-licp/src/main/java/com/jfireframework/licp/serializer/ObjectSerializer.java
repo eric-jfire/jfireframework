@@ -2,7 +2,6 @@ package com.jfireframework.licp.serializer;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -17,7 +16,6 @@ import sun.misc.Unsafe;
 
 public class ObjectSerializer implements LicpSerializer
 {
-    private static final Charset           CHARSET       = Charset.forName("utf8");
     private final CacheField[]             fields;
     private static final Comparator<Field> fieldCompator = new Comparator<Field>() {
                                                              
@@ -38,7 +36,7 @@ public class ObjectSerializer implements LicpSerializer
         List<Field> list = new LinkedList<Field>();
         for (Field each : fields)
         {
-            if (Modifier.isFinal(each.getModifiers()) || Modifier.isStatic(each.getModifiers()))
+            if (Modifier.isStatic(each.getModifiers()))
             {
                 continue;
             }
@@ -54,33 +52,9 @@ public class ObjectSerializer implements LicpSerializer
         this.fields = tmp;
     }
     
-    /**
-     * 如果对象为null，写入0，结束。
-     * 如果对象不为null，分以下两种情况：
-     * 1）如果对象类型已经注册过，则首先写入对象类型序号+1。然后开始序列化。
-     * 2）如果对象类型没有注册过，首先写入1。紧接着写入类名的String的byte数组长度，然后写入byte数组内容。然后开始序列化
-     */
     @Override
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
-        if (src == null)
-        {
-            buf.writeInt(Licp.EXIST);
-            return;
-        }
-        Class<?> type = src.getClass();
-        int classNo = licp.indexOf(type);
-        if (classNo == 0)
-        {
-            buf.writeInt(1);
-            byte[] nameBytes = type.getName().getBytes(CHARSET);
-            buf.writeInt(nameBytes.length);
-            buf.put(nameBytes);
-        }
-        else
-        {
-            buf.writeInt(classNo = 1);
-        }
         for (CacheField each : fields)
         {
             each.write(src, buf, licp);
@@ -93,6 +67,8 @@ public class ObjectSerializer implements LicpSerializer
         try
         {
             Object holder = unsafe.allocateInstance(type);
+            // 在这个地方把对象放入。在外面放入就来不及了
+            licp.putObject(holder);
             for (CacheField each : fields)
             {
                 each.read(holder, buf, licp);

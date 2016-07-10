@@ -13,69 +13,32 @@ public class WDoubleField extends AbstractCacheField
     }
     
     @Override
-    protected void writeSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        Double value = (Double) unsafe.getObject(holder, offset);
-        write(buf, value);
-    }
-    
-    private void write(ByteBuf<?> buf, Double value)
-    {
-        if (value == null)
+        Double d = (Double) unsafe.getObject(holder, offset);
+        if (d == null)
         {
-            buf.writeInt(Licp.NULL);
+            buf.put((byte) 0);
         }
         else
         {
-            buf.writeInt(Licp.EXIST);
-            buf.writeDouble(value.doubleValue());
+            buf.put((byte) 1);
+            buf.writeDouble(d);
         }
     }
     
     @Override
-    protected void writeOneDimensionMember(Object oneDimArray, ByteBuf<?> buf, Licp licp)
+    public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        if (oneDimArray == null)
-        {
-            buf.writeInt(Licp.NULL);
-            return;
-        }
-        Double[] array = (Double[]) oneDimArray;
-        buf.writeInt(array.length + 1);
-        for (Double each : array)
-        {
-            write(buf, each);
-        }
-    }
-    
-    @Override
-    protected void readSingle(Object holder, ByteBuf<?> buf, Licp licp)
-    {
-        unsafe.putObject(holder, offset, read(buf));
-    }
-    
-    private Double read(ByteBuf<?> buf)
-    {
-        boolean exist = buf.readInt() == Licp.EXIST;
+        boolean exist = buf.get() == 1 ? true : false;
         if (exist)
         {
-            return Double.valueOf(buf.readDouble());
+            unsafe.putObject(holder, offset, buf.readDouble());
         }
         else
         {
-            return null;
+            unsafe.putObject(holder, offset, null);
         }
-    }
-    
-    @Override
-    protected Object readOneDimArray(int length, ByteBuf<?> buf, Licp licp)
-    {
-        Double[] array = new Double[length];
-        for (int i = 0; i < array.length; i++)
-        {
-            array[i] = read(buf);
-        }
-        return array;
     }
     
 }

@@ -5,6 +5,8 @@ import com.jfireframework.licp.Licp;
 
 public interface CacheField
 {
+    public String getName();
+    
     public void write(Object holder, ByteBuf<?> buf, Licp licp);
     
     public void read(Object holder, ByteBuf<?> buf, Licp licp);

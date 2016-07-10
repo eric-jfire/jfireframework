@@ -2,119 +2,68 @@ package com.jfireframework.licp;
 
 public class ObjectCollect
 {
-    private Object[] array;
-    private int      size;
-    private int      count = 0;
+    // private IdentityHashMap<Object, Integer> objectMap = new
+    // IdentityHashMap<Object, Integer>();
+    private Object[]      objs     = new Object[20];
+    private int           sequence = 0;
+    private final boolean cycleSupport;
     
-    /**
-     * 以size大小初始化收集器
-     * 
-     * @param size
-     */
-    public ObjectCollect(int size)
+    public ObjectCollect(boolean cycleSupport)
     {
-        this.size = size;
-        array = new Object[size];
-        count = 0;
+        this.cycleSupport = cycleSupport;
     }
     
-    /**
-     * 默认构造方法，初始容量为50
-     */
     public ObjectCollect()
     {
-        this(50);
+        cycleSupport = true;
     }
     
     /**
-     * 向对象收集器中添加对象实例，如果该实例已经添加过，则返回false，否则返回真 该添加对比只进行对象实例内存地址判断，而不进行相等性判断
+     * 放入一个对象，如果对象已经存在于收集器中，就放回具体的id,id从1开始。如果对象不存在，返回0
      * 
-     * @param value
+     * @param obj
      * @return
      */
-    public int putIfAbsent(Object value)
+    public int put(Object obj)
     {
-        int index = indexOf(value);
-        if (index == -1)
+        if (cycleSupport == false)
         {
-            ensureCapacity(1);
-            array[count] = value;
-            count++;
-            return 0 - count + 1;
+            return 0;
+        }
+        for (int i = 0; i < objs.length; i++)
+        {
+            if (objs[i] == obj)
+            {
+                return i + 1;
+            }
+        }
+        if (sequence < objs.length)
+        {
+            objs[sequence] = obj;
         }
         else
         {
-            return index;
+            Object[] tmp = new Object[objs.length * 2];
+            System.arraycopy(objs, 0, tmp, 0, sequence);
+            objs = tmp;
+            objs[sequence] = obj;
         }
+        sequence += 1;
+        return 0;
     }
     
-    /**
-     * 确定收集器的剩余容量可以满足大小。如果不满足则自动扩容
-     * 
-     * @param needSize
-     */
-    public void ensureCapacity(int needSize)
+    public Object get(int id)
     {
-        if (size - count < needSize)
-        {
-            size = (size + needSize) * 2;
-            Object[] tmp = new Object[size];
-            System.arraycopy(array, 0, tmp, 0, count);
-            array = tmp;
-        }
+        return objs[id - 1];
     }
     
-    /**
-     * 返回某个对象在收集器中的位置，如果不存在，返回-1
-     * 
-     * @param value
-     * @return
-     */
-    public int indexOf(Object value)
-    {
-        for (int i = 0; i < count; i++)
-        {
-            if (array[i] == value)
-            {
-                return i;
-            }
-        }
-        return -1;
-    }
-    
-    /**
-     * 获取对应位置的对象
-     * 
-     * @param index
-     * @return
-     */
-    public Object get(int index)
-    {
-        if (index < 0)
-        {
-            return null;
-        }
-        return array[index];
-    }
-    
-    /**
-     * 获取收集器当前收集的对象个数
-     */
-    public int getCount()
-    {
-        return count;
-    }
-    
-    /**
-     * 清空收集器
-     */
     public void clear()
     {
-        for (int i = 0; i < count; i++)
+        sequence = 0;
+        for (int i = 0; i < objs.length; i++)
         {
-            array[i] = null;
+            objs[i] = null;
         }
-        count = 0;
     }
     
 }

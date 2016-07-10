@@ -385,8 +385,99 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
         writeIndex = newWriteIndex;
     }
     
+    public void writePositive(int positive)
+    {
+        if (positive < 0)
+        {
+            throw new UnsupportedOperationException();
+        }
+        changeToWriteState();
+        int newWriteIndex = 0;
+        if (positive <= 251)
+        {
+            newWriteIndex = writeIndex + 1;
+            ensureCapacity(newWriteIndex);
+            memory.put(writeIndex, (byte) positive);
+        }
+        else if (positive <= 255)
+        {
+            newWriteIndex = writeIndex + 2;
+            ensureCapacity(newWriteIndex);
+            memory.put(writeIndex, (byte) 252);
+            memory.put(writeIndex + 1, (byte) positive);
+        }
+        else if (positive <= 0xffff)
+        {
+            newWriteIndex = writeIndex + 3;
+            ensureCapacity(newWriteIndex);
+            memory.put(writeIndex, (byte) 253);
+            memory.put(writeIndex + 1, (byte) (positive >> 8));
+            memory.put(writeIndex + 2, (byte) positive);
+        }
+        else if (positive <= 0xffffff)
+        {
+            newWriteIndex = writeIndex + 4;
+            ensureCapacity(newWriteIndex);
+            memory.put(writeIndex, (byte) 254);
+            memory.put(writeIndex + 1, (byte) (positive >> 16));
+            memory.put(writeIndex + 2, (byte) (positive >> 8));
+            memory.put(writeIndex + 3, (byte) positive);
+        }
+        else
+        {
+            newWriteIndex = writeIndex + 5;
+            ensureCapacity(newWriteIndex);
+            memory.put(writeIndex, (byte) 255);
+            memory.put(writeIndex + 1, (byte) (positive >> 24));
+            memory.put(writeIndex + 2, (byte) (positive >> 16));
+            memory.put(writeIndex + 3, (byte) (positive >> 8));
+            memory.put(writeIndex + 4, (byte) positive);
+        }
+        writeIndex = newWriteIndex;
+    }
+    
     @Override
     public int readLength()
+    {
+        changeToReadState();
+        int length = memory.get(readIndex++) & 0xff;
+        if (length <= 251)
+        {
+            return length;
+        }
+        else if (length == 252)
+        {
+            length = memory.get(readIndex++) & 0xff;
+            return length;
+        }
+        else if (length == 253)
+        {
+            length = (memory.get(readIndex++) & 0xff) << 8;
+            length |= memory.get(readIndex++) & 0xff;
+            return length;
+        }
+        else if (length == 254)
+        {
+            length = (memory.get(readIndex++) & 0xff) << 16;
+            length |= (memory.get(readIndex++) & 0xff) << 8;
+            length |= memory.get(readIndex++) & 0xff;
+            return length;
+        }
+        else if (length == 255)
+        {
+            length = (memory.get(readIndex++) & 0xff) << 24;
+            length |= (memory.get(readIndex++) & 0xff) << 16;
+            length |= (memory.get(readIndex++) & 0xff) << 8;
+            length |= memory.get(readIndex++) & 0xff;
+            return length;
+        }
+        else
+        {
+            throw new RuntimeException("wrong data");
+        }
+    }
+    
+    public int readPositive()
     {
         changeToReadState();
         int length = memory.get(readIndex++) & 0xff;

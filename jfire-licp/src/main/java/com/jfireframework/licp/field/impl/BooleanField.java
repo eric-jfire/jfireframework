@@ -13,42 +13,24 @@ public class BooleanField extends AbstractCacheField
     }
     
     @Override
-    protected void writeSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        buf.writeBoolean(unsafe.getBoolean(holder, offset));
-    }
-    
-    @Override
-    protected void writeOneDimensionMember(Object oneDimArray, ByteBuf<?> buf, Licp licp)
-    {
-        if (oneDimArray == null)
+        boolean value = unsafe.getBoolean(holder, offset);
+        if (value)
         {
-            buf.writeInt(Licp.NULL);
-            return;
+            buf.put((byte) 1);
         }
-        boolean[] array = (boolean[]) oneDimArray;
-        buf.writeInt(array.length + 1);
-        for (boolean each : array)
+        else
         {
-            buf.writeBoolean(each);
+            buf.put((byte) 0);
         }
     }
     
     @Override
-    protected void readSingle(Object holder, ByteBuf<?> buf, Licp licp)
+    public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        unsafe.putBoolean(holder, offset, buf.readBoolean());
-    }
-    
-    @Override
-    protected Object readOneDimArray(int length, ByteBuf<?> buf, Licp licp)
-    {
-        boolean[] array = new boolean[length];
-        for (int i = 0; i < array.length; i++)
-        {
-            array[i] = buf.readBoolean();
-        }
-        return array;
+        boolean value = buf.get() == 1 ? true : false;
+        unsafe.putBoolean(holder, offset, value);
     }
     
 }
