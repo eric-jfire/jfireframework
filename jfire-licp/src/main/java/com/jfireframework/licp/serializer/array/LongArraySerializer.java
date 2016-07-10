@@ -15,7 +15,7 @@ public class LongArraySerializer extends AbstractArraySerializer
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
         long[] array = (long[]) src;
-        buf.writeInt(array.length);
+        buf.writePositive(array.length);
         for (long each : array)
         {
             buf.writeLong(each);
@@ -25,7 +25,7 @@ public class LongArraySerializer extends AbstractArraySerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        int length = buf.readInt();
+        int length = buf.readPositive();
         long[] array = new long[length];
         licp.putObject(array);
         for (int i = 0; i < length; i++)

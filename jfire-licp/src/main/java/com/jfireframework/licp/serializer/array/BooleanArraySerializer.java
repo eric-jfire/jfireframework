@@ -15,7 +15,7 @@ public class BooleanArraySerializer extends AbstractArraySerializer
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
         boolean[] array = (boolean[]) src;
-        buf.writeInt(array.length);
+        buf.writePositive(array.length);
         for (boolean each : array)
         {
             buf.writeBoolean(each);
@@ -25,7 +25,7 @@ public class BooleanArraySerializer extends AbstractArraySerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        int length = buf.readInt();
+        int length = buf.readPositive();
         boolean[] array = new boolean[length];
         licp.putObject(array);
         for (int i = 0; i < length; i++)

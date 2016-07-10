@@ -15,7 +15,7 @@ public class WDoubleArraySerializer extends AbstractArraySerializer
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
         Double[] array = (Double[]) src;
-        buf.writeInt(array.length);
+        buf.writePositive(array.length);
         for (Double each : array)
         {
             if (each == null)
@@ -33,7 +33,7 @@ public class WDoubleArraySerializer extends AbstractArraySerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        int length = buf.readInt();
+        int length = buf.readPositive();
         Double[] array = new Double[length];
         licp.putObject(array);
         for (int i = 0; i < length; i++)

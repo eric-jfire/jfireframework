@@ -15,7 +15,7 @@ public class WFloatArraySerializer extends AbstractArraySerializer
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
         Float[] array = (Float[]) src;
-        buf.writeInt(array.length);
+        buf.writePositive(array.length);
         for (Float each : array)
         {
             if (each == null)
@@ -33,7 +33,7 @@ public class WFloatArraySerializer extends AbstractArraySerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        int length = buf.readInt();
+        int length = buf.readPositive();
         Float[] array = new Float[length];
         licp.putObject(array);
         for (int i = 0; i < length; i++)

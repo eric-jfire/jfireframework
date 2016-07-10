@@ -883,6 +883,20 @@ public abstract class ByteBuf<T>
      */
     public abstract void writeLength(int length);
     
+    /**
+     * 写入一个0或者正数
+     * 
+     * @param positive
+     */
+    public abstract void writePositive(int positive);
+    
+    /**
+     * 读取一个0或者正数
+     * 
+     * @return
+     */
+    public abstract int readPositive();
+    
     public abstract int readLength();
     
     public boolean isTraceFlag()

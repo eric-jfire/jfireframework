@@ -243,4 +243,16 @@ public class CompositeByteBuf extends ByteBuf<Void>
         throw unsupport;
     }
     
+    @Override
+    public void writePositive(int positive)
+    {
+        throw unsupport;
+    }
+    
+    @Override
+    public int readPositive()
+    {
+        throw unsupport;
+    }
+    
 }

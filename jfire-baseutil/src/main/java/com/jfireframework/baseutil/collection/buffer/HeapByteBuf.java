@@ -345,8 +345,101 @@ public class HeapByteBuf extends ByteBuf<byte[]>
         }
     }
     
+    public void writePositive(int positive)
+    {
+        if (positive < 0)
+        {
+            throw new UnsupportedOperationException();
+        }
+        if (positive <= 251)
+        {
+            int newWriteIndex = writeIndex + 1;
+            ensureCapacity(newWriteIndex);
+            memory[writeIndex] = (byte) positive;
+            writeIndex = newWriteIndex;
+        }
+        else if (positive <= 255)
+        {
+            int newWriteIndex = writeIndex + 2;
+            ensureCapacity(newWriteIndex);
+            memory[writeIndex] = (byte) 252;
+            memory[writeIndex + 1] = (byte) positive;
+            writeIndex = newWriteIndex;
+        }
+        else if (positive <= 0xffff)
+        {
+            int newWriteIndex = writeIndex + 3;
+            ensureCapacity(newWriteIndex);
+            memory[writeIndex] = (byte) 253;
+            memory[writeIndex + 1] = (byte) (positive >>> 8);
+            memory[writeIndex + 2] = (byte) positive;
+            writeIndex = newWriteIndex;
+        }
+        
+        else if (positive <= 0xffffff)
+        {
+            int newWriteIndex = writeIndex + 4;
+            ensureCapacity(newWriteIndex);
+            memory[writeIndex] = (byte) 254;
+            memory[writeIndex + 1] = (byte) (positive >>> 16);
+            memory[writeIndex + 2] = (byte) (positive >>> 8);
+            memory[writeIndex + 3] = (byte) positive;
+            writeIndex = newWriteIndex;
+        }
+        else
+        {
+            int newWriteIndex = writeIndex + 5;
+            ensureCapacity(newWriteIndex);
+            memory[writeIndex] = (byte) 255;
+            memory[writeIndex + 1] = (byte) (positive >>> 24);
+            memory[writeIndex + 2] = (byte) (positive >>> 16);
+            memory[writeIndex + 3] = (byte) (positive >>> 8);
+            memory[writeIndex + 4] = (byte) positive;
+            writeIndex = newWriteIndex;
+        }
+    }
+    
     @Override
     public int readLength()
+    {
+        int length = memory[readIndex++] & 0xff;
+        if (length <= 251)
+        {
+            return length;
+        }
+        else if (length == 252)
+        {
+            length = memory[readIndex++] & 0xff;
+            return length;
+        }
+        else if (length == 253)
+        {
+            length = (memory[readIndex++] & 0xff) << 8;
+            length |= memory[readIndex++] & 0xff;
+            return length;
+        }
+        else if (length == 254)
+        {
+            length = (memory[readIndex++] & 0xff) << 16;
+            length |= (memory[readIndex++] & 0xff) << 8;
+            length |= memory[readIndex++] & 0xff;
+            return length;
+        }
+        else if (length == 255)
+        {
+            length = (memory[readIndex++] & 0xff) << 24;
+            length |= (memory[readIndex++] & 0xff) << 16;
+            length |= (memory[readIndex++] & 0xff) << 8;
+            length |= memory[readIndex++] & 0xff;
+            return length;
+        }
+        else
+        {
+            throw new RuntimeException("wrong data");
+        }
+    }
+    
+    public int readPositive()
     {
         int length = memory[readIndex++] & 0xff;
         if (length <= 251)

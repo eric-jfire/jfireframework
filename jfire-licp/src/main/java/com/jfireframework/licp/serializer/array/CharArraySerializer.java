@@ -15,7 +15,7 @@ public class CharArraySerializer extends AbstractArraySerializer
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
         char[] array = (char[]) src;
-        buf.writeInt(array.length);
+        buf.writePositive(array.length);
         for (char each : array)
         {
             buf.writeChar(each);
@@ -25,7 +25,7 @@ public class CharArraySerializer extends AbstractArraySerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        int length = buf.readInt();
+        int length = buf.readPositive();
         char[] array = new char[length];
         licp.putObject(array);
         for (int i = 0; i < length; i++)

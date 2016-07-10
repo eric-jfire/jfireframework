@@ -15,18 +15,21 @@ public class StringArraySerializer extends AbstractArraySerializer
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
         String[] array = (String[]) src;
-        buf.writeInt(array.length);
+        buf.writePositive(array.length);
         for (String each : array)
         {
             if (each == null)
             {
-                buf.writeInt(0);
+                buf.writePositive(0);
             }
             else
             {
-                byte[] bytes = each.getBytes(CHARSET);
-                buf.writeInt(((bytes.length << 1) | 1));
-                buf.put(bytes);
+                int length = each.length();
+                buf.writePositive((length << 1 | 1));
+                for (int i = 0; i < length; i++)
+                {
+                    buf.writeChar(each.charAt(i));
+                }
             }
         }
     }
@@ -34,12 +37,12 @@ public class StringArraySerializer extends AbstractArraySerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        int length = buf.readInt();
+        int length = buf.readPositive();
         String[] array = new String[length];
         licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
-            int strLength = buf.readInt();
+            int strLength = buf.readPositive();
             if (strLength == 0)
             {
                 array[i] = null;
@@ -53,9 +56,12 @@ public class StringArraySerializer extends AbstractArraySerializer
                 }
                 else
                 {
-                    byte[] src = new byte[strLength];
-                    buf.get(src, strLength);
-                    array[i] = new String(src, CHARSET);
+                    char[] src = new char[strLength];
+                    for (int j = 0; j < strLength; j++)
+                    {
+                        src[j] = buf.readChar();
+                    }
+                    array[i] = new String(src);
                 }
             }
         }

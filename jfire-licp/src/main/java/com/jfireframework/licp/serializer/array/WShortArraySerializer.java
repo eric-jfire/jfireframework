@@ -15,7 +15,7 @@ public class WShortArraySerializer extends AbstractArraySerializer
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
         Short[] array = (Short[]) src;
-        buf.writeInt(array.length);
+        buf.writePositive(array.length);
         for (Short each : array)
         {
             if (each == null)
@@ -33,7 +33,7 @@ public class WShortArraySerializer extends AbstractArraySerializer
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        int length = buf.readInt();
+        int length = buf.readPositive();
         Short[] array = new Short[length];
         licp.putObject(array);
         for (int i = 0; i < length; i++)

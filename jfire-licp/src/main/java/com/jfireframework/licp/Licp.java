@@ -14,6 +14,10 @@ public class Licp
     public static final int                                  NULL         = 0;
     public static final int                                  EXIST        = 1;
     private static final ConcurrentHashMap<String, Class<?>> nameClassMap = new ConcurrentHashMap<String, Class<?>>();
+    /**
+     * 版本号标识，用来防止不同的版本互相转化导致的异常
+     */
+    private static final byte                                version      = 0;
     
     public Licp()
     {
@@ -31,6 +35,7 @@ public class Licp
     {
         collect.clear();
         register.clear();
+        buf.put(version);
         _serialize(src, buf);
     }
     
@@ -52,7 +57,7 @@ public class Licp
     {
         if (src == null)
         {
-            buf.writeInt(0);
+            buf.writePositive(0);
             return;
         }
         int id = collect.put(src);
@@ -60,7 +65,7 @@ public class Licp
         {
             id = ((id << 2) | 1);
             // 已经在收集器中的对象不需要序列化，只要写入序号即可
-            buf.writeInt(id);
+            buf.writePositive(id);
             return;
         }
         Class<?> type = src.getClass();
@@ -69,7 +74,7 @@ public class Licp
         {
             String name = type.getName();
             int length = name.length();
-            buf.writeInt(((length << 2) | 2));
+            buf.writePositive(((length << 2) | 2));
             for (int i = 0; i < length; i++)
             {
                 buf.writeChar(name.charAt(i));
@@ -79,7 +84,7 @@ public class Licp
         {
             classNo <<= 2;
             classNo |= 3;
-            buf.writeInt(classNo);
+            buf.writePositive(classNo);
         }
         SerializerFactory.get(type).serialize(src, buf, this);
     }
@@ -88,7 +93,7 @@ public class Licp
     {
         if (src == null)
         {
-            buf.writeInt(0);
+            buf.writePositive(0);
             return;
         }
         int id = collect.put(src);
@@ -96,10 +101,10 @@ public class Licp
         {
             id = ((id << 2) | 1);
             // 已经在收集器中的对象不需要序列化，只要写入序号即可
-            buf.writeInt(id);
+            buf.writePositive(id);
             return;
         }
-        buf.writeInt(2);
+        buf.writePositive(2);
         serializer.serialize(src, buf, this);
     }
     
@@ -108,6 +113,10 @@ public class Licp
     {
         collect.clear();
         register.clear();
+        if (buf.get() != Licp.version)
+        {
+            throw new UnSupportException("序号逆序列化的字节的版本号不对，请检查序列化和反序列化的licp是否同一个版本");
+        }
         return (T) _deserialize(buf);
     }
     
@@ -115,12 +124,16 @@ public class Licp
     {
         collect.clear();
         register.clear();
+        if (buf.get() != Licp.version)
+        {
+            throw new UnSupportException("序号逆序列化的字节的版本号不对，请检查序列化和反序列化的licp是否同一个版本");
+        }
         return _deserialize(buf);
     }
     
     public Object _deserialize(ByteBuf<?> buf)
     {
-        int result = buf.readInt();
+        int result = buf.readPositive();
         if (result == 0)
         {
             return null;
@@ -157,7 +170,7 @@ public class Licp
     
     public Object _deserialize(ByteBuf<?> buf, LicpSerializer serializer)
     {
-        int result = buf.readInt();
+        int result = buf.readPositive();
         if (result == 0)
         {
             return null;
