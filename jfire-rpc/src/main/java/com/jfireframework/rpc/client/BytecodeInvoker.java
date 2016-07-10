@@ -6,7 +6,6 @@ import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.fose.Fose;
 import com.jfireframework.jnet.client.AioClient;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.channel.JnetChannel;
@@ -15,6 +14,7 @@ import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
 import com.jfireframework.jnet.common.result.InternalTask;
+import com.jfireframework.licp.Licp;
 
 public class BytecodeInvoker
 {
@@ -104,11 +104,11 @@ public class BytecodeInvoker
 
 class ReadHandler implements DataHandler
 {
-    protected ThreadLocal<Fose> lbseLocal = new ThreadLocal<Fose>() {
+    protected ThreadLocal<Licp> lbseLocal = new ThreadLocal<Licp>() {
         @Override
-        protected Fose initialValue()
+        protected Licp initialValue()
         {
-            return new Fose();
+            return new Licp();
         }
     };
     
@@ -137,11 +137,11 @@ class WriteHandler implements DataHandler
         this.proxyName = proxyName;
     }
     
-    protected ThreadLocal<Fose> lbseLocal = new ThreadLocal<Fose>() {
+    protected ThreadLocal<Licp> lbseLocal = new ThreadLocal<Licp>() {
         @Override
-        protected Fose initialValue()
+        protected Licp initialValue()
         {
-            return new Fose();
+            return new Licp();
         }
     };
     
@@ -152,14 +152,24 @@ class WriteHandler implements DataHandler
      * @param method
      * @param args
      */
-    protected void prepareData(Fose lbse, String methodName, Object[] args, ByteBuf<?> buf)
+    protected void prepareData(Licp lbse, String methodName, Object[] args, ByteBuf<?> buf)
     {
-        buf.writeString(proxyName);
+        int length = proxyName.length();
+        buf.writePositive(length);
+        for (int i = 0; i < length; i++)
+        {
+            buf.writeVarChar(proxyName.charAt(i));
+        }
         // 写入方法名的长度
-        buf.writeString(methodName);
+        length = methodName.length();
+        buf.writePositive(length);
+        for (int i = 0; i < length; i++)
+        {
+            buf.writeVarChar(methodName.charAt(i));
+        }
         int argsNum = args == null ? 0 : args.length;
         // 写入参数个数
-        buf.writeInt(argsNum);
+        buf.writePositive(argsNum);
         // 逐个写入参数
         for (int i = 0; i < argsNum; i++)
         {
@@ -173,10 +183,10 @@ class WriteHandler implements DataHandler
         Object[] datas = (Object[]) data;
         String methodName = (String) datas[0];
         Object[] args = (Object[]) datas[1];
-        Fose fose = lbseLocal.get();
+        Licp licp = lbseLocal.get();
         ByteBuf<?> buf = DirectByteBufPool.getInstance().get(100);
         buf.addWriteIndex(4);
-        prepareData(fose, methodName, args, buf);
+        prepareData(licp, methodName, args, buf);
         return buf;
     }
     

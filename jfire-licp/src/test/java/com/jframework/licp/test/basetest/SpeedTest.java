@@ -11,7 +11,6 @@ import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.fose.Fose;
 import com.jfireframework.licp.Licp;
 import com.jframework.licp.test.basetest.data.Device;
 import com.jframework.licp.test.basetest.data.Person;
@@ -53,15 +52,7 @@ public class SpeedTest
         tPerson.setLeader(person);
         Device device = Builder();
         Licp context = new Licp();
-        Fose fose = new Fose();
         long t0 = System.currentTimeMillis();
-        for (int i = 0; i < testSum; i++)
-        {
-            fose.serialize(device, buf.clear());
-        }
-        long foseCost = System.currentTimeMillis() - t0;
-        logger.info("fose序列化耗时：{}", foseCost);
-        t0 = System.currentTimeMillis();
         for (int i = 0; i < testSum; i++)
         {
             context.serialize(device, buf.clear());
@@ -82,7 +73,7 @@ public class SpeedTest
         logger.info("kryo序列化耗时{}", kryoCost);
         logger.info("licp比kryo快{},性能比是{}", (kryoCost - lbseCost), ((float) lbseCost / kryoCost));
         t0 = System.currentTimeMillis();
-       
+        
     }
     
     @Test

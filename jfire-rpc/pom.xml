@@ -33,7 +33,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.jfireframework</groupId>
-			<artifactId>jfire-fose</artifactId>
+			<artifactId>jfire-licp</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
