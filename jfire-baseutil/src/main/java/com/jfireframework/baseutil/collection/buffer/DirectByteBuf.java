@@ -672,24 +672,28 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
     @Override
     public ByteBuf<ByteBuffer> writeVarChar(char c)
     {
-        int positive = c;
         changeToWriteState();
+        ensureCapacity(writeIndex + 3);
+        _writeVarChar(c);
+        return this;
+    }
+    
+    private ByteBuf<ByteBuffer> _writeVarChar(char c)
+    {
+        int positive = c;
         if (positive <= 251)
         {
-            ensureCapacity(writeIndex + 1);
             memory.put(writeIndex, (byte) positive);
             writeIndex += 1;
         }
         else if (positive <= 255)
         {
-            ensureCapacity(writeIndex + 2);
             memory.put(writeIndex, (byte) 252);
             memory.put(writeIndex + 1, (byte) positive);
             writeIndex += 2;
         }
         else if (positive <= 0xffff)
         {
-            ensureCapacity(writeIndex + 3);
             memory.put(writeIndex, (byte) 253);
             memory.put(writeIndex + 1, (byte) (positive >>> 8));
             memory.put(writeIndex + 2, (byte) positive);
@@ -722,5 +726,39 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
         {
             throw new UnSupportException("not here");
         }
+    }
+    
+    @Override
+    public ByteBuf<ByteBuffer> writeString(String value)
+    {
+        if (value == null)
+        {
+            throw new NullPointerException();
+        }
+        int length = value.length();
+        writePositive(length);
+        changeToWriteState();
+        ensureCapacity(writeIndex + length * 3);
+        for (int i = 0; i < length; i++)
+        {
+            _writeVarChar(value.charAt(i));
+        }
+        return this;
+    }
+    
+    @Override
+    public String readString()
+    {
+        int length = readPositive();
+        if (length == 0)
+        {
+            return "";
+        }
+        char[] src = new char[length];
+        for (int i = 0; i < length; i++)
+        {
+            src[i] = readVarChar();
+        }
+        return new String(src);
     }
 }

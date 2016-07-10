@@ -28,7 +28,7 @@ public class StringArraySerializer extends AbstractArraySerializer
                 buf.writePositive((length << 1 | 1));
                 for (int i = 0; i < length; i++)
                 {
-                    buf.writeChar(each.charAt(i));
+                    buf.writeVarChar(each.charAt(i));
                 }
             }
         }
@@ -59,7 +59,7 @@ public class StringArraySerializer extends AbstractArraySerializer
                     char[] src = new char[strLength];
                     for (int j = 0; j < strLength; j++)
                     {
-                        src[j] = buf.readChar();
+                        src[j] = buf.readVarChar();
                     }
                     array[i] = new String(src);
                 }

@@ -26,7 +26,7 @@ public class StringField extends AbstractCacheField
             buf.writePositive((length << 1) | 1);
             for (int i = 0; i < length; i++)
             {
-                buf.writeChar(value.charAt(i));
+                buf.writeVarChar(value.charAt(i));
             }
         }
     }
@@ -51,7 +51,7 @@ public class StringField extends AbstractCacheField
                 char[] src = new char[length];
                 for (int i = 0; i < length; i++)
                 {
-                    src[i] = buf.readChar();
+                    src[i] = buf.readVarChar();
                 }
                 unsafe.putObject(holder, offset, new String(src));
             }

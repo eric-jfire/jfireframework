@@ -11,42 +11,46 @@ public class StringSerializer implements LicpSerializer
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
         String value = (String) src;
-        int length = value.length();
-        if (length == 0)
-        {
-            buf.writePositive(0);
-        }
-        else
-        {
-            buf.writePositive(length);
-            for (int i = 0; i < length; i++)
-            {
-                buf.writeChar(value.charAt(i));
-            }
-        }
+//        int length = value.length();
+//        if (length == 0)
+//        {
+//            buf.writePositive(0);
+//        }
+//        else
+//        {
+//            buf.writePositive(length);
+//            for (int i = 0; i < length; i++)
+//            {
+//                buf.writeChar(value.charAt(i));
+//            }
+//        }
+        buf.writeString(value);
     }
     
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        int length = buf.readPositive();
-        if (length == 0)
-        {
-            String result = "";
-            licp.putObject(result);
-            return result;
-        }
-        else
-        {
-            char[] src = new char[length];
-            for (int i = 0; i < length; i++)
-            {
-                src[i] = buf.readChar();
-            }
-            String result = new String(src);
-            licp.putObject(result);
-            return result;
-        }
+        String value = buf.readString();
+        licp.putObject(value);
+        return value;
+//        int length = buf.readPositive();
+//        if (length == 0)
+//        {
+//            String result = "";
+//            licp.putObject(result);
+//            return result;
+//        }
+//        else
+//        {
+//            char[] src = new char[length];
+//            for (int i = 0; i < length; i++)
+//            {
+//                src[i] = buf.readChar();
+//            }
+//            String result = new String(src);
+//            licp.putObject(result);
+//            return result;
+//        }
     }
     
 }

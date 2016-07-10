@@ -279,4 +279,16 @@ public class CompositeByteBuf extends ByteBuf<Void>
         throw unsupport;
     }
     
+    @Override
+    public ByteBuf<Void> writeString(String value)
+    {
+        throw unsupport;
+    }
+    
+    @Override
+    public String readString()
+    {
+        throw unsupport;
+    }
+    
 }

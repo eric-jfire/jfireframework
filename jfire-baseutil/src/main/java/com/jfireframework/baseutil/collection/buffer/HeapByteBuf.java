@@ -629,23 +629,26 @@ public class HeapByteBuf extends ByteBuf<byte[]>
     @Override
     public HeapByteBuf writeVarChar(char c)
     {
+        ensureCapacity(writeIndex + 3);
+        return _writeVarChar(c);
+    }
+    
+    private HeapByteBuf _writeVarChar(char c)
+    {
         int positive = c;
         if (positive <= 251)
         {
-            ensureCapacity(writeIndex + 1);
             memory[writeIndex] = (byte) positive;
             writeIndex += 1;
         }
         else if (positive <= 255)
         {
-            ensureCapacity(writeIndex + 2);
             memory[writeIndex] = (byte) 252;
             memory[writeIndex + 1] = (byte) positive;
             writeIndex += 2;
         }
         else if (positive <= 0xffff)
         {
-            ensureCapacity(writeIndex + 3);
             memory[writeIndex] = (byte) 253;
             memory[writeIndex + 1] = (byte) (positive >>> 8);
             memory[writeIndex + 2] = (byte) positive;
@@ -677,5 +680,39 @@ public class HeapByteBuf extends ByteBuf<byte[]>
         {
             throw new UnSupportException("not here");
         }
+    }
+    
+    @Override
+    public HeapByteBuf writeString(String value)
+    {
+        if (value == null)
+        {
+            throw new NullPointerException();
+        }
+        int length = value.length();
+        writePositive(length);
+        ensureCapacity(writeIndex + length * 3);
+        for (int i = 0; i < length; i++)
+        {
+            _writeVarChar(value.charAt(i));
+        }
+        return this;
+        
+    }
+    
+    @Override
+    public String readString()
+    {
+        int length = readPositive();
+        if (length == 0)
+        {
+            return "";
+        }
+        char[] src = new char[length];
+        for (int i = 0; i < length; i++)
+        {
+            src[i] = readVarChar();
+        }
+        return new String(src);
     }
 }

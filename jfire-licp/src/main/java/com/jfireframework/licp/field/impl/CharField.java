@@ -16,13 +16,13 @@ public class CharField extends AbstractCacheField
     public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
         char c = unsafe.getChar(holder, offset);
-        buf.writeChar(c);
+        buf.writeVarChar(c);
     }
     
     @Override
     public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        unsafe.putChar(holder, offset, buf.readChar());
+        unsafe.putChar(holder, offset, buf.readVarChar());
     }
     
 }

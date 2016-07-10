@@ -77,7 +77,7 @@ public class Licp
             buf.writePositive(((length << 2) | 2));
             for (int i = 0; i < length; i++)
             {
-                buf.writeChar(name.charAt(i));
+                buf.writeVarChar(name.charAt(i));
             }
         }
         else
@@ -150,7 +150,7 @@ public class Licp
             char[] src = new char[result];
             for (int i = 0; i < src.length; i++)
             {
-                src[i] = buf.readChar();
+                src[i] = buf.readVarChar();
             }
             Class<?> type = loadClass(new String(src));
             register.registerTemporary(type);

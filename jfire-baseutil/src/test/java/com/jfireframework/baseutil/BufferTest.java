@@ -5,6 +5,7 @@ import org.junit.Test;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBufPool;
+import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBufPool;
 import com.jfireframework.baseutil.time.Timewatch;
 
@@ -15,7 +16,7 @@ public class BufferTest
     @Test
     public void test()
     {
-        buf = HeapByteBufPool.getInstance().get(100);
+        buf = DirectByteBuf.allocate(100);
         buf.writeFloat(5.236f);
         buf.put((byte) 0x12);
         buf.writeDouble(5.236659);
@@ -23,6 +24,7 @@ public class BufferTest
         buf.writeInt(5);
         buf.writeBoolean(true);
         buf.writeShort((short) 2312);
+        buf.writeString("abc");
         assertEquals(5.236f, buf.readFloat(), 0.0001);
         assertEquals(0x12, buf.get());
         assertEquals(5.236659, buf.readDouble(), 0.000001);
@@ -30,6 +32,7 @@ public class BufferTest
         assertEquals(5, buf.readInt());
         assertEquals(true, buf.readBoolean());
         assertEquals((short) 2312, buf.readShort());
+        assertEquals("abc", buf.readString());
         // assertEquals(56, buf.readInt(40));
         buf = DirectByteBufPool.getInstance().get(100);
         buf.writeFloat(5.236f);

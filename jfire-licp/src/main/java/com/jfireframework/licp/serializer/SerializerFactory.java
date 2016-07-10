@@ -65,6 +65,11 @@ public class SerializerFactory
         serializerMap.put(java.sql.Date.class, new DateSerializer(true));
     }
     
+    public static void register(Class<?> type, LicpSerializer serializer)
+    {
+        serializerMap.put(type, serializer);
+    }
+    
     public static LicpSerializer get(Class<?> type)
     {
         LicpSerializer serializer = serializerMap.get(type);

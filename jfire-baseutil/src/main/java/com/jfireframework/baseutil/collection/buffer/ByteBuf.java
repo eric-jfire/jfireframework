@@ -811,4 +811,8 @@ public abstract class ByteBuf<T>
     public abstract ByteBuf<T> writeVarChar(char c);
     
     public abstract char readVarChar();
+    
+    public abstract ByteBuf<T> writeString(String value);
+    
+    public abstract String readString();
 }
