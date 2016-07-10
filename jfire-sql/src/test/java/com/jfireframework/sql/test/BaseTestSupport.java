@@ -43,11 +43,11 @@ public abstract class BaseTestSupport
     
     public BaseTestSupport()
     {
-        testUnit.clearSchemaData();
-        testUnit.importExcelFile();
+//        testUnit.clearSchemaData();
+//        testUnit.importExcelFile();
     }
     
-    @Before
+//    @Before
     public void before()
     {
         testUnit.clearSchemaData();
