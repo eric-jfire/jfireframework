@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Queue;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import sun.misc.Unsafe;
@@ -527,5 +528,249 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
         DirectByteBuf buf = DirectByteBufPool.getInstance().get(size);
         buf.setTraceFlag(true);
         return buf;
+    }
+    
+    @Override
+    public DirectByteBuf writeVarint(int i)
+    {
+        if (i >= -120 && i <= 127)
+        {
+            int newCount = writeIndex + 1;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) i);
+            writeIndex = newCount;
+            return this;
+        }
+        int head = -120;
+        if (i < 0)
+        {
+            i = ~i;
+            head = -124;
+        }
+        if (i <= 0x000000ff)
+        {
+            int newCount = writeIndex + 2;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) (head - 1)).put((byte) i);
+            writeIndex = newCount;
+        }
+        else if (i <= 0x0000ffff)
+        {
+            int newCount = writeIndex + 3;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) (head - 2)).put((byte) (i >>> 8)).put((byte) i);
+            writeIndex = newCount;
+        }
+        else if (i <= 0x00ffffff)
+        {
+            int newCount = writeIndex + 4;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) (head - 3)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
+            writeIndex = newCount;
+        }
+        else
+        {
+            int newCount = writeIndex + 5;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) (head - 4)).put((byte) (i >>> 24)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
+            writeIndex = newCount;
+        }
+        return this;
+    }
+    
+    @Override
+    public int readVarint()
+    {
+        changeToReadState();
+        byte b = memory.get();
+        if (b >= -120 && b <= 127)
+        {
+            readIndex += 1;
+            return b;
+        }
+        switch (b)
+        {
+            case -121:
+                readIndex += 2;
+                return memory.get() & 0xff;
+            case -122:
+                readIndex += 3;
+                return ((memory.get() & 0xff) << 8) | (memory.get() & 0xff);
+            case -123:
+                readIndex += 4;
+                return ((memory.get() & 0xff) << 16) | ((memory.get() & 0xff) << 8) | (memory.get() & 0xff);
+            case -124:
+                readIndex += 5;
+                return ((memory.get() & 0xff) << 24) | ((memory.get() & 0xff) << 16) | ((memory.get() & 0xff) << 8) | (memory.get() & 0xff);
+            case -125:
+                readIndex += 2;
+                return ~(memory.get() & 0xff);
+            case -126:
+                readIndex += 3;
+                return ~(((memory.get() & 0xff) << 8) | (memory.get() & 0xff));
+            case -127:
+                readIndex += 4;
+                return ~(((memory.get() & 0xff) << 16) | ((memory.get() & 0xff) << 8) | (memory.get() & 0xff));
+            case -128:
+                readIndex += 5;
+                return ~(((memory.get() & 0xff) << 24) | ((memory.get() & 0xff) << 16) | ((memory.get() & 0xff) << 8) | (memory.get() & 0xff));
+            default:
+                throw new UnSupportException("not here");
+        }
+    }
+    
+    @Override
+    public DirectByteBuf writeVarLong(long i)
+    {
+        if (i >= -112 && i <= 127)
+        {
+            int newCount = writeIndex + 1;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) i);
+            writeIndex = newCount;
+            return this;
+        }
+        int head = -112;
+        if (i < 0)
+        {
+            i = ~i;
+            head = -120;
+        }
+        if (i <= 0x000000ff)
+        {
+            int newCount = writeIndex + 2;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) (head - 1)).put((byte) i);
+            writeIndex = newCount;
+        }
+        else if (i <= 0x0000ffff)
+        {
+            int newCount = writeIndex + 3;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) (head - 2)).put((byte) (i >>> 8)).put((byte) i);
+            writeIndex = newCount;
+        }
+        else if (i <= 0x00ffffff)
+        {
+            int newCount = writeIndex + 4;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) (head - 3)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
+            writeIndex = newCount;
+        }
+        else if (i <= 0x00000000ffffffffl)
+        {
+            int newCount = writeIndex + 5;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) (head - 4)).put((byte) (i >>> 24)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
+            writeIndex = newCount;
+        }
+        else if (i <= 0x000000ffffffffffl)
+        {
+            int newCount = writeIndex + 6;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) (head - 5)).put((byte) (i >>> 32)).put((byte) (i >>> 24)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
+            writeIndex = newCount;
+        }
+        else if (i <= 0x0000ffffffffffffl)
+        {
+            int newCount = writeIndex + 7;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) (head - 6)).put((byte) (i >>> 40)).put((byte) (i >>> 32)).put((byte) (i >>> 24)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
+            writeIndex = newCount;
+        }
+        else if (i <= 0x00ffffffffffffffl)
+        {
+            int newCount = writeIndex + 8;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) (head - 7)).put((byte) (i >>> 48)).put((byte) (i >>> 40)).put((byte) (i >>> 32)).put((byte) (i >>> 24)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
+            writeIndex = newCount;
+        }
+        else
+        {
+            int newCount = writeIndex + 9;
+            ensureCapacity(newCount);
+            changeToWriteState();
+            memory.put((byte) (head - 8)).put((byte) (i >>> 56)).put((byte) (i >>> 48)).put((byte) (i >>> 40)).put((byte) (i >>> 32)).put((byte) (i >>> 24)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
+            writeIndex = newCount;
+        }
+        return this;
+    }
+    
+    @Override
+    public long readVarLong()
+    {
+        changeToReadState();
+        byte b = memory.get();
+        if (b >= -112 && b <= 127)
+        {
+            readIndex += 1;
+            return b;
+        }
+        switch (b)
+        {
+            case -113:
+                readIndex += 2;
+                return memory.get() & 0xffl;
+            case -114:
+                readIndex += 3;
+                return ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl);
+            case -115:
+                readIndex += 4;
+                return ((memory.get() & 0xffl) << 16) | ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl);
+            case -116:
+                readIndex += 5;
+                return ((memory.get() & 0xffl) << 24) | ((memory.get() & 0xffl) << 16) | ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl);
+            case -117:
+                readIndex += 6;
+                return ((memory.get() & 0xffl) << 32) | ((memory.get() & 0xffl) << 24) | ((memory.get() & 0xffl) << 16) | ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl);
+            case -118:
+                readIndex += 7;
+                return ((memory.get() & 0xffl) << 40) | ((memory.get() & 0xffl) << 32) | ((memory.get() & 0xffl) << 24) | ((memory.get() & 0xffl) << 16) | ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl);
+            case -119:
+                readIndex += 8;
+                return ((memory.get() & 0xffl) << 48) | ((memory.get() & 0xffl) << 40) | ((memory.get() & 0xffl) << 32) | ((memory.get() & 0xffl) << 24) | ((memory.get() & 0xffl) << 16) | ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl);
+            case -120:
+                readIndex += 9;
+                return ((memory.get() & 0xffl) << 56) | ((memory.get() & 0xffl) << 48) | ((memory.get() & 0xffl) << 40) | ((memory.get() & 0xffl) << 32) | ((memory.get() & 0xffl) << 24) | ((memory.get() & 0xffl) << 16) | ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl);
+            case -121:
+                readIndex += 2;
+                return ~(memory.get() & 0xffl);
+            case -122:
+                readIndex += 3;
+                return ~(((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl));
+            case -123:
+                readIndex += 4;
+                return ~(((memory.get() & 0xffl) << 16) | ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl));
+            case -124:
+                readIndex += 5;
+                return ~(((memory.get() & 0xffl) << 24) | ((memory.get() & 0xffl) << 16) | ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl));
+            case -125:
+                readIndex += 6;
+                return ~(((memory.get() & 0xffl) << 32) | ((memory.get() & 0xffl) << 24) | ((memory.get() & 0xffl) << 16) | ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl));
+            case -126:
+                readIndex += 7;
+                return ~(((memory.get() & 0xffl) << 40) | ((memory.get() & 0xffl) << 32) | ((memory.get() & 0xffl) << 24) | ((memory.get() & 0xffl) << 16) | ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl));
+            case -127:
+                readIndex += 8;
+                return ~(((memory.get() & 0xffl) << 48) | ((memory.get() & 0xffl) << 40) | ((memory.get() & 0xffl) << 32) | ((memory.get() & 0xffl) << 24) | ((memory.get() & 0xffl) << 16) | ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl));
+            case -128:
+                readIndex += 9;
+                return ~(((memory.get() & 0xffl) << 56) | ((memory.get() & 0xffl) << 48) | ((memory.get() & 0xffl) << 40) | ((memory.get() & 0xffl) << 32) | ((memory.get() & 0xffl) << 24) | ((memory.get() & 0xffl) << 16) | ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl));
+            default:
+                throw new UnSupportException("not here");
+        }
     }
 }

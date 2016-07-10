@@ -255,4 +255,28 @@ public class CompositeByteBuf extends ByteBuf<Void>
         throw unsupport;
     }
     
+    @Override
+    public ByteBuf<Void> writeVarint(int i)
+    {
+        throw unsupport;
+    }
+    
+    @Override
+    public int readVarint()
+    {
+        throw unsupport;
+    }
+    
+    @Override
+    public ByteBuf<Void> writeVarLong(long l)
+    {
+        throw unsupport;
+    }
+    
+    @Override
+    public long readVarLong()
+    {
+        throw unsupport;
+    }
+    
 }

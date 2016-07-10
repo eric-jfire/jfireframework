@@ -57,6 +57,7 @@ public abstract class ByteBuf<T>
     public ByteBuf<T> addWriteIndex(int length)
     {
         writeIndex += length;
+        ensureCapacity(writeIndex);
         return this;
     }
     
@@ -909,4 +910,11 @@ public abstract class ByteBuf<T>
         this.traceFlag = traceFlag;
     }
     
+    public abstract ByteBuf<T> writeVarint(int i);
+    
+    public abstract int readVarint();
+    
+    public abstract ByteBuf<T> writeVarLong(long l);
+    
+    public abstract long readVarLong();
 }

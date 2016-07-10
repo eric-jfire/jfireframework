@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Queue;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.verify.Verify;
 
 public class HeapByteBuf extends ByteBuf<byte[]>
@@ -488,5 +489,251 @@ public class HeapByteBuf extends ByteBuf<byte[]>
         HeapByteBuf buf = HeapByteBufPool.getInstance().get(size);
         buf.setTraceFlag(true);
         return buf;
+    }
+    
+    @Override
+    public HeapByteBuf writeVarint(int i)
+    {
+        if (i >= -120 && i <= 127)
+        {
+            int newCount = writeIndex + 1;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) i;
+            writeIndex = newCount;
+            return this;
+        }
+        int head = -120;
+        if (i < 0)
+        {
+            i = ~i;
+            head = -124;
+        }
+        if (i <= 0x000000ff)
+        {
+            int newCount = writeIndex + 2;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) (head - 1);
+            memory[writeIndex + 1] = (byte) i;
+            writeIndex = newCount;
+        }
+        else if (i <= 0x0000ffff)
+        {
+            int newCount = writeIndex + 3;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) (head - 2);
+            memory[writeIndex + 1] = (byte) (i >>> 8);
+            memory[writeIndex + 2] = (byte) i;
+            writeIndex = newCount;
+        }
+        else if (i <= 0x00ffffff)
+        {
+            int newCount = writeIndex + 4;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) (head - 3);
+            memory[writeIndex + 1] = (byte) (i >>> 16);
+            memory[writeIndex + 2] = (byte) (i >>> 8);
+            memory[writeIndex + 3] = (byte) i;
+            writeIndex = newCount;
+        }
+        else
+        {
+            int newCount = writeIndex + 5;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) (head - 4);
+            memory[writeIndex + 1] = (byte) (i >>> 24);
+            memory[writeIndex + 2] = (byte) (i >>> 16);
+            memory[writeIndex + 3] = (byte) (i >>> 8);
+            memory[writeIndex + 4] = (byte) i;
+            writeIndex = newCount;
+        }
+        return this;
+    }
+    
+    @Override
+    public int readVarint()
+    {
+        byte b = memory[readIndex++];
+        if (b >= -120 && b <= 127)
+        {
+            return b;
+        }
+        switch (b)
+        {
+            case -121:
+                return memory[readIndex++] & 0xff;
+            case -122:
+                return ((memory[readIndex++] & 0xff) << 8) | (memory[readIndex++] & 0xff);
+            case -123:
+                return ((memory[readIndex++] & 0xff) << 16) | ((memory[readIndex++] & 0xff) << 8) | (memory[readIndex++] & 0xff);
+            case -124:
+                return ((memory[readIndex++] & 0xff) << 24) | ((memory[readIndex++] & 0xff) << 16) | ((memory[readIndex++] & 0xff) << 8) | (memory[readIndex++] & 0xff);
+            case -125:
+                return ~(memory[readIndex++] & 0xff);
+            case -126:
+                return ~(((memory[readIndex++] & 0xff) << 8) | (memory[readIndex++] & 0xff));
+            case -127:
+                return ~(((memory[readIndex++] & 0xff) << 16) | ((memory[readIndex++] & 0xff) << 8) | (memory[readIndex++] & 0xff));
+            case -128:
+                return ~(((memory[readIndex++] & 0xff) << 24) | ((memory[readIndex++] & 0xff) << 16) | ((memory[readIndex++] & 0xff) << 8) | (memory[readIndex++] & 0xff));
+            default:
+                throw new UnSupportException("not here");
+        }
+    }
+    
+    public HeapByteBuf writeVarLong(long i)
+    {
+        if (i >= -112 && i <= 127)
+        {
+            int newCount = writeIndex + 1;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) i;
+            writeIndex = newCount;
+            return this;
+        }
+        int head = -112;
+        if (i < 0)
+        {
+            i = ~i;
+            head = -120;
+        }
+        if (i <= 0x00000000000000ff)
+        {
+            int newCount = writeIndex + 2;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) (head - 1);
+            memory[writeIndex + 1] = (byte) i;
+            writeIndex = newCount;
+        }
+        else if (i <= 0x000000000000ffff)
+        {
+            int newCount = writeIndex + 3;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) (head - 2);
+            memory[writeIndex + 1] = (byte) (i >>> 8);
+            memory[writeIndex + 2] = (byte) i;
+            writeIndex = newCount;
+        }
+        else if (i <= 0x0000000000ffffff)
+        {
+            int newCount = writeIndex + 4;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) (head - 3);
+            memory[writeIndex + 1] = (byte) (i >>> 16);
+            memory[writeIndex + 2] = (byte) (i >>> 8);
+            memory[writeIndex + 3] = (byte) i;
+            writeIndex = newCount;
+        }
+        else if (i <= 0x00000000ffffffff)
+        {
+            int newCount = writeIndex + 5;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) (head - 4);
+            memory[writeIndex + 1] = (byte) (i >>> 24);
+            memory[writeIndex + 2] = (byte) (i >>> 16);
+            memory[writeIndex + 3] = (byte) (i >>> 8);
+            memory[writeIndex + 4] = (byte) i;
+            writeIndex = newCount;
+        }
+        else if (i <= 0x000000ffffffffffl)
+        {
+            int newCount = writeIndex + 6;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) (head - 5);
+            memory[writeIndex + 1] = (byte) (i >>> 32);
+            memory[writeIndex + 2] = (byte) (i >>> 24);
+            memory[writeIndex + 3] = (byte) (i >>> 16);
+            memory[writeIndex + 4] = (byte) (i >>> 8);
+            memory[writeIndex + 5] = (byte) i;
+            writeIndex = newCount;
+        }
+        else if (i <= 0x0000ffffffffffffl)
+        {
+            int newCount = writeIndex + 7;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) (head - 6);
+            memory[writeIndex + 1] = (byte) (i >>> 40);
+            memory[writeIndex + 2] = (byte) (i >>> 32);
+            memory[writeIndex + 3] = (byte) (i >>> 24);
+            memory[writeIndex + 4] = (byte) (i >>> 16);
+            memory[writeIndex + 5] = (byte) (i >>> 8);
+            memory[writeIndex + 6] = (byte) i;
+            writeIndex = newCount;
+        }
+        else if (i <= 0x00ffffffffffffffl)
+        {
+            int newCount = writeIndex + 8;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) (head - 7);
+            memory[writeIndex + 1] = (byte) (i >>> 48);
+            memory[writeIndex + 2] = (byte) (i >>> 40);
+            memory[writeIndex + 3] = (byte) (i >>> 32);
+            memory[writeIndex + 4] = (byte) (i >>> 24);
+            memory[writeIndex + 5] = (byte) (i >>> 16);
+            memory[writeIndex + 6] = (byte) (i >>> 8);
+            memory[writeIndex + 7] = (byte) i;
+            writeIndex = newCount;
+        }
+        else
+        {
+            int newCount = writeIndex + 9;
+            ensureCapacity(newCount);
+            memory[writeIndex] = (byte) (head - 8);
+            memory[writeIndex + 1] = (byte) (i >>> 56);
+            memory[writeIndex + 2] = (byte) (i >>> 48);
+            memory[writeIndex + 3] = (byte) (i >>> 40);
+            memory[writeIndex + 4] = (byte) (i >>> 32);
+            memory[writeIndex + 5] = (byte) (i >>> 24);
+            memory[writeIndex + 6] = (byte) (i >>> 16);
+            memory[writeIndex + 7] = (byte) (i >>> 8);
+            memory[writeIndex + 8] = (byte) i;
+            writeIndex = newCount;
+        }
+        return this;
+    }
+    
+    public long readVarLong()
+    {
+        byte b = memory[readIndex++];
+        if (b >= -112 && b <= 127)
+        {
+            return b;
+        }
+        switch (b)
+        {
+            case -113:
+                return memory[readIndex++] & 0xffl;
+            case -114:
+                return ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl);
+            case -115:
+                return ((memory[readIndex++] & 0xffl) << 16) | ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl);
+            case -116:
+                return ((memory[readIndex++] & 0xffl) << 24) | ((memory[readIndex++] & 0xffl) << 16) | ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl);
+            case -117:
+                return ((memory[readIndex++] & 0xffl) << 32) | ((memory[readIndex++] & 0xffl) << 24) | ((memory[readIndex++] & 0xffl) << 16) | ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl);
+            case -118:
+                return ((memory[readIndex++] & 0xffl) << 40) | ((memory[readIndex++] & 0xffl) << 32) | ((memory[readIndex++] & 0xffl) << 24) | ((memory[readIndex++] & 0xffl) << 16) | ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl);
+            case -119:
+                return ((memory[readIndex++] & 0xffl) << 48) | ((memory[readIndex++] & 0xffl) << 40) | ((memory[readIndex++] & 0xffl) << 32) | ((memory[readIndex++] & 0xffl) << 24) | ((memory[readIndex++] & 0xffl) << 16) | ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl);
+            case -120:
+                return ((memory[readIndex++] & 0xffl) << 56) | ((memory[readIndex++] & 0xffl) << 48) | ((memory[readIndex++] & 0xffl) << 40) | ((memory[readIndex++] & 0xffl) << 32) | ((memory[readIndex++] & 0xffl) << 24) | ((memory[readIndex++] & 0xffl) << 16) | ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl);
+            case -121:
+                return ~(memory[readIndex++] & 0xffl);
+            case -122:
+                return ~(((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl));
+            case -123:
+                return ~(((memory[readIndex++] & 0xffl) << 16) | ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl));
+            case -124:
+                return ~(((memory[readIndex++] & 0xffl) << 24) | ((memory[readIndex++] & 0xffl) << 16) | ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl));
+            case -125:
+                return ~(((memory[readIndex++] & 0xffl) << 32) | ((memory[readIndex++] & 0xffl) << 24) | ((memory[readIndex++] & 0xffl) << 16) | ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl));
+            case -126:
+                return ~(((memory[readIndex++] & 0xffl) << 40) | ((memory[readIndex++] & 0xffl) << 32) | ((memory[readIndex++] & 0xffl) << 24) | ((memory[readIndex++] & 0xffl) << 16) | ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl));
+            case -127:
+                return ~(((memory[readIndex++] & 0xffl) << 48) | ((memory[readIndex++] & 0xffl) << 40) | ((memory[readIndex++] & 0xffl) << 32) | ((memory[readIndex++] & 0xffl) << 24) | ((memory[readIndex++] & 0xffl) << 16) | ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl));
+            case -128:
+                return ~(((memory[readIndex++] & 0xffl) << 56) | ((memory[readIndex++] & 0xffl) << 48) | ((memory[readIndex++] & 0xffl) << 40) | ((memory[readIndex++] & 0xffl) << 32) | ((memory[readIndex++] & 0xffl) << 24) | ((memory[readIndex++] & 0xffl) << 16) | ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl));
+            default:
+                throw new UnSupportException("not here");
+        }
     }
 }
