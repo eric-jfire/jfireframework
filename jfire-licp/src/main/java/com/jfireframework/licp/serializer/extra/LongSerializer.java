@@ -10,13 +10,13 @@ public class LongSerializer implements LicpSerializer
     @Override
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
-        buf.writeLong((Long) src);
+        buf.writeVarLong((Long) src);
     }
     
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        Long l = buf.readLong();
+        Long l = buf.readVarLong();
         licp.putObject(l);
         return l;
     }

@@ -338,54 +338,6 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
         return cache.toString();
     }
     
-    @Override
-    public void writeLength(int length)
-    {
-        changeToWriteState();
-        int newWriteIndex = 0;
-        if (length <= 251)
-        {
-            newWriteIndex = writeIndex + 1;
-            ensureCapacity(newWriteIndex);
-            memory.put(writeIndex, (byte) length);
-        }
-        else if (length <= 255)
-        {
-            newWriteIndex = writeIndex + 2;
-            ensureCapacity(newWriteIndex);
-            memory.put(writeIndex, (byte) 252);
-            memory.put(writeIndex + 1, (byte) length);
-        }
-        else if (length <= 0xffff)
-        {
-            newWriteIndex = writeIndex + 3;
-            ensureCapacity(newWriteIndex);
-            memory.put(writeIndex, (byte) 253);
-            memory.put(writeIndex + 1, (byte) (length >> 8));
-            memory.put(writeIndex + 2, (byte) length);
-        }
-        else if (length <= 0xffffff)
-        {
-            newWriteIndex = writeIndex + 4;
-            ensureCapacity(newWriteIndex);
-            memory.put(writeIndex, (byte) 254);
-            memory.put(writeIndex + 1, (byte) (length >> 16));
-            memory.put(writeIndex + 2, (byte) (length >> 8));
-            memory.put(writeIndex + 3, (byte) length);
-        }
-        else
-        {
-            newWriteIndex = writeIndex + 5;
-            ensureCapacity(newWriteIndex);
-            memory.put(writeIndex, (byte) 255);
-            memory.put(writeIndex + 1, (byte) (length >> 24));
-            memory.put(writeIndex + 2, (byte) (length >> 16));
-            memory.put(writeIndex + 3, (byte) (length >> 8));
-            memory.put(writeIndex + 4, (byte) length);
-        }
-        writeIndex = newWriteIndex;
-    }
-    
     public void writePositive(int positive)
     {
         if (positive < 0)
@@ -393,88 +345,45 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
             throw new UnsupportedOperationException();
         }
         changeToWriteState();
-        int newWriteIndex = 0;
         if (positive <= 251)
         {
-            newWriteIndex = writeIndex + 1;
-            ensureCapacity(newWriteIndex);
+            ensureCapacity(writeIndex + 1);
             memory.put(writeIndex, (byte) positive);
+            writeIndex += 1;
         }
         else if (positive <= 255)
         {
-            newWriteIndex = writeIndex + 2;
-            ensureCapacity(newWriteIndex);
+            ensureCapacity(writeIndex + 2);
             memory.put(writeIndex, (byte) 252);
             memory.put(writeIndex + 1, (byte) positive);
+            writeIndex += 2;
         }
         else if (positive <= 0xffff)
         {
-            newWriteIndex = writeIndex + 3;
-            ensureCapacity(newWriteIndex);
+            ensureCapacity(writeIndex + 3);
             memory.put(writeIndex, (byte) 253);
             memory.put(writeIndex + 1, (byte) (positive >> 8));
             memory.put(writeIndex + 2, (byte) positive);
+            writeIndex += 3;
         }
         else if (positive <= 0xffffff)
         {
-            newWriteIndex = writeIndex + 4;
-            ensureCapacity(newWriteIndex);
+            ensureCapacity(writeIndex + 4);
             memory.put(writeIndex, (byte) 254);
             memory.put(writeIndex + 1, (byte) (positive >> 16));
             memory.put(writeIndex + 2, (byte) (positive >> 8));
             memory.put(writeIndex + 3, (byte) positive);
+            writeIndex += 4;
         }
         else
         {
-            newWriteIndex = writeIndex + 5;
-            ensureCapacity(newWriteIndex);
+            ensureCapacity(writeIndex + 5);
             memory.put(writeIndex, (byte) 255);
             memory.put(writeIndex + 1, (byte) (positive >> 24));
             memory.put(writeIndex + 2, (byte) (positive >> 16));
             memory.put(writeIndex + 3, (byte) (positive >> 8));
             memory.put(writeIndex + 4, (byte) positive);
-        }
-        writeIndex = newWriteIndex;
-    }
-    
-    @Override
-    public int readLength()
-    {
-        changeToReadState();
-        int length = memory.get(readIndex++) & 0xff;
-        if (length <= 251)
-        {
-            return length;
-        }
-        else if (length == 252)
-        {
-            length = memory.get(readIndex++) & 0xff;
-            return length;
-        }
-        else if (length == 253)
-        {
-            length = (memory.get(readIndex++) & 0xff) << 8;
-            length |= memory.get(readIndex++) & 0xff;
-            return length;
-        }
-        else if (length == 254)
-        {
-            length = (memory.get(readIndex++) & 0xff) << 16;
-            length |= (memory.get(readIndex++) & 0xff) << 8;
-            length |= memory.get(readIndex++) & 0xff;
-            return length;
-        }
-        else if (length == 255)
-        {
-            length = (memory.get(readIndex++) & 0xff) << 24;
-            length |= (memory.get(readIndex++) & 0xff) << 16;
-            length |= (memory.get(readIndex++) & 0xff) << 8;
-            length |= memory.get(readIndex++) & 0xff;
-            return length;
-        }
-        else
-        {
-            throw new RuntimeException("wrong data");
+            writeIndex += 5;
         }
     }
     
@@ -535,11 +444,10 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
     {
         if (i >= -120 && i <= 127)
         {
-            int newCount = writeIndex + 1;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 1);
             changeToWriteState();
             memory.put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 1;
             return this;
         }
         int head = -120;
@@ -550,35 +458,31 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
         }
         if (i <= 0x000000ff)
         {
-            int newCount = writeIndex + 2;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 2);
             changeToWriteState();
             memory.put((byte) (head - 1)).put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 2;
         }
         else if (i <= 0x0000ffff)
         {
-            int newCount = writeIndex + 3;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 3);
             changeToWriteState();
             memory.put((byte) (head - 2)).put((byte) (i >>> 8)).put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 3;
         }
         else if (i <= 0x00ffffff)
         {
-            int newCount = writeIndex + 4;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 4);
             changeToWriteState();
             memory.put((byte) (head - 3)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 4;
         }
         else
         {
-            int newCount = writeIndex + 5;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 5);
             changeToWriteState();
             memory.put((byte) (head - 4)).put((byte) (i >>> 24)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 5;
         }
         return this;
     }
@@ -629,11 +533,10 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
     {
         if (i >= -112 && i <= 127)
         {
-            int newCount = writeIndex + 1;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 1);
             changeToWriteState();
             memory.put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 1;
             return this;
         }
         int head = -112;
@@ -644,67 +547,59 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
         }
         if (i <= 0x000000ff)
         {
-            int newCount = writeIndex + 2;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 2);
             changeToWriteState();
             memory.put((byte) (head - 1)).put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 2;
         }
         else if (i <= 0x0000ffff)
         {
-            int newCount = writeIndex + 3;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 3);
             changeToWriteState();
             memory.put((byte) (head - 2)).put((byte) (i >>> 8)).put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 3;
         }
         else if (i <= 0x00ffffff)
         {
-            int newCount = writeIndex + 4;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 4);
             changeToWriteState();
             memory.put((byte) (head - 3)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 4;
         }
         else if (i <= 0x00000000ffffffffl)
         {
-            int newCount = writeIndex + 5;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 5);
             changeToWriteState();
             memory.put((byte) (head - 4)).put((byte) (i >>> 24)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 5;
         }
         else if (i <= 0x000000ffffffffffl)
         {
-            int newCount = writeIndex + 6;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 6);
             changeToWriteState();
             memory.put((byte) (head - 5)).put((byte) (i >>> 32)).put((byte) (i >>> 24)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 6;
         }
         else if (i <= 0x0000ffffffffffffl)
         {
-            int newCount = writeIndex + 7;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 7);
             changeToWriteState();
             memory.put((byte) (head - 6)).put((byte) (i >>> 40)).put((byte) (i >>> 32)).put((byte) (i >>> 24)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 7;
         }
         else if (i <= 0x00ffffffffffffffl)
         {
-            int newCount = writeIndex + 8;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 8);
             changeToWriteState();
             memory.put((byte) (head - 7)).put((byte) (i >>> 48)).put((byte) (i >>> 40)).put((byte) (i >>> 32)).put((byte) (i >>> 24)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 8;
         }
         else
         {
-            int newCount = writeIndex + 9;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 9);
             changeToWriteState();
             memory.put((byte) (head - 8)).put((byte) (i >>> 56)).put((byte) (i >>> 48)).put((byte) (i >>> 40)).put((byte) (i >>> 32)).put((byte) (i >>> 24)).put((byte) (i >>> 16)).put((byte) (i >>> 8)).put((byte) i);
-            writeIndex = newCount;
+            writeIndex += 9;
         }
         return this;
     }
@@ -771,6 +666,61 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
                 return ~(((memory.get() & 0xffl) << 56) | ((memory.get() & 0xffl) << 48) | ((memory.get() & 0xffl) << 40) | ((memory.get() & 0xffl) << 32) | ((memory.get() & 0xffl) << 24) | ((memory.get() & 0xffl) << 16) | ((memory.get() & 0xffl) << 8) | (memory.get() & 0xffl));
             default:
                 throw new UnSupportException("not here");
+        }
+    }
+    
+    @Override
+    public ByteBuf<ByteBuffer> writeVarChar(char c)
+    {
+        int positive = c;
+        changeToWriteState();
+        if (positive <= 251)
+        {
+            ensureCapacity(writeIndex + 1);
+            memory.put(writeIndex, (byte) positive);
+            writeIndex += 1;
+        }
+        else if (positive <= 255)
+        {
+            ensureCapacity(writeIndex + 2);
+            memory.put(writeIndex, (byte) 252);
+            memory.put(writeIndex + 1, (byte) positive);
+            writeIndex += 2;
+        }
+        else if (positive <= 0xffff)
+        {
+            ensureCapacity(writeIndex + 3);
+            memory.put(writeIndex, (byte) 253);
+            memory.put(writeIndex + 1, (byte) (positive >>> 8));
+            memory.put(writeIndex + 2, (byte) positive);
+            writeIndex += 3;
+        }
+        return this;
+    }
+    
+    @Override
+    public char readVarChar()
+    {
+        changeToReadState();
+        int length = memory.get(readIndex++) & 0xff;
+        if (length <= 251)
+        {
+            return (char) length;
+        }
+        else if (length == 252)
+        {
+            length = memory.get(readIndex++) & 0xff;
+            return (char) length;
+        }
+        else if (length == 253)
+        {
+            length = (memory.get(readIndex++) & 0xff) << 8;
+            length |= memory.get(readIndex++) & 0xff;
+            return (char) length;
+        }
+        else
+        {
+            throw new UnSupportException("not here");
         }
     }
 }

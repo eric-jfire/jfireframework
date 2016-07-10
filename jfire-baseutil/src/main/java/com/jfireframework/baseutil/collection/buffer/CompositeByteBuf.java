@@ -232,18 +232,6 @@ public class CompositeByteBuf extends ByteBuf<Void>
     }
     
     @Override
-    public void writeLength(int length)
-    {
-        throw unsupport;
-    }
-    
-    @Override
-    public int readLength()
-    {
-        throw unsupport;
-    }
-    
-    @Override
     public void writePositive(int positive)
     {
         throw unsupport;
@@ -275,6 +263,18 @@ public class CompositeByteBuf extends ByteBuf<Void>
     
     @Override
     public long readVarLong()
+    {
+        throw unsupport;
+    }
+    
+    @Override
+    public ByteBuf<Void> writeVarChar(char c)
+    {
+        throw unsupport;
+    }
+    
+    @Override
+    public char readVarChar()
     {
         throw unsupport;
     }

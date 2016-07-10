@@ -16,13 +16,13 @@ public class LongField extends AbstractCacheField
     public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
         long value = unsafe.getLong(holder, offset);
-        buf.writeLong(value);
+        buf.writeVarLong(value);
     }
     
     @Override
     public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        unsafe.putLong(holder, offset, buf.readLong());
+        unsafe.putLong(holder, offset, buf.readVarLong());
     }
     
 }

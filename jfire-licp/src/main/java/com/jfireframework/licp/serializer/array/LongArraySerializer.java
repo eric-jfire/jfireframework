@@ -18,7 +18,7 @@ public class LongArraySerializer extends AbstractArraySerializer
         buf.writePositive(array.length);
         for (long each : array)
         {
-            buf.writeLong(each);
+            buf.writeVarLong(each);
         }
     }
     
@@ -30,7 +30,7 @@ public class LongArraySerializer extends AbstractArraySerializer
         licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
-            array[i] = buf.readLong();
+            array[i] = buf.readVarLong();
         }
         return array;
     }

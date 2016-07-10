@@ -295,57 +295,6 @@ public class HeapByteBuf extends ByteBuf<byte[]>
         return cache.toString();
     }
     
-    @Override
-    public void writeLength(int length)
-    {
-        if (length <= 251)
-        {
-            int newWriteIndex = writeIndex + 1;
-            ensureCapacity(newWriteIndex);
-            memory[writeIndex] = (byte) length;
-            writeIndex = newWriteIndex;
-        }
-        else if (length <= 255)
-        {
-            int newWriteIndex = writeIndex + 2;
-            ensureCapacity(newWriteIndex);
-            memory[writeIndex] = (byte) 252;
-            memory[writeIndex + 1] = (byte) length;
-            writeIndex = newWriteIndex;
-        }
-        else if (length <= 0xffff)
-        {
-            int newWriteIndex = writeIndex + 3;
-            ensureCapacity(newWriteIndex);
-            memory[writeIndex] = (byte) 253;
-            memory[writeIndex + 1] = (byte) (length >>> 8);
-            memory[writeIndex + 2] = (byte) length;
-            writeIndex = newWriteIndex;
-        }
-        
-        else if (length <= 0xffffff)
-        {
-            int newWriteIndex = writeIndex + 4;
-            ensureCapacity(newWriteIndex);
-            memory[writeIndex] = (byte) 254;
-            memory[writeIndex + 1] = (byte) (length >>> 16);
-            memory[writeIndex + 2] = (byte) (length >>> 8);
-            memory[writeIndex + 3] = (byte) length;
-            writeIndex = newWriteIndex;
-        }
-        else
-        {
-            int newWriteIndex = writeIndex + 5;
-            ensureCapacity(newWriteIndex);
-            memory[writeIndex] = (byte) 255;
-            memory[writeIndex + 1] = (byte) (length >>> 24);
-            memory[writeIndex + 2] = (byte) (length >>> 16);
-            memory[writeIndex + 3] = (byte) (length >>> 8);
-            memory[writeIndex + 4] = (byte) length;
-            writeIndex = newWriteIndex;
-        }
-    }
-    
     public void writePositive(int positive)
     {
         if (positive < 0)
@@ -354,89 +303,43 @@ public class HeapByteBuf extends ByteBuf<byte[]>
         }
         if (positive <= 251)
         {
-            int newWriteIndex = writeIndex + 1;
-            ensureCapacity(newWriteIndex);
+            ensureCapacity(writeIndex + 1);
             memory[writeIndex] = (byte) positive;
-            writeIndex = newWriteIndex;
+            writeIndex += 1;
         }
         else if (positive <= 255)
         {
-            int newWriteIndex = writeIndex + 2;
-            ensureCapacity(newWriteIndex);
+            ensureCapacity(writeIndex + 2);
             memory[writeIndex] = (byte) 252;
             memory[writeIndex + 1] = (byte) positive;
-            writeIndex = newWriteIndex;
+            writeIndex += 2;
         }
         else if (positive <= 0xffff)
         {
-            int newWriteIndex = writeIndex + 3;
-            ensureCapacity(newWriteIndex);
+            ensureCapacity(writeIndex + 3);
             memory[writeIndex] = (byte) 253;
             memory[writeIndex + 1] = (byte) (positive >>> 8);
             memory[writeIndex + 2] = (byte) positive;
-            writeIndex = newWriteIndex;
+            writeIndex += 3;
         }
-        
         else if (positive <= 0xffffff)
         {
-            int newWriteIndex = writeIndex + 4;
-            ensureCapacity(newWriteIndex);
+            ensureCapacity(writeIndex + 4);
             memory[writeIndex] = (byte) 254;
             memory[writeIndex + 1] = (byte) (positive >>> 16);
             memory[writeIndex + 2] = (byte) (positive >>> 8);
             memory[writeIndex + 3] = (byte) positive;
-            writeIndex = newWriteIndex;
+            writeIndex += 4;
         }
         else
         {
-            int newWriteIndex = writeIndex + 5;
-            ensureCapacity(newWriteIndex);
+            ensureCapacity(writeIndex + 5);
             memory[writeIndex] = (byte) 255;
             memory[writeIndex + 1] = (byte) (positive >>> 24);
             memory[writeIndex + 2] = (byte) (positive >>> 16);
             memory[writeIndex + 3] = (byte) (positive >>> 8);
             memory[writeIndex + 4] = (byte) positive;
-            writeIndex = newWriteIndex;
-        }
-    }
-    
-    @Override
-    public int readLength()
-    {
-        int length = memory[readIndex++] & 0xff;
-        if (length <= 251)
-        {
-            return length;
-        }
-        else if (length == 252)
-        {
-            length = memory[readIndex++] & 0xff;
-            return length;
-        }
-        else if (length == 253)
-        {
-            length = (memory[readIndex++] & 0xff) << 8;
-            length |= memory[readIndex++] & 0xff;
-            return length;
-        }
-        else if (length == 254)
-        {
-            length = (memory[readIndex++] & 0xff) << 16;
-            length |= (memory[readIndex++] & 0xff) << 8;
-            length |= memory[readIndex++] & 0xff;
-            return length;
-        }
-        else if (length == 255)
-        {
-            length = (memory[readIndex++] & 0xff) << 24;
-            length |= (memory[readIndex++] & 0xff) << 16;
-            length |= (memory[readIndex++] & 0xff) << 8;
-            length |= memory[readIndex++] & 0xff;
-            return length;
-        }
-        else
-        {
-            throw new RuntimeException("wrong data");
+            writeIndex += 5;
         }
     }
     
@@ -496,10 +399,9 @@ public class HeapByteBuf extends ByteBuf<byte[]>
     {
         if (i >= -120 && i <= 127)
         {
-            int newCount = writeIndex + 1;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 1);
             memory[writeIndex] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 1;
             return this;
         }
         int head = -120;
@@ -510,41 +412,37 @@ public class HeapByteBuf extends ByteBuf<byte[]>
         }
         if (i <= 0x000000ff)
         {
-            int newCount = writeIndex + 2;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 2);
             memory[writeIndex] = (byte) (head - 1);
             memory[writeIndex + 1] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 2;
         }
         else if (i <= 0x0000ffff)
         {
-            int newCount = writeIndex + 3;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 3);
             memory[writeIndex] = (byte) (head - 2);
             memory[writeIndex + 1] = (byte) (i >>> 8);
             memory[writeIndex + 2] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 3;
         }
         else if (i <= 0x00ffffff)
         {
-            int newCount = writeIndex + 4;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 4);
             memory[writeIndex] = (byte) (head - 3);
             memory[writeIndex + 1] = (byte) (i >>> 16);
             memory[writeIndex + 2] = (byte) (i >>> 8);
             memory[writeIndex + 3] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 4;
         }
         else
         {
-            int newCount = writeIndex + 5;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 5);
             memory[writeIndex] = (byte) (head - 4);
             memory[writeIndex + 1] = (byte) (i >>> 24);
             memory[writeIndex + 2] = (byte) (i >>> 16);
             memory[writeIndex + 3] = (byte) (i >>> 8);
             memory[writeIndex + 4] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 5;
         }
         return this;
     }
@@ -584,10 +482,9 @@ public class HeapByteBuf extends ByteBuf<byte[]>
     {
         if (i >= -112 && i <= 127)
         {
-            int newCount = writeIndex + 1;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 1);
             memory[writeIndex] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 1;
             return this;
         }
         int head = -112;
@@ -598,58 +495,52 @@ public class HeapByteBuf extends ByteBuf<byte[]>
         }
         if (i <= 0x00000000000000ff)
         {
-            int newCount = writeIndex + 2;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 2);
             memory[writeIndex] = (byte) (head - 1);
             memory[writeIndex + 1] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 2;
         }
         else if (i <= 0x000000000000ffff)
         {
-            int newCount = writeIndex + 3;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 3);
             memory[writeIndex] = (byte) (head - 2);
             memory[writeIndex + 1] = (byte) (i >>> 8);
             memory[writeIndex + 2] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 3;
         }
         else if (i <= 0x0000000000ffffff)
         {
-            int newCount = writeIndex + 4;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 4);
             memory[writeIndex] = (byte) (head - 3);
             memory[writeIndex + 1] = (byte) (i >>> 16);
             memory[writeIndex + 2] = (byte) (i >>> 8);
             memory[writeIndex + 3] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 4;
         }
         else if (i <= 0x00000000ffffffff)
         {
-            int newCount = writeIndex + 5;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 5);
             memory[writeIndex] = (byte) (head - 4);
             memory[writeIndex + 1] = (byte) (i >>> 24);
             memory[writeIndex + 2] = (byte) (i >>> 16);
             memory[writeIndex + 3] = (byte) (i >>> 8);
             memory[writeIndex + 4] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 5;
         }
         else if (i <= 0x000000ffffffffffl)
         {
-            int newCount = writeIndex + 6;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 6);
             memory[writeIndex] = (byte) (head - 5);
             memory[writeIndex + 1] = (byte) (i >>> 32);
             memory[writeIndex + 2] = (byte) (i >>> 24);
             memory[writeIndex + 3] = (byte) (i >>> 16);
             memory[writeIndex + 4] = (byte) (i >>> 8);
             memory[writeIndex + 5] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 6;
         }
         else if (i <= 0x0000ffffffffffffl)
         {
-            int newCount = writeIndex + 7;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 7);
             memory[writeIndex] = (byte) (head - 6);
             memory[writeIndex + 1] = (byte) (i >>> 40);
             memory[writeIndex + 2] = (byte) (i >>> 32);
@@ -657,12 +548,11 @@ public class HeapByteBuf extends ByteBuf<byte[]>
             memory[writeIndex + 4] = (byte) (i >>> 16);
             memory[writeIndex + 5] = (byte) (i >>> 8);
             memory[writeIndex + 6] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 7;
         }
         else if (i <= 0x00ffffffffffffffl)
         {
-            int newCount = writeIndex + 8;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 8);
             memory[writeIndex] = (byte) (head - 7);
             memory[writeIndex + 1] = (byte) (i >>> 48);
             memory[writeIndex + 2] = (byte) (i >>> 40);
@@ -671,12 +561,11 @@ public class HeapByteBuf extends ByteBuf<byte[]>
             memory[writeIndex + 5] = (byte) (i >>> 16);
             memory[writeIndex + 6] = (byte) (i >>> 8);
             memory[writeIndex + 7] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 8;
         }
         else
         {
-            int newCount = writeIndex + 9;
-            ensureCapacity(newCount);
+            ensureCapacity(writeIndex + 9);
             memory[writeIndex] = (byte) (head - 8);
             memory[writeIndex + 1] = (byte) (i >>> 56);
             memory[writeIndex + 2] = (byte) (i >>> 48);
@@ -686,7 +575,7 @@ public class HeapByteBuf extends ByteBuf<byte[]>
             memory[writeIndex + 6] = (byte) (i >>> 16);
             memory[writeIndex + 7] = (byte) (i >>> 8);
             memory[writeIndex + 8] = (byte) i;
-            writeIndex = newCount;
+            writeIndex += 9;
         }
         return this;
     }
@@ -734,6 +623,59 @@ public class HeapByteBuf extends ByteBuf<byte[]>
                 return ~(((memory[readIndex++] & 0xffl) << 56) | ((memory[readIndex++] & 0xffl) << 48) | ((memory[readIndex++] & 0xffl) << 40) | ((memory[readIndex++] & 0xffl) << 32) | ((memory[readIndex++] & 0xffl) << 24) | ((memory[readIndex++] & 0xffl) << 16) | ((memory[readIndex++] & 0xffl) << 8) | (memory[readIndex++] & 0xffl));
             default:
                 throw new UnSupportException("not here");
+        }
+    }
+    
+    @Override
+    public HeapByteBuf writeVarChar(char c)
+    {
+        int positive = c;
+        if (positive <= 251)
+        {
+            ensureCapacity(writeIndex + 1);
+            memory[writeIndex] = (byte) positive;
+            writeIndex += 1;
+        }
+        else if (positive <= 255)
+        {
+            ensureCapacity(writeIndex + 2);
+            memory[writeIndex] = (byte) 252;
+            memory[writeIndex + 1] = (byte) positive;
+            writeIndex += 2;
+        }
+        else if (positive <= 0xffff)
+        {
+            ensureCapacity(writeIndex + 3);
+            memory[writeIndex] = (byte) 253;
+            memory[writeIndex + 1] = (byte) (positive >>> 8);
+            memory[writeIndex + 2] = (byte) positive;
+            writeIndex += 3;
+        }
+        return this;
+    }
+    
+    @Override
+    public char readVarChar()
+    {
+        int length = memory[readIndex++] & 0xff;
+        if (length <= 251)
+        {
+            return (char) length;
+        }
+        else if (length == 252)
+        {
+            length = memory[readIndex++] & 0xff;
+            return (char) length;
+        }
+        else if (length == 253)
+        {
+            length = (memory[readIndex++] & 0xff) << 8;
+            length |= memory[readIndex++] & 0xff;
+            return (char) length;
+        }
+        else
+        {
+            throw new UnSupportException("not here");
         }
     }
 }

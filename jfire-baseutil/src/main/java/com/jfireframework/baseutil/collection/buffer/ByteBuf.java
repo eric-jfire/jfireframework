@@ -139,10 +139,9 @@ public abstract class ByteBuf<T>
      */
     public void put(ByteBuffer buffer, int length)
     {
-        int newCount = writeIndex + length;
-        ensureCapacity(newCount);
+        ensureCapacity(writeIndex + length);
         _put(buffer, length);
-        writeIndex = newCount;
+        writeIndex += length;
     }
     
     /**
@@ -161,10 +160,9 @@ public abstract class ByteBuf<T>
      */
     public ByteBuf<T> put(byte b)
     {
-        int newCount = writeIndex + 1;
-        ensureCapacity(newCount);
+        ensureCapacity(writeIndex + 1);
         _put(writeIndex, b);
-        writeIndex = newCount;
+        writeIndex += 1;
         return this;
     }
     
@@ -188,10 +186,9 @@ public abstract class ByteBuf<T>
     
     public ByteBuf<T> put(byte[] content, int off, int len)
     {
-        int newCount = writeIndex + len;
-        ensureCapacity(newCount);
+        ensureCapacity(writeIndex + len);
         _put(content, off, len);
-        writeIndex = newCount;
+        writeIndex += len;
         return this;
     }
     
@@ -364,10 +361,9 @@ public abstract class ByteBuf<T>
      */
     public ByteBuf<T> put(ByteBuf<?> byteBuf, int length)
     {
-        int newWriteIndex = writeIndex + length;
-        ensureCapacity(newWriteIndex);
+        ensureCapacity(writeIndex + length);
         _put(byteBuf, length);
-        writeIndex = newWriteIndex;
+        writeIndex += length;
         return this;
     }
     
@@ -387,10 +383,9 @@ public abstract class ByteBuf<T>
      */
     public ByteBuf<T> writeInt(int i)
     {
-        int newWriteIndex = writeIndex + 4;
-        ensureCapacity(newWriteIndex);
+        ensureCapacity(writeIndex + 4);
         _writeInt(writeIndex, i);
-        writeIndex = newWriteIndex;
+        writeIndex += 4;
         return this;
     }
     
@@ -404,10 +399,9 @@ public abstract class ByteBuf<T>
     
     public ByteBuf<T> writeShort(short s)
     {
-        int newWriteIndex = writeIndex + 2;
-        ensureCapacity(newWriteIndex);
+        ensureCapacity(writeIndex + 2);
         _writeShort(writeIndex, s);
-        writeIndex = newWriteIndex;
+        writeIndex += 2;
         return this;
     }
     
@@ -421,60 +415,10 @@ public abstract class ByteBuf<T>
     
     public ByteBuf<T> writeLong(long l)
     {
-        int newWriteIndex = writeIndex + 8;
-        ensureCapacity(newWriteIndex);
+        ensureCapacity(writeIndex + 8);
         _writeLong(writeIndex, l);
-        writeIndex = newWriteIndex;
+        writeIndex += 8;
         return this;
-    }
-    
-    public ByteBuf<T> writeMutableLengthLong(long num)
-    {
-        ensureCapacity(writeIndex + 9);
-        if (num >= -112 && num <= 127)
-        {
-            put((byte) num);
-            return this;
-        }
-        int length = 0;
-        byte first = -112;
-        if (num < 0)
-        {
-            first = -120;
-        }
-        long tmp = num;
-        while (tmp != 0)
-        {
-            tmp = tmp >>> 8;
-            first--;
-            length++;
-        }
-        put(first);
-        for (int j = 0; j < length; j++)
-        {
-            put((byte) num);
-            num = num >>> 8;
-        }
-        return this;
-    }
-    
-    public long readMutableLengthLong()
-    {
-        byte head = get();
-        if (head >= -112 && head <= 127)
-        {
-            return head;
-        }
-        else
-        {
-            int length = head >= -124 ? (-head - 112) : (-head - 120);
-            long out = 0;
-            for (int i = 0; i < length; i++)
-            {
-                out |= (get() & 0xffL) << offsets[i];
-            }
-            return out;
-        }
     }
     
     public ByteBuf<T> writeLong(int index, long l)
@@ -507,10 +451,9 @@ public abstract class ByteBuf<T>
     
     public ByteBuf<T> writeChar(char c)
     {
-        int newWriteIndex = writeIndex + 2;
-        ensureCapacity(newWriteIndex);
+        ensureCapacity(writeIndex + 2);
         _writeChar(writeIndex, c);
-        writeIndex = newWriteIndex;
+        writeIndex += 2;
         return this;
     }
     
@@ -524,10 +467,9 @@ public abstract class ByteBuf<T>
     
     public ByteBuf<T> writeBoolean(boolean b)
     {
-        int newWriteIndex = writeIndex + 1;
-        ensureCapacity(newWriteIndex);
+        ensureCapacity(writeIndex + 1);
         _writeBoolean(writeIndex, b);
-        writeIndex = newWriteIndex;
+        writeIndex += 1;
         return this;
     }
     
@@ -558,39 +500,6 @@ public abstract class ByteBuf<T>
     public abstract double readDouble(int index);
     
     public abstract boolean readBoolean();
-    
-    public void writeString(String str)
-    {
-        if (str == null)
-        {
-            writeInt(-1);
-        }
-        else
-        {
-            int length = str.length();
-            ensureCapacity(writeIndex + 4 + (length << 1));
-            _writeInt(writeIndex, length);
-            writeIndex += 4;
-            // writeLength(length);
-            // ensureCapacity(writeIndex + length * 2);
-            for (int i = 0; i < length; i++)
-            {
-                _writeChar(writeIndex + (i << 1), str.charAt(i));
-            }
-            writeIndex += length << 1;
-        }
-    }
-    
-    public String readString()
-    {
-        int length = readInt();
-        if (length == -1)
-        {
-            return null;
-        }
-        char[] tmp = readCharArray(length);
-        return new String(tmp);
-    }
     
     /**
      * 匹配对src在bytebuf中的位置。如果匹配，就返回最开始的位置，如果不匹配，返回-1
@@ -711,16 +620,6 @@ public abstract class ByteBuf<T>
         for (int i = 0; i < length; i++)
         {
             tmp[i] = readLong();
-        }
-        return tmp;
-    }
-    
-    public long[] readMutableLengthLongArray(int length)
-    {
-        long[] tmp = new long[length];
-        for (int i = 0; i < length; i++)
-        {
-            tmp[i] = readMutableLengthLong();
         }
         return tmp;
     }
@@ -878,13 +777,6 @@ public abstract class ByteBuf<T>
     }
     
     /**
-     * 写入长度信息，由于长度信息大于等于0，所以可以有特殊的优化写法
-     * 
-     * @param length
-     */
-    public abstract void writeLength(int length);
-    
-    /**
      * 写入一个0或者正数
      * 
      * @param positive
@@ -897,8 +789,6 @@ public abstract class ByteBuf<T>
      * @return
      */
     public abstract int readPositive();
-    
-    public abstract int readLength();
     
     public boolean isTraceFlag()
     {
@@ -917,4 +807,8 @@ public abstract class ByteBuf<T>
     public abstract ByteBuf<T> writeVarLong(long l);
     
     public abstract long readVarLong();
+    
+    public abstract ByteBuf<T> writeVarChar(char c);
+    
+    public abstract char readVarChar();
 }

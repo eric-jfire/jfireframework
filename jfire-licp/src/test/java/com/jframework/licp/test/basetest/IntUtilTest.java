@@ -9,9 +9,16 @@ public class IntUtilTest
     @Test
     public void test()
     {
-        for (int i =Short.MIN_VALUE; i <= Short.MAX_VALUE; i++)
+        for (int i = Short.MIN_VALUE; i <= Short.MAX_VALUE; i++)
         {
             Assert.assertEquals(i, IntUtil.zag(IntUtil.zig(i)));
         }
+    }
+    
+    @Test
+    public void charTest()
+    {
+        int i = 'a';
+        System.out.println(i);
     }
 }

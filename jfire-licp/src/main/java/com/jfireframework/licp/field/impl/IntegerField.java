@@ -22,7 +22,7 @@ public class IntegerField extends AbstractCacheField
         else
         {
             buf.put((byte) 1);
-            buf.writeInt(value);
+            buf.writeVarint(value);
         }
     }
     
@@ -32,7 +32,7 @@ public class IntegerField extends AbstractCacheField
         boolean exist = buf.get() == 1 ? true : false;
         if (exist)
         {
-            Integer value = buf.readInt();
+            Integer value = buf.readVarint();
             unsafe.putObject(holder, offset, value);
         }
         else

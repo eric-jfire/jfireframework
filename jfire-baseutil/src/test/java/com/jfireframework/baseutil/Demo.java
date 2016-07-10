@@ -6,6 +6,7 @@ import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
 import com.jfireframework.baseutil.exception.UnSupportException;
+import sun.security.provider.VerificationProvider;
 
 public class Demo
 {
@@ -101,5 +102,18 @@ public class Demo
         buf.clear();
         buf.writeVarint(Integer.MAX_VALUE);
         Assert.assertEquals(Integer.MAX_VALUE, buf.readVarint());
+    }
+    
+    @Test
+    public void chartest()
+    {
+        int i = 0;
+        ByteBuf<?> buf = HeapByteBuf.allocate(100);
+        for (char c = Character.MIN_VALUE; c < Character.MAX_VALUE; c++)
+        {
+            // buf.clear();
+            buf.writeVarChar(c);
+            Assert.assertEquals(c, buf.readVarChar());
+        }
     }
 }

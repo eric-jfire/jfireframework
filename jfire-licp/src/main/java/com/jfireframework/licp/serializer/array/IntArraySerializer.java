@@ -18,7 +18,7 @@ public class IntArraySerializer extends AbstractArraySerializer
         buf.writePositive(array.length);
         for (int each : array)
         {
-            buf.writeInt(each);
+            buf.writeVarint(each);
         }
     }
     
@@ -30,7 +30,7 @@ public class IntArraySerializer extends AbstractArraySerializer
         licp.putObject(array);
         for (int i = 0; i < length; i++)
         {
-            array[i] = buf.readInt();
+            array[i] = buf.readVarint();
         }
         return array;
     }

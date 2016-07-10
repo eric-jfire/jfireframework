@@ -25,7 +25,7 @@ public class WLongArraySerializer extends AbstractArraySerializer
             else
             {
                 buf.put((byte) 1);
-                buf.writeLong(each);
+                buf.writeVarLong(each);
             }
         }
     }
@@ -41,7 +41,7 @@ public class WLongArraySerializer extends AbstractArraySerializer
             boolean exist = buf.get() == 1 ? true : false;
             if (exist)
             {
-                array[i] = buf.readLong();
+                array[i] = buf.readVarLong();
             }
             else
             {

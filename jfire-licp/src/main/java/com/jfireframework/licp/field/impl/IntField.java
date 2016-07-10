@@ -16,13 +16,13 @@ public class IntField extends AbstractCacheField
     public void write(Object holder, ByteBuf<?> buf, Licp licp)
     {
         int value = unsafe.getInt(holder, offset);
-        buf.writeInt(value);
+        buf.writeVarint(value);
     }
     
     @Override
     public void read(Object holder, ByteBuf<?> buf, Licp licp)
     {
-        unsafe.putInt(holder, offset, buf.readInt());
+        unsafe.putInt(holder, offset, buf.readVarint());
     }
     
 }

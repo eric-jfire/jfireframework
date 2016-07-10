@@ -42,6 +42,7 @@ public class ClassNoRegister
         tmp.add(Double[].class);
         tmp.add(Boolean[].class);
         tmp.add(String[].class);
+        tmp.add(String[][].class);
         tmp.add(Date.class);
         tmp.add(java.sql.Date.class);
         tmp.add(Calendar.class);
@@ -64,6 +65,15 @@ public class ClassNoRegister
         tmp.add(byte[].class);
         tmp.add(float[].class);
         tmp.add(double[].class);
+        tmp.add(boolean[][].class);
+        tmp.add(int[][].class);
+        tmp.add(short[][].class);
+        tmp.add(char[][].class);
+        tmp.add(long[][].class);
+        tmp.add(byte[][].class);
+        tmp.add(float[][].class);
+        tmp.add(double[][].class);
+        tmp.add(Object.class);
         int index = 0;
         for (Class<?> each : tmp)
         {

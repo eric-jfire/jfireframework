@@ -23,7 +23,7 @@ public class WlongField extends AbstractCacheField
         else
         {
             buf.put((byte) 1);
-            buf.writeLong(d);
+            buf.writeVarLong(d);
         }
     }
     
@@ -33,7 +33,7 @@ public class WlongField extends AbstractCacheField
         boolean exist = buf.get() == 1 ? true : false;
         if (exist)
         {
-            unsafe.putObject(holder, offset, buf.readLong());
+            unsafe.putObject(holder, offset, buf.readVarLong());
         }
         else
         {

@@ -25,7 +25,7 @@ public class IntegerArraySerializer extends AbstractArraySerializer
             else
             {
                 buf.put((byte) 1);
-                buf.writeInt(each);
+                buf.writeVarint(each);
             }
         }
     }
@@ -41,7 +41,7 @@ public class IntegerArraySerializer extends AbstractArraySerializer
             boolean exist = buf.get() == 1 ? true : false;
             if (exist)
             {
-                array[i] = buf.readInt();
+                array[i] = buf.readVarint();
             }
             else
             {
