@@ -30,7 +30,7 @@ public class AnnotationUtil
     
     public static boolean isPresent(Class<? extends Annotation> annoType, Class<?> target)
     {
-        if (target.isAnnotationPresent(annoType))
+        if (target.isAnnotationPresent(annoType) && target.isAnnotation() == false)
         {
             return true;
         }
@@ -76,7 +76,6 @@ public class AnnotationUtil
     
     public static <T extends Annotation> T getAnnotation(Class<T> annoType, Method method)
     {
-        
         T anno = null;
         anno = method.getAnnotation(annoType);
         if (anno != null)
