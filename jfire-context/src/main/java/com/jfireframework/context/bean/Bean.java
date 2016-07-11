@@ -172,8 +172,7 @@ public class Bean
         {
             if (singletonInstance == null)
             {
-                singletonInstance = buildInstance(beanInstanceMap);
-                return singletonInstance;
+                return buildInstance(beanInstanceMap);
             }
             else
             {
@@ -195,6 +194,10 @@ public class Bean
             for (ParamField each : paramFields)
             {
                 each.setParam(instance);
+            }
+            if (prototype == false)
+            {
+                singletonInstance = instance;
             }
             if (postConstructMethod != null)
             {
