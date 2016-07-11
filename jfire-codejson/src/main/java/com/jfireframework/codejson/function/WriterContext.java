@@ -253,6 +253,17 @@ public class WriterContext
         {
             return true;
         }
+        try
+        {
+            Field field = method.getDeclaringClass().getDeclaredField(fieldName);
+            if (field.isAnnotationPresent(JsonIgnore.class) && field.getAnnotation(JsonIgnore.class).force())
+            {
+                return true;
+            }
+        }
+        catch (Exception e)
+        {
+        }
         if (strategy != null)
         {
             if (strategy.ignore(method.getDeclaringClass().getName() + '.' + fieldName))
