@@ -12,7 +12,6 @@
 		<module>jfire-context</module>
 		<module>jfire-sql</module>
 		<module>jfire-mvc</module>
-		<module>jfire-fose</module>
 		<module>jfire-jnet</module>
 		<module>jfire-rpc</module>
 		<module>jfire-dbunit</module>
