@@ -107,7 +107,7 @@ public class SpeedTest
     public void ser2()
     {
         Object data = new SpeedData2();
-        Licp licp = new Licp();
+        Licp licp = new Licp(false);
         int testSum = 100000;
         Kryo kryo = new Kryo();
         Output output = new Output(4096, 300000);

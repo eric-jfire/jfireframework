@@ -26,10 +26,7 @@ public class Licp
     
     public Licp(boolean cycleSupport)
     {
-        if (cycleSupport)
-        {
-            collect = new ObjectCollect(cycleSupport);
-        }
+        collect = new ObjectCollect(cycleSupport);
     }
     
     public void serialize(Object src, ByteBuf<?> buf)

@@ -36,11 +36,11 @@ public class SpeedData2
     
     public SpeedData2()
     {
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 20; i++)
         {
             SpeedData baseData = new SpeedData();
             list.add(baseData);
-            map.put(i, baseData);
+//            map.put(i, baseData);
         }
     }
 }
