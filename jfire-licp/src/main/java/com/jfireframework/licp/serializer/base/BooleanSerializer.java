@@ -1,4 +1,4 @@
-package com.jfireframework.licp.serializer.extra;
+package com.jfireframework.licp.serializer.base;
 
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;

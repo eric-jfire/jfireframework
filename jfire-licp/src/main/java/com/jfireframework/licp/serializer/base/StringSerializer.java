@@ -1,24 +1,25 @@
-package com.jfireframework.licp.serializer.extra;
+package com.jfireframework.licp.serializer.base;
 
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
 import com.jfireframework.licp.serializer.LicpSerializer;
 
-public class CharSerializer implements LicpSerializer
+public class StringSerializer implements LicpSerializer
 {
     
     @Override
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
-        buf.writeChar((Character) src);
+        String value = (String) src;
+        buf.writeString(value);
     }
     
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        Character c = buf.readChar();
-        licp.putObject(c);
-        return c;
+        String value = buf.readString();
+        licp.putObject(value);
+        return value;
     }
     
 }

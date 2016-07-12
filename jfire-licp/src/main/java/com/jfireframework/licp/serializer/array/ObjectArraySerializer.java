@@ -3,13 +3,23 @@ package com.jfireframework.licp.serializer.array;
 import java.lang.reflect.Array;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
+import com.jfireframework.licp.serializer.LicpSerializer;
 
 public class ObjectArraySerializer extends AbstractArraySerializer
 {
+    private final LicpSerializer elementSerializer;
     
-    public ObjectArraySerializer(Class<?> type)
+    public ObjectArraySerializer(Class<?> type, Licp licp)
     {
         super(type);
+        if (elementSameType)
+        {
+            elementSerializer = licp._getSerializer(type.getComponentType());
+        }
+        else
+        {
+            elementSerializer = null;
+        }
     }
     
     @Override

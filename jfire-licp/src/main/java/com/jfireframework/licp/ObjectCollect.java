@@ -2,8 +2,6 @@ package com.jfireframework.licp;
 
 public class ObjectCollect
 {
-    // private IdentityHashMap<Object, Integer> objectMap = new
-    // IdentityHashMap<Object, Integer>();
     private Object[]      objs     = new Object[20];
     private int           sequence = 0;
     private final boolean cycleSupport;
@@ -30,7 +28,7 @@ public class ObjectCollect
         {
             return 0;
         }
-        for (int i = 0; i < objs.length; i++)
+        for (int i = 0; i < sequence; i++)
         {
             if (objs[i] == obj)
             {

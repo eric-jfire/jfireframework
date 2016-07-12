@@ -1,6 +1,6 @@
 package com.jfireframework.licp;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
@@ -9,15 +9,16 @@ import com.jfireframework.licp.serializer.SerializerFactory;
 
 public class Licp
 {
-    private ObjectCollect                                    collect      = new ObjectCollect();
-    private ClassNoRegister                                  register     = new ClassNoRegister();
-    public static final int                                  NULL         = 0;
-    public static final int                                  EXIST        = 1;
-    private static final ConcurrentHashMap<String, Class<?>> nameClassMap = new ConcurrentHashMap<String, Class<?>>();
+    private ObjectCollect                   collect      = new ObjectCollect();
+    private ClassNoRegister                 register     = new ClassNoRegister();
+    public static final int                 NULL         = 0;
+    public static final int                 EXIST        = 1;
+    private final HashMap<String, Class<?>> nameClassMap = new HashMap<String, Class<?>>();
+    private final SerializerFactory         factory      = new SerializerFactory();
     /**
      * 版本号标识，用来防止不同的版本互相转化导致的异常
      */
-    private static final byte                                version      = 0;
+    private static final byte               version      = 0;
     
     public Licp()
     {
@@ -73,6 +74,7 @@ public class Licp
         if (classNo == 0)
         {
             String name = type.getName();
+            // 由于这里采用了特殊的设计，所以无法使用buf.writeString来节约时间
             int length = name.length();
             buf.writePositive(((length << 2) | 2));
             for (int i = 0; i < length; i++)
@@ -86,7 +88,12 @@ public class Licp
             classNo |= 3;
             buf.writePositive(classNo);
         }
-        SerializerFactory.get(type).serialize(src, buf, this);
+        _getSerializer(type).serialize(src, buf, this);
+    }
+    
+    public LicpSerializer _getSerializer(Class<?> type)
+    {
+        return factory.get(type, this);
     }
     
     public void _serialize(Object src, ByteBuf<?> buf, LicpSerializer serializer)
@@ -154,13 +161,13 @@ public class Licp
             }
             Class<?> type = loadClass(new String(src));
             register.registerTemporary(type);
-            return SerializerFactory.get(type).deserialize(buf, this);
+            return _getSerializer(type).deserialize(buf, this);
         }
         else if (flag == 3)
         {
             result >>>= 2;
             Class<?> type = loadClass(result);
-            return SerializerFactory.get(type).deserialize(buf, this);
+            return _getSerializer(type).deserialize(buf, this);
         }
         else
         {

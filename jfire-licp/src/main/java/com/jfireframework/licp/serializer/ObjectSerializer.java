@@ -29,7 +29,7 @@ public class ObjectSerializer implements LicpSerializer
     private final Class<?>                 type;
     private final static Unsafe            unsafe        = ReflectUtil.getUnsafe();
     
-    public ObjectSerializer(Class<?> type)
+    public ObjectSerializer(Class<?> type, Licp licp)
     {
         this.type = type;
         Field[] fields = ReflectUtil.getAllFields(type);
@@ -47,7 +47,7 @@ public class ObjectSerializer implements LicpSerializer
         CacheField[] tmp = new CacheField[fields.length];
         for (int i = 0; i < tmp.length; i++)
         {
-            tmp[i] = FieldFactory.build(fields[i]);
+            tmp[i] = FieldFactory.build(fields[i],licp);
         }
         this.fields = tmp;
     }

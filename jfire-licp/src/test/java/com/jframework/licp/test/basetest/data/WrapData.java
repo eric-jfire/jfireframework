@@ -3,6 +3,7 @@ package com.jframework.licp.test.basetest.data;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,11 +33,11 @@ public class WrapData
     
     public WrapData()
     {
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 2; i++)
         {
             BaseData baseData = new BaseData(i);
             list.add(baseData);
-            map.put(i, baseData);
+//            map.put(i, baseData);
         }
     }
     

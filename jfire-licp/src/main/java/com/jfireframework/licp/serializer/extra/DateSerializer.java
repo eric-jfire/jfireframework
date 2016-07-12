@@ -20,19 +20,19 @@ public class DateSerializer implements LicpSerializer
         if (sqlDate)
         {
             java.sql.Date date = (java.sql.Date) src;
-            buf.writeLong(date.getTime());
+            buf.writeVarLong(date.getTime());
         }
         else
         {
             Date date = (Date) src;
-            buf.writeLong(date.getTime());
+            buf.writeVarLong(date.getTime());
         }
     }
     
     @Override
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
-        long time = buf.readLong();
+        long time = buf.readVarLong();
         if (sqlDate)
         {
             Object result = new java.sql.Date(time);
