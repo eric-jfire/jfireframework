@@ -13,7 +13,6 @@ public class HashMapSerializer implements LicpSerializer
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
         HashMap<?, ?> map = (HashMap<?, ?>) src;
-        licp.putObject(map);
         int size = map.size();
         buf.writePositive(size);
         for (Entry<?, ?> entry : map.entrySet())

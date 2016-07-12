@@ -1,20 +1,20 @@
 package com.jfireframework.licp.serializer.extra;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
 import com.jfireframework.licp.serializer.LicpSerializer;
 
-public class ArrayListSerializer implements LicpSerializer
+public class HashSetSerializer implements LicpSerializer
 {
     
     @Override
     public void serialize(Object src, ByteBuf<?> buf, Licp licp)
     {
-        ArrayList<?> list = (ArrayList<?>) src;
-        int length = list.size();
+        HashSet<?> set = (HashSet<?>) src;
+        int length = set.size();
         buf.writePositive(length);
-        for (Object each : list)
+        for (Object each : set)
         {
             licp._serialize(each, buf);
         }
@@ -24,13 +24,12 @@ public class ArrayListSerializer implements LicpSerializer
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
         int length = buf.readPositive();
-        ArrayList<Object> list = new ArrayList<Object>(length);
-        licp.putObject(list);
+        HashSet<Object> set = new HashSet<Object>(length);
         for (int i = 0; i < length; i++)
         {
-            list.add(licp._deserialize(buf));
+            set.add(licp._deserialize(buf));
         }
-        return list;
+        return set;
     }
     
 }
