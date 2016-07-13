@@ -9,7 +9,7 @@ import com.jfireframework.licp.serializer.SerializerFactory;
 
 public class Licp
 {
-    private ObjectCollect                   collect      = new ObjectCollect();
+    private ObjectCollect                   collect      = new ObjectCollect(true);
     private ClassNoRegister                 register     = new ClassNoRegister();
     public static final int                 NULL         = 0;
     public static final int                 EXIST        = 1;

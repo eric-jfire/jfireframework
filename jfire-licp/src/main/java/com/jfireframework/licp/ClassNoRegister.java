@@ -5,6 +5,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -16,13 +17,12 @@ import java.util.List;
  */
 public class ClassNoRegister
 {
-    private Class<?>[] types  = new Class[300];
-    private int        originCount;
-    private int        nowCount;
-    // length是实际数组长度-1，这样方便进行计算
-    private int        length = 999;
-    
-    public ClassNoRegister()
+    private static final IdentityHashMap<Class<?>, Integer> originMap = new IdentityHashMap<Class<?>, Integer>();
+    private static final int                                originSequence;
+    private static final Class<?>[]                         originTypes;
+    private int                                             sequence  = originSequence;
+    private Class<?>[]                                      types     = new Class[300];
+    static
     {
         List<Class<?>> tmp = new ArrayList<Class<?>>();
         tmp.add(boolean.class);
@@ -75,14 +75,20 @@ public class ClassNoRegister
         tmp.add(HashMap.class);
         tmp.add(HashSet.class);
         tmp.add(Object.class);
-        int index = 0;
+        int index = 1;
         for (Class<?> each : tmp)
         {
-            types[index] = each;
-            index++;
+            originMap.put(each, index++);
         }
-        originCount = index;
-        nowCount = index;
+        originSequence = index;
+        Class<?>[] tmpTypes = tmp.toArray(new Class<?>[tmp.size()]);
+        originTypes = new Class<?>[originSequence];
+        System.arraycopy(tmpTypes, 0, originTypes, 1, tmpTypes.length);
+    }
+    
+    public ClassNoRegister()
+    {
+        System.arraycopy(originTypes, 0, types, 0, originTypes.length);
     }
     
     /**
@@ -92,10 +98,7 @@ public class ClassNoRegister
      */
     public void register(Class<?> type)
     {
-        if (registerTemporary(type) == 0)
-        {
-            originCount++;
-        }
+        registerTemporary(type);
     }
     
     /**
@@ -104,27 +107,31 @@ public class ClassNoRegister
      * @param type
      * @return
      */
-    @SuppressWarnings("rawtypes")
     public int registerTemporary(Class<?> type)
     {
-        if (nowCount >= length)
+        Integer result = originMap.get(type);
+        if (result == null)
         {
-            Class[] newTypes = new Class[length * 2 + 2];
-            System.arraycopy(types, 0, newTypes, 0, nowCount);
-            types = newTypes;
-            length = newTypes.length;
-        }
-        for (int i = 0; i < nowCount; i++)
-        {
-            if (types[i] == type)
+            for (int i = originSequence; i < sequence; i++)
             {
-                return i + 1;
+                if (types[i] == type)
+                {
+                    return i;
+                }
             }
+            if (sequence == types.length)
+            {
+                Class<?>[] tmp = new Class<?>[types.length << 1];
+                System.arraycopy(types, 0, tmp, 0, types.length);
+                types = tmp;
+            }
+            types[sequence++] = type;
+            return 0;
         }
-        int index = nowCount;
-        types[index] = type;
-        nowCount++;
-        return 0;
+        else
+        {
+            return result;
+        }
     }
     
     /**
@@ -135,25 +142,16 @@ public class ClassNoRegister
      */
     public int indexOf(Class<?> type)
     {
-        
-        for (int i = 0; i < nowCount; i++)
-        {
-            if (types[i] == type)
-            {
-                return i + 1;
-            }
-        }
-        registerTemporary(type);
-        return 0;
+        return registerTemporary(type);
     }
     
     public Class<?> getType(int index)
     {
-        return types[index - 1];
+        return types[index];
     }
     
     public void clear()
     {
-        nowCount = originCount;
+        sequence = originSequence;
     }
 }

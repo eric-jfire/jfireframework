@@ -105,46 +105,16 @@ public class SpeedTest
         
     }
     
-    @Test
-    public void test()
-    {
-        IdentityObjectIntMap<Integer> kryoIdmap = new IdentityObjectIntMap<Integer>();
-        IdentityHashMap<Integer, Integer> map = new IdentityHashMap<Integer, Integer>();
-        int testsum = 100;
-        Timewatch timewatch = new Timewatch();
-        for (int index = 0; index < testsum; index++)
-        {
-            for (int i = 0; i < 100000; i++)
-            {
-                kryoIdmap.get(i,0);
-                kryoIdmap.put(i, i);
-            }
-            kryoIdmap.clear();
-        }
-        timewatch.end();
-        System.out.println(timewatch.getTotal());
-        timewatch.start();
-        for (int index = 0; index < testsum; index++)
-        {
-            for (int i = 0; i < 100000; i++)
-            {
-                map.get(i);
-                map.put(i, i);
-            }
-            map.clear();
-        }
-        timewatch.end();
-        System.out.println(timewatch.getTotal());
-        
-    }
-    
+ 
     @Test
     public void ser2()
     {
         Object data = new SpeedData2();
         Licp licp = new Licp();
+        licp.disableCycleSupport();
         int testSum = 100000;
         Kryo kryo = new Kryo();
+        kryo.setReferences(false);
         Output output = new Output(4096, 300000);
         kryo.writeClassAndObject(output, data);
         // System.out.println("kryo length:" + output.toBytes().length);
