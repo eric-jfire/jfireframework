@@ -8,6 +8,7 @@
 	</parent>
 	<packaging>jar</packaging>
 	<artifactId>jfire-licp</artifactId>
+	<version>1.0</version>
 	<name>licp</name>
 	<url>http://maven.apache.org</url>
 	<properties>
