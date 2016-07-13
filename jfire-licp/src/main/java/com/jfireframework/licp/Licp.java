@@ -20,16 +20,9 @@ public class Licp
      */
     private static final byte               version      = 0;
     
-    public Licp()
+    public void disableCycleSupport()
     {
-    }
-    
-    public Licp(boolean cycleSupport)
-    {
-        if (cycleSupport)
-        {
-            collect = new ObjectCollect(cycleSupport);
-        }
+        collect = new ObjectCollect(false);
     }
     
     public void serialize(Object src, ByteBuf<?> buf)
@@ -227,6 +220,6 @@ public class Licp
     
     public void putObject(Object x)
     {
-        collect.put(x);
+        collect.putForDesc(x);
     }
 }

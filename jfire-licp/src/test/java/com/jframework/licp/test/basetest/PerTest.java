@@ -9,6 +9,9 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.licp.Licp;
 import com.jframework.licp.test.basetest.data.Device;
+import com.jframework.licp.test.basetest.data.SpeedData;
+import com.jframework.licp.test.basetest.data.SpeedData2;
+import com.sun.org.apache.bcel.internal.generic.NEW;
 
 public class PerTest
 {
@@ -47,12 +50,13 @@ public class PerTest
     @Test
     public void test()
     {
-        Device device = Builder();
+        int testSum = 1000000;
+        Object data = new SpeedData2();
         Licp context = new Licp();
         long t0 = System.currentTimeMillis();
         for (int i = 0; i < testSum; i++)
         {
-            context.serialize(device, buf.clear());
+            context.serialize(data, buf.clear());
         }
         long lbseCost = System.currentTimeMillis() - t0;
         logger.info("lbse序列化耗时：{}", lbseCost);

@@ -2,10 +2,12 @@ package com.jframework.licp.test.basetest;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
+import java.util.IdentityHashMap;
 import org.junit.Test;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.util.IdentityObjectIntMap;
 import com.jfireframework.baseutil.code.RandomString;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
@@ -72,7 +74,7 @@ public class SpeedTest
     @Test
     public void serialize() throws InstantiationException, IllegalAccessException, ClassNotFoundException, UnsupportedEncodingException, NoSuchFieldException, SecurityException, IllegalArgumentException
     {
-        int testSum = 1000;
+        int testSum = 30000;
         Person person = new Person("linbin", 25);
         Person tPerson = new Person("zhangshi[in", 30);
         person.setLeader(tPerson);
@@ -104,6 +106,39 @@ public class SpeedTest
     }
     
     @Test
+    public void test()
+    {
+        IdentityObjectIntMap<Integer> kryoIdmap = new IdentityObjectIntMap<Integer>();
+        IdentityHashMap<Integer, Integer> map = new IdentityHashMap<Integer, Integer>();
+        int testsum = 100;
+        Timewatch timewatch = new Timewatch();
+        for (int index = 0; index < testsum; index++)
+        {
+            for (int i = 0; i < 100000; i++)
+            {
+                kryoIdmap.get(i,0);
+                kryoIdmap.put(i, i);
+            }
+            kryoIdmap.clear();
+        }
+        timewatch.end();
+        System.out.println(timewatch.getTotal());
+        timewatch.start();
+        for (int index = 0; index < testsum; index++)
+        {
+            for (int i = 0; i < 100000; i++)
+            {
+                map.get(i);
+                map.put(i, i);
+            }
+            map.clear();
+        }
+        timewatch.end();
+        System.out.println(timewatch.getTotal());
+        
+    }
+    
+    @Test
     public void ser2()
     {
         Object data = new SpeedData2();
@@ -112,11 +147,11 @@ public class SpeedTest
         Kryo kryo = new Kryo();
         Output output = new Output(4096, 300000);
         kryo.writeClassAndObject(output, data);
-//        System.out.println("kryo length:" + output.toBytes().length);
-        System.out.println( output.toBytes().length);
+        // System.out.println("kryo length:" + output.toBytes().length);
+        System.out.println(output.toBytes().length);
         licp.serialize(data, buf);
-//        System.out.println("licp length:" + buf.writeIndex());
-        System.out.println( buf.writeIndex());
+        // System.out.println("licp length:" + buf.writeIndex());
+        System.out.println(buf.writeIndex());
         Timewatch timewatch = new Timewatch();
         for (int i = 0; i < testSum; i++)
         {
@@ -125,7 +160,7 @@ public class SpeedTest
         }
         timewatch.end();
         System.out.println("kryo:" + timewatch.getTotal());
-//        System.out.println( timewatch.getTotal());
+        // System.out.println( timewatch.getTotal());
         timewatch.start();
         for (int i = 0; i < testSum; i++)
         {
@@ -133,13 +168,13 @@ public class SpeedTest
         }
         timewatch.end();
         System.out.println("licp:" + timewatch.getTotal());
-//        System.out.println( timewatch.getTotal());
+        // System.out.println( timewatch.getTotal());
     }
     
     @Test
     public void deserialize()
     {
-        int testSum = 1000;
+        int testSum = 400000;
         Person person = new Person("linbin", 25);
         Person tPerson = new Person("zhangshi[in", 30);
         person.setLeader(tPerson);

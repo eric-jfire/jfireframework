@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -72,6 +73,7 @@ public class ClassNoRegister
         tmp.add(ArrayList.class);
         tmp.add(LinkedList.class);
         tmp.add(HashMap.class);
+        tmp.add(HashSet.class);
         tmp.add(Object.class);
         int index = 0;
         for (Class<?> each : tmp)

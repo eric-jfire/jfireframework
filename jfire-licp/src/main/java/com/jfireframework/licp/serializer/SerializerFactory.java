@@ -1,8 +1,10 @@
 package com.jfireframework.licp.serializer;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import com.jfireframework.licp.Licp;
 import com.jfireframework.licp.serializer.array.BooleanArraySerializer;
@@ -32,9 +34,11 @@ import com.jfireframework.licp.serializer.base.IntegerSerializer;
 import com.jfireframework.licp.serializer.base.LongSerializer;
 import com.jfireframework.licp.serializer.base.ShortSerializer;
 import com.jfireframework.licp.serializer.base.StringSerializer;
-import com.jfireframework.licp.serializer.extra.ArrayListSerializer;
+import com.jfireframework.licp.serializer.extra.ArraylistSerializer;
+import com.jfireframework.licp.serializer.extra.CalendarSerializer;
 import com.jfireframework.licp.serializer.extra.DateSerializer;
 import com.jfireframework.licp.serializer.extra.HashMapSerializer;
+import com.jfireframework.licp.serializer.extra.HashSetSerializer;
 import com.jfireframework.licp.serializer.extra.LinkedListSerializer;
 
 public class SerializerFactory
@@ -74,10 +78,11 @@ public class SerializerFactory
         /**************************/
         serializerMap.put(Date.class, new DateSerializer(false));
         serializerMap.put(java.sql.Date.class, new DateSerializer(true));
-        // serializerMap.put(Calendar.class, new CalendarSerializer());
-        serializerMap.put(ArrayList.class, new ArrayListSerializer());
+        serializerMap.put(Calendar.class, new CalendarSerializer());
+        serializerMap.put(ArrayList.class, new ArraylistSerializer());
         serializerMap.put(LinkedList.class, new LinkedListSerializer());
         serializerMap.put(HashMap.class, new HashMapSerializer());
+        serializerMap.put(HashSet.class, new HashSetSerializer());
     }
     
     public void register(Class<?> type, LicpSerializer serializer)
