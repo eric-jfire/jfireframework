@@ -2,21 +2,29 @@ package com.jfireframework.extra.wx.vo;
 
 public class WxCfg
 {
-    private String appId;
-    private String appSecret;
-    private String token;
-    private int    expires_in;
-    private long   accessTime;
+    private final String    appId;
+    private final String    appSecret;
+    private volatile String token;
+    private volatile long   token_expires_in;
+    private volatile long   token_accessTime;
+    private volatile String jsApiTicket;
+    private volatile long   jsApiTicket_expirex_in;
+    private volatile long   jsApiTicket_accessTime;
     
     public WxCfg(String appId, String appSecret)
     {
         this.appId = appId;
         this.appSecret = appSecret;
     }
-
-    public boolean expire()
+    
+    public boolean tokenExpire()
     {
-        return System.currentTimeMillis() - accessTime > expires_in;
+        return System.currentTimeMillis() - token_accessTime > token_expires_in;
+    }
+    
+    public boolean jsApiTicketExpire()
+    {
+        return System.currentTimeMillis() - jsApiTicket_accessTime > jsApiTicket_expirex_in;
     }
     
     public String getAppId()
@@ -24,19 +32,9 @@ public class WxCfg
         return appId;
     }
     
-    public void setAppId(String appId)
-    {
-        this.appId = appId;
-    }
-    
     public String getAppSecret()
     {
         return appSecret;
-    }
-    
-    public void setAppSecret(String appSecret)
-    {
-        this.appSecret = appSecret;
     }
     
     public String getToken()
@@ -49,24 +47,54 @@ public class WxCfg
         this.token = token;
     }
     
-    public int getExpires_in()
+    public long getToken_expires_in()
     {
-        return expires_in;
+        return token_expires_in;
     }
     
-    public void setExpires_in(int expires_in)
+    public void setToken_expires_in(long token_expires_in)
     {
-        this.expires_in = expires_in;
+        this.token_expires_in = token_expires_in * 1000;
     }
     
-    public long getAccessTime()
+    public long getToken_accessTime()
     {
-        return accessTime;
+        return token_accessTime;
     }
     
-    public void setAccessTime(long accessTime)
+    public void setToken_accessTime(long token_accessTime)
     {
-        this.accessTime = accessTime;
+        this.token_accessTime = token_accessTime;
+    }
+    
+    public String getJsApiTicket()
+    {
+        return jsApiTicket;
+    }
+    
+    public void setJsApiTicket(String jsApiTicket)
+    {
+        this.jsApiTicket = jsApiTicket;
+    }
+    
+    public long getJsApiTicket_expirex_in()
+    {
+        return jsApiTicket_expirex_in;
+    }
+    
+    public void setJsApiTicket_expirex_in(long jsApiTicket_expirex_in)
+    {
+        this.jsApiTicket_expirex_in = jsApiTicket_expirex_in * 1000;
+    }
+    
+    public long getJsApiTicket_accessTime()
+    {
+        return jsApiTicket_accessTime;
+    }
+    
+    public void setJsApiTicket_accessTime(long jsApiTicket_accessTime)
+    {
+        this.jsApiTicket_accessTime = jsApiTicket_accessTime;
     }
     
 }
