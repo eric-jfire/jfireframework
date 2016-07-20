@@ -66,14 +66,11 @@ public class EventPublisherImpl implements EventPublisher
         int sequence = 0;
         for (EventHandler each : _handlers)
         {
-            for (Enum<?> type : each.type())
+            if (map.containsKey(each.type().getClass()))
             {
-                if (map.containsKey(type.getClass()))
-                {
-                    continue;
-                }
-                map.put(type.getClass(), sequence++);
+                continue;
             }
+            map.put(each.type().getClass(), sequence++);
         }
         int[][] count = new int[map.size()][];
         for (int i = 0; i < count.length; i++)
@@ -82,18 +79,15 @@ public class EventPublisherImpl implements EventPublisher
         }
         for (EventHandler each : _handlers)
         {
-            for (Enum<?> type : each.type())
+            sequence = map.get(each.type().getClass());
+            int index = each.type().ordinal();
+            if (count[sequence].length <= index)
             {
-                sequence = map.get(type.getClass());
-                int index = type.ordinal();
-                if (count[sequence].length <= index)
-                {
-                    int[] tmp = new int[index + 1];
-                    System.arraycopy(count[sequence], 0, tmp, 0, count[sequence].length);
-                    count[sequence] = tmp;
-                }
-                count[sequence][index] += 1;
+                int[] tmp = new int[index + 1];
+                System.arraycopy(count[sequence], 0, tmp, 0, count[sequence].length);
+                count[sequence] = tmp;
             }
+            count[sequence][index] += 1;
         }
         EventHandler[][][] handlers = new EventHandler[map.size()][][];
         for (int i = 0; i <= max; i++)
@@ -106,18 +100,15 @@ public class EventPublisherImpl implements EventPublisher
         }
         for (EventHandler each : _handlers)
         {
-            for (Enum<?> type : each.type())
+            sequence = map.get(each.type().getClass());
+            int index = each.type().ordinal();
+            EventHandler[] tmp = handlers[sequence][index];
+            for (int j = 0; j < tmp.length; j++)
             {
-                sequence = map.get(type.getClass());
-                int index = type.ordinal();
-                EventHandler[] tmp = handlers[sequence][index];
-                for (int j = 0; j < tmp.length; j++)
+                if (tmp[j] == null)
                 {
-                    if (tmp[j] == null)
-                    {
-                        tmp[j] = each;
-                        break;
-                    }
+                    tmp[j] = each;
+                    break;
                 }
             }
         }

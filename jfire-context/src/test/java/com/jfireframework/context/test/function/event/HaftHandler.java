@@ -10,28 +10,19 @@ import com.jfireframework.context.event.EventPublisher;
 public class HaftHandler implements EventHandler, ContextInitFinish
 {
     @Resource
-    private EventPublisher  publisher;
-    private final Enum<?>[] interest = new Enum<?>[] { SmsEvent.Arrearage, SmsEvent.halt };
+    private EventPublisher publisher;
     
     @Override
-    public Enum<?>[] type()
+    public Enum<?> type()
     {
-        return interest;
+        return SmsEvent.halt;
     }
     
     @Override
     public void handle(ApplicationEvent event)
     {
         UserPhone myEvent = (UserPhone) event.getData();
-        SmsEvent type = (SmsEvent) event.getType();
-        if (type == SmsEvent.halt)
-        {
-            System.out.println("用户:" + myEvent.getPhone() + "停机");
-        }
-        else if (type == SmsEvent.Arrearage)
-        {
-            System.out.println("用户:" + myEvent.getPhone() + "欠费");
-        }
+        System.out.println("用户:" + myEvent.getPhone() + "欠费");
     }
     
     @Override

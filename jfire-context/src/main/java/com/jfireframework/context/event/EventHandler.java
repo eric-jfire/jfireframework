@@ -14,5 +14,5 @@ public interface EventHandler
      * 
      * @return
      */
-    public Enum<?>[] type();
+    public Enum<?> type();
 }

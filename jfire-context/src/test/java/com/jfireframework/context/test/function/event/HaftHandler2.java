@@ -20,9 +20,9 @@ public class HaftHandler2 implements EventHandler
     }
     
     @Override
-    public Enum<?>[] type()
+    public Enum<?> type()
     {
-        return new Enum<?>[] { SmsEvent.halt };
+        return SmsEvent.halt;
     }
     
 }
