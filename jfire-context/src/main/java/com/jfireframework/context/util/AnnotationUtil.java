@@ -133,10 +133,12 @@ public class AnnotationUtil
         public AliasAnno(Annotation anno, final Map<String, Object> valueMap)
         {
             Annotation superAnno = null;
+            boolean hasAlias = false;
             for (Method each : anno.annotationType().getMethods())
             {
                 if (each.isAnnotationPresent(AliasFor.class))
                 {
+                    hasAlias = true;
                     AliasFor aliasFor = each.getAnnotation(AliasFor.class);
                     String name;
                     try
@@ -156,7 +158,11 @@ public class AnnotationUtil
                     {
                         throw new JustThrowException(e);
                     }
-                    
+                    /**
+                     * 下面的代码主要是指定一种注解值的传递关系。比如注解a的属性a1别名了注解b的属性b1，而这个b1的属性别名了注解c的属性c1.
+                     * 那么本来放入值的时候应该b1用自身的值放入属性c1中。但是发现自己的原本属性名b1已经被a1别名，那么久会使用a1的值，最终的结果就是c1是使用a1的值，而不是b1的值。
+                     * 也就是说，在最上层的别名具有优先权
+                     */
                     String originName = each.getDeclaringClass().getName() + "." + each.getName();
                     if (valueMap.containsKey(originName))
                     {
@@ -191,9 +197,12 @@ public class AnnotationUtil
             {
                 new AliasAnno(superAnno, valueMap);
             }
+            else if (hasAlias == true)
+            {
+                throw new UnSupportException(StringUtil.format("注解别名错误。别名属性自身所在的注解必须被别名注解所注解。请检查{}", anno.getClass().getName()));
+            }
             rootType = getRoot(anno.annotationType());
             target = (Annotation) Proxy.newProxyInstance(anno.annotationType().getClassLoader(), new Class<?>[] { getRoot(anno.annotationType()) }, new aliasInvocationHandler(valueMap));
-            
         }
         
         public Annotation target()
