@@ -22,12 +22,10 @@ public class CreateTableTest
         }
         catch (SQLException e)
         {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
         SessionFactoryImpl sessionFactory = new SessionFactoryImpl(dataSource);
-        sessionFactory.setScanPackage("com.jfireframework.sql.test.table");
+        sessionFactory.setScanPackage("com.jfireframework.sql.test.table:out~com.jfireframework.sql.test.table.User3");
         sessionFactory.setDbType("MariaDB");
         sessionFactory.setTableMode("update");
         sessionFactory.init();

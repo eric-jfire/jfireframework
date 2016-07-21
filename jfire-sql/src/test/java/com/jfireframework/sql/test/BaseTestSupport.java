@@ -2,6 +2,7 @@ package com.jfireframework.sql.test;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import org.junit.After;
 import org.junit.Before;
 import com.alibaba.druid.pool.DruidDataSource;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -17,7 +18,7 @@ public abstract class BaseTestSupport
     protected SqlSession                session;
     protected Connection                connection;
     protected Logger                    logger = ConsoleLogFactory.getLogger();
-                                               
+    
     static
     {
         DruidDataSource dataSource = new DruidDataSource();
@@ -43,11 +44,11 @@ public abstract class BaseTestSupport
     
     public BaseTestSupport()
     {
-//        testUnit.clearSchemaData();
-//        testUnit.importExcelFile();
+        testUnit.clearSchemaData();
+        testUnit.importExcelFile();
     }
     
-//    @Before
+    @Before
     public void before()
     {
         testUnit.clearSchemaData();
@@ -60,7 +61,7 @@ public abstract class BaseTestSupport
         connection = session.getConnection();
     }
     
-    // @After
+    @After
     public void after()
     {
         testUnit.clearSchemaData();

@@ -1,12 +1,13 @@
 package com.jfireframework.sql.test.table;
 
 import java.sql.Time;
+import java.util.Date;
 import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.TableEntity;
 
 @TableEntity(name = "user")
-public class User3
+public class UserTable
 {
     @Id
     @Column(name = "userid")
@@ -15,7 +16,7 @@ public class User3
     private String  name;
     private String  password;
     private Integer age;
-    private String  birthday;
+    private Date    birthday;
     private boolean boy;
     @Column(name = "boy", saveIgnore = true)
     private Boolean wboy;
@@ -23,36 +24,6 @@ public class User3
     @Column(name = "weight", saveIgnore = true)
     private float   weight2;
     private Time    time;
-    
-    public Time getTime()
-    {
-        return time;
-    }
-    
-    public void setTime(Time time)
-    {
-        this.time = time;
-    }
-    
-    public double getWeight()
-    {
-        return weight;
-    }
-    
-    public void setWeight(double weight)
-    {
-        this.weight = weight;
-    }
-    
-    public float getWeight2()
-    {
-        return weight2;
-    }
-    
-    public void setWeight2(float weight2)
-    {
-        this.weight2 = weight2;
-    }
     
     public Integer getId()
     {
@@ -94,12 +65,12 @@ public class User3
         this.age = age;
     }
     
-    public String getBirthday()
+    public Date getBirthday()
     {
         return birthday;
     }
     
-    public void setBirthday(String birthday)
+    public void setBirthday(Date birthday)
     {
         this.birthday = birthday;
     }
@@ -122,6 +93,36 @@ public class User3
     public void setWboy(Boolean wboy)
     {
         this.wboy = wboy;
+    }
+    
+    public double getWeight()
+    {
+        return weight;
+    }
+    
+    public void setWeight(double weight)
+    {
+        this.weight = weight;
+    }
+    
+    public float getWeight2()
+    {
+        return weight2;
+    }
+    
+    public void setWeight2(float weight2)
+    {
+        this.weight2 = weight2;
+    }
+    
+    public Time getTime()
+    {
+        return time;
+    }
+    
+    public void setTime(Time time)
+    {
+        this.time = time;
     }
     
 }
