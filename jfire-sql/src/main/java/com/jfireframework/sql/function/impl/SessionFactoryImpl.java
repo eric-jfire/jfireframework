@@ -3,7 +3,9 @@ package com.jfireframework.sql.function.impl;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -19,6 +21,7 @@ import com.jfireframework.sql.dbstructure.Structure;
 import com.jfireframework.sql.function.DAOBean;
 import com.jfireframework.sql.function.SessionFactory;
 import com.jfireframework.sql.function.SqlSession;
+import com.jfireframework.sql.function.mapper.Mapper;
 import com.jfireframework.sql.util.DaoFactory;
 import com.jfireframework.sql.util.InterfaceMapperFactory;
 import com.jfireframework.sql.util.MapBeanFactory;
@@ -27,15 +30,16 @@ import com.jfireframework.sql.util.MapBeanFactory;
 public class SessionFactoryImpl implements SessionFactory
 {
     @Resource
-    private DataSource                     dataSource;
+    private DataSource                        dataSource;
     @Resource
-    private ClassLoader                    classLoader;
-    private static ThreadLocal<SqlSession> sessionLocal = new ThreadLocal<SqlSession>();
-    private String                         scanPackage;
+    private ClassLoader                       classLoader;
+    private static ThreadLocal<SqlSession>    sessionLocal = new ThreadLocal<SqlSession>();
+    private String                            scanPackage;
     // 如果值是create，则会创建表。
-    private String                         tableMode    = "none";
+    private String                            tableMode    = "none";
     // 当前支持的类型有mysql,MariaDB
-    private String                         dbType;
+    private String                            dbType;
+    private IdentityHashMap<Class<?>, Mapper> mappers      = new IdentityHashMap<>(128);
     
     public SessionFactoryImpl()
     {
@@ -76,11 +80,15 @@ public class SessionFactoryImpl implements SessionFactory
                     {
                         if (method.isAnnotationPresent(Query.class) || method.isAnnotationPresent(Update.class) || method.isAnnotationPresent(BatchUpdate.class))
                         {
-                            InterfaceMapperFactory.buildMapper(ckass, classLoader);
+                            mappers.put(ckass, (Mapper) InterfaceMapperFactory.createMapper(ckass, classLoader).newInstance());
                             continue next;
                         }
                     }
                 }
+            }
+            for (Mapper each : mappers.values())
+            {
+                each.setSessionFactory(this);
             }
         }
         catch (Exception e1)
@@ -194,5 +202,37 @@ public class SessionFactoryImpl implements SessionFactory
     public void setDbType(String dbType)
     {
         this.dbType = dbType;
+    }
+    
+    @Override
+    public SqlSession getOrCreateCurrentSession()
+    {
+        SqlSession session = getCurrentSession();
+        if (session == null)
+        {
+            session = openSession();
+            sessionLocal.set(session);
+        }
+        return session;
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T getMapper(Class<T> entityClass)
+    {
+        try
+        {
+            return (T) mappers.get(entityClass);
+        }
+        catch (Exception e)
+        {
+            throw new JustThrowException(e);
+        }
+    }
+    
+    @Override
+    public Collection<Mapper> mappers()
+    {
+        return mappers.values();
     }
 }

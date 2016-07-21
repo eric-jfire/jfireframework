@@ -6,14 +6,11 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
@@ -33,10 +30,9 @@ import javassist.NotFoundException;
 
 public class InterfaceMapperFactory
 {
-    private static Logger                 logger       = ConsoleLogFactory.getLogger();
-    private static ClassPool              classPool    = ClassPool.getDefault();
-    public static Map<Class<?>, Class<?>> mapperBeans  = new HashMap<Class<?>, Class<?>>();
-    private static Set<Class<?>>          baseClassSet = new HashSet<Class<?>>();
+    private static Logger        logger       = ConsoleLogFactory.getLogger();
+    private static ClassPool     classPool    = ClassPool.getDefault();
+    private static Set<Class<?>> baseClassSet = new HashSet<Class<?>>();
     
     static
     {
@@ -71,41 +67,16 @@ public class InterfaceMapperFactory
     }
     
     /**
-     * 获取实现了用户接口的Mapper实现，该实现主要作用是发出注解中的sql语句
-     * 
-     * @param entityClass 用户的接口类
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T getMapper(Class<T> entityClass)
-    {
-        try
-        {
-            return (T) mapperBeans.get(entityClass).newInstance();
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        
-    }
-    
-    public static void buildMapper(Class<?> ckass, ClassLoader classLoader)
-    {
-        mapperBeans.put(ckass, createMapper(ckass, classLoader));
-    }
-    
-    /**
      * 创造一个Mapper的子类，该子类同时实现了用户指定的接口。并且接口的实现内容就是对注解的sql语句的执行
      * 
      * @param interfaceClass 子类需要实现的接口
      * @return
      */
-    private static Class<?> createMapper(Class<?> interfaceClass, ClassLoader classLoader)
+    public static Class<?> createMapper(Class<?> interfaceClass, ClassLoader classLoader)
     {
         try
         {
-            CtClass implClass = classPool.makeClass(interfaceClass.getName() + "_JfireOrmMapper_" + System.nanoTime());
+            CtClass implClass = classPool.makeClass(interfaceClass.getName() + "_JfireSqlMapper_" + System.nanoTime());
             implClass.setSuperclass(classPool.get(Mapper.class.getName()));
             CtClass interfaceCtClass = classPool.getCtClass(interfaceClass.getName());
             implClass.setInterfaces(new CtClass[] { interfaceCtClass });
@@ -202,7 +173,7 @@ public class InterfaceMapperFactory
             {
                 Verify.True(query.returnTypes().length > 0, "方法{}.{}的query注解中的returnType没有内容", method.getDeclaringClass(), method.getName());
                 resultTypes = query.returnTypes();
-                methodBody.append("($r) session.listQuery(new Class[]{");
+                methodBody.append("($r) sessionFactory.getOrCreateCurrentSession().listQuery(new Class[]{");
                 for (Class<?> each : resultTypes)
                 {
                     methodBody.append(each.getName()).append(".class,");
@@ -215,11 +186,11 @@ public class InterfaceMapperFactory
                 Class<?> resultType = (Class<?>) returnParamType;
                 if (baseClassSet.contains(resultType))
                 {
-                    methodBody.append("($r)session.baseListQuery(").append(resultType.getName()).append(".class,");
+                    methodBody.append("($r)sessionFactory.getOrCreateCurrentSession().baseListQuery(").append(resultType.getName()).append(".class,");
                 }
                 else
                 {
-                    methodBody.append("($r)session.listQuery(").append(resultType.getName()).append(".class,");
+                    methodBody.append("($r)sessionFactory.getOrCreateCurrentSession().listQuery(").append(resultType.getName()).append(".class,");
                 }
             }
             else
@@ -232,11 +203,11 @@ public class InterfaceMapperFactory
             Class<?> resultType = method.getReturnType();
             if (baseClassSet.contains(resultType))
             {
-                methodBody.append("\treturn ($r)session.baseQuery(").append(resultType.getName()).append(".class,");
+                methodBody.append("\treturn ($r)sessionFactory.getOrCreateCurrentSession().baseQuery(").append(resultType.getName()).append(".class,");
             }
             else
             {
-                methodBody.append("\treturn ($r)session.query(").append(resultType.getName()).append(".class,");
+                methodBody.append("\treturn ($r)sessionFactory.getOrCreateCurrentSession().query(").append(resultType.getName()).append(".class,");
             }
         }
         if (isDynamicSql)
@@ -256,11 +227,11 @@ public class InterfaceMapperFactory
             methodBody.append("\t" + var + ".setData(result);\n");
             if (isDynamicSql)
             {
-                methodBody.append("\tint total = ((Integer)session.baseQuery(int.class,countSql,countParam)).intValue();\n");
+                methodBody.append("\tint total = ((Integer)sessionFactory.getOrCreateCurrentSession().baseQuery(int.class,countSql,countParam)).intValue();\n");
             }
             else
             {
-                methodBody.append("\tint total = ((Integer)session.baseQuery(int.class,\"" + countSql + "\",").append(countParam).append(")).intValue();\n");
+                methodBody.append("\tint total = ((Integer)sessionFactory.getOrCreateCurrentSession().baseQuery(int.class,\"" + countSql + "\",").append(countParam).append(")).intValue();\n");
             }
             methodBody.append("\t" + var + ".setTotal(total);\n");
             methodBody.append("\treturn ($r)result;\n}");
@@ -314,14 +285,14 @@ public class InterfaceMapperFactory
         }
         if (method.getReturnType().getName().equals("void"))
         {
-            cache.append("session.update(");
+            cache.append("sessionFactory.getOrCreateCurrentSession().update(");
         }
         else
         {
             Class<?> returnType = method.getReturnType();
             if (returnType == int.class || returnType == Integer.class || returnType == long.class || returnType == Long.class)
             {
-                cache.append(" return ($r)session.update(");
+                cache.append(" return ($r)sessionFactory.getOrCreateCurrentSession().update(");
             }
             else
             {
@@ -388,11 +359,11 @@ public class InterfaceMapperFactory
         cache.append("list.add(tmp);}");
         if (method.getReturnType().getName().equals("void"))
         {
-            cache.append("session.batchUpdate(\"").append(sql).append("\",list);}");
+            cache.append("sessionFactory.getOrCreateCurrentSession().batchUpdate(\"").append(sql).append("\",list);}");
         }
         else
         {
-            cache.append("return ($r)session.batchUpdate(\"").append(sql).append("\",list);}");
+            cache.append("return ($r)sessionFactory.getOrCreateCurrentSession().batchUpdate(\"").append(sql).append("\",list);}");
         }
         CtMethod targetMethod = forCtMethod(method, mapperClass);
         logger.debug("创建的批量更新sql是{}", cache.toString());

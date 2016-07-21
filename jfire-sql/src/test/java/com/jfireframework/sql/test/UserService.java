@@ -21,7 +21,7 @@ public class UserService
     {
         System.out.println("caozuo");
         SqlSession session = sessionFactory.getCurrentSession();
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         op2();
         System.out.println("操作完毕");
         userDAO.deleteUser(1);
@@ -31,7 +31,7 @@ public class UserService
     public void op2()
     {
         SqlSession session = sessionFactory.getCurrentSession();
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         userDAO.getUserByidWithName(1);
     }
 }

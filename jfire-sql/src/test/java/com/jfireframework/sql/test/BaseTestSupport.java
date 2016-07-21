@@ -53,11 +53,7 @@ public abstract class BaseTestSupport
     {
         testUnit.clearSchemaData();
         testUnit.importExcelFile();
-        session = sessionFactory.getCurrentSession();
-        if (session == null)
-        {
-            session = sessionFactory.openSession();
-        }
+        session = sessionFactory.getOrCreateCurrentSession();
         connection = session.getConnection();
     }
     

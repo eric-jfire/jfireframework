@@ -38,7 +38,7 @@ public class ContextTest
     
     private void baseTest(JfireContext jfireContext)
     {
-        assertEquals(3, jfireContext.getBeanByAnnotation(Resource.class).length);
+        assertEquals(4, jfireContext.getBeanByAnnotation(Resource.class).length);
         ImmutablePerson immutablePerson = jfireContext.getBean(ImmutablePerson.class);
         ImmutablePerson person2 = (ImmutablePerson) jfireContext.getBean(ImmutablePerson.class.getName());
         assertEquals(immutablePerson, person2);

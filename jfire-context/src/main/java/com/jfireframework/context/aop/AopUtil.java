@@ -15,8 +15,6 @@ import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.baseutil.tx.AutoCloseManager;
-import com.jfireframework.baseutil.tx.TransactionManager;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.context.aop.annotation.AutoCloseResource;
 import com.jfireframework.context.aop.annotation.EnhanceClass;
@@ -26,6 +24,8 @@ import com.jfireframework.context.cache.CacheManager;
 import com.jfireframework.context.cache.annotation.CacheDelete;
 import com.jfireframework.context.cache.annotation.CacheGet;
 import com.jfireframework.context.cache.annotation.CachePut;
+import com.jfireframework.context.tx.AutoCloseManager;
+import com.jfireframework.context.tx.TransactionManager;
 import com.jfireframework.context.util.AnnotationUtil;
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
@@ -61,7 +61,7 @@ public class AopUtil
         classPool = new ClassPool();
         ClassPool.doPruning = true;
         classPool.importPackage("com.jfireframework.context.aop");
-        classPool.importPackage("com.jfireframework.baseutil.tx");
+        classPool.importPackage("com.jfireframework.context.tx");
         try
         {
             if (classLoader != null)
@@ -70,7 +70,6 @@ public class AopUtil
             }
             classPool.appendClassPath(new ClassClassPath(AopUtil.class));
             classPool.appendClassPath("com.jfireframework.context.aop");
-            classPool.appendClassPath("com.jfireframework.baseutil.tx");
             txManagerCtClass = classPool.get(TransactionManager.class.getName());
             acManagerCtClass = classPool.get(AutoCloseManager.class.getName());
             cacheManagerCtClass = classPool.get(CacheManager.class.getName());
@@ -436,11 +435,12 @@ public class AopUtil
                 exCcs[i] = classPool.get(types[i].getName());
             }
             CtMethod ctMethod = targetCc.getDeclaredMethod(method.getName(), getParamTypes(method));
-            ctMethod.insertBefore("((TransactionManager)" + txFieldName + ").beginTransAction();");
-            ctMethod.insertAfter("((TransactionManager)" + txFieldName + ").commit();");
+            String field = "((com.jfireframework.context.tx.TransactionManager)" + txFieldName + ")";
+            ctMethod.insertBefore(field + ".buildCurrentSession();" + field + ".beginTransAction();");
+            ctMethod.insertAfter(field + ".commit();" + field + ".closeCurrentSession();");
             for (CtClass exCc : exCcs)
             {
-                ctMethod.addCatch("{((TransactionManager)" + txFieldName + ").rollback();throw new RuntimeException($e);}", exCc);
+                ctMethod.addCatch("{" + field + ".rollback();" + field + ".closeCurrentSession();" + "throw new RuntimeException($e);}", exCc);
             }
         }
     }

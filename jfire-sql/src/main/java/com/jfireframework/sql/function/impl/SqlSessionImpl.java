@@ -17,9 +17,7 @@ import com.jfireframework.sql.function.LockMode;
 import com.jfireframework.sql.function.MapBean;
 import com.jfireframework.sql.function.SessionFactory;
 import com.jfireframework.sql.function.SqlSession;
-import com.jfireframework.sql.function.mapper.Mapper;
 import com.jfireframework.sql.util.DaoFactory;
-import com.jfireframework.sql.util.InterfaceMapperFactory;
 import com.jfireframework.sql.util.MapBeanFactory;
 import com.jfireframework.sql.util.SqlTool;
 
@@ -165,21 +163,6 @@ public class SqlSessionImpl implements SqlSession
     public void insert(Object entity)
     {
         DaoFactory.getDaoBean(entity.getClass()).insert(entity, connection);
-    }
-    
-    @Override
-    public <T> T getMapper(Class<T> entityClass)
-    {
-        try
-        {
-            T entity = InterfaceMapperFactory.getMapper(entityClass);
-            ((Mapper) entity).setSqlSession(this);
-            return entity;
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
     }
     
     @Override

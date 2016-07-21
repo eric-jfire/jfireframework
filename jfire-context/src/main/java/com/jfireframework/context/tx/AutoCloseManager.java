@@ -1,4 +1,4 @@
-package com.jfireframework.baseutil.tx;
+package com.jfireframework.context.tx;
 
 public interface AutoCloseManager
 {

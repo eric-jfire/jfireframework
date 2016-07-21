@@ -1,7 +1,19 @@
 package com.jfireframework.sql.function;
 
+import java.util.Collection;
+import com.jfireframework.sql.function.mapper.Mapper;
+
 public interface SessionFactory
 {
+    public Collection<Mapper> mappers();
+    
+    /**
+     * 根据给定的接口，返回符合sqlorm规范的接口实现
+     * 
+     * @param entityClass
+     * @return
+     */
+    public <T> T getMapper(Class<T> entityClass);
     
     /**
      * 获得当前线程内的SqlSession
@@ -9,6 +21,13 @@ public interface SessionFactory
      * @return
      */
     public SqlSession getCurrentSession();
+    
+    /**
+     * 调用getCurrentSession获得session，如果存在就返回。如果没有值，则使用openSession创建一个并且存储于线程内并返回
+     * 
+     * @return
+     */
+    public SqlSession getOrCreateCurrentSession();
     
     /**
      * 重新打开一个SqlSession
