@@ -14,9 +14,9 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 import com.jfireframework.baseutil.PackageScan;
+import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.code.CodeLocation;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.order.AescComparator;
@@ -48,7 +48,7 @@ public class JfireContextImpl implements JfireContext
     private Map<String, Bean>                      beanNameMap = new HashMap<String, Bean>();
     private Map<Class<?>, Bean>                    beanTypeMap = new HashMap<Class<?>, Bean>();
     private boolean                                init        = false;
-    private LightSet<String>                       classNames  = new LightSet<String>();
+    private List<String>                           classNames  = new LinkedList<String>();
     private static Logger                          logger      = ConsoleLogFactory.getLogger();
     private ClassLoader                            classLoader = JfireContextImpl.class.getClassLoader();
     private BeanUtil                               beanUtil    = new BeanUtil();
@@ -67,14 +67,17 @@ public class JfireContextImpl implements JfireContext
     {
         Verify.False(init, "不能在容器初始化后再加入需要扫描的包名");
         Verify.notNull(packageNames, "添加扫描的包名有误,不能为null.请检查{}", CodeLocation.getCodeLocation(2));
-        LightSet<String> classNames = new LightSet<String>();
+        List<String> classNames = new LinkedList<String>();
         for (String each : packageNames)
         {
             if (each == null)
             {
                 continue;
             }
-            classNames.addAll(PackageScan.scan(each));
+            for (String var : PackageScan.scan(each))
+            {
+                classNames.add(var);
+            }
         }
         this.classNames.addAll(classNames);
         StringCache cache = new StringCache("共扫描到类：\r\n");
@@ -82,7 +85,7 @@ public class JfireContextImpl implements JfireContext
         {
             cache.append("{}\r\n");
         }
-        logger.trace(cache.toString(), (Object[]) classNames.toArray(String.class));
+        logger.trace(cache.toString(), (Object[]) classNames.toArray(new String[classNames.size()]));
     }
     
     @Override
@@ -344,15 +347,15 @@ public class JfireContextImpl implements JfireContext
         {
             initContext();
         }
-        LightSet<Bean> set = new LightSet<Bean>();
+        List<Bean> list = new LinkedList<Bean>();
         for (Bean each : beanNameMap.values())
         {
             if (type.isAssignableFrom(each.getOriginType()))
             {
-                set.add(each);
+                list.add(each);
             }
         }
-        return set.toArray(Bean.class);
+        return list.toArray(new Bean[list.size()]);
     }
     
     @Override
@@ -377,7 +380,7 @@ public class JfireContextImpl implements JfireContext
          * @param classNames
          * @param beanMap
          */
-        public void buildBean(LightSet<String> classNames, Map<String, Bean> beanNameMap, ClassLoader classLoader)
+        public void buildBean(List<String> classNames, Map<String, Bean> beanNameMap, ClassLoader classLoader)
         {
             for (String each : classNames)
             {
@@ -412,7 +415,7 @@ public class JfireContextImpl implements JfireContext
             if (AnnotationUtil.isPresent(FactoryCreated.class, res))
             {
                 FactoryCreated factoryCreated = AnnotationUtil.getAnnotation(FactoryCreated.class, res);
-                Class<BeanFactory> ckass = factoryCreated.value();
+                Class<? extends BeanFactory> ckass = factoryCreated.value();
                 BeanFactory beanFactory = factories.get(ckass);
                 if (beanFactory == null)
                 {
@@ -434,7 +437,7 @@ public class JfireContextImpl implements JfireContext
             }
             else
             {
-                throw new UnSupportException("在接口上只有Resource注解是无法实例化bean的，请配合FactoryCreated注解");
+                throw new UnSupportException(StringUtil.format("在接口上只有Resource注解是无法实例化bean的，请配合FactoryCreated注解.请检查{}", res.getName()));
             }
             if (beanNameMap.containsKey(bean.getBeanName()))
             {
@@ -461,7 +464,7 @@ public class JfireContextImpl implements JfireContext
                 if (bean.canModify())
                 {
                     BeanConfig beanConfig = configMap.get(bean.getBeanName());
-                    bean.setInjectFields(FieldFactory.buildDependencyField(bean, beanNameMap, beanConfig));
+                    bean.setInjectFields(FieldFactory.buildDependencyField(bean, beanNameMap, beanTypeMap, beanConfig));
                     if (beanConfig != null)
                     {
                         bean.setParamFields(FieldFactory.buildParamField(bean, beanConfig));

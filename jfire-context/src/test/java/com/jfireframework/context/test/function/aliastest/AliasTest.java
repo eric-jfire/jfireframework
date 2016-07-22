@@ -14,7 +14,7 @@ import com.jfireframework.context.aliasanno.AnnotationUtil;
 public class AliasTest
 {
     @Autowired(wiredName = "sad")
-    private String bi;
+    private SingleDemo bi;
     
     @MyMethod(load = "ss")
     public void take()
@@ -39,7 +39,7 @@ public class AliasTest
     @Test
     public void test2()
     {
-        JfireContext jfireContext = new JfireContextImpl("com.jfireframework.context");
+        JfireContext jfireContext = new JfireContextImpl("com.jfireframework.context.test.function.aliastest");
         SingleDemo demo = (SingleDemo) jfireContext.getBean("demo");
         assertFalse(demo == null);
     }

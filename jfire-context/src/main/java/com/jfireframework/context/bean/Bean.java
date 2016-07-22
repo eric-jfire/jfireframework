@@ -8,7 +8,6 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
@@ -56,11 +55,11 @@ public class Bean
     /** 该bean是否实现了容器初始化结束接口 */
     private boolean                              hasFinishAction = false;
     /** 该bean的所有增强方法信息 */
-    private LightSet<EnhanceAnnoInfo>            enHanceAnnos    = new LightSet<EnhanceAnnoInfo>();
+    private List<EnhanceAnnoInfo>                enHanceAnnos    = new LinkedList<EnhanceAnnoInfo>();
     /** 该bean的事务方法 */
-    private LightSet<Method>                     txMethods       = new LightSet<Method>();
+    private List<Method>                         txMethods       = new LinkedList<Method>();
     /** 该bean的自动关闭资源方法 */
-    private LightSet<Method>                     acMethods       = new LightSet<Method>();
+    private List<Method>                         acMethods       = new LinkedList<Method>();
     private List<Method>                         cacheMethods    = new LinkedList<Method>();
     /**
      * 该Bean是否可以进行修改。如果是使用外部对象进行bean初始化，由于使用了外部对象，此时不应该再对该类进行aop操作。
@@ -305,12 +304,12 @@ public class Bean
         acMethods.add(method);
     }
     
-    public LightSet<Method> getTxMethodSet()
+    public List<Method> getTxMethodSet()
     {
         return txMethods;
     }
     
-    public LightSet<Method> getAcMethods()
+    public List<Method> getAcMethods()
     {
         return acMethods;
     }
@@ -320,7 +319,7 @@ public class Bean
         return canModify;
     }
     
-    public LightSet<EnhanceAnnoInfo> getEnHanceAnnos()
+    public List<EnhanceAnnoInfo> getEnHanceAnnos()
     {
         return enHanceAnnos;
     }

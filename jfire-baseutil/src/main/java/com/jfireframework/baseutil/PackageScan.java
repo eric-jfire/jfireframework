@@ -7,9 +7,11 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.exception.UnSupportException;
 
 /**
@@ -36,7 +38,7 @@ public class PackageScan
             filterNames = packageName.split(":")[1];
             packageName = packageName.split(":")[0];
         }
-        LightSet<String> classNames = new LightSet<String>();
+        List<String> classNames = new LinkedList<String>();
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         String resourceName = packageName.replaceAll("\\.", "/");
         URL url = loader.getResource(resourceName);
@@ -65,7 +67,7 @@ public class PackageScan
             getClassNameByJars(((URLClassLoader) loader).getURLs(), packageName, classNames);
         }
         doFilter(filterNames, classNames);
-        return classNames.toArray(String.class);
+        return classNames.toArray(new String[classNames.size()]);
     }
     
     /**
@@ -76,7 +78,7 @@ public class PackageScan
      * @return
      * @throws IOException
      */
-    private static void getClassNamesByJar(URL url, String packageName, LightSet<String> classNames)
+    private static void getClassNamesByJar(URL url, String packageName, List<String> classNames)
     {
         JarFile jarFile = null;
         try
@@ -99,7 +101,7 @@ public class PackageScan
             {
                 String className = entryName.substring(0, entryName.indexOf(".class"));
                 className = className.replaceAll("/", ".");
-                classNames.addValue(className);
+                classNames.add(className);
             }
         }
     }
@@ -111,7 +113,7 @@ public class PackageScan
      * @param packageFile 当前的文件
      * @param list
      */
-    private static void findClassNamesByFile(String packageName, File packageFile, LightSet<String> classNames)
+    private static void findClassNamesByFile(String packageName, File packageFile, List<String> classNames)
     {
         if (packageFile.isFile())
         {
@@ -119,7 +121,7 @@ public class PackageScan
             className = className.replaceAll("/", ".");
             if (!className.contains("$"))
             {
-                classNames.addValue(className);
+                classNames.add(className);
             }
         }
         else
@@ -141,7 +143,7 @@ public class PackageScan
      * @return
      * @throws IOException
      */
-    private static void getClassNameByJars(URL[] urls, String packagePath, LightSet<String> classNames)
+    private static void getClassNameByJars(URL[] urls, String packagePath, List<String> classNames)
     {
         if (urls != null)
         {
@@ -169,7 +171,7 @@ public class PackageScan
      * @param filterNames
      * @param classNames
      */
-    private static void doFilter(String filterNames, LightSet<String> classNames)
+    private static void doFilter(String filterNames, List<String> classNames)
     {
         if (filterNames == null)
         {
@@ -194,32 +196,28 @@ public class PackageScan
         
     }
     
-    private static void inFilter(String rule, LightSet<String> classNames)
+    private static void inFilter(String rule, List<String> classNames)
     {
-        for (String each : classNames)
+        Iterator<String> iterator = classNames.iterator();
+        while (iterator.hasNext())
         {
-            if (StringUtil.match(each, rule))
+            String value = iterator.next();
+            if (StringUtil.match(value, rule) == false)
             {
-                continue;
-            }
-            else
-            {
-                classNames.removeValue(each);
+                iterator.remove();
             }
         }
     }
     
-    private static void outFilter(String rule, LightSet<String> classNames)
+    private static void outFilter(String rule, List<String> classNames)
     {
-        for (String each : classNames)
+        Iterator<String> iterator = classNames.iterator();
+        while (iterator.hasNext())
         {
-            if (StringUtil.match(each, rule))
+            String value = iterator.next();
+            if (StringUtil.match(value, rule))
             {
-                classNames.removeValue(each);
-            }
-            else
-            {
-                continue;
+                iterator.remove();
             }
         }
     }

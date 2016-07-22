@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 import com.jfireframework.context.bean.BeanFactory;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target(value = { ElementType.FIELD, ElementType.ANNOTATION_TYPE })
+@Target(value = { ElementType.TYPE, ElementType.ANNOTATION_TYPE })
 @Documented
 @Inherited
 public @interface FactoryCreated
@@ -19,5 +19,5 @@ public @interface FactoryCreated
      * 
      * @return
      */
-    public Class<BeanFactory> value();
+    public Class<? extends BeanFactory> value();
 }

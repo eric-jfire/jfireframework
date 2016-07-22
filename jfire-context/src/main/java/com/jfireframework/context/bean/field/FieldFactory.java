@@ -5,14 +5,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.baseutil.collection.set.LightSet;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
-import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.context.aliasanno.AnnotationUtil;
 import com.jfireframework.context.bean.Bean;
@@ -21,11 +20,8 @@ import com.jfireframework.context.bean.annotation.field.MapKey;
 import com.jfireframework.context.bean.field.dependency.DependencyField;
 import com.jfireframework.context.bean.field.dependency.impl.BeanNameMapField;
 import com.jfireframework.context.bean.field.dependency.impl.DefaultBeanField;
-import com.jfireframework.context.bean.field.dependency.impl.InterfaceField;
-import com.jfireframework.context.bean.field.dependency.impl.LightSetField;
 import com.jfireframework.context.bean.field.dependency.impl.ListField;
 import com.jfireframework.context.bean.field.dependency.impl.MethodMapField;
-import com.jfireframework.context.bean.field.dependency.impl.NoActionField;
 import com.jfireframework.context.bean.field.dependency.impl.ValueMapField;
 import com.jfireframework.context.bean.field.param.AbstractParamField;
 import com.jfireframework.context.bean.field.param.ParamField;
@@ -33,7 +29,6 @@ import sun.reflect.MethodAccessor;
 
 public class FieldFactory
 {
-    private static Logger logger = ConsoleLogFactory.getLogger();
     
     /**
      * 根据配置信息和field上的注解信息,返回该bean所有的依赖注入的field
@@ -43,10 +38,10 @@ public class FieldFactory
      * @param beanConfig
      * @return
      */
-    public static DependencyField[] buildDependencyField(Bean bean, Map<String, Bean> beanNameMap, BeanConfig beanConfig)
+    public static DependencyField[] buildDependencyField(Bean bean, Map<String, Bean> beanNameMap, Map<Class<?>, Bean> beanTypeMap, BeanConfig beanConfig)
     {
         Field[] fields = ReflectUtil.getAllFields(bean.getType());
-        LightSet<DependencyField> set = new LightSet<DependencyField>();
+        List<DependencyField> list = new LinkedList<DependencyField>();
         Map<String, String> dependencyMap = null;
         if (beanConfig != null)
         {
@@ -58,14 +53,14 @@ public class FieldFactory
             if (dependencyMap != null && dependencyMap.containsKey(field.getName()))
             {
                 String dependencyStr = dependencyMap.get(field.getName());
-                set.add(buildDependFieldsByConfig(field, beanNameMap, dependencyStr));
+                list.add(buildDependFieldsByConfig(field, beanNameMap, dependencyStr));
             }
             else if (AnnotationUtil.isPresent(Resource.class, field))
             {
-                set.add(buildDependencyFieldByAnno(field, bean, beanNameMap));
+                list.add(buildDependencyFieldByAnno(field, bean, beanNameMap, beanTypeMap));
             }
         }
-        return set.toArray(DependencyField.class);
+        return list.toArray(new DependencyField[list.size()]);
     }
     
     /**
@@ -79,42 +74,42 @@ public class FieldFactory
     private static DependencyField buildDependFieldsByConfig(Field field, Map<String, Bean> beanNameMap, String dependencyStr)
     {
         Class<?> type = field.getType();
-        if (LightSet.class.equals(type) || List.class.equals(type))
+        if (List.class == type)
         {
-            return buildListOrLightsetFieldByConfig(field, dependencyStr, beanNameMap);
+            return buildListByConfig(field, dependencyStr, beanNameMap);
         }
-        else if (Map.class.equals(type))
+        else if (Map.class == type)
         {
             return buildMapFieldByConfig(field, dependencyStr, beanNameMap);
         }
         else
         {
-            return buildInterfaceOrDefaultFieldByConfig(field, dependencyStr, beanNameMap);
+            return buildDefaultFieldByConfig(field, dependencyStr, beanNameMap);
         }
     }
     
-    private static DependencyField buildDependencyFieldByAnno(Field field, Bean bean, Map<String, Bean> beanNameMap)
+    private static DependencyField buildDependencyFieldByAnno(Field field, Bean bean, Map<String, Bean> beanNameMap, Map<Class<?>, Bean> beanTypeMap)
     {
         Class<?> type = field.getType();
-        if (LightSet.class.equals(type) || List.class.equals(type))
+        if (type == List.class)
         {
-            return buildListOrLightsetFieldByAnno(field, beanNameMap);
+            return buildListFieldByAnno(field, beanNameMap);
         }
-        else if (Map.class.equals(type))
+        else if (type == Map.class)
         {
             return buildMapFieldByAnno(field, beanNameMap);
         }
         else if (type.isInterface() || Modifier.isAbstract(type.getModifiers()))
         {
-            return buildInterfaceField(field, beanNameMap);
+            return buildInterfaceField(field, beanNameMap, beanTypeMap);
         }
         else
         {
-            return buildDefaultField(field, beanNameMap);
+            return buildDefaultField(field, beanNameMap, beanTypeMap);
         }
     }
     
-    private static DependencyField buildListOrLightsetFieldByConfig(Field field, String dependencyStr, Map<String, Bean> beanNameMap)
+    private static DependencyField buildListByConfig(Field field, String dependencyStr, Map<String, Bean> beanNameMap)
     {
         String[] dependencyBeanNames = dependencyStr.split(";");
         Bean[] beans = new Bean[dependencyBeanNames.length];
@@ -126,14 +121,7 @@ public class FieldFactory
             Verify.True(beanInterface.isAssignableFrom(dependencyBean.getType()), "配置文件中注入配置{}中的beanName:{}没有实现接口:{}", dependencyStr, dependencyBeanNames[i], beanInterface);
             beans[i] = dependencyBean;
         }
-        if (LightSet.class.equals(field.getType()))
-        {
-            return new LightSetField(field, beans);
-        }
-        else
-        {
-            return new ListField(field, beans);
-        }
+        return new ListField(field, beans);
     }
     
     private static DependencyField buildMapFieldByConfig(Field field, String dependencyStr, Map<String, Bean> beanNameMap)
@@ -195,12 +183,12 @@ public class FieldFactory
         {
             dependencyStr = dependencyStr.substring(9);
             Verify.True(keyClass.equals(String.class), "只用Resource注解进行map注入时，key就是注入的bean的名称，所以要求key是String类型。请检查{}.{}", field.getDeclaringClass(), field.getName());
-            LightSet<Bean> beans = new LightSet<Bean>();
+            List<Bean> beans = new LinkedList<Bean>();
             for (String each : dependencyStr.split(","))
             {
                 beans.add(beanNameMap.get(each));
             }
-            return new BeanNameMapField(field, beans.toArray(Bean.class));
+            return new BeanNameMapField(field, beans.toArray(new Bean[beans.size()]));
         }
         else
         {
@@ -208,7 +196,7 @@ public class FieldFactory
         }
     }
     
-    private static DependencyField buildInterfaceOrDefaultFieldByConfig(Field field, String dependencyStr, Map<String, Bean> beanNameMap)
+    private static DependencyField buildDefaultFieldByConfig(Field field, String dependencyStr, Map<String, Bean> beanNameMap)
     {
         Bean dependencyBean = beanNameMap.get(dependencyStr);
         Verify.notNull(dependencyBean, "配置文件中注入配置{}的bean不存在", dependencyStr);
@@ -216,19 +204,18 @@ public class FieldFactory
         if (type.isInterface() || Modifier.isAbstract(type.getModifiers()))
         {
             Verify.True(type.isAssignableFrom(dependencyBean.getOriginType()), "配置文件中注入的bean:{}不是接口:{}的实现", dependencyStr, type);
-            return new InterfaceField(field, dependencyBean);
         }
         else
         {
             Verify.True(type.isAssignableFrom(dependencyBean.getOriginType()), "配置文件中注入的bean:{}不是类{}的类型", dependencyStr, type);
-            return new DefaultBeanField(field, dependencyBean);
         }
+        return new DefaultBeanField(field, dependencyBean);
     }
     
-    private static DependencyField buildListOrLightsetFieldByAnno(Field field, Map<String, Bean> beanNameMap)
+    private static DependencyField buildListFieldByAnno(Field field, Map<String, Bean> beanNameMap)
     {
         Class<?> beanInterface = (Class<?>) ((java.lang.reflect.ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-        LightSet<Bean> tmp = new LightSet<Bean>();
+        List<Bean> tmp = new LinkedList<Bean>();
         for (Bean each : beanNameMap.values())
         {
             if (beanInterface.isAssignableFrom(each.getOriginType()))
@@ -236,21 +223,7 @@ public class FieldFactory
                 tmp.add(each);
             }
         }
-        if (tmp.size() > 0)
-        {
-            if (LightSet.class.equals(field.getType()))
-            {
-                return new LightSetField(field, tmp.toArray(Bean.class));
-            }
-            else
-            {
-                return new ListField(field, tmp.toArray(Bean.class));
-            }
-        }
-        else
-        {
-            return new NoActionField(field);
-        }
+        return new ListField(field, tmp.toArray(new Bean[tmp.size()]));
     }
     
     private static DependencyField buildMapFieldByAnno(Field field, Map<String, Bean> beanNameMap)
@@ -260,7 +233,7 @@ public class FieldFactory
         Verify.matchType(types[1], Class.class, "map依赖字段，要求value必须指明类型，而当前类型是{}", types[1]);
         Class<?> keyClass = (Class<?>) (types[0]);
         Class<?> valueClass = (Class<?>) (types[1]);
-        LightSet<Bean> tmp = new LightSet<Bean>();
+        List<Bean> tmp = new LinkedList<Bean>();
         for (Bean each : beanNameMap.values())
         {
             if (valueClass.isAssignableFrom(each.getOriginType()))
@@ -268,7 +241,7 @@ public class FieldFactory
                 tmp.add(each);
             }
         }
-        Bean[] beans = tmp.toArray(Bean.class);
+        Bean[] beans = tmp.toArray(new Bean[tmp.size()]);
         if (AnnotationUtil.isPresent(MapKey.class, field))
         {
             String methodName = AnnotationUtil.getAnnotation(MapKey.class, field).value();
@@ -282,68 +255,76 @@ public class FieldFactory
         }
     }
     
-    private static DependencyField buildInterfaceField(Field field, Map<String, Bean> beanNameMap)
+    /**
+     * 注入一个bean，首先按照名称来寻找，无法找到的情况下使用接口类型来寻找匹配。再找不到报错
+     * 
+     * @param field
+     * @param beanNameMap
+     * @return
+     */
+    private static DependencyField buildInterfaceField(Field field, Map<String, Bean> beanNameMap, Map<Class<?>, Bean> beanTypeMap)
     {
         Resource resource = AnnotationUtil.getAnnotation(Resource.class, field);
         Class<?> type = field.getType();
-        // 如果指明了beanName,则寻找对应的beanName进行注入准备
-        if (StringUtil.isNotBlank(resource.name()))
+        String beanName = resource.name().equals("") ? field.getType().getName() : resource.name();
+        Bean nameBean = beanNameMap.get(beanName);
+        if (nameBean != null)
         {
-            Bean implBean = beanNameMap.get(resource.name());
-            Verify.notNull(implBean, "资源{}不存在,注入错误", resource.name());
-            Verify.True(type.isAssignableFrom(implBean.getOriginType()), "bean:{}不是接口:{}的实现", implBean.getOriginType().getName(), type.getName());
-            return new InterfaceField(field, implBean);
+            Verify.True(type.isAssignableFrom(nameBean.getOriginType()), "bean:{}不是接口:{}的实现", nameBean.getOriginType().getName(), type.getName());
+            return new DefaultBeanField(field, nameBean);
         }
-        // 否则寻找实现了该接口的bean,如果超过1个,则抛出异常
+        // 寻找实现了该接口的bean,如果超过1个,则抛出异常
+        int find = 0;
+        Bean implBean = null;
+        for (Class<?> each : beanTypeMap.keySet())
+        {
+            if (type.isAssignableFrom(each))
+            {
+                find++;
+                implBean = beanTypeMap.get(each);
+            }
+        }
+        if (find != 0)
+        {
+            Verify.True(find == 1, "接口或抽象类{}的实现多于一个,无法自动注入{}.{},请在resource注解上注明需要注入的bean的名称", type.getName(), field.getDeclaringClass().getName(), field.getName());
+            return new DefaultBeanField(field, implBean);
+        }
         else
         {
-            int find = 0;
-            Bean implBean = null;
-            for (Bean each : beanNameMap.values())
-            {
-                if (type.isAssignableFrom(each.getOriginType()))
-                {
-                    find++;
-                    implBean = each;
-                }
-            }
-            if (find != 0)
-            {
-                Verify.True(find == 1, "接口或抽象类{}的实现多于一个,无法自动注入{}.{},请在resource注解上注明需要注入的bean的名称", type.getName(), field.getDeclaringClass().getName(), field.getName());
-                return new InterfaceField(field, implBean);
-            }
-            else
-            {
-                logger.warn("接口或抽象类{}没有实现,请注意", type);
-                return new NoActionField(field);
-            }
+            throw new NullPointerException(StringUtil.format("属性{}.{}没有可以注入的bean", field.getDeclaringClass().getName(), field.getName()));
         }
     }
     
-    private static DependencyField buildDefaultField(Field field, Map<String, Bean> beanNameMap)
+    /**
+     * 构建默认情况的注入bean。首先按照bean的名称来寻找，如果找不到，则按照类型来寻找。再找不到，则报错
+     * 
+     * @param field
+     * @param beanNameMap
+     * @return
+     */
+    private static DependencyField buildDefaultField(Field field, Map<String, Bean> beanNameMap, Map<Class<?>, Bean> beanTypeMap)
     {
         Resource resource = AnnotationUtil.getAnnotation(Resource.class, field);
         String beanName = resource.name().equals("") ? field.getType().getName() : resource.name();
-        Bean implBean = beanNameMap.get(beanName);
-        if (implBean == null)
-        {
-            logger.warn("属性{}.{}没有对应的bean可以注入", field.getDeclaringClass().getName(), field.getName());
-            return new NoActionField(field);
-        }
-        else
+        Bean nameBean = beanNameMap.get(beanName);
+        if (nameBean != null)
         {
             try
             {
-                Verify.True(field.getType().isAssignableFrom(implBean.getOriginType()), "bean:{}不是类:{}的实例", implBean.getOriginType().getName(), field.getType().getName());
+                Verify.True(field.getType().isAssignableFrom(nameBean.getOriginType()), "bean:{}不是类:{}的实例", nameBean.getOriginType().getName(), field.getType().getName());
             }
             catch (Exception e)
             {
-                System.out.println(field.getType().getClassLoader());
-                System.out.println(implBean.getOriginType().getClassLoader());
-                throw new RuntimeException(e);
+                throw new JustThrowException(e);
             }
-            return new DefaultBeanField(field, implBean);
+            return new DefaultBeanField(field, nameBean);
         }
+        Bean typeBean = beanTypeMap.get(field.getType());
+        if (typeBean != null)
+        {
+            return new DefaultBeanField(field, typeBean);
+        }
+        throw new NullPointerException(StringUtil.format("无法注入{}.{},没有任何可以注入的内容", field.getDeclaringClass().getName(), field.getName()));
     }
     
     private static MethodAccessor[] initMapKeyMethods(Bean[] beans, String methodName, Class<?> hasMapFieldClass, Class<?> keyClass)
@@ -386,15 +367,15 @@ public class FieldFactory
     {
         Map<String, String> map = beanConfig.getParamMap();
         Field[] fields = ReflectUtil.getAllFields(bean.getType());
-        LightSet<ParamField> set = new LightSet<ParamField>();
+        List<ParamField> list = new LinkedList<ParamField>();
         for (Field field : fields)
         {
             if (map.containsKey(field.getName()))
             {
-                set.add(buildParamField(field, map.get(field.getName())));
+                list.add(buildParamField(field, map.get(field.getName())));
             }
         }
-        return set.toArray(ParamField.class);
+        return list.toArray(new ParamField[list.size()]);
     }
     
     private static ParamField buildParamField(Field field, String value)

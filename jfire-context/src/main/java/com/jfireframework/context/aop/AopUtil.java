@@ -4,10 +4,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.el.JelException;
 import com.jfireframework.baseutil.el.JelExplain;
 import com.jfireframework.baseutil.exception.UnSupportException;
@@ -210,13 +211,13 @@ public class AopUtil
         {
             String txFieldName = "tx_" + System.nanoTime();
             addField(childCc, txManagerCtClass, txFieldName);
-            addTxToMethod(childCc, txFieldName, bean.getTxMethodSet().toArray(Method.class));
+            addTxToMethod(childCc, txFieldName, bean.getTxMethodSet().toArray(new Method[bean.getTxMethodSet().size()]));
         }
         if (bean.getAcMethods().size() > 0)
         {
             String acFieldName = "ac_" + System.nanoTime();
             addField(childCc, acManagerCtClass, acFieldName);
-            addAcToMethod(childCc, acFieldName, bean.getAcMethods().toArray(Method.class));
+            addAcToMethod(childCc, acFieldName, bean.getAcMethods().toArray(new Method[bean.getAcMethods().size()]));
         }
         if (bean.getCacheMethods().size() > 0)
         {
@@ -240,19 +241,19 @@ public class AopUtil
                 }
             }
         }
-        LightSet<EnhanceAnnoInfo> set = new LightSet<EnhanceAnnoInfo>();
+        List<EnhanceAnnoInfo> infos = new LinkedList<EnhanceAnnoInfo>();
         for (CtMethod each : childCc.getDeclaredMethods())
         {
             // 针对每一个方法,取出该方法对应的所有增强,并且进行排序
-            set.removeAll();
+            infos.clear();
             for (EnhanceAnnoInfo enhanceAnnoInfo : bean.getEnHanceAnnos())
             {
                 if (enhanceAnnoInfo.match(each))
                 {
-                    set.add(enhanceAnnoInfo);
+                    infos.add(enhanceAnnoInfo);
                 }
             }
-            EnhanceAnnoInfo[] enhanceAnnoInfos = set.toArray(EnhanceAnnoInfo.class);
+            EnhanceAnnoInfo[] enhanceAnnoInfos = infos.toArray(new EnhanceAnnoInfo[infos.size()]);
             Arrays.sort(enhanceAnnoInfos, new AescComparator());
             String originName = each.getName();
             for (EnhanceAnnoInfo enhanceAnnoInfo : enhanceAnnoInfos)
@@ -781,13 +782,13 @@ public class AopUtil
      */
     public static CtMethod[] getAllMethods(CtClass cc) throws NotFoundException
     {
-        LightSet<CtMethod> set = new LightSet<CtMethod>();
+        List<CtMethod> list = new LinkedList<CtMethod>();
         while (cc.getSimpleName().equals("Object") == false)
         {
             CtMethod[] methods = cc.getDeclaredMethods();
             checkNextMethod: for (CtMethod each : methods)
             {
-                checkAlreadIn: for (CtMethod alreadIn : set)
+                checkAlreadIn: for (CtMethod alreadIn : list)
                 {
                     if (alreadIn.getName().equals(each.getName()) == false)
                     {
@@ -809,11 +810,11 @@ public class AopUtil
                     // 代码走到这里，意味着父类的方法已经被子类重载了
                     continue checkNextMethod;
                 }
-                set.add(each);
+                list.add(each);
             }
             cc = cc.getSuperclass();
         }
-        return set.toArray(CtMethod.class);
+        return list.toArray(new CtMethod[list.size()]);
     }
     
     /**
@@ -846,12 +847,12 @@ public class AopUtil
         {
             ctClass = cc;
         }
-        LightSet<CtClass> set = new LightSet<CtClass>();
+        List<CtClass> list = new LinkedList<CtClass>();
         for (Class<?> each : method.getParameterTypes())
         {
-            set.add(classPool.get(each.getName()));
+            list.add(classPool.get(each.getName()));
         }
-        return ctClass.getDeclaredMethod(method.getName(), set.toArray(CtClass.class));
+        return ctClass.getDeclaredMethod(method.getName(), list.toArray(new CtClass[list.size()]));
     }
     
     /**
