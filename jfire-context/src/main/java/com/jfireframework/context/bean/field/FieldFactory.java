@@ -291,7 +291,7 @@ public class FieldFactory
         }
         else
         {
-            throw new NullPointerException(StringUtil.format("属性{}.{}没有可以注入的bean", field.getDeclaringClass().getName(), field.getName()));
+            throw new NullPointerException(StringUtil.format("属性{}.{}没有可以注入的bean,属性类型为{}", field.getDeclaringClass().getName(), field.getName(), field.getType().getName()));
         }
     }
     

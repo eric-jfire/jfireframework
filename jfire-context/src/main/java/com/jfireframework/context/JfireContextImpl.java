@@ -8,7 +8,6 @@ import java.lang.annotation.Annotation;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +29,6 @@ import com.jfireframework.context.aliasanno.AnnotationUtil;
 import com.jfireframework.context.aop.AopUtil;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.context.bean.BeanConfig;
-import com.jfireframework.context.bean.BeanFactory;
-import com.jfireframework.context.bean.annotation.FactoryCreated;
 import com.jfireframework.context.bean.field.FieldFactory;
 import com.jfireframework.context.config.BeanAttribute;
 import com.jfireframework.context.config.BeanInfo;
@@ -40,18 +37,14 @@ import com.jfireframework.context.event.impl.EventPublisherImpl;
 
 public class JfireContextImpl implements JfireContext
 {
-    /**
-     * 用来存储Beanfactory的实例
-     */
-    private IdentityHashMap<Class<?>, BeanFactory> factories   = new IdentityHashMap<Class<?>, BeanFactory>();
-    private Map<String, BeanConfig>                configMap   = new HashMap<String, BeanConfig>();
-    private Map<String, Bean>                      beanNameMap = new HashMap<String, Bean>();
-    private Map<Class<?>, Bean>                    beanTypeMap = new HashMap<Class<?>, Bean>();
-    private boolean                                init        = false;
-    private List<String>                           classNames  = new LinkedList<String>();
-    private static Logger                          logger      = ConsoleLogFactory.getLogger();
-    private ClassLoader                            classLoader = JfireContextImpl.class.getClassLoader();
-    private BeanUtil                               beanUtil    = new BeanUtil();
+    private Map<String, BeanConfig> configMap   = new HashMap<String, BeanConfig>();
+    private Map<String, Bean>       beanNameMap = new HashMap<String, Bean>();
+    private Map<Class<?>, Bean>     beanTypeMap = new HashMap<Class<?>, Bean>();
+    private boolean                 init        = false;
+    private List<String>            classNames  = new LinkedList<String>();
+    private static Logger           logger      = ConsoleLogFactory.getLogger();
+    private ClassLoader             classLoader = JfireContextImpl.class.getClassLoader();
+    private BeanUtil                beanUtil    = new BeanUtil();
     
     public JfireContextImpl()
     {
@@ -203,7 +196,7 @@ public class JfireContextImpl implements JfireContext
         addSingletonEntity(JfireContext.class.getName(), this);
         addBean(EventPublisherImpl.class);
         init = true;
-        beanUtil.buildBean(classNames, beanNameMap, classLoader);
+        beanUtil.buildBean(classNames);
         for (Bean each : beanNameMap.values())
         {
             beanTypeMap.put(each.getOriginType(), each);
@@ -380,11 +373,11 @@ public class JfireContextImpl implements JfireContext
          * @param classNames
          * @param beanMap
          */
-        public void buildBean(List<String> classNames, Map<String, Bean> beanNameMap, ClassLoader classLoader)
+        public void buildBean(List<String> classNames)
         {
             for (String each : classNames)
             {
-                buildBean(each, beanNameMap, classLoader);
+                buildBean(each);
             }
         }
         
@@ -395,12 +388,12 @@ public class JfireContextImpl implements JfireContext
          * @param context
          * @return
          */
-        private void buildBean(String className, Map<String, Bean> beanNameMap, ClassLoader classloader)
+        private void buildBean(String className)
         {
             Class<?> res = null;
             try
             {
-                res = classloader.loadClass(className);
+                res = classLoader.loadClass(className);
             }
             catch (ClassNotFoundException e)
             {
@@ -412,32 +405,13 @@ public class JfireContextImpl implements JfireContext
                 return;
             }
             Bean bean = null;
-            if (AnnotationUtil.isPresent(FactoryCreated.class, res))
-            {
-                FactoryCreated factoryCreated = AnnotationUtil.getAnnotation(FactoryCreated.class, res);
-                Class<? extends BeanFactory> ckass = factoryCreated.value();
-                BeanFactory beanFactory = factories.get(ckass);
-                if (beanFactory == null)
-                {
-                    try
-                    {
-                        beanFactory = ckass.newInstance();
-                        factories.put(ckass, beanFactory);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new JustThrowException(e);
-                    }
-                }
-                bean = beanFactory.parse(res);
-            }
-            else if (res.isInterface() == false)
+            if (res.isInterface() == false)
             {
                 bean = new Bean(res);
             }
             else
             {
-                throw new UnSupportException(StringUtil.format("在接口上只有Resource注解是无法实例化bean的，请配合FactoryCreated注解.请检查{}", res.getName()));
+                throw new UnSupportException(StringUtil.format("在接口上只有Resource注解是无法实例化bean的.请检查{}", res.getName()));
             }
             if (beanNameMap.containsKey(bean.getBeanName()))
             {

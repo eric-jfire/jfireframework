@@ -242,7 +242,6 @@ public class Bean
         int order;
         for (Method each : bean.getType().getDeclaredMethods())
         {
-            
             if (AnnotationUtil.isPresent(AfterEnhance.class, each))
             {
                 AfterEnhance afterEnhance = AnnotationUtil.getAnnotation(AfterEnhance.class, each);

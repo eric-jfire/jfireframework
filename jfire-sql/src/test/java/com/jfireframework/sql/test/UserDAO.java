@@ -16,6 +16,7 @@ public interface UserDAO
     public List<User> functionUse2(String name, String name2);
     
     @Query(sql = "select username from user order by userid", paramNames = "")
+    
     public List<String> getUsernames();
     
     @Query(sql = "select username from user order by userid", paramNames = "")
