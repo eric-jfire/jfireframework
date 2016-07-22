@@ -4,7 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-public interface MapBean<T>
+public interface ResultMap<T>
 {
     /**
      * 将resultset中的值转换到bean中,从resultset中取值使用名称，名称是属性所对应的数据库列名

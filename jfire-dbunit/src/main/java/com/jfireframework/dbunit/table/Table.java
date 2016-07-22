@@ -3,8 +3,9 @@ package com.jfireframework.dbunit.table;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedList;
+import java.util.List;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.collection.set.LightSet;
 
 /**
  * 数据库表的映射类
@@ -15,19 +16,19 @@ import com.jfireframework.baseutil.collection.set.LightSet;
 public class Table implements Comparable<Table>
 {
     // 表的名字
-    private String           tableName;
+    private String       tableName;
     // 该表所持有的外键对应的外键表名称
-    private LightSet<String> fatherTableNames = new LightSet<String>();
-    private LightSet<Table>  fatherTables     = new LightSet<Table>();
+    private List<String> fatherTableNames = new LinkedList<String>();
+    private List<Table>  fatherTables     = new LinkedList<Table>();
     // 持有该表主键作为外键的表名称
-    private LightSet<Table>  childTables      = new LightSet<Table>();
-    private LightSet<String> colNameList      = new LightSet<String>();
-    private LightSet<Row>    rowArray         = new LightSet<Row>();
-    private int              orderNum         = 0;
-    private int              rowCount         = 0;
-    private String           selectSql;
-    private String           deleteSql;
-    private String           insertSql;
+    private List<Table>  childTables      = new LinkedList<Table>();
+    private List<String> colNameList      = new LinkedList<String>();
+    private List<Row>    rowArray         = new LinkedList<Row>();
+    private int          orderNum         = 0;
+    private int          rowCount         = 0;
+    private String       selectSql;
+    private String       deleteSql;
+    private String       insertSql;
     
     /**
      * 使用数据库元数据信息，分析表结构，并且存储在对象实例之中
@@ -131,7 +132,7 @@ public class Table implements Comparable<Table>
         rowArray.add(row);
     }
     
-    public LightSet<String> getColNameList()
+    public List<String> getColNameList()
     {
         return colNameList;
     }
@@ -146,17 +147,17 @@ public class Table implements Comparable<Table>
         this.tableName = tableName;
     }
     
-    public LightSet<Row> getRowArray()
+    public List<Row> getRowArray()
     {
         return rowArray;
     }
     
-    public LightSet<Table> getFatherTables()
+    public List<Table> getFatherTables()
     {
         return fatherTables;
     }
     
-    public LightSet<String> getFatherTableNames()
+    public List<String> getFatherTableNames()
     {
         return fatherTableNames;
     }

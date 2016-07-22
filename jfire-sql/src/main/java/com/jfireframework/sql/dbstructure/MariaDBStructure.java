@@ -13,7 +13,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.field.MapField;
-import com.jfireframework.sql.function.impl.DAOBeanImpl;
+import com.jfireframework.sql.function.Dao;
 
 public class MariaDBStructure implements Structure
 {
@@ -41,7 +41,7 @@ public class MariaDBStructure implements Structure
     }
     
     @Override
-    public void createTable(Connection connection, DAOBeanImpl daoBean) throws SQLException
+    public void createTable(Connection connection, Dao<?> daoBean) throws SQLException
     {
         String tableName = daoBean.getTableName();
         MapField idField = daoBean.getIdField();
@@ -70,7 +70,7 @@ public class MariaDBStructure implements Structure
     }
     
     @Override
-    public void updateTable(Connection connection, DAOBeanImpl daoBean) throws SQLException
+    public void updateTable(Connection connection, Dao<?> daoBean) throws SQLException
     {
         String tableName = daoBean.getTableName();
         MapField idField = daoBean.getIdField();

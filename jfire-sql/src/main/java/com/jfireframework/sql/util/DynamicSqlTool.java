@@ -24,9 +24,9 @@ public class DynamicSqlTool
      * @throws NoSuchFieldException
      * @throws SecurityException
      */
-    public static String analyseDynamicSql(String sql, String[] paramNames, Class<?>[] paramTypes, boolean isPage, String countSql) throws NoSuchFieldException, SecurityException
+    public static String analyseDynamicSql(String sql, String[] paramNames, Class<?>[] paramTypes, boolean isPage, String countSql, Map<String, MetaData> metaDatas) throws NoSuchFieldException, SecurityException
     {
-        sql = transMapSql(sql);
+        sql = transMapSql(sql, metaDatas);
         String bk = "\t";
         String context = bk + "com.jfireframework.baseutil.collection.StringCache builder = new StringCache();\n" + bk + "List list = new ArrayList();\n";
         int pre = 0;
@@ -333,7 +333,7 @@ public class DynamicSqlTool
      * @param sql
      * @return
      */
-    public static String transMapSql(String sql)
+    public static String transMapSql(String sql, Map<String, MetaData> metaDatas)
     {
         Map<String, String> asNameMap = new HashMap<String, String>();
         try
@@ -377,7 +377,7 @@ public class DynamicSqlTool
                     else if (tmp.charAt(0) >= 'A' && tmp.charAt(0) <= 'Z')
                     {
                         rootSimpleClassName = tmp;
-                        Verify.notNull(MapBeanFactory.getMetaData(rootSimpleClassName), "sql:{}存在错误，类{}没有被注解MapTabel或TableEntity标记。", sql, rootSimpleClassName);
+                        Verify.notNull(metaDatas.get(rootSimpleClassName), "sql:{}存在错误，类{}没有被注解MapTabel或TableEntity标记。", sql, rootSimpleClassName);
                     }
                     else if (tmp.equals("as") && end < sql.length() && sql.charAt(end) == ' ')
                     {
@@ -451,10 +451,10 @@ public class DynamicSqlTool
                     {
                         String[] tmp = var.split("\\.");
                         Verify.True(tmp.length == 2, "sql有错误，请检查{},关注：{}", sql, var);
-                        MetaData metaData = MapBeanFactory.getMetaData(tmp[0]);
+                        MetaData metaData = metaDatas.get(tmp[0]);
                         if (metaData == null && asNameMap.containsKey(tmp[0]))
                         {
-                            metaData = MapBeanFactory.getMetaData(asNameMap.get(tmp[0]));
+                            metaData = metaDatas.get(asNameMap.get(tmp[0]));
                         }
                         Verify.notNull(metaData, "sql存在错误，请检查{},类{}不存在映射，关注{}", sql, tmp[0], var);
                         Verify.notNull(metaData.getColumnName(tmp[1]), "sql存在错误，请检查{},类{}的属性{}不存在映射，关注{}", sql, metaData.getSimpleClassName(), tmp[1], var);
@@ -469,7 +469,7 @@ public class DynamicSqlTool
                     }
                     else if (var.charAt(0) >= 'A' && var.charAt(0) <= 'Z')
                     {
-                        String replaceName = MapBeanFactory.getMetaData(var).getTableName();
+                        String replaceName = metaDatas.get(var).getTableName();
                         cache.append(replaceName);
                     }
                     else if (var.equals("as"))
@@ -486,7 +486,7 @@ public class DynamicSqlTool
                         }
                         else
                         {
-                            String replaceName = MapBeanFactory.getMetaData(rootSimpleClassName).getColumnName(var);
+                            String replaceName = metaDatas.get(rootSimpleClassName).getColumnName(var);
                             if (replaceName == null)
                             {
                                 cache.append(var);
@@ -542,11 +542,11 @@ public class DynamicSqlTool
      * @throws SecurityException
      * @throws NoSuchFieldException
      */
-    public static String[] analyseFormatSql(String originalSql, String[] paramNames, Class<?>[] paramTypes, boolean isPage, String annoCountSql) throws NoSuchFieldException, SecurityException
+    public static String[] analyseFormatSql(String originalSql, String[] paramNames, Class<?>[] paramTypes, boolean isPage, String annoCountSql, Map<String, MetaData> metaDatas) throws NoSuchFieldException, SecurityException
     {
         String querySql, queryParam, countSql = null, countParam = null;
         List<String> variateNames = new ArrayList<String>();
-        String formatSql = getFormatSql(originalSql, variateNames);
+        String formatSql = getFormatSql(originalSql, variateNames, metaDatas);
         querySql = formatSql;
         if (isPage)
         {
@@ -592,9 +592,9 @@ public class DynamicSqlTool
      * @param paramNames
      * @return
      */
-    public static String getFormatSql(String sql, List<String> variateNames)
+    public static String getFormatSql(String sql, List<String> variateNames, Map<String, MetaData> metaDatas)
     {
-        sql = transMapSql(sql);
+        sql = transMapSql(sql, metaDatas);
         StringCache formatSql = new StringCache();
         int length = sql.length();
         char c;

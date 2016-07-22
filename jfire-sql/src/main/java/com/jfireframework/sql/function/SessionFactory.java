@@ -1,11 +1,23 @@
 package com.jfireframework.sql.function;
 
-import java.util.Collection;
-import com.jfireframework.sql.function.mapper.Mapper;
-
 public interface SessionFactory
 {
-    public Collection<Mapper> mappers();
+    /**
+     * 获取对应的结果集转换对象
+     * 
+     * @param ckass
+     * @return
+     */
+    public <T> ResultMap<T> getResultMap(Class<T> ckass);
+    
+    /**
+     * 获取对应的类型的Dao对象
+     * 
+     * @param <T>
+     * @param ckass
+     * @return
+     */
+    public <T> Dao<T> getDao(Class<T> ckass);
     
     /**
      * 根据给定的接口，返回符合sqlorm规范的接口实现

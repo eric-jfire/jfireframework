@@ -14,9 +14,9 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.field.MapField;
 import com.jfireframework.sql.field.MapFieldBuilder;
-import com.jfireframework.sql.function.MapBean;
+import com.jfireframework.sql.function.ResultMap;
 
-public class MapBeanImpl<T> implements MapBean<T>
+public class MapBeanImpl<T> implements ResultMap<T>
 {
     private MapField[]                mapFields;
     private HashMap<String, MapField> fieldMap = new HashMap<String, MapField>();

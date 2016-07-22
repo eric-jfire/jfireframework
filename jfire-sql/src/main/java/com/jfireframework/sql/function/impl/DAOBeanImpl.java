@@ -31,12 +31,12 @@ import com.jfireframework.sql.field.MapFieldBuilder;
 import com.jfireframework.sql.field.impl.IntegerField;
 import com.jfireframework.sql.field.impl.StringField;
 import com.jfireframework.sql.field.impl.WLongField;
-import com.jfireframework.sql.function.DAOBean;
+import com.jfireframework.sql.function.Dao;
 import com.jfireframework.sql.function.LockMode;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
-public class DAOBeanImpl implements DAOBean
+public class DAOBeanImpl<T> implements Dao<T>
 {
     private static Logger             logger          = ConsoleLogFactory.getLogger();
     private Class<?>                  entityClass;
@@ -58,7 +58,7 @@ public class DAOBeanImpl implements DAOBean
     private Map<String, SqlAndFields> selectUpdateMap = new ConcurrentHashMap<String, SqlAndFields>();
     private Map<String, SqlAndFields> selectGetMap    = new ConcurrentHashMap<String, SqlAndFields>();
     
-    public DAOBeanImpl(Class<?> entityClass)
+    public DAOBeanImpl(Class<T> entityClass)
     {
         this.entityClass = entityClass;
         Field[] fields = ReflectUtil.getAllFields(entityClass);
@@ -223,7 +223,7 @@ public class DAOBeanImpl implements DAOBean
     
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T getById(Object pk, Connection connection)
+    public T getById(Object pk, Connection connection)
     {
         PreparedStatement pStat = null;
         try
@@ -267,7 +267,7 @@ public class DAOBeanImpl implements DAOBean
     }
     
     @SuppressWarnings("unchecked")
-    public <T> T getById(Object pk, Connection connection, String fieldNames)
+    public T getById(Object pk, Connection connection, String fieldNames)
     {
         SqlAndFields sqlAndFields = selectGetMap.get(fieldNames);
         if (sqlAndFields == null)
@@ -329,7 +329,7 @@ public class DAOBeanImpl implements DAOBean
     }
     
     @Override
-    public <T> void save(T entity, Connection connection)
+    public void save(T entity, Connection connection)
     {
         Object idValue = unsafe.getObject(entity, idOffset);
         if (idValue == null)
@@ -380,7 +380,7 @@ public class DAOBeanImpl implements DAOBean
     }
     
     @Override
-    public <T> void batchInsert(List<T> entitys, Connection connection)
+    public void batchInsert(List<T> entitys, Connection connection)
     {
         PreparedStatement pStat = null;
         try
@@ -419,7 +419,7 @@ public class DAOBeanImpl implements DAOBean
     }
     
     @Override
-    public <T> int update(T entity, Connection connection, String fieldNames)
+    public int update(T entity, Connection connection, String fieldNames)
     {
         SqlAndFields sqlAndFields = selectUpdateMap.get(fieldNames);
         if (sqlAndFields == null)
@@ -472,7 +472,7 @@ public class DAOBeanImpl implements DAOBean
         }
     }
     
-    public <T> void insert(T entity, Connection connection)
+    public void insert(T entity, Connection connection)
     {
         PreparedStatement pStat = null;
         try
@@ -528,7 +528,7 @@ public class DAOBeanImpl implements DAOBean
     
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T getById(Object pk, Connection connection, LockMode mode)
+    public T getById(Object pk, Connection connection, LockMode mode)
     {
         String sql = mode == LockMode.SHARE ? getInShareInfo.getSql() : getForUpdateInfo.getSql();
         PreparedStatement pStat = null;
