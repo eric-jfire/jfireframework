@@ -9,12 +9,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -62,7 +62,7 @@ public class DAOBeanImpl implements DAOBean
     {
         this.entityClass = entityClass;
         Field[] fields = ReflectUtil.getAllFields(entityClass);
-        LightSet<MapField> set = new LightSet<MapField>();
+        List<MapField> list = new LinkedList<MapField>();
         for (Field each : fields)
         {
             if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || each.getType().isArray() || Modifier.isStatic(each.getModifiers()))
@@ -76,7 +76,7 @@ public class DAOBeanImpl implements DAOBean
                     continue;
                 }
             }
-            set.add(MapFieldBuilder.buildMapField(each));
+            list.add(MapFieldBuilder.buildMapField(each));
             if (each.isAnnotationPresent(Id.class))
             {
                 idField = MapFieldBuilder.buildMapField(each);
@@ -85,10 +85,12 @@ public class DAOBeanImpl implements DAOBean
                 if (idStrategy == IdStrategy.autoDecision)
                 {
                     Class<?> type = each.getType();
-                    if (type == Integer.class //
-                            || type == int.class //
-                            || type == long.class //
-                            || type == Long.class)
+                    if (
+                        type == Integer.class //
+                                || type == int.class //
+                                || type == long.class //
+                                || type == Long.class
+                    )
                     {
                         idStrategy = IdStrategy.autoIncrement;
                     }
@@ -104,8 +106,8 @@ public class DAOBeanImpl implements DAOBean
             }
         }
         Verify.notNull(idField, "使用TableEntity映射的表必须由id字段，请检查{}", entityClass.getName());
-        LightSet<MapField> tmp = new LightSet<MapField>();
-        for (MapField each : set)
+        List<MapField> tmp = new LinkedList<MapField>();
+        for (MapField each : list)
         {
             if (each.saveIgnore())
             {
@@ -113,12 +115,12 @@ public class DAOBeanImpl implements DAOBean
             }
             tmp.add(each);
         }
-        MapField[] insertOrUpdateFields = tmp.toArray(MapField.class);
+        MapField[] insertOrUpdateFields = tmp.toArray(new MapField[tmp.size()]);
         for (MapField each : insertOrUpdateFields)
         {
             fieldMap.put(each.getFieldName(), each);
         }
-        MapField[] getFields = set.toArray(MapField.class);
+        MapField[] getFields = list.toArray(new MapField[list.size()]);
         buildSql(insertOrUpdateFields, getFields);
     }
     
@@ -143,7 +145,7 @@ public class DAOBeanImpl implements DAOBean
         /******** 生成updatesql *******/
         cache.clear();
         cache.append("update ").append(tableName).append(" set ");
-        LightSet<MapField> tmps = new LightSet<MapField>();
+        List<MapField> tmps = new LinkedList<MapField>();
         for (MapField each : insertOrUpdateFields)
         {
             if (each.getColName().equals(idField.getColName()))
@@ -157,7 +159,7 @@ public class DAOBeanImpl implements DAOBean
         tmps.add(idField);
         updateInfo = new SqlAndFields();
         updateInfo.setSql(cache.toString());
-        updateInfo.setFields(tmps.toArray(MapField.class));
+        updateInfo.setFields(tmps.toArray(new MapField[tmps.size()]));
         /******** 生成updatesql *******/
         /******** 生成deletesql *****/
         cache.clear();
@@ -271,7 +273,7 @@ public class DAOBeanImpl implements DAOBean
         if (sqlAndFields == null)
         {
             StringCache cache = new StringCache("select ");
-            LightSet<MapField> set = new LightSet<MapField>();
+            List<MapField> set = new LinkedList<MapField>();
             for (String each : fieldNames.split(","))
             {
                 MapField tmp = fieldMap.get(each);
@@ -283,7 +285,7 @@ public class DAOBeanImpl implements DAOBean
             cache.append(" from ").append(tableName).append(" where ").append(idField.getColName()).append(" = ?");
             sqlAndFields = new SqlAndFields();
             sqlAndFields.setSql(cache.toString());
-            sqlAndFields.setFields(set.toArray(MapField.class));
+            sqlAndFields.setFields(set.toArray(new MapField[set.size()]));
         }
         logger.trace("执行的sql语句是{}", sqlAndFields.getSql());
         PreparedStatement pStat = null;
@@ -424,7 +426,7 @@ public class DAOBeanImpl implements DAOBean
         {
             StringCache cache = new StringCache("update ");
             cache.append(tableName).append(" set ");
-            LightSet<MapField> set = new LightSet<MapField>();
+            List<MapField> set = new LinkedList<MapField>();
             for (String each : fieldNames.split(","))
             {
                 MapField tmp = fieldMap.get(each);
@@ -434,7 +436,7 @@ public class DAOBeanImpl implements DAOBean
             cache.deleteEnds(2).append(" where ").append(idField.getColName()).append("=?");
             sqlAndFields = new SqlAndFields();
             sqlAndFields.setSql(cache.toString());
-            sqlAndFields.setFields(set.toArray(MapField.class));
+            sqlAndFields.setFields(set.toArray(new MapField[set.size()]));
         }
         logger.trace("执行的sql语句是{}", sqlAndFields.getSql());
         PreparedStatement pStat = null;

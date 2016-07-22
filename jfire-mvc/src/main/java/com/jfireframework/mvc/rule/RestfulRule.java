@@ -1,7 +1,8 @@
 package com.jfireframework.mvc.rule;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-import com.jfireframework.baseutil.collection.set.LightSet;
 
 public class RestfulRule
 {
@@ -14,7 +15,7 @@ public class RestfulRule
     
     public RestfulRule(String url)
     {
-        LightSet<String> set = new LightSet<String>();
+        List<String> list = new LinkedList<String>();
         StringBuilder builder = new StringBuilder();
         int pre = 0, index = 0;
         do
@@ -35,14 +36,14 @@ public class RestfulRule
                 }
                 else
                 {
-                    set.add(url.substring(pre, index));
+                    list.add(url.substring(pre, index));
                     pre = index + 1;
                 }
             }
         } while (true);
         builder.append(url.substring(pre));
         String rule = builder.toString();
-        names = set.toArray(String.class);
+        names = list.toArray(new String[list.size()]);
         rules = rule.split("\\*");
         if (rule.endsWith("*"))
         {

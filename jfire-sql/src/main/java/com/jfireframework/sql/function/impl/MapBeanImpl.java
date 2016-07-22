@@ -7,9 +7,9 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.field.MapField;
@@ -25,7 +25,7 @@ public class MapBeanImpl<T> implements MapBean<T>
     public MapBeanImpl(Class<T> entityClass)
     {
         this.entityClass = entityClass;
-        LightSet<MapField> set = new LightSet<MapField>();
+        List<MapField> set = new LinkedList<MapField>();
         for (Field each : ReflectUtil.getAllFields(entityClass))
         {
             if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || each.getType().isArray() || Modifier.isStatic(each.getModifiers()))
@@ -34,7 +34,7 @@ public class MapBeanImpl<T> implements MapBean<T>
             }
             set.add(MapFieldBuilder.buildMapField(each));
         }
-        mapFields = set.toArray(MapField.class);
+        mapFields = set.toArray(new MapField[set.size()]);
         for (MapField each : mapFields)
         {
             fieldMap.put(each.getColName(), each);
