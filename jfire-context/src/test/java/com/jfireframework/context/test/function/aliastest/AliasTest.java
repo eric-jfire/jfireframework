@@ -8,7 +8,7 @@ import javax.annotation.Resource;
 import org.junit.Test;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.JfireContextImpl;
-import com.jfireframework.context.util.AnnotationUtil;
+import com.jfireframework.context.aliasanno.AnnotationUtil;
 
 @Testalis3(t = "sada", s = false)
 public class AliasTest

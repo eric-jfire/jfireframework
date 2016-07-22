@@ -8,6 +8,7 @@ import java.lang.annotation.Annotation;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,8 @@ import com.jfireframework.baseutil.PackageScan;
 import com.jfireframework.baseutil.code.CodeLocation;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.collection.set.LightSet;
+import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -23,25 +26,32 @@ import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.codejson.JsonObject;
 import com.jfireframework.codejson.JsonTool;
+import com.jfireframework.context.aliasanno.AnnotationUtil;
 import com.jfireframework.context.aop.AopUtil;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.context.bean.BeanConfig;
+import com.jfireframework.context.bean.BeanFactory;
+import com.jfireframework.context.bean.annotation.FactoryCreated;
+import com.jfireframework.context.bean.field.FieldFactory;
 import com.jfireframework.context.config.BeanAttribute;
 import com.jfireframework.context.config.BeanInfo;
 import com.jfireframework.context.config.ContextConfig;
 import com.jfireframework.context.event.impl.EventPublisherImpl;
-import com.jfireframework.context.util.AnnotationUtil;
-import com.jfireframework.context.util.ContextUtil;
 
 public class JfireContextImpl implements JfireContext
 {
-    private Map<String, BeanConfig> configMap   = new HashMap<String, BeanConfig>();
-    private Map<String, Bean>       beanNameMap = new HashMap<String, Bean>();
-    private Map<Class<?>, Bean>     beanTypeMap = new HashMap<Class<?>, Bean>();
-    private boolean                 init        = false;
-    private LightSet<String>        classNames  = new LightSet<String>();
-    private static Logger           logger      = ConsoleLogFactory.getLogger();
-    private ClassLoader             classLoader = JfireContextImpl.class.getClassLoader();
+    /**
+     * 用来存储Beanfactory的实例
+     */
+    private IdentityHashMap<Class<?>, BeanFactory> factories   = new IdentityHashMap<Class<?>, BeanFactory>();
+    private Map<String, BeanConfig>                configMap   = new HashMap<String, BeanConfig>();
+    private Map<String, Bean>                      beanNameMap = new HashMap<String, Bean>();
+    private Map<Class<?>, Bean>                    beanTypeMap = new HashMap<Class<?>, Bean>();
+    private boolean                                init        = false;
+    private LightSet<String>                       classNames  = new LightSet<String>();
+    private static Logger                          logger      = ConsoleLogFactory.getLogger();
+    private ClassLoader                            classLoader = JfireContextImpl.class.getClassLoader();
+    private BeanUtil                               beanUtil    = new BeanUtil();
     
     public JfireContextImpl()
     {
@@ -190,7 +200,7 @@ public class JfireContextImpl implements JfireContext
         addSingletonEntity(JfireContext.class.getName(), this);
         addBean(EventPublisherImpl.class);
         init = true;
-        ContextUtil.buildBean(classNames, beanNameMap, classLoader);
+        beanUtil.buildBean(classNames, beanNameMap, classLoader);
         for (Bean each : beanNameMap.values())
         {
             beanTypeMap.put(each.getOriginType(), each);
@@ -209,7 +219,7 @@ public class JfireContextImpl implements JfireContext
          * 并且由于aop需要增加若干个类属性(属性上均有Resouce注解用来注入增强类)，所以注入属性数组的生成必须在aop之后
          */
         AopUtil.enhance(beanNameMap, classLoader);
-        ContextUtil.initDependencyAndParamFields(beanNameMap, configMap);
+        beanUtil.initDependencyAndParamFields(beanNameMap, configMap);
         // 提前实例化单例，避免第一次惩罚以及由于是在单线程中实例化，就不会出现多线程可能的单例被实例化不止一次的情况
         for (Bean bean : beanNameMap.values())
         {
@@ -221,7 +231,7 @@ public class JfireContextImpl implements JfireContext
         /**
          * 按照order顺序运行容器初始化结束方法
          */
-        LightSet<ContextInitFinish> tmp = new LightSet<ContextInitFinish>();
+        List<ContextInitFinish> tmp = new LinkedList<ContextInitFinish>();
         for (Bean bean : beanNameMap.values())
         {
             if (bean.HasFinishAction())
@@ -229,7 +239,7 @@ public class JfireContextImpl implements JfireContext
                 tmp.add((ContextInitFinish) bean.getInstance());
             }
         }
-        ContextInitFinish[] initFinishs = tmp.toArray(ContextInitFinish.class);
+        ContextInitFinish[] initFinishs = tmp.toArray(new ContextInitFinish[tmp.size()]);
         Arrays.sort(initFinishs, new AescComparator());
         for (ContextInitFinish each : initFinishs)
         {
@@ -241,6 +251,7 @@ public class JfireContextImpl implements JfireContext
             catch (Exception e)
             {
                 logger.error("执行方法{}.afterContextInit发生异常", each.getClass().getName(), e);
+                throw new JustThrowException(e);
             }
         }
     }
@@ -259,7 +270,7 @@ public class JfireContextImpl implements JfireContext
         }
         else
         {
-            throw new RuntimeException("bean:" + name + "不存在");
+            throw new UnSupportException("bean:" + name + "不存在");
         }
     }
     
@@ -287,7 +298,7 @@ public class JfireContextImpl implements JfireContext
         {
             return bean;
         }
-        throw new RuntimeException("bean" + beanClass.getName() + "不存在");
+        throw new UnSupportException("bean" + beanClass.getName() + "不存在");
     }
     
     @Override
@@ -353,5 +364,110 @@ public class JfireContextImpl implements JfireContext
     public ClassLoader getClassLoader()
     {
         return classLoader;
+    }
+    
+    class BeanUtil
+    {
+        private Logger logger = ConsoleLogFactory.getLogger();
+        
+        /**
+         * 检查所有的Class名称，通过反射获取class，并且进行初始化。
+         * 形成基本的bean信息（bean名称，bean类型，单例与否，是否实现完成接口的信息） 将这些信息放入beanNameMap
+         * 
+         * @param classNames
+         * @param beanMap
+         */
+        public void buildBean(LightSet<String> classNames, Map<String, Bean> beanNameMap, ClassLoader classLoader)
+        {
+            for (String each : classNames)
+            {
+                buildBean(each, beanNameMap, classLoader);
+            }
+        }
+        
+        /**
+         * 对类进行分析，给出该类的信息Bean，并且填充包括bean名称，bean类型，单例与否，是否实现完成接口的信息
+         * 
+         * @param className
+         * @param context
+         * @return
+         */
+        private void buildBean(String className, Map<String, Bean> beanNameMap, ClassLoader classloader)
+        {
+            Class<?> res = null;
+            try
+            {
+                res = classloader.loadClass(className);
+            }
+            catch (ClassNotFoundException e)
+            {
+                throw new RuntimeException("对应的类不存在", e);
+            }
+            if (AnnotationUtil.isPresent(Resource.class, res) == false)
+            {
+                logger.trace("类{}未使用资源注解", className);
+                return;
+            }
+            Bean bean = null;
+            if (AnnotationUtil.isPresent(FactoryCreated.class, res))
+            {
+                FactoryCreated factoryCreated = AnnotationUtil.getAnnotation(FactoryCreated.class, res);
+                Class<BeanFactory> ckass = factoryCreated.value();
+                BeanFactory beanFactory = factories.get(ckass);
+                if (beanFactory == null)
+                {
+                    try
+                    {
+                        beanFactory = ckass.newInstance();
+                        factories.put(ckass, beanFactory);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new JustThrowException(e);
+                    }
+                }
+                bean = beanFactory.parse(res);
+            }
+            else if (res.isInterface() == false)
+            {
+                bean = new Bean(res);
+            }
+            else
+            {
+                throw new UnSupportException("在接口上只有Resource注解是无法实例化bean的，请配合FactoryCreated注解");
+            }
+            if (beanNameMap.containsKey(bean.getBeanName()))
+            {
+                Bean sameNameBean = beanNameMap.get(bean.getBeanName());
+                Verify.True(sameNameBean.getOriginType().equals(bean.getOriginType()), "类{}和类{}使用了相同的bean名称，请检查", sameNameBean.getOriginType(), bean.getOriginType().getName());
+            }
+            else
+            {
+                logger.trace("为类{}注册bean", res.getName());
+                beanNameMap.put(bean.getBeanName(), bean);
+            }
+            
+        }
+        
+        /**
+         * 分析所有的组件bean，将其中需要注入的属性的bean形成injectField数组以供注入使用
+         * 
+         * @param beanNameMap
+         */
+        public void initDependencyAndParamFields(Map<String, Bean> beanNameMap, Map<String, BeanConfig> configMap)
+        {
+            for (Bean bean : beanNameMap.values())
+            {
+                if (bean.canModify())
+                {
+                    BeanConfig beanConfig = configMap.get(bean.getBeanName());
+                    bean.setInjectFields(FieldFactory.buildDependencyField(bean, beanNameMap, beanConfig));
+                    if (beanConfig != null)
+                    {
+                        bean.setParamFields(FieldFactory.buildParamField(bean, beanConfig));
+                    }
+                }
+            }
+        }
     }
 }

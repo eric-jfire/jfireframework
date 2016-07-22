@@ -14,6 +14,7 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.context.aliasanno.AnnotationUtil;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.context.bean.BeanConfig;
 import com.jfireframework.context.bean.annotation.field.MapKey;
@@ -28,7 +29,6 @@ import com.jfireframework.context.bean.field.dependency.impl.NoActionField;
 import com.jfireframework.context.bean.field.dependency.impl.ValueMapField;
 import com.jfireframework.context.bean.field.param.AbstractParamField;
 import com.jfireframework.context.bean.field.param.ParamField;
-import com.jfireframework.context.util.AnnotationUtil;
 import sun.reflect.MethodAccessor;
 
 public class FieldFactory

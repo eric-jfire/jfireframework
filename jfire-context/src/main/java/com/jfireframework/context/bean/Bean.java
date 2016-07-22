@@ -13,6 +13,7 @@ import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.context.ContextInitFinish;
+import com.jfireframework.context.aliasanno.AnnotationUtil;
 import com.jfireframework.context.aop.EnhanceAnnoInfo;
 import com.jfireframework.context.aop.annotation.AfterEnhance;
 import com.jfireframework.context.aop.annotation.AroundEnhance;
@@ -20,7 +21,6 @@ import com.jfireframework.context.aop.annotation.BeforeEnhance;
 import com.jfireframework.context.aop.annotation.ThrowEnhance;
 import com.jfireframework.context.bean.field.dependency.DependencyField;
 import com.jfireframework.context.bean.field.param.ParamField;
-import com.jfireframework.context.util.AnnotationUtil;
 import sun.reflect.MethodAccessor;
 
 /**
