@@ -8,13 +8,13 @@ import javax.annotation.Resource;
 import org.junit.Test;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.JfireContextImpl;
-import com.jfireframework.context.util.AnnotationUtil;
+import com.jfireframework.context.aliasanno.AnnotationUtil;
 
 @Testalis3(t = "sada", s = false)
 public class AliasTest
 {
     @Autowired(wiredName = "sad")
-    private String bi;
+    private SingleDemo bi;
     
     @MyMethod(load = "ss")
     public void take()
@@ -39,7 +39,7 @@ public class AliasTest
     @Test
     public void test2()
     {
-        JfireContext jfireContext = new JfireContextImpl("com.jfireframework.context");
+        JfireContext jfireContext = new JfireContextImpl("com.jfireframework.context.test.function.aliastest");
         SingleDemo demo = (SingleDemo) jfireContext.getBean("demo");
         assertFalse(demo == null);
     }

@@ -16,14 +16,6 @@ public interface SqlSession extends GetOperator, SaveOperator, UpdateOperator, S
 {
     
     /**
-     * 根据给定的接口，返回符合sqlorm规范的接口实现
-     * 
-     * @param entityClass
-     * @return
-     */
-    public <T> T getMapper(Class<T> entityClass);
-    
-    /**
      * 关闭session，释放数据库链接
      */
     public void close();

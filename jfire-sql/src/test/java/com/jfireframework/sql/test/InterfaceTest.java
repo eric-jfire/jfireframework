@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
-import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.sql.page.MysqlPage;
 import com.jfireframework.sql.test.entity.User;
 
@@ -18,7 +17,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void getUserByIdTest()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         User user = null;
         user = userDAO.getUserByid(1);
         assertEquals(1, user.getId().intValue());
@@ -29,7 +28,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void getUserByIdWithNameTest()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         List<User> users = userDAO.getUserByidWithName(1);
         User user = users.get(0);
         assertEquals(1, user.getId().intValue());
@@ -40,7 +39,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void insertUserTest()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         User user = new User();
         user.setId(4);
         user.setPassword("123132");
@@ -67,7 +66,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void getUsernameTest()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         userDAO.getUserName(1);
         String username = userDAO.getUserName(1);
         assertEquals("林斌", username);
@@ -76,7 +75,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void deleteUserTest()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         logger.debug("删除的用户条数是{}", userDAO.deleteUser(1));
         try
         {
@@ -95,7 +94,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void getUsernamesTest()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         List<String> list = userDAO.getUsernames();
         assertEquals("林斌", list.get(0));
         assertEquals("林曦", list.get(1));
@@ -104,7 +103,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void getUsernamesTest2()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         List<String> list = userDAO.getUsernames2(1);
         assertEquals("林斌", list.get(0));
     }
@@ -127,7 +126,7 @@ public class InterfaceTest extends BaseTestSupport
         user.setBirthday("2015-06-07 00:00:00.0");
         user.setAge(15);
         users.add(user);
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         int[] result = userDAO.insertUsers(users);
         for (int each : result)
         {
@@ -158,7 +157,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void dyncTest()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         User user = new User();
         user.setName("林斌");
         List<User> list = userDAO.dynamicQuery(user);
@@ -168,7 +167,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void dyncTest2()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         User user = new User();
         user.setName("林斌");
         MysqlPage page = new MysqlPage();
@@ -181,7 +180,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void testquestion()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         List<User> list = userDAO.listinquestion("2,1,");
         assertEquals("林斌", list.get(0).getName());
         assertEquals(1, list.size());
@@ -190,7 +189,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void testquestion2()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         List<User> list = userDAO.listinquestion(new int[] { 2, 1 });
         assertEquals("林斌", list.get(0).getName());
         assertEquals(1, list.size());
@@ -199,7 +198,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void testquestion3()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         List<User> list = userDAO.listinquestion(new Integer[] { 2, 1 });
         assertEquals("林斌", list.get(0).getName());
         assertEquals(1, list.size());
@@ -208,7 +207,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void testupdatename()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         userDAO.updatename("li", "2,3");
         assertEquals("li", userDAO.getUserName(2));
     }
@@ -216,21 +215,21 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void name2Test()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         System.out.println(userDAO.name2(14));
     }
     
     @Test
     public void name3Test()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         assertEquals("林斌", userDAO.name3("user"));
     }
     
     @Test
     public void test4()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         MysqlPage page = new MysqlPage();
         page.setPage(1);
         page.setPageSize(20);
@@ -242,7 +241,7 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void test5()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         List<Integer> ids = new ArrayList<Integer>();
         ids.add(1);
         userDAO.querySize(ids);
@@ -251,14 +250,14 @@ public class InterfaceTest extends BaseTestSupport
     @Test
     public void test6()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         userDAO.functionUse("assd");
     }
     
     @Test
     public void test7()
     {
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         userDAO.functionUse2("asdasd", "dsad");
     }
 }

@@ -5,9 +5,9 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
-import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.dbunit.table.Row;
 import com.jfireframework.dbunit.table.Table;
@@ -31,7 +31,7 @@ public class BuckupWork
             queryTableData = dataSource.getConnection();
             for (Table each : tableMap.values())
             {
-                LightSet<String> colNameList = each.getColNameList();
+                List<String> colNameList = each.getColNameList();
                 ResultSet dataSet = queryTableData.prepareStatement(each.getSelectSql()).executeQuery();
                 while (dataSet.next())
                 {
@@ -69,7 +69,7 @@ public class BuckupWork
      * @return
      * @throws SQLException
      */
-    private static String[] getRowData(ResultSet dataSet, LightSet<String> colNameList) throws SQLException
+    private static String[] getRowData(ResultSet dataSet, List<String> colNameList) throws SQLException
     {
         int length = colNameList.size();
         String[] rowData = new String[length];

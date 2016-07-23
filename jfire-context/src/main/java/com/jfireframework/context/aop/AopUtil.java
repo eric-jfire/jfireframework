@@ -4,10 +4,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.el.JelException;
 import com.jfireframework.baseutil.el.JelExplain;
 import com.jfireframework.baseutil.exception.UnSupportException;
@@ -15,10 +16,9 @@ import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.baseutil.tx.AutoCloseManager;
-import com.jfireframework.baseutil.tx.TransactionManager;
 import com.jfireframework.baseutil.verify.Verify;
-import com.jfireframework.context.aop.annotation.AutoCloseResource;
+import com.jfireframework.context.aliasanno.AnnotationUtil;
+import com.jfireframework.context.aop.annotation.AutoResource;
 import com.jfireframework.context.aop.annotation.EnhanceClass;
 import com.jfireframework.context.aop.annotation.Transaction;
 import com.jfireframework.context.bean.Bean;
@@ -26,7 +26,8 @@ import com.jfireframework.context.cache.CacheManager;
 import com.jfireframework.context.cache.annotation.CacheDelete;
 import com.jfireframework.context.cache.annotation.CacheGet;
 import com.jfireframework.context.cache.annotation.CachePut;
-import com.jfireframework.context.util.AnnotationUtil;
+import com.jfireframework.context.tx.RessourceManager;
+import com.jfireframework.context.tx.TransactionManager;
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
 import javassist.ClassPool;
@@ -47,7 +48,7 @@ public class AopUtil
 {
     private static ClassPool classPool = ClassPool.getDefault();
     private static CtClass   txManagerCtClass;
-    private static CtClass   acManagerCtClass;
+    private static CtClass   resManagerCtClass;
     private static CtClass   cacheManagerCtClass;
     private static Logger    logger    = ConsoleLogFactory.getLogger();
     
@@ -61,7 +62,7 @@ public class AopUtil
         classPool = new ClassPool();
         ClassPool.doPruning = true;
         classPool.importPackage("com.jfireframework.context.aop");
-        classPool.importPackage("com.jfireframework.baseutil.tx");
+        classPool.importPackage("com.jfireframework.context.tx");
         try
         {
             if (classLoader != null)
@@ -70,9 +71,8 @@ public class AopUtil
             }
             classPool.appendClassPath(new ClassClassPath(AopUtil.class));
             classPool.appendClassPath("com.jfireframework.context.aop");
-            classPool.appendClassPath("com.jfireframework.baseutil.tx");
             txManagerCtClass = classPool.get(TransactionManager.class.getName());
-            acManagerCtClass = classPool.get(AutoCloseManager.class.getName());
+            resManagerCtClass = classPool.get(RessourceManager.class.getName());
             cacheManagerCtClass = classPool.get(CacheManager.class.getName());
         }
         catch (NotFoundException e)
@@ -96,7 +96,7 @@ public class AopUtil
     {
         try
         {
-            initTxAndAcAndCacheMethods(beanMap);
+            initAopMethods(beanMap);
             initAopbeanSet(beanMap);
             for (Bean bean : beanMap.values())
             {
@@ -114,11 +114,11 @@ public class AopUtil
     }
     
     /**
-     * 循环所有的bean，确定每一个bean需要进行事务增强的方法,自动关闭资源和缓存管理的方法,并且在bean中添加这些方法的信息
+     * 遍历所有的bean，确定该bean中的基本内置AOP方法。内置AOP方法指的是事务方法，自动资源方法，缓存方法
      * 
      * @param beanMap
      */
-    private static void initTxAndAcAndCacheMethods(Map<String, Bean> beanMap)
+    private static void initAopMethods(Map<String, Bean> beanMap)
     {
         for (Bean bean : beanMap.values())
         {
@@ -131,15 +131,15 @@ public class AopUtil
             {
                 if (AnnotationUtil.isPresent(Transaction.class, method))
                 {
-                    Verify.False(AnnotationUtil.isPresent(AutoCloseResource.class, method), "同一个方法上不能同时有事务注解和自动关闭注解，请检查{}.{}", method.getDeclaringClass(), method.getName());
+                    Verify.False(AnnotationUtil.isPresent(AutoResource.class, method), "同一个方法上不能同时有事务注解和自动关闭注解，请检查{}.{}", method.getDeclaringClass(), method.getName());
                     Verify.True(Modifier.isPublic(method.getModifiers()) || Modifier.isProtected(method.getModifiers()), "方法{}.{}有事务注解,访问类型必须是public或protected", method.getDeclaringClass(), method.getName());
                     bean.addTxMethod(method);
                     logger.trace("发现事务方法{}", method.toString());
                 }
-                else if (AnnotationUtil.isPresent(AutoCloseResource.class, method))
+                else if (AnnotationUtil.isPresent(AutoResource.class, method))
                 {
                     Verify.True(Modifier.isPublic(method.getModifiers()) || Modifier.isProtected(method.getModifiers()), "方法{}.{}有自动关闭注解,访问类型必须是public或protected", method.getDeclaringClass(), method.getName());
-                    bean.addAcMethod(method);
+                    bean.addResMethod(method);
                     logger.trace("发现自动关闭方法{}", method.toString());
                 }
                 if (AnnotationUtil.isPresent(CachePut.class, method) || AnnotationUtil.isPresent(CacheGet.class, method) || AnnotationUtil.isPresent(CacheDelete.class, method))
@@ -211,13 +211,13 @@ public class AopUtil
         {
             String txFieldName = "tx_" + System.nanoTime();
             addField(childCc, txManagerCtClass, txFieldName);
-            addTxToMethod(childCc, txFieldName, bean.getTxMethodSet().toArray(Method.class));
+            addTxToMethod(childCc, txFieldName, bean.getTxMethodSet().toArray(new Method[bean.getTxMethodSet().size()]));
         }
-        if (bean.getAcMethods().size() > 0)
+        if (bean.getResMethods().size() > 0)
         {
-            String acFieldName = "ac_" + System.nanoTime();
-            addField(childCc, acManagerCtClass, acFieldName);
-            addAcToMethod(childCc, acFieldName, bean.getAcMethods().toArray(Method.class));
+            String resFieldName = "ac_" + System.nanoTime();
+            addField(childCc, resManagerCtClass, resFieldName);
+            addResToMethod(childCc, resFieldName, bean.getResMethods().toArray(new Method[bean.getResMethods().size()]));
         }
         if (bean.getCacheMethods().size() > 0)
         {
@@ -241,19 +241,19 @@ public class AopUtil
                 }
             }
         }
-        LightSet<EnhanceAnnoInfo> set = new LightSet<EnhanceAnnoInfo>();
+        List<EnhanceAnnoInfo> infos = new LinkedList<EnhanceAnnoInfo>();
         for (CtMethod each : childCc.getDeclaredMethods())
         {
             // 针对每一个方法,取出该方法对应的所有增强,并且进行排序
-            set.removeAll();
+            infos.clear();
             for (EnhanceAnnoInfo enhanceAnnoInfo : bean.getEnHanceAnnos())
             {
                 if (enhanceAnnoInfo.match(each))
                 {
-                    set.add(enhanceAnnoInfo);
+                    infos.add(enhanceAnnoInfo);
                 }
             }
-            EnhanceAnnoInfo[] enhanceAnnoInfos = set.toArray(EnhanceAnnoInfo.class);
+            EnhanceAnnoInfo[] enhanceAnnoInfos = infos.toArray(new EnhanceAnnoInfo[infos.size()]);
             Arrays.sort(enhanceAnnoInfos, new AescComparator());
             String originName = each.getName();
             for (EnhanceAnnoInfo enhanceAnnoInfo : enhanceAnnoInfos)
@@ -436,11 +436,12 @@ public class AopUtil
                 exCcs[i] = classPool.get(types[i].getName());
             }
             CtMethod ctMethod = targetCc.getDeclaredMethod(method.getName(), getParamTypes(method));
-            ctMethod.insertBefore("((TransactionManager)" + txFieldName + ").beginTransAction();");
-            ctMethod.insertAfter("((TransactionManager)" + txFieldName + ").commit();");
+            String field = "((com.jfireframework.context.tx.TransactionManager)" + txFieldName + ")";
+            ctMethod.insertBefore(field + ".buildCurrentSession();" + field + ".beginTransAction();");
+            ctMethod.insertAfter(field + ".commit();" + field + ".closeCurrentSession();");
             for (CtClass exCc : exCcs)
             {
-                ctMethod.addCatch("{((TransactionManager)" + txFieldName + ").rollback();throw new RuntimeException($e);}", exCc);
+                ctMethod.addCatch("{" + field + ".rollback();" + field + ".closeCurrentSession();" + "throw new RuntimeException($e);}", exCc);
             }
         }
     }
@@ -449,16 +450,16 @@ public class AopUtil
      * 为自动关闭方法加上资源关闭的调用
      * 
      * @param targetCc 自动关闭方法所在的类
-     * @param acFieldName 自动关闭管理器在这个类中的属性名
+     * @param resFieldName 自动关闭管理器在这个类中的属性名
      * @param txMethods 自动关闭方法
      * @throws NotFoundException
      * @throws CannotCompileException
      */
-    private static void addAcToMethod(CtClass targetCc, String acFieldName, Method[] acMethods) throws NotFoundException, CannotCompileException
+    private static void addResToMethod(CtClass targetCc, String resFieldName, Method[] resMethods) throws NotFoundException, CannotCompileException
     {
-        for (Method method : acMethods)
+        for (Method method : resMethods)
         {
-            AutoCloseResource autoClose = AnnotationUtil.getAnnotation(AutoCloseResource.class, method);
+            AutoResource autoClose = AnnotationUtil.getAnnotation(AutoResource.class, method);
             Class<?>[] types = autoClose.exceptions();
             CtClass[] exCcs = new CtClass[types.length];
             for (int i = 0; i < types.length; i++)
@@ -466,10 +467,11 @@ public class AopUtil
                 exCcs[i] = classPool.get(types[i].getName());
             }
             CtMethod ctMethod = targetCc.getDeclaredMethod(method.getName(), getParamTypes(method));
-            ctMethod.insertAfter("{((AutoCloseManager)" + acFieldName + ").close();}");
+            ctMethod.insertBefore(resFieldName + ".open();");
+            ctMethod.insertAfter(resFieldName + ".close();");
             for (CtClass exCc : exCcs)
             {
-                ctMethod.addCatch("{((AutoCloseManager)" + acFieldName + ").close();throw $e;}", exCc);
+                ctMethod.addCatch("{" + resFieldName + ".close();throw $e;}", exCc);
             }
         }
     }
@@ -781,13 +783,13 @@ public class AopUtil
      */
     public static CtMethod[] getAllMethods(CtClass cc) throws NotFoundException
     {
-        LightSet<CtMethod> set = new LightSet<CtMethod>();
+        List<CtMethod> list = new LinkedList<CtMethod>();
         while (cc.getSimpleName().equals("Object") == false)
         {
             CtMethod[] methods = cc.getDeclaredMethods();
             checkNextMethod: for (CtMethod each : methods)
             {
-                checkAlreadIn: for (CtMethod alreadIn : set)
+                checkAlreadIn: for (CtMethod alreadIn : list)
                 {
                     if (alreadIn.getName().equals(each.getName()) == false)
                     {
@@ -809,11 +811,11 @@ public class AopUtil
                     // 代码走到这里，意味着父类的方法已经被子类重载了
                     continue checkNextMethod;
                 }
-                set.add(each);
+                list.add(each);
             }
             cc = cc.getSuperclass();
         }
-        return set.toArray(CtMethod.class);
+        return list.toArray(new CtMethod[list.size()]);
     }
     
     /**
@@ -846,12 +848,12 @@ public class AopUtil
         {
             ctClass = cc;
         }
-        LightSet<CtClass> set = new LightSet<CtClass>();
+        List<CtClass> list = new LinkedList<CtClass>();
         for (Class<?> each : method.getParameterTypes())
         {
-            set.add(classPool.get(each.getName()));
+            list.add(classPool.get(each.getName()));
         }
-        return ctClass.getDeclaredMethod(method.getName(), set.toArray(CtClass.class));
+        return ctClass.getDeclaredMethod(method.getName(), list.toArray(new CtClass[list.size()]));
     }
     
     /**

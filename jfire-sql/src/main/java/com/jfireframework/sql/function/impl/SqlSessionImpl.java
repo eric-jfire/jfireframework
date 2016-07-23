@@ -14,24 +14,19 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.function.LockMode;
-import com.jfireframework.sql.function.MapBean;
+import com.jfireframework.sql.function.ResultMap;
 import com.jfireframework.sql.function.SessionFactory;
 import com.jfireframework.sql.function.SqlSession;
-import com.jfireframework.sql.function.mapper.Mapper;
-import com.jfireframework.sql.util.DaoFactory;
-import com.jfireframework.sql.util.InterfaceMapperFactory;
-import com.jfireframework.sql.util.MapBeanFactory;
 import com.jfireframework.sql.util.SqlTool;
 
 public class SqlSessionImpl implements SqlSession
 {
-    private volatile int         transNum     = 0;
+    private int                  transNum     = 0;
     private Connection           connection;
     private SessionFactory       sessionFactory;
     private static Logger        logger       = ConsoleLogFactory.getLogger();
-    private volatile boolean     closed       = false;
+    private boolean              closed       = false;
     private static Set<Class<?>> baseClassSet = new HashSet<Class<?>>();
-    private long                 t0           = System.currentTimeMillis();
     
     static
     {
@@ -65,8 +60,11 @@ public class SqlSessionImpl implements SqlSession
     {
         try
         {
-            transNum++;
-            connection.setAutoCommit(false);
+            if (transNum == 0)
+            {
+                transNum++;
+                connection.setAutoCommit(false);
+            }
         }
         catch (SQLException e)
         {
@@ -80,7 +78,10 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             transNum--;
-            connection.commit();
+            if (transNum == 0)
+            {
+                connection.commit();
+            }
         }
         catch (SQLException e)
         {
@@ -108,7 +109,10 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             transNum--;
-            connection.rollback();
+            if (transNum == 0)
+            {
+                connection.rollback();
+            }
         }
         catch (SQLException e)
         {
@@ -126,10 +130,8 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             closed = true;
-            connection.setAutoCommit(true);
             sessionFactory.removeCurrentSession();
             connection.close();
-            logger.trace("sqlsession关闭,共使用{}毫秒", (System.currentTimeMillis() - t0));
         }
         catch (SQLException e)
         {
@@ -137,49 +139,37 @@ public class SqlSessionImpl implements SqlSession
         }
     }
     
+    @SuppressWarnings("unchecked")
     @Override
-    public boolean delete(Object entity)
+    public <T> boolean delete(T entity)
     {
-        return DaoFactory.getDaoBean(entity.getClass()).delete(entity, connection);
+        return sessionFactory.getDao((Class<T>) entity.getClass()).delete(entity, connection);
+    }
+    
+    @Override
+    public <T> T get(Class<T> entityClass, Object pk)
+    {
+        return (T) sessionFactory.getDao(entityClass).getById(pk, connection);
     }
     
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T get(Class<T> entityClass, Object pk)
-    {
-        return (T) DaoFactory.getDaoBean(entityClass).getById(pk, connection);
-    }
-    
-    @Override
     public <T> void save(T entity)
     {
-        DaoFactory.getDaoBean(entity.getClass()).save(entity, connection);
+        sessionFactory.getDao((Class<T>) entity.getClass()).save(entity, connection);
     }
     
+    @SuppressWarnings("unchecked")
     @Override
     public <T> void batchInsert(List<T> entitys)
     {
-        DaoFactory.getDaoBean(entitys.get(0).getClass()).batchInsert(entitys, connection);
+        sessionFactory.getDao((Class<T>) entitys.get(0).getClass()).batchInsert(entitys, connection);
     }
     
-    public void insert(Object entity)
+    @SuppressWarnings("unchecked")
+    public <T> void insert(T entity)
     {
-        DaoFactory.getDaoBean(entity.getClass()).insert(entity, connection);
-    }
-    
-    @Override
-    public <T> T getMapper(Class<T> entityClass)
-    {
-        try
-        {
-            T entity = InterfaceMapperFactory.getMapper(entityClass);
-            ((Mapper) entity).setSqlSession(this);
-            return entity;
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        sessionFactory.getDao((Class<T>) entity.getClass()).insert(entity, connection);
     }
     
     @Override
@@ -261,11 +251,6 @@ public class SqlSessionImpl implements SqlSession
         return connection;
     }
     
-    public int getTransNum()
-    {
-        return transNum;
-    }
-    
     @Override
     public List<Object[]> listQuery(Class<?>[] resultTypes, String sql, Object... params)
     {
@@ -325,7 +310,7 @@ public class SqlSessionImpl implements SqlSession
                 pstat.setObject(i + 1, params[i]);
             }
             ResultSet resultSet = pstat.executeQuery();
-            MapBean<T> mapBean = MapBeanFactory.getBean(resultType);
+            ResultMap<T> mapBean = sessionFactory.getResultMap(resultType);
             return mapBean.toBean(resultSet);
         }
         catch (Exception e)
@@ -461,7 +446,7 @@ public class SqlSessionImpl implements SqlSession
                 pstat.setObject(i + 1, params[i]);
             }
             ResultSet resultSet = pstat.executeQuery();
-            MapBean<T> mapBean = MapBeanFactory.getBean(resultType);
+            ResultMap<T> mapBean = sessionFactory.getResultMap(resultType);
             return mapBean.singleResultToBean(resultSet);
         }
         catch (Exception e)
@@ -484,35 +469,35 @@ public class SqlSessionImpl implements SqlSession
         }
     }
     
-    @SuppressWarnings("unchecked")
     @Override
     public <T> T get(Class<T> entityClass, Object pk, LockMode mode)
     {
-        return (T) DaoFactory.getDaoBean(entityClass).getById(pk, connection, mode);
+        return (T) sessionFactory.getDao(entityClass).getById(pk, connection, mode);
     }
     
+    @SuppressWarnings("unchecked")
     @Override
-    public int selectUpdate(Object entity, String fieldNames)
+    public <T> int selectUpdate(T entity, String fieldNames)
     {
-        return DaoFactory.getDaoBean(entity.getClass()).update(entity, connection, fieldNames);
+        return sessionFactory.getDao((Class<T>) entity.getClass()).update(entity, connection, fieldNames);
     }
     
     @Override
     public <T> T get(Class<T> entityClass, Object pk, String fieldNames)
     {
-        return DaoFactory.getDaoBean(entityClass).getById(pk, connection, fieldNames);
+        return (T) sessionFactory.getDao(entityClass).getById(pk, connection, fieldNames);
     }
     
     @Override
-    public int deleteByIds(Class<?> entityClass, String ids)
+    public <T> int deleteByIds(Class<T> entityClass, String ids)
     {
-        return DaoFactory.getDaoBean(entityClass).deleteByIds(ids, connection);
+        return sessionFactory.getDao(entityClass).deleteByIds(ids, connection);
     }
     
     @Override
-    public int deleteByIds(Class<?> entityClass, int[] ids)
+    public <T> int deleteByIds(Class<T> entityClass, int[] ids)
     {
-        return DaoFactory.getDaoBean(entityClass).deleteByIds(ids, connection);
+        return sessionFactory.getDao(entityClass).deleteByIds(ids, connection);
     }
     
 }

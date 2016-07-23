@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import javax.annotation.Resource;
-import com.jfireframework.context.util.AliasFor;
+import com.jfireframework.context.aliasanno.AliasFor;
 
 /**
  * 代表注解类是一个action类

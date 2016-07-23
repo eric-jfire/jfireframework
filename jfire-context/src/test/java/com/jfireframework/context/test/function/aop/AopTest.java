@@ -6,8 +6,8 @@ import javax.annotation.Resource;
 import org.junit.Test;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.JfireContextImpl;
+import com.jfireframework.context.aliasanno.AnnotationUtil;
 import com.jfireframework.context.bean.Bean;
-import com.jfireframework.context.util.AnnotationUtil;
 
 public class AopTest
 {

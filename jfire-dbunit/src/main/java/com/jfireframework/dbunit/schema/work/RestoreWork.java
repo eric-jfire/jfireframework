@@ -3,8 +3,8 @@ package com.jfireframework.dbunit.schema.work;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.List;
 import javax.sql.DataSource;
-import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.dbunit.table.Row;
@@ -29,7 +29,7 @@ public class RestoreWork
                 for (Table each : sortTables)
                 {
                     PreparedStatement pStat = restoreConn.prepareStatement(each.getInsertSql());
-                    LightSet<Row> tableData = each.getRowArray();
+                    List<Row> tableData = each.getRowArray();
                     for (Row row : tableData)
                     {
                         setRowData(row, pStat);

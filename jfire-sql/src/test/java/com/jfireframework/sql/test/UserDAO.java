@@ -1,12 +1,17 @@
 package com.jfireframework.sql.test;
 
 import java.util.List;
+import javax.annotation.Resource;
+import com.jfireframework.context.bean.annotation.BuildBy;
 import com.jfireframework.sql.annotation.BatchUpdate;
 import com.jfireframework.sql.annotation.Query;
 import com.jfireframework.sql.annotation.Update;
+import com.jfireframework.sql.jfirecontext.SqlMapperBeanBuilder;
 import com.jfireframework.sql.page.MysqlPage;
 import com.jfireframework.sql.test.entity.User;
 
+@Resource
+@BuildBy(SqlMapperBeanBuilder.class)
 public interface UserDAO
 {
     @Query(sql = "select * from User [$name.contains(\"asd\")  && $name.length()>2] where name like $%name% #", paramNames = "name")
@@ -16,6 +21,7 @@ public interface UserDAO
     public List<User> functionUse2(String name, String name2);
     
     @Query(sql = "select username from user order by userid", paramNames = "")
+    
     public List<String> getUsernames();
     
     @Query(sql = "select username from user order by userid", paramNames = "")

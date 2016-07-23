@@ -6,12 +6,13 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.code.CodeLocation;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.verify.Verify;
@@ -340,17 +341,19 @@ public final class ReflectUtil
     public static Method[] listGetMethod(Class<?> ckass)
     {
         Set<MethodInfo> set = new HashSet<MethodInfo>();
-        LightSet<Method> methods = new LightSet<Method>();
+        List<Method> methods = new LinkedList<Method>();
         do
         {
             for (Method each : ckass.getDeclaredMethods())
             {
-                if (Modifier.isPublic(each.getModifiers()) == false //
-                        || each.getParameterTypes().length > 0//
-                        || (each.getName().startsWith("get") | each.getName().startsWith("is")) == false //
-                        || each.getReturnType().equals(Void.class)//
-                        || each.getName().equals("get") //
-                        || each.getName().equals("is"))
+                if (
+                    Modifier.isPublic(each.getModifiers()) == false //
+                            || each.getParameterTypes().length > 0//
+                            || (each.getName().startsWith("get") | each.getName().startsWith("is")) == false //
+                            || each.getReturnType().equals(Void.class)//
+                            || each.getName().equals("get") //
+                            || each.getName().equals("is")
+                )
                 {
                     continue;
                 }
@@ -361,7 +364,7 @@ public final class ReflectUtil
             }
             ckass = ckass.getSuperclass();
         } while (ckass != null && ckass != Object.class);
-        return methods.toArray(Method.class);
+        return methods.toArray(new Method[methods.size()]);
     }
     
     /**
@@ -373,15 +376,17 @@ public final class ReflectUtil
     public static Method[] listSetMethod(Class<?> ckass)
     {
         Set<MethodInfo> set = new HashSet<MethodInfo>();
-        LightSet<Method> methods = new LightSet<Method>();
+        List<Method> methods = new LinkedList<Method>();
         do
         {
             for (Method each : ckass.getDeclaredMethods())
             {
-                if (Modifier.isPublic(each.getModifiers()) == false//
-                        || each.getParameterTypes().length != 1//
-                        || each.getName().startsWith("set") == false//
-                        || each.getName().equals("set"))
+                if (
+                    Modifier.isPublic(each.getModifiers()) == false//
+                            || each.getParameterTypes().length != 1//
+                            || each.getName().startsWith("set") == false//
+                            || each.getName().equals("set")
+                )
                 {
                     continue;
                 }
@@ -392,7 +397,7 @@ public final class ReflectUtil
             }
             ckass = ckass.getSuperclass();
         } while (ckass != null && ckass.equals(Object.class) == false);
-        return methods.toArray(Method.class);
+        return methods.toArray(new Method[methods.size()]);
     }
     
     /**

@@ -44,7 +44,6 @@ public class SqlTool
         else if (type == boolean.class)
         {
             return resultSet.getBoolean(index);
-            
         }
         else if (type == float.class)
         {

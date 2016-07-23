@@ -8,11 +8,11 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.context.ContextInitFinish;
+import com.jfireframework.context.aliasanno.AnnotationUtil;
 import com.jfireframework.context.aop.EnhanceAnnoInfo;
 import com.jfireframework.context.aop.annotation.AfterEnhance;
 import com.jfireframework.context.aop.annotation.AroundEnhance;
@@ -20,7 +20,6 @@ import com.jfireframework.context.aop.annotation.BeforeEnhance;
 import com.jfireframework.context.aop.annotation.ThrowEnhance;
 import com.jfireframework.context.bean.field.dependency.DependencyField;
 import com.jfireframework.context.bean.field.param.ParamField;
-import com.jfireframework.context.util.AnnotationUtil;
 import sun.reflect.MethodAccessor;
 
 /**
@@ -38,39 +37,44 @@ public class Bean
     /** 该bean的原始class对象，供查询使用 */
     private Class<?>                             originType;
     /** 该bean需要进行属性注入的field */
-    private DependencyField[]                    injectFields    = new DependencyField[0];
+    private DependencyField[]                    injectFields       = new DependencyField[0];
     /** 该bean需要进行属性初始化的field */
-    private ParamField[]                         paramFields     = new ParamField[0];
+    private ParamField[]                         paramFields        = new ParamField[0];
     /** 该bean是否是多例 */
-    private boolean                              prototype       = false;
+    private boolean                              prototype          = false;
     /* bean对象初始化过程中暂存生成的中间对象 */
-    private ThreadLocal<HashMap<String, Object>> beanInstanceMap = new ThreadLocal<HashMap<String, Object>>() {
-                                                                     @Override
-                                                                     protected HashMap<String, Object> initialValue()
-                                                                     {
-                                                                         return new HashMap<String, Object>();
-                                                                     }
-                                                                 };
+    private ThreadLocal<HashMap<String, Object>> beanInstanceMap    = new ThreadLocal<HashMap<String, Object>>() {
+                                                                        @Override
+                                                                        protected HashMap<String, Object> initialValue()
+                                                                        {
+                                                                            return new HashMap<String, Object>();
+                                                                        }
+                                                                    };
     /** 单例的引用对象 */
     private Object                               singletonInstance;
     /** 该bean是否实现了容器初始化结束接口 */
-    private boolean                              hasFinishAction = false;
+    private boolean                              hasFinishAction    = false;
     /** 该bean的所有增强方法信息 */
-    private LightSet<EnhanceAnnoInfo>            enHanceAnnos    = new LightSet<EnhanceAnnoInfo>();
+    private List<EnhanceAnnoInfo>                enHanceAnnos       = new LinkedList<EnhanceAnnoInfo>();
     /** 该bean的事务方法 */
-    private LightSet<Method>                     txMethods       = new LightSet<Method>();
+    private List<Method>                         txMethods          = new LinkedList<Method>();
     /** 该bean的自动关闭资源方法 */
-    private LightSet<Method>                     acMethods       = new LightSet<Method>();
-    private List<Method>                         cacheMethods    = new LinkedList<Method>();
+    private List<Method>                         resMethod          = new LinkedList<Method>();
+    private List<Method>                         cacheMethods       = new LinkedList<Method>();
     /**
      * 该Bean是否可以进行修改。如果是使用外部对象进行bean初始化，由于使用了外部对象，此时不应该再对该类进行aop操作。
      * 同样的，针对该Bean的分析也不应该进行，因为是外部对象，所以其内部的对其他对象的引用不由容器负责。因为不会生成新对象，也就没有注入分析的必要
      */
-    private boolean                              canModify       = true;
+    private boolean                              canModify          = true;
     /**
      * 对象初始化后，在容器内首先先调用的方法
      */
     private MethodAccessor                       postConstructMethod;
+    /**
+     * 该bean是否实现了BeanInstanceHolder接口
+     */
+    private boolean                              beanInstanceHolder = false;
+    private BeanConfig                           beanConfig;
     
     /**
      * 用bean名称和外部对象实例初始化一个bean，该bean为单例
@@ -111,6 +115,13 @@ public class Bean
         // 如果资源名称不为空，使用注解的资源名称。否则使用被注解的类的名称
         beanName = StringUtil.isNotBlank(resource.name()) ? resource.name() : src.getName();
         configBean(beanName, resource.shareable() == false, src);
+    }
+    
+    public Bean(String beanName, boolean prototype, Class<? extends BeanInstanceHolder> ckass, Class<?> realType)
+    {
+        configBean(beanName, prototype, ckass);
+        originType = realType;
+        beanInstanceHolder = true;
     }
     
     /**
@@ -195,13 +206,17 @@ public class Bean
             {
                 each.setParam(instance);
             }
-            if (prototype == false)
-            {
-                singletonInstance = instance;
-            }
             if (postConstructMethod != null)
             {
                 postConstructMethod.invoke(instance, null);
+            }
+            if (beanInstanceHolder)
+            {
+                instance = ((BeanInstanceHolder) instance).getObject();
+            }
+            if (prototype == false)
+            {
+                singletonInstance = instance;
             }
             return instance;
         }
@@ -243,7 +258,6 @@ public class Bean
         int order;
         for (Method each : bean.getType().getDeclaredMethods())
         {
-            
             if (AnnotationUtil.isPresent(AfterEnhance.class, each))
             {
                 AfterEnhance afterEnhance = AnnotationUtil.getAnnotation(AfterEnhance.class, each);
@@ -300,19 +314,19 @@ public class Bean
         txMethods.add(method);
     }
     
-    public void addAcMethod(Method method)
+    public void addResMethod(Method method)
     {
-        acMethods.add(method);
+        resMethod.add(method);
     }
     
-    public LightSet<Method> getTxMethodSet()
+    public List<Method> getTxMethodSet()
     {
         return txMethods;
     }
     
-    public LightSet<Method> getAcMethods()
+    public List<Method> getResMethods()
     {
-        return acMethods;
+        return resMethod;
     }
     
     public boolean canModify()
@@ -320,14 +334,14 @@ public class Bean
         return canModify;
     }
     
-    public LightSet<EnhanceAnnoInfo> getEnHanceAnnos()
+    public List<EnhanceAnnoInfo> getEnHanceAnnos()
     {
         return enHanceAnnos;
     }
     
     public boolean needEnhance()
     {
-        if (enHanceAnnos.size() > 0 || txMethods.size() > 0 || acMethods.size() > 0 || cacheMethods.size() > 0)
+        if (enHanceAnnos.size() > 0 || txMethods.size() > 0 || resMethod.size() > 0 || cacheMethods.size() > 0)
         {
             return true;
         }
@@ -351,4 +365,15 @@ public class Bean
     {
         return cacheMethods;
     }
+    
+    public BeanConfig getBeanConfig()
+    {
+        return beanConfig;
+    }
+    
+    public void setBeanConfig(BeanConfig beanConfig)
+    {
+        this.beanConfig = beanConfig;
+    }
+    
 }

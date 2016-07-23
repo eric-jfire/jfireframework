@@ -11,14 +11,15 @@ public class TxTest extends BaseTestSupport
     {
         TxManager txManager = new TxManager();
         txManager.setSessionFactory(sessionFactory);
+        txManager.buildCurrentSession();
         txManager.beginTransAction();
-        UserDAO userDAO = session.getMapper(UserDAO.class);
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         userDAO.deleteUser(1);
         txManager.beginTransAction();
-        userDAO = session.getMapper(UserDAO.class);
         userDAO.getUserByid(1);
         txManager.commit();
         txManager.commit();
+        txManager.closeCurrentSession();
     }
     
 }

@@ -1,5 +1,6 @@
 package com.jfireframework.sql.test.table;
 
+import java.sql.Time;
 import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.TableEntity;
@@ -21,7 +22,18 @@ public class User3
     private double  weight;
     @Column(name = "weight", saveIgnore = true)
     private float   weight2;
-                    
+    private Time    time;
+    
+    public Time getTime()
+    {
+        return time;
+    }
+    
+    public void setTime(Time time)
+    {
+        this.time = time;
+    }
+    
     public double getWeight()
     {
         return weight;

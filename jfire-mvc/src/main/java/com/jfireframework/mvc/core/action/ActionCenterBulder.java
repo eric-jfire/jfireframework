@@ -3,9 +3,9 @@ package com.jfireframework.mvc.core.action;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import javax.servlet.ServletContext;
-import com.jfireframework.baseutil.collection.set.LightSet;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.reflect.SimpleHotswapClassLoader;
 import com.jfireframework.baseutil.verify.Verify;
@@ -13,9 +13,9 @@ import com.jfireframework.codejson.JsonObject;
 import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.JfireContextImpl;
+import com.jfireframework.context.aliasanno.AnnotationUtil;
 import com.jfireframework.context.aop.AopUtil;
 import com.jfireframework.context.bean.Bean;
-import com.jfireframework.context.util.AnnotationUtil;
 import com.jfireframework.mvc.annotation.Controller;
 import com.jfireframework.mvc.annotation.RequestMapping;
 import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
@@ -66,12 +66,12 @@ public class ActionCenterBulder
     {
         Bean[] beans = jfireContext.getBeanByAnnotation(Controller.class);
         Bean[] listenerBeans = jfireContext.getBeanByInterface(ActionInitListener.class);
-        LightSet<ActionInitListener> tmp = new LightSet<ActionInitListener>();
+        List<ActionInitListener> tmp = new LinkedList<ActionInitListener>();
         for (Bean each : listenerBeans)
         {
             tmp.add((ActionInitListener) each.getInstance());
         }
-        ActionInitListener[] listeners = tmp.toArray(ActionInitListener.class);
+        ActionInitListener[] listeners = tmp.toArray(new ActionInitListener[tmp.size()]);
         List<Action> list = new ArrayList<Action>();
         for (Bean each : beans)
         {
