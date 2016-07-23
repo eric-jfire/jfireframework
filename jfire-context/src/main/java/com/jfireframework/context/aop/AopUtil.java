@@ -18,7 +18,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.context.aliasanno.AnnotationUtil;
-import com.jfireframework.context.aop.annotation.AutoCloseResource;
+import com.jfireframework.context.aop.annotation.AutoResource;
 import com.jfireframework.context.aop.annotation.EnhanceClass;
 import com.jfireframework.context.aop.annotation.Transaction;
 import com.jfireframework.context.bean.Bean;
@@ -26,7 +26,7 @@ import com.jfireframework.context.cache.CacheManager;
 import com.jfireframework.context.cache.annotation.CacheDelete;
 import com.jfireframework.context.cache.annotation.CacheGet;
 import com.jfireframework.context.cache.annotation.CachePut;
-import com.jfireframework.context.tx.AutoCloseManager;
+import com.jfireframework.context.tx.RessourceManager;
 import com.jfireframework.context.tx.TransactionManager;
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
@@ -48,7 +48,7 @@ public class AopUtil
 {
     private static ClassPool classPool = ClassPool.getDefault();
     private static CtClass   txManagerCtClass;
-    private static CtClass   acManagerCtClass;
+    private static CtClass   resManagerCtClass;
     private static CtClass   cacheManagerCtClass;
     private static Logger    logger    = ConsoleLogFactory.getLogger();
     
@@ -72,7 +72,7 @@ public class AopUtil
             classPool.appendClassPath(new ClassClassPath(AopUtil.class));
             classPool.appendClassPath("com.jfireframework.context.aop");
             txManagerCtClass = classPool.get(TransactionManager.class.getName());
-            acManagerCtClass = classPool.get(AutoCloseManager.class.getName());
+            resManagerCtClass = classPool.get(RessourceManager.class.getName());
             cacheManagerCtClass = classPool.get(CacheManager.class.getName());
         }
         catch (NotFoundException e)
@@ -96,7 +96,7 @@ public class AopUtil
     {
         try
         {
-            initTxAndAcAndCacheMethods(beanMap);
+            initAopMethods(beanMap);
             initAopbeanSet(beanMap);
             for (Bean bean : beanMap.values())
             {
@@ -114,11 +114,11 @@ public class AopUtil
     }
     
     /**
-     * 循环所有的bean，确定每一个bean需要进行事务增强的方法,自动关闭资源和缓存管理的方法,并且在bean中添加这些方法的信息
+     * 遍历所有的bean，确定该bean中的基本内置AOP方法。内置AOP方法指的是事务方法，自动资源方法，缓存方法
      * 
      * @param beanMap
      */
-    private static void initTxAndAcAndCacheMethods(Map<String, Bean> beanMap)
+    private static void initAopMethods(Map<String, Bean> beanMap)
     {
         for (Bean bean : beanMap.values())
         {
@@ -131,15 +131,15 @@ public class AopUtil
             {
                 if (AnnotationUtil.isPresent(Transaction.class, method))
                 {
-                    Verify.False(AnnotationUtil.isPresent(AutoCloseResource.class, method), "同一个方法上不能同时有事务注解和自动关闭注解，请检查{}.{}", method.getDeclaringClass(), method.getName());
+                    Verify.False(AnnotationUtil.isPresent(AutoResource.class, method), "同一个方法上不能同时有事务注解和自动关闭注解，请检查{}.{}", method.getDeclaringClass(), method.getName());
                     Verify.True(Modifier.isPublic(method.getModifiers()) || Modifier.isProtected(method.getModifiers()), "方法{}.{}有事务注解,访问类型必须是public或protected", method.getDeclaringClass(), method.getName());
                     bean.addTxMethod(method);
                     logger.trace("发现事务方法{}", method.toString());
                 }
-                else if (AnnotationUtil.isPresent(AutoCloseResource.class, method))
+                else if (AnnotationUtil.isPresent(AutoResource.class, method))
                 {
                     Verify.True(Modifier.isPublic(method.getModifiers()) || Modifier.isProtected(method.getModifiers()), "方法{}.{}有自动关闭注解,访问类型必须是public或protected", method.getDeclaringClass(), method.getName());
-                    bean.addAcMethod(method);
+                    bean.addResMethod(method);
                     logger.trace("发现自动关闭方法{}", method.toString());
                 }
                 if (AnnotationUtil.isPresent(CachePut.class, method) || AnnotationUtil.isPresent(CacheGet.class, method) || AnnotationUtil.isPresent(CacheDelete.class, method))
@@ -213,11 +213,11 @@ public class AopUtil
             addField(childCc, txManagerCtClass, txFieldName);
             addTxToMethod(childCc, txFieldName, bean.getTxMethodSet().toArray(new Method[bean.getTxMethodSet().size()]));
         }
-        if (bean.getAcMethods().size() > 0)
+        if (bean.getResMethods().size() > 0)
         {
-            String acFieldName = "ac_" + System.nanoTime();
-            addField(childCc, acManagerCtClass, acFieldName);
-            addAcToMethod(childCc, acFieldName, bean.getAcMethods().toArray(new Method[bean.getAcMethods().size()]));
+            String resFieldName = "ac_" + System.nanoTime();
+            addField(childCc, resManagerCtClass, resFieldName);
+            addResToMethod(childCc, resFieldName, bean.getResMethods().toArray(new Method[bean.getResMethods().size()]));
         }
         if (bean.getCacheMethods().size() > 0)
         {
@@ -450,16 +450,16 @@ public class AopUtil
      * 为自动关闭方法加上资源关闭的调用
      * 
      * @param targetCc 自动关闭方法所在的类
-     * @param acFieldName 自动关闭管理器在这个类中的属性名
+     * @param resFieldName 自动关闭管理器在这个类中的属性名
      * @param txMethods 自动关闭方法
      * @throws NotFoundException
      * @throws CannotCompileException
      */
-    private static void addAcToMethod(CtClass targetCc, String acFieldName, Method[] acMethods) throws NotFoundException, CannotCompileException
+    private static void addResToMethod(CtClass targetCc, String resFieldName, Method[] resMethods) throws NotFoundException, CannotCompileException
     {
-        for (Method method : acMethods)
+        for (Method method : resMethods)
         {
-            AutoCloseResource autoClose = AnnotationUtil.getAnnotation(AutoCloseResource.class, method);
+            AutoResource autoClose = AnnotationUtil.getAnnotation(AutoResource.class, method);
             Class<?>[] types = autoClose.exceptions();
             CtClass[] exCcs = new CtClass[types.length];
             for (int i = 0; i < types.length; i++)
@@ -467,10 +467,11 @@ public class AopUtil
                 exCcs[i] = classPool.get(types[i].getName());
             }
             CtMethod ctMethod = targetCc.getDeclaredMethod(method.getName(), getParamTypes(method));
-            ctMethod.insertAfter("{((AutoCloseManager)" + acFieldName + ").close();}");
+            ctMethod.insertBefore(resFieldName + ".open();");
+            ctMethod.insertAfter(resFieldName + ".close();");
             for (CtClass exCc : exCcs)
             {
-                ctMethod.addCatch("{((AutoCloseManager)" + acFieldName + ").close();throw $e;}", exCc);
+                ctMethod.addCatch("{" + resFieldName + ".close();throw $e;}", exCc);
             }
         }
     }

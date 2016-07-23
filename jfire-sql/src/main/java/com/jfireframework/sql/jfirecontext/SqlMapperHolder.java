@@ -8,12 +8,12 @@ public class SqlMapperHolder implements BeanInstanceHolder
 {
     @Resource
     private SessionFactory sessionFactory;
+    private Class<?>       ckass;
     
     @Override
     public Object getObject()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return sessionFactory.getMapper(ckass);
     }
     
 }

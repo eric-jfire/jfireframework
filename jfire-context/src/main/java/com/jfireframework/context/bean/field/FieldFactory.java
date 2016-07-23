@@ -16,12 +16,14 @@ import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.context.aliasanno.AnnotationUtil;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.context.bean.BeanConfig;
+import com.jfireframework.context.bean.annotation.field.CanBeNull;
 import com.jfireframework.context.bean.annotation.field.MapKey;
 import com.jfireframework.context.bean.field.dependency.DependencyField;
 import com.jfireframework.context.bean.field.dependency.impl.BeanNameMapField;
 import com.jfireframework.context.bean.field.dependency.impl.DefaultBeanField;
 import com.jfireframework.context.bean.field.dependency.impl.ListField;
 import com.jfireframework.context.bean.field.dependency.impl.MethodMapField;
+import com.jfireframework.context.bean.field.dependency.impl.NullInjectField;
 import com.jfireframework.context.bean.field.dependency.impl.ValueMapField;
 import com.jfireframework.context.bean.field.param.AbstractParamField;
 import com.jfireframework.context.bean.field.param.ParamField;
@@ -289,6 +291,10 @@ public class FieldFactory
             Verify.True(find == 1, "接口或抽象类{}的实现多于一个,无法自动注入{}.{},请在resource注解上注明需要注入的bean的名称", type.getName(), field.getDeclaringClass().getName(), field.getName());
             return new DefaultBeanField(field, implBean);
         }
+        else if (AnnotationUtil.isPresent(CanBeNull.class, field))
+        {
+            return new NullInjectField(field);
+        }
         else
         {
             throw new NullPointerException(StringUtil.format("属性{}.{}没有可以注入的bean,属性类型为{}", field.getDeclaringClass().getName(), field.getName(), field.getType().getName()));
@@ -323,6 +329,10 @@ public class FieldFactory
         if (typeBean != null)
         {
             return new DefaultBeanField(field, typeBean);
+        }
+        else if (AnnotationUtil.isPresent(CanBeNull.class, field))
+        {
+            return new NullInjectField(field);
         }
         throw new NullPointerException(StringUtil.format("无法注入{}.{},没有任何可以注入的内容", field.getDeclaringClass().getName(), field.getName()));
     }

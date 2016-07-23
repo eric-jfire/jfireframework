@@ -26,6 +26,7 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.context.bean.annotation.field.CanBeNull;
 import com.jfireframework.sql.annotation.BatchUpdate;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.Query;
@@ -54,6 +55,7 @@ public class SessionFactoryImpl implements SessionFactory
     @Resource
     private DataSource                        dataSource;
     @Resource
+    @CanBeNull
     private ClassLoader                       classLoader;
     private static ThreadLocal<SqlSession>    sessionLocal = new ThreadLocal<SqlSession>();
     private String                            scanPackage;
@@ -63,7 +65,7 @@ public class SessionFactoryImpl implements SessionFactory
     private String                            dbType;
     private IdentityHashMap<Class<?>, Mapper> mappers      = new IdentityHashMap<Class<?>, Mapper>(128);
     private IdentityHashMap<Class<?>, Dao<?>> daos         = new IdentityHashMap<Class<?>, Dao<?>>();
-    private Map<Class<?>, MapBeanImpl<?>>     resultMaps   = new IdentityHashMap<Class<?>, MapBeanImpl<?>>();
+    private Map<Class<?>, ResultMapImpl<?>>     resultMaps   = new IdentityHashMap<Class<?>, ResultMapImpl<?>>();
     private Map<String, MetaData>             metaDatas    = new HashMap<String, MetaData>();
     
     public SessionFactoryImpl()
@@ -83,6 +85,15 @@ public class SessionFactoryImpl implements SessionFactory
         {
             return;
         }
+        Set<String> set = buildClassNameSet();
+        new ResuleMapBuilder().build(set, classLoader);
+        new DaoBuilder().buildDao(set, classLoader);
+        createMappers(set);
+        createOrUpdateDatabase();
+    }
+    
+    private Set<String> buildClassNameSet()
+    {
         Set<String> set = new HashSet<String>();
         String[] packageNames = scanPackage.split(";");
         for (String packageName : packageNames)
@@ -92,8 +103,11 @@ public class SessionFactoryImpl implements SessionFactory
                 set.add(each);
             }
         }
-        new ResuleMapBuilder().build(set, classLoader);
-        new DaoBuilder().buildDao(set, classLoader);
+        return set;
+    }
+    
+    private void createMappers(Set<String> set)
+    {
         try
         {
             MapperBuilder mapperBuilder = new MapperBuilder();
@@ -121,14 +135,14 @@ public class SessionFactoryImpl implements SessionFactory
         {
             throw new JustThrowException(e1);
         }
-        if ("create".equals(tableMode) || "update".equals(tableMode))
-        {
-            createOrUpdateDatabase();
-        }
     }
     
     private void createOrUpdateDatabase()
     {
+        if ("create".equals(tableMode) == false && "update".equals(tableMode) == false)
+        {
+            return;
+        }
         int type = "create".equals(tableMode) ? 0 : 1;
         Structure structure;
         Verify.notNull(dbType, "dbType不能为空，必须指定内容。当前支持：mysql,MariaDB");
@@ -338,7 +352,7 @@ public class SessionFactoryImpl implements SessionFactory
                     if (ckass.isAnnotationPresent(TableEntity.class))
                     {
                         metaDatas.put(ckass.getSimpleName(), new MetaData(ckass));
-                        resultMaps.put(ckass, new MapBeanImpl(ckass));
+                        resultMaps.put(ckass, new ResultMapImpl(ckass));
                     }
                 }
                 catch (ClassNotFoundException e)

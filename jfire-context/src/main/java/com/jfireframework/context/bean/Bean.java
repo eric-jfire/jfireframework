@@ -59,7 +59,7 @@ public class Bean
     /** 该bean的事务方法 */
     private List<Method>                         txMethods          = new LinkedList<Method>();
     /** 该bean的自动关闭资源方法 */
-    private List<Method>                         acMethods          = new LinkedList<Method>();
+    private List<Method>                         resMethod          = new LinkedList<Method>();
     private List<Method>                         cacheMethods       = new LinkedList<Method>();
     /**
      * 该Bean是否可以进行修改。如果是使用外部对象进行bean初始化，由于使用了外部对象，此时不应该再对该类进行aop操作。
@@ -314,9 +314,9 @@ public class Bean
         txMethods.add(method);
     }
     
-    public void addAcMethod(Method method)
+    public void addResMethod(Method method)
     {
-        acMethods.add(method);
+        resMethod.add(method);
     }
     
     public List<Method> getTxMethodSet()
@@ -324,9 +324,9 @@ public class Bean
         return txMethods;
     }
     
-    public List<Method> getAcMethods()
+    public List<Method> getResMethods()
     {
-        return acMethods;
+        return resMethod;
     }
     
     public boolean canModify()
@@ -341,7 +341,7 @@ public class Bean
     
     public boolean needEnhance()
     {
-        if (enHanceAnnos.size() > 0 || txMethods.size() > 0 || acMethods.size() > 0 || cacheMethods.size() > 0)
+        if (enHanceAnnos.size() > 0 || txMethods.size() > 0 || resMethod.size() > 0 || cacheMethods.size() > 0)
         {
             return true;
         }

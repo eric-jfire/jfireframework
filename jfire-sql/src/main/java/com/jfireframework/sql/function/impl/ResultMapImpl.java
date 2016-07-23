@@ -16,13 +16,13 @@ import com.jfireframework.sql.field.MapField;
 import com.jfireframework.sql.field.MapFieldBuilder;
 import com.jfireframework.sql.function.ResultMap;
 
-public class MapBeanImpl<T> implements ResultMap<T>
+public class ResultMapImpl<T> implements ResultMap<T>
 {
     private MapField[]                mapFields;
     private HashMap<String, MapField> fieldMap = new HashMap<String, MapField>();
     private Class<T>                  entityClass;
     
-    public MapBeanImpl(Class<T> entityClass)
+    public ResultMapImpl(Class<T> entityClass)
     {
         this.entityClass = entityClass;
         List<MapField> set = new LinkedList<MapField>();

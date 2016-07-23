@@ -3,12 +3,12 @@ package com.jfireframework.sql.util;
 import javax.annotation.Resource;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.context.tx.AutoCloseManager;
+import com.jfireframework.context.tx.RessourceManager;
 import com.jfireframework.sql.function.SessionFactory;
 import com.jfireframework.sql.function.SqlSession;
 
 @Resource
-public class AutoCloseSession implements AutoCloseManager
+public class AutoCloseSession implements RessourceManager
 {
     @Resource
     private SessionFactory sessionFactory;

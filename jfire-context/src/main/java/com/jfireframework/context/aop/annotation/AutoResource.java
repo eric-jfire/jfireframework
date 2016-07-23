@@ -8,7 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 注解在方法上,代表会自动关闭方法中打开的资源
+ * 注解在方法上,代码会自动打开和关闭方法中会需要使用到的资源
  * 
  * @author 林斌{erci@jfire.cn}
  * 
@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-public @interface AutoCloseResource
+public @interface AutoResource
 {
     /**
      * 识别到该异常进行自动关闭,其余异常不操作
