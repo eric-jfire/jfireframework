@@ -10,6 +10,7 @@ import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.dbunit.schema.DbUnit;
 import com.jfireframework.sql.function.SqlSession;
 import com.jfireframework.sql.function.impl.SessionFactoryImpl;
+import com.zaxxer.hikari.HikariDataSource;
 
 public abstract class BaseTestSupport
 {
@@ -21,12 +22,12 @@ public abstract class BaseTestSupport
     
     static
     {
-        DruidDataSource dataSource = new DruidDataSource();
-        dataSource.setUrl("jdbc:mysql://localhost:3306/test?characterEncoding=utf8");
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:mysql://localhost:3306/test?characterEncoding=utf8");
         dataSource.setUsername("root");
         dataSource.setPassword("centerm");
-        dataSource.setMaxActive(150);
-        dataSource.setMaxWait(500);
+        dataSource.setMaximumPoolSize(150);
+        dataSource.setConnectionTimeout(1500);
         try
         {
             dataSource.getConnection();

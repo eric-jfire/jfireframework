@@ -21,13 +21,12 @@ import com.jfireframework.sql.util.SqlTool;
 
 public class SqlSessionImpl implements SqlSession
 {
-    private volatile int         transNum     = 0;
+    private int                  transNum     = 0;
     private Connection           connection;
     private SessionFactory       sessionFactory;
     private static Logger        logger       = ConsoleLogFactory.getLogger();
-    private volatile boolean     closed       = false;
+    private boolean              closed       = false;
     private static Set<Class<?>> baseClassSet = new HashSet<Class<?>>();
-    private long                 t0           = System.currentTimeMillis();
     
     static
     {
@@ -61,8 +60,11 @@ public class SqlSessionImpl implements SqlSession
     {
         try
         {
-            transNum++;
-            connection.setAutoCommit(false);
+            if (transNum == 0)
+            {
+                transNum++;
+                connection.setAutoCommit(false);
+            }
         }
         catch (SQLException e)
         {
@@ -76,7 +78,10 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             transNum--;
-            connection.commit();
+            if (transNum == 0)
+            {
+                connection.commit();
+            }
         }
         catch (SQLException e)
         {
@@ -104,7 +109,10 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             transNum--;
-            connection.rollback();
+            if (transNum == 0)
+            {
+                connection.rollback();
+            }
         }
         catch (SQLException e)
         {
@@ -122,10 +130,8 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             closed = true;
-            connection.setAutoCommit(true);
             sessionFactory.removeCurrentSession();
             connection.close();
-            logger.trace("sqlsession关闭,共使用{}毫秒", (System.currentTimeMillis() - t0));
         }
         catch (SQLException e)
         {
@@ -243,11 +249,6 @@ public class SqlSessionImpl implements SqlSession
     public Connection getConnection()
     {
         return connection;
-    }
-    
-    public int getTransNum()
-    {
-        return transNum;
     }
     
     @Override

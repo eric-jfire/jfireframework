@@ -8,12 +8,12 @@ import com.jfireframework.sql.function.SessionFactory;
 import com.jfireframework.sql.function.SqlSession;
 
 @Resource
-public class AutoCloseSession implements RessourceManager
+public class AutoSession implements RessourceManager
 {
     @Resource
     private SessionFactory sessionFactory;
     private static Logger  logger = ConsoleLogFactory.getLogger();
-                                  
+    
     @Override
     public void close()
     {
@@ -23,6 +23,12 @@ public class AutoCloseSession implements RessourceManager
         {
             session.close();
         }
+    }
+    
+    @Override
+    public void open()
+    {
+        sessionFactory.getOrCreateCurrentSession();
     }
     
 }
