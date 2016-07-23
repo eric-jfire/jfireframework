@@ -70,7 +70,11 @@ public class Bean
      * 对象初始化后，在容器内首先先调用的方法
      */
     private MethodAccessor                       postConstructMethod;
+    /**
+     * 该bean是否实现了BeanInstanceHolder接口
+     */
     private boolean                              beanInstanceHolder = false;
+    private BeanConfig                           beanConfig;
     
     /**
      * 用bean名称和外部对象实例初始化一个bean，该bean为单例
@@ -361,4 +365,15 @@ public class Bean
     {
         return cacheMethods;
     }
+    
+    public BeanConfig getBeanConfig()
+    {
+        return beanConfig;
+    }
+    
+    public void setBeanConfig(BeanConfig beanConfig)
+    {
+        this.beanConfig = beanConfig;
+    }
+    
 }

@@ -12,7 +12,7 @@ public class HolderTest
     {
         JfireContext jfireContext = new JfireContextImpl("com.jfireframework.context.test.function.builder");
         Person person = jfireContext.getBean(Person.class);
-        Assert.assertEquals("1", person.getName());
+        Assert.assertEquals("name", person.getName());
         Home home = jfireContext.getBean(Home.class);
         Assert.assertEquals(100, home.getLength());
     }

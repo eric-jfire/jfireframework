@@ -204,11 +204,13 @@ public class JfireContextImpl implements JfireContext
         for (Bean each : beanNameMap.values())
         {
             beanTypeMap.put(each.getOriginType(), each);
-            if (configMap.containsKey(each.getBeanName()))
+            BeanConfig beanConfig = configMap.get(each.getBeanName());
+            if (beanConfig != null)
             {
-                if (configMap.get(each.getBeanName()).getPostConstructMethod() != null)
+                each.setBeanConfig(beanConfig);
+                if (beanConfig.getPostConstructMethod() != null)
                 {
-                    each.setPostConstructMethod(ReflectUtil.fastMethod(ReflectUtil.getMethodWithoutParam(configMap.get(each.getBeanName()).getPostConstructMethod(), each.getOriginType())));
+                    each.setPostConstructMethod(ReflectUtil.fastMethod(ReflectUtil.getMethodWithoutParam(beanConfig.getPostConstructMethod(), each.getOriginType())));
                 }
             }
         }
@@ -219,7 +221,7 @@ public class JfireContextImpl implements JfireContext
          * 并且由于aop需要增加若干个类属性(属性上均有Resouce注解用来注入增强类)，所以注入属性数组的生成必须在aop之后
          */
         AopUtil.enhance(beanNameMap, classLoader);
-        beanUtil.initDependencyAndParamFields(beanNameMap, configMap);
+        beanUtil.initDependencyAndParamFields();
         // 提前实例化单例，避免第一次惩罚以及由于是在单线程中实例化，就不会出现多线程可能的单例被实例化不止一次的情况
         for (Bean bean : beanNameMap.values())
         {
@@ -454,13 +456,14 @@ public class JfireContextImpl implements JfireContext
          * 
          * @param beanNameMap
          */
-        public void initDependencyAndParamFields(Map<String, Bean> beanNameMap, Map<String, BeanConfig> configMap)
+        public void initDependencyAndParamFields()
         {
             for (Bean bean : beanNameMap.values())
             {
                 if (bean.canModify())
                 {
-                    BeanConfig beanConfig = configMap.get(bean.getBeanName());
+                    // 首先从配置文件中获取配置信息，如果不存在，则尝试获取自身的配置信息
+                    BeanConfig beanConfig = bean.getBeanConfig();
                     bean.setInjectFields(FieldFactory.buildDependencyField(bean, beanNameMap, beanTypeMap, beanConfig));
                     if (beanConfig != null)
                     {

@@ -6,6 +6,7 @@ import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.Set;
 import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import sun.misc.Unsafe;
@@ -73,6 +74,10 @@ public abstract class AbstractParamField implements ParamField
         else if (fieldType == Set.class)
         {
             return new SetField(field, value);
+        }
+        else if (fieldType == Class.class)
+        {
+            return new ClassField(field, value);
         }
         else
         {
@@ -289,6 +294,24 @@ public abstract class AbstractParamField implements ParamField
         {
             super(field, value);
             this.value = Long.valueOf(value);
+        }
+        
+    }
+    
+    static class ClassField extends AbstractParamField
+    {
+        
+        public ClassField(Field field, String value)
+        {
+            super(field, value);
+            try
+            {
+                this.value = Class.forName(value);
+            }
+            catch (ClassNotFoundException e)
+            {
+                throw new JustThrowException(e);
+            }
         }
         
     }
