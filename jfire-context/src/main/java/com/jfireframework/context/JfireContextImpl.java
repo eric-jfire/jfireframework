@@ -8,6 +8,7 @@ import java.lang.annotation.Annotation;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,9 @@ import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.context.aliasanno.AnnotationUtil;
 import com.jfireframework.context.aop.AopUtil;
 import com.jfireframework.context.bean.Bean;
+import com.jfireframework.context.bean.BeanBuilder;
 import com.jfireframework.context.bean.BeanConfig;
+import com.jfireframework.context.bean.annotation.BuildBy;
 import com.jfireframework.context.bean.field.FieldFactory;
 import com.jfireframework.context.config.BeanAttribute;
 import com.jfireframework.context.config.BeanInfo;
@@ -37,14 +40,15 @@ import com.jfireframework.context.event.impl.EventPublisherImpl;
 
 public class JfireContextImpl implements JfireContext
 {
-    private Map<String, BeanConfig> configMap   = new HashMap<String, BeanConfig>();
-    private Map<String, Bean>       beanNameMap = new HashMap<String, Bean>();
-    private Map<Class<?>, Bean>     beanTypeMap = new HashMap<Class<?>, Bean>();
-    private boolean                 init        = false;
-    private List<String>            classNames  = new LinkedList<String>();
-    private static Logger           logger      = ConsoleLogFactory.getLogger();
-    private ClassLoader             classLoader = JfireContextImpl.class.getClassLoader();
-    private BeanUtil                beanUtil    = new BeanUtil();
+    private Map<Class<?>, BeanBuilder> builders    = new IdentityHashMap<Class<?>, BeanBuilder>();
+    private Map<String, BeanConfig>    configMap   = new HashMap<String, BeanConfig>();
+    private Map<String, Bean>          beanNameMap = new HashMap<String, Bean>();
+    private Map<Class<?>, Bean>        beanTypeMap = new HashMap<Class<?>, Bean>();
+    private boolean                    init        = false;
+    private List<String>               classNames  = new LinkedList<String>();
+    private static Logger              logger      = ConsoleLogFactory.getLogger();
+    private ClassLoader                classLoader = JfireContextImpl.class.getClassLoader();
+    private BeanUtil                   beanUtil    = new BeanUtil();
     
     public JfireContextImpl()
     {
@@ -405,7 +409,26 @@ public class JfireContextImpl implements JfireContext
                 return;
             }
             Bean bean = null;
-            if (res.isInterface() == false)
+            if (AnnotationUtil.isPresent(BuildBy.class, res))
+            {
+                BuildBy buildBy = AnnotationUtil.getAnnotation(BuildBy.class, res);
+                Class<? extends BeanBuilder> ckass = buildBy.value();
+                BeanBuilder beanBuilder = builders.get(ckass);
+                if (beanBuilder == null)
+                {
+                    try
+                    {
+                        beanBuilder = ckass.newInstance();
+                    }
+                    catch (Exception e)
+                    {
+                        throw new JustThrowException(e);
+                    }
+                    builders.put(ckass, beanBuilder);
+                }
+                bean = beanBuilder.parse(res);
+            }
+            else if (res.isInterface() == false)
             {
                 bean = new Bean(res);
             }
