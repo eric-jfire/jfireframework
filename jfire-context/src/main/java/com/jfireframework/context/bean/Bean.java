@@ -197,7 +197,11 @@ public class Bean
         try
         {
             Object instance = type.newInstance();
-            beanInstanceMap.put(beanName, instance);
+            // 实现了BeanInstanceHolder接口的bean不能包含在循环引用路径中，否则就会出现栈溢出
+            if (beanInstanceHolder == false)
+            {
+                beanInstanceMap.put(beanName, instance);
+            }
             for (DependencyField each : injectFields)
             {
                 each.inject(instance, beanInstanceMap);
@@ -213,6 +217,7 @@ public class Bean
             if (beanInstanceHolder)
             {
                 instance = ((BeanInstanceHolder) instance).getObject();
+                beanInstanceMap.put(beanName, instance);
             }
             if (prototype == false)
             {
