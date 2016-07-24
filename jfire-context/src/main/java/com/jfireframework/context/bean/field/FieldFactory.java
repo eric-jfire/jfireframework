@@ -373,7 +373,7 @@ public class FieldFactory
      * @param beanConfig
      * @return
      */
-    public static ParamField[] buildParamField(Bean bean, BeanConfig beanConfig)
+    public static ParamField[] buildParamField(Bean bean, BeanConfig beanConfig, ClassLoader classLoader)
     {
         Map<String, String> map = beanConfig.getParamMap();
         Field[] fields = ReflectUtil.getAllFields(bean.getType());
@@ -382,14 +382,14 @@ public class FieldFactory
         {
             if (map.containsKey(field.getName()))
             {
-                list.add(buildParamField(field, map.get(field.getName())));
+                list.add(buildParamField(field, map.get(field.getName()), classLoader));
             }
         }
         return list.toArray(new ParamField[list.size()]);
     }
     
-    private static ParamField buildParamField(Field field, String value)
+    private static ParamField buildParamField(Field field, String value, ClassLoader classLoader)
     {
-        return AbstractParamField.build(field, value);
+        return AbstractParamField.build(field, value, classLoader);
     }
 }

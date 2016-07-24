@@ -28,7 +28,7 @@ public abstract class AbstractParamField implements ParamField
         unsafe.putObject(entity, offset, value);
     }
     
-    public static ParamField build(Field field, String value)
+    public static ParamField build(Field field, String value, ClassLoader classLoader)
     {
         Class<?> fieldType = field.getType();
         if (fieldType == String.class)
@@ -77,7 +77,7 @@ public abstract class AbstractParamField implements ParamField
         }
         else if (fieldType == Class.class)
         {
-            return new ClassField(field, value);
+            return new ClassField(field, value, classLoader);
         }
         else
         {
@@ -301,12 +301,12 @@ public abstract class AbstractParamField implements ParamField
     static class ClassField extends AbstractParamField
     {
         
-        public ClassField(Field field, String value)
+        public ClassField(Field field, String value, ClassLoader classLoader)
         {
             super(field, value);
             try
             {
-                this.value = Class.forName(value);
+                this.value = classLoader.loadClass(value);
             }
             catch (ClassNotFoundException e)
             {

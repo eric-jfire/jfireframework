@@ -467,7 +467,7 @@ public class JfireContextImpl implements JfireContext
                     bean.setInjectFields(FieldFactory.buildDependencyField(bean, beanNameMap, beanTypeMap, beanConfig));
                     if (beanConfig != null)
                     {
-                        bean.setParamFields(FieldFactory.buildParamField(bean, beanConfig));
+                        bean.setParamFields(FieldFactory.buildParamField(bean, beanConfig, classLoader));
                     }
                 }
             }

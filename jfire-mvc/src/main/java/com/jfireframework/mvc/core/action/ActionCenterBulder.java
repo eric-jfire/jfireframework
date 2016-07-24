@@ -52,7 +52,6 @@ public class ActionCenterBulder
             classLoader = Thread.currentThread().getContextClassLoader();
         }
         jfireContext.readConfig(config);
-        jfireContext.addPackageNames("com.jfireframework.sql");
         jfireContext.addSingletonEntity("servletContext", servletContext);
         jfireContext.addBean(DataBinderInterceptor.class);
         jfireContext.addBean(UploadInterceptor.class);
