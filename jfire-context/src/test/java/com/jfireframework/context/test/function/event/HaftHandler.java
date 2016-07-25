@@ -37,10 +37,7 @@ public class HaftHandler implements EventHandler, ContextInitFinish
     {
         UserPhone phone = new UserPhone();
         phone.setPhone("1775032");
-        ApplicationEvent event = new ApplicationEvent();
-        event.setData(phone);
-        event.setType(SmsEvent.halt);
-        publisher.publish(event);
+        publisher.publish(phone, SmsEvent.halt);
     }
     
 }

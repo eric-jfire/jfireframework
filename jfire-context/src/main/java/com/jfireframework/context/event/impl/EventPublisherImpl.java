@@ -116,13 +116,16 @@ public class EventPublisherImpl implements EventPublisher
     }
     
     @Override
-    public void publish(ApplicationEvent event)
+    public void publish(Object data, Enum<?> type)
     {
         if (disruptor == null)
         {
             throw new NullPointerException("请正确初始化事件发布器");
         }
-        disruptor.publish(event);
+        ApplicationEvent applicationEvent = new ApplicationEvent();
+        applicationEvent.setData(data);
+        applicationEvent.setType(type);
+        disruptor.publish(applicationEvent);
     }
     
 }
