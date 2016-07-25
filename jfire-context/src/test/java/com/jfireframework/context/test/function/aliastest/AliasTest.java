@@ -13,7 +13,7 @@ import com.jfireframework.context.aliasanno.AnnotationUtil;
 @Testalis3(t = "sada", s = false)
 public class AliasTest
 {
-    @Autowired(wiredName = "sad")
+    @Autowired(wiredName = "demo")
     private SingleDemo bi;
     
     @MyMethod(load = "ss")
@@ -33,7 +33,7 @@ public class AliasTest
         assertEquals("ss", initMethod.name());
         Field field = AliasTest.class.getDeclaredField("bi");
         resource = AnnotationUtil.getAnnotation(Resource.class, field);
-        assertEquals("sad", resource.name());
+        assertEquals("demo", resource.name());
     }
     
     @Test
