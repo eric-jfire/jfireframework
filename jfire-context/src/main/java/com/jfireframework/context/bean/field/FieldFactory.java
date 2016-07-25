@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.context.aliasanno.AnnotationUtil;
@@ -194,7 +194,7 @@ public class FieldFactory
         }
         else
         {
-            throw new RuntimeException(StringUtil.format("属性{}.{}进行map注入，本质信息不正确。请检查{}", field.getDeclaringClass(), field.getName(), dependencyStr));
+            throw new UnSupportException(StringUtil.format("属性{}.{}进行map注入，本质信息不正确。请检查{}", field.getDeclaringClass(), field.getName(), dependencyStr));
         }
     }
     
@@ -209,7 +209,7 @@ public class FieldFactory
         }
         else
         {
-            Verify.True(type.isAssignableFrom(dependencyBean.getOriginType()), "配置文件中注入的bean:{}不是类{}的类型", dependencyStr, type);
+            Verify.True(type == dependencyBean.getOriginType(), "配置文件中注入的bean:{}不是类{}的类型", dependencyStr, type);
         }
         return new DefaultBeanField(field, dependencyBean);
     }
@@ -268,36 +268,54 @@ public class FieldFactory
     {
         Resource resource = AnnotationUtil.getAnnotation(Resource.class, field);
         Class<?> type = field.getType();
-        String beanName = resource.name().equals("") ? field.getType().getName() : resource.name();
-        Bean nameBean = beanNameMap.get(beanName);
-        if (nameBean != null)
+        if (resource.name().equals("") == false)
         {
-            Verify.True(type.isAssignableFrom(nameBean.getOriginType()), "bean:{}不是接口:{}的实现", nameBean.getOriginType().getName(), type.getName());
-            return new DefaultBeanField(field, nameBean);
-        }
-        // 寻找实现了该接口的bean,如果超过1个,则抛出异常
-        int find = 0;
-        Bean implBean = null;
-        for (Class<?> each : beanTypeMap.keySet())
-        {
-            if (type.isAssignableFrom(each))
+            Bean nameBean = beanNameMap.get(resource.name());
+            if (AnnotationUtil.isPresent(CanBeNull.class, field))
             {
-                find++;
-                implBean = beanTypeMap.get(each);
+                if (nameBean == null)
+                {
+                    return new NullInjectField(field);
+                }
+                else
+                {
+                    Verify.True(type.isAssignableFrom(nameBean.getOriginType()), "bean:{}不是接口:{}的实现", nameBean.getOriginType().getName(), type.getName());
+                    return new DefaultBeanField(field, nameBean);
+                }
             }
-        }
-        if (find != 0)
-        {
-            Verify.True(find == 1, "接口或抽象类{}的实现多于一个,无法自动注入{}.{},请在resource注解上注明需要注入的bean的名称", type.getName(), field.getDeclaringClass().getName(), field.getName());
-            return new DefaultBeanField(field, implBean);
-        }
-        else if (AnnotationUtil.isPresent(CanBeNull.class, field))
-        {
-            return new NullInjectField(field);
+            else
+            {
+                Verify.exist(nameBean, "属性{}.{}指定需要bean:{}注入，但是该bean不存在，请检查", field.getDeclaringClass().getName(), field.getName(), resource.name());
+                Verify.True(type.isAssignableFrom(nameBean.getOriginType()), "bean:{}不是接口:{}的实现", nameBean.getOriginType().getName(), type.getName());
+                return new DefaultBeanField(field, nameBean);
+            }
         }
         else
         {
-            throw new NullPointerException(StringUtil.format("属性{}.{}没有可以注入的bean,属性类型为{}", field.getDeclaringClass().getName(), field.getName(), field.getType().getName()));
+            // 寻找实现了该接口的bean,如果超过1个,则抛出异常
+            int find = 0;
+            Bean implBean = null;
+            for (Class<?> each : beanTypeMap.keySet())
+            {
+                if (type.isAssignableFrom(each))
+                {
+                    find++;
+                    implBean = beanTypeMap.get(each);
+                }
+            }
+            if (find != 0)
+            {
+                Verify.True(find == 1, "接口或抽象类{}的实现多于一个,无法自动注入{}.{},请在resource注解上注明需要注入的bean的名称", type.getName(), field.getDeclaringClass().getName(), field.getName());
+                return new DefaultBeanField(field, implBean);
+            }
+            else if (AnnotationUtil.isPresent(CanBeNull.class, field))
+            {
+                return new NullInjectField(field);
+            }
+            else
+            {
+                throw new NullPointerException(StringUtil.format("属性{}.{}没有可以注入的bean,属性类型为{}", field.getDeclaringClass().getName(), field.getName(), field.getType().getName()));
+            }
         }
     }
     
@@ -311,30 +329,55 @@ public class FieldFactory
     private static DependencyField buildDefaultField(Field field, Map<String, Bean> beanNameMap, Map<Class<?>, Bean> beanTypeMap)
     {
         Resource resource = AnnotationUtil.getAnnotation(Resource.class, field);
-        String beanName = resource.name().equals("") ? field.getType().getName() : resource.name();
-        Bean nameBean = beanNameMap.get(beanName);
-        if (nameBean != null)
+        if (resource.name().equals("") == false)
         {
-            try
+            Bean nameBean = beanNameMap.get(resource.name());
+            if (nameBean != null)
             {
-                Verify.True(field.getType().isAssignableFrom(nameBean.getOriginType()), "bean:{}不是类:{}的实例", nameBean.getOriginType().getName(), field.getType().getName());
+                Verify.True(field.getType() == nameBean.getOriginType(), "bean:{}不是类:{}的实例", nameBean.getBeanName(), field.getType().getName());
+                return new DefaultBeanField(field, nameBean);
             }
-            catch (Exception e)
+            else
             {
-                throw new JustThrowException(e);
+                if (AnnotationUtil.isPresent(CanBeNull.class, field))
+                {
+                    return new NullInjectField(field);
+                }
+                else
+                {
+                    throw new NullPointerException(StringUtil.format("无法注入{}.{},没有任何可以注入的内容", field.getDeclaringClass().getName(), field.getName()));
+                }
             }
-            return new DefaultBeanField(field, nameBean);
         }
-        Bean typeBean = beanTypeMap.get(field.getType());
-        if (typeBean != null)
+        else
         {
-            return new DefaultBeanField(field, typeBean);
+            String beanName = field.getType().getName();
+            Bean nameBean = beanNameMap.get(beanName);
+            if (nameBean != null)
+            {
+                Verify.True(field.getType() == nameBean.getOriginType(), "bean:{}不是类:{}的实例", nameBean.getBeanName(), field.getType().getName());
+                return new DefaultBeanField(field, nameBean);
+            }
+            else
+            {
+                Bean typeBean = beanTypeMap.get(field.getType());
+                if (typeBean != null)
+                {
+                    return new DefaultBeanField(field, typeBean);
+                }
+                else
+                {
+                    if (AnnotationUtil.isPresent(CanBeNull.class, field))
+                    {
+                        return new NullInjectField(field);
+                    }
+                    else
+                    {
+                        throw new NullPointerException(StringUtil.format("无法注入{}.{},没有任何可以注入的内容", field.getDeclaringClass().getName(), field.getName()));
+                    }
+                }
+            }
         }
-        else if (AnnotationUtil.isPresent(CanBeNull.class, field))
-        {
-            return new NullInjectField(field);
-        }
-        throw new NullPointerException(StringUtil.format("无法注入{}.{},没有任何可以注入的内容", field.getDeclaringClass().getName(), field.getName()));
     }
     
     private static MethodAccessor[] initMapKeyMethods(Bean[] beans, String methodName, Class<?> hasMapFieldClass, Class<?> keyClass)

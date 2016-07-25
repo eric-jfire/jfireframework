@@ -462,7 +462,6 @@ public class JfireContextImpl implements JfireContext
             {
                 if (bean.canModify())
                 {
-                    // 首先从配置文件中获取配置信息，如果不存在，则尝试获取自身的配置信息
                     BeanConfig beanConfig = bean.getBeanConfig();
                     bean.setInjectFields(FieldFactory.buildDependencyField(bean, beanNameMap, beanTypeMap, beanConfig));
                     if (beanConfig != null)
