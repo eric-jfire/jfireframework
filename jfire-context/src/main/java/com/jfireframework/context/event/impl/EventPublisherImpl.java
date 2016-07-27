@@ -62,7 +62,6 @@ public class EventPublisherImpl implements EventPublisher
     
     private EventHandler[][][] transfer(IdentityHashMap<Class<?>, Integer> map)
     {
-        int max = 0;
         int sequence = 0;
         for (EventHandler each : _handlers)
         {
@@ -90,7 +89,7 @@ public class EventPublisherImpl implements EventPublisher
             count[sequence][index] += 1;
         }
         EventHandler[][][] handlers = new EventHandler[map.size()][][];
-        for (int i = 0; i <= max; i++)
+        for (int i = 0; i < map.size(); i++)
         {
             handlers[i] = new EventHandler[count[i].length][];
             for (int j = 0; j < handlers[i].length; j++)
