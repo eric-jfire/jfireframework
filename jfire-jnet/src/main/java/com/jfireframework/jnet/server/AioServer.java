@@ -7,20 +7,27 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
+import com.jfireframework.jnet.server.CompletionHandler.x.impl.WeaponAcceptHandler;
 import com.jfireframework.jnet.server.util.ExecutorMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
 import com.jfireframework.jnet.server.util.WorkMode;
 
 public class AioServer
 {
+    private Lock                            lock     = new ReentrantLock();
+    private Condition                       shutdown = lock.newCondition();
+    private WeaponAcceptHandler             weaponAcceptHandler;
     private AcceptHandler                   acceptCompleteHandler;
     private AsynchronousServerSocketChannel serverSocketChannel;
-    private Logger                          logger = ConsoleLogFactory.getLogger();
+    private Logger                          logger   = ConsoleLogFactory.getLogger();
     private AsynchronousChannelGroup        channelGroup;
     private ServerConfig                    serverConfig;
     
@@ -52,7 +59,8 @@ public class AioServer
      */
     public void start()
     {
-        acceptCompleteHandler = new AcceptHandler(this, serverConfig);
+//        acceptCompleteHandler = new AcceptHandler(this, serverConfig);
+        weaponAcceptHandler = new WeaponAcceptHandler(this, serverConfig);
         ThreadFactory threadFactory = new ThreadFactory() {
             int i = 1;
             
@@ -75,12 +83,31 @@ public class AioServer
             }
             serverSocketChannel = AsynchronousServerSocketChannel.open(channelGroup).bind(new InetSocketAddress(serverConfig.getPort()));
             logger.info("监听启动");
-            serverSocketChannel.accept(null, acceptCompleteHandler);
+//            serverSocketChannel.accept(null, acceptCompleteHandler);
+             serverSocketChannel.accept(null , weaponAcceptHandler);
         }
         catch (IOException e)
         {
             logger.error("服务器启动失败", e);
             throw new RuntimeException(e);
+        }
+    }
+    
+    public void waitForShutdown()
+    {
+        lock.lock();
+        try
+        {
+            shutdown.await();
+        }
+        catch (InterruptedException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        finally
+        {
+            lock.unlock();
         }
     }
     
@@ -93,8 +120,17 @@ public class AioServer
                 channelGroup.shutdownNow();
                 channelGroup.awaitTermination(10, TimeUnit.SECONDS);
             }
-            acceptCompleteHandler.stop();
+            // acceptCompleteHandler.stop();
             logger.info("服务器关闭");
+            lock.lock();
+            try
+            {
+                shutdown.notify();
+            }
+            finally
+            {
+                lock.unlock();
+            }
         }
         catch (Exception e)
         {

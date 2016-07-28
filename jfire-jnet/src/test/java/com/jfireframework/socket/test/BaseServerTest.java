@@ -81,6 +81,7 @@ public class BaseServerTest
                     public Object catchException(Object data, InternalTask result)
                     {
                         Throwable e = (Throwable) data;
+                        System.err.println("感知到关闭");
                         e.printStackTrace();
                         return null;
                     }
