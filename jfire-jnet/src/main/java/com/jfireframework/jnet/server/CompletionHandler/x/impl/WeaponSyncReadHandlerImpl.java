@@ -191,7 +191,9 @@ public class WeaponSyncReadHandlerImpl implements WeaponReadHandler
                         if (readState.compareAndSwap(IDLE, WORK))
                         {
                             // 此时是必然成功的
-                            writeHandler.trySend(waitForSendBuf);
+                            ByteBuf<?> send = waitForSendBuf;
+                            waitForSendBuf = null;
+                            writeHandler.trySend(send);
                         }
                         else
                         {
@@ -266,7 +268,9 @@ public class WeaponSyncReadHandlerImpl implements WeaponReadHandler
         {
             if (waitForSendBuf != null)
             {
-                writeHandler.trySend(waitForSendBuf);
+                ByteBuf<?> send = waitForSendBuf;
+                waitForSendBuf = null;
+                writeHandler.trySend(send);
             }
             if (ioBuf.remainRead() > 0)
             {

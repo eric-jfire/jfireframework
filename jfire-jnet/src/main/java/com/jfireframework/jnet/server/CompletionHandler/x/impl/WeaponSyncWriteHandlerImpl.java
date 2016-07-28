@@ -87,7 +87,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponWriteHandler
         setCapacity(serverChannel.capacity());
     }
     
-    public void setCapacity(int capacity)
+    private void setCapacity(int capacity)
     {
         Verify.True(capacity > 1, "数组的大小必须大于1");
         int tmp = 1;
@@ -101,7 +101,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponWriteHandler
         {
             bufArray[i] = new BufHolder();
         }
-        lengthMask = capacity - 1;
+        lengthMask = tmp - 1;
     }
     
     public ByteBuf<?> getBuf(long cursor)
