@@ -14,33 +14,31 @@ import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.WaeponTask;
-import com.jfireframework.jnet.server.CompletionHandler.x.WeaponReadHandler;
-import com.jfireframework.jnet.server.CompletionHandler.x.WeaponWriteHandler;
 
-public class WeaponSyncReadHandlerImpl implements WeaponReadHandler
+public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
 {
     
-    private static final Logger      logger         = ConsoleLogFactory.getLogger();
-    private final FrameDecodec       frameDecodec;
-    private final DataHandler[]      handlers;
-    private final DirectByteBuf      ioBuf          = DirectByteBuf.allocate(100);
-    private final ServerChannel      serverChannel;
-    public final static int          WORK           = 1;
-    public final static int          IDLE           = 2;
-    public final static int          YIDLE          = 3;
-    private final CpuCachePadingInt  readState      = new CpuCachePadingInt(IDLE);
+    private static final Logger          logger         = ConsoleLogFactory.getLogger();
+    private final FrameDecodec           frameDecodec;
+    private final DataHandler[]          handlers;
+    private final DirectByteBuf          ioBuf          = DirectByteBuf.allocate(100);
+    private final ServerChannel          serverChannel;
+    public final static int              WORK           = 1;
+    public final static int              IDLE           = 2;
+    public final static int              YIDLE          = 3;
+    private final CpuCachePadingInt      readState      = new CpuCachePadingInt(IDLE);
     // 读取超时时间
-    private final long               readTimeout;
-    private final long               waitTimeout;
+    private final long                   readTimeout;
+    private final long                   waitTimeout;
     // 最后一次读取时间
-    private long                     lastReadTime;
+    private long                         lastReadTime;
     // 本次读取的截止时间
-    private long                     endReadTime;
+    private long                         endReadTime;
     // 启动读取超时的计数
-    private boolean                  startCountdown = false;
-    private final WaeponTask         waeponTask     = new WaeponTask();
-    private final WeaponWriteHandler writeHandler;
-    private volatile ByteBuf<?>      waitForSendBuf;
+    private boolean                      startCountdown = false;
+    private final WaeponTask             waeponTask     = new WaeponTask();
+    private final WeaponSyncWriteHandler writeHandler;
+    private volatile ByteBuf<?>          waitForSendBuf;
     
     public WeaponSyncReadHandlerImpl(ServerChannel serverChannel)
     {

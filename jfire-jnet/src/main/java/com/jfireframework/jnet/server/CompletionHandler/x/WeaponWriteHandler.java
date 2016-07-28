@@ -14,6 +14,4 @@ public interface WeaponWriteHandler extends CompletionHandler<Integer, ByteBuf<?
      */
     public boolean trySend(ByteBuf<?> buf);
     
-    public boolean noMoreSend();
-    
 }

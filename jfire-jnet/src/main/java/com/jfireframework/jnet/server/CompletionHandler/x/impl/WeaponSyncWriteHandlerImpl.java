@@ -11,11 +11,10 @@ import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.CompletionHandler.x.WeaponReadHandler;
-import com.jfireframework.jnet.server.CompletionHandler.x.WeaponWriteHandler;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
-public class WeaponSyncWriteHandlerImpl implements WeaponWriteHandler
+public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
 {
     
     class BufHolder
@@ -70,7 +69,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponWriteHandler
     /**
      * 写出处理器写一个发送数据的位置
      */
-    private CpuCachePadingLong      sendSequence     = new CpuCachePadingLong(0);
+    private volatile long           sendSequence     = 0;
     private long                    wrapSendSequence = 0;
     private long                    wrapPutSequence  = 0;
     private final WeaponReadHandler weaponReadHandler;
@@ -124,15 +123,15 @@ public class WeaponSyncWriteHandlerImpl implements WeaponWriteHandler
             return;
         }
         buf.release();
-        sendSequence.set(sendSequence.value() + 1);
+        sendSequence += 1;
         weaponReadHandler.notifyRead();
-        if (sendSequence.value() >= wrapSendSequence)
+        if (sendSequence >= wrapSendSequence)
         {
             wrapSendSequence = putSequence.value();
         }
-        if (sendSequence.value() < wrapSendSequence)
+        if (sendSequence < wrapSendSequence)
         {
-            buf = getBuf(sendSequence.value());
+            buf = getBuf(sendSequence);
             serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
             return;
         }
@@ -140,7 +139,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponWriteHandler
         {
             state.set(idle);
             wrapSendSequence = putSequence.value();
-            if (sendSequence.value() >= wrapSendSequence)
+            if (sendSequence >= wrapSendSequence)
             {
                 return;
             }
@@ -171,7 +170,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponWriteHandler
         }
         else
         {
-            wrapPutSequence = sendSequence.value() + lengthMask;
+            wrapPutSequence = sendSequence + lengthMask;
             if (putSequence.value() < wrapPutSequence)
             {
                 setBuf(buf, putSequence.value());
@@ -190,7 +189,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponWriteHandler
     {
         if (state.value() == idle && state.compareAndSwap(idle, work))
         {
-            ByteBuf<?> buf = getBuf(sendSequence.value());
+            ByteBuf<?> buf = getBuf(sendSequence);
             serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
             return;
         }
@@ -199,6 +198,6 @@ public class WeaponSyncWriteHandlerImpl implements WeaponWriteHandler
     @Override
     public boolean noMoreSend()
     {
-        return sendSequence == putSequence;
+        return sendSequence == putSequence.value();
     }
 }

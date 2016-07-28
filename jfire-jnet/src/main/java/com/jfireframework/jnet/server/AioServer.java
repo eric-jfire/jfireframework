@@ -14,7 +14,6 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
 import com.jfireframework.jnet.server.CompletionHandler.x.impl.WeaponAcceptHandler;
 import com.jfireframework.jnet.server.util.ExecutorMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
@@ -25,7 +24,7 @@ public class AioServer
     private Lock                            lock     = new ReentrantLock();
     private Condition                       shutdown = lock.newCondition();
     private WeaponAcceptHandler             weaponAcceptHandler;
-    private AcceptHandler                   acceptCompleteHandler;
+    // private AcceptHandler acceptCompleteHandler;
     private AsynchronousServerSocketChannel serverSocketChannel;
     private Logger                          logger   = ConsoleLogFactory.getLogger();
     private AsynchronousChannelGroup        channelGroup;
@@ -59,7 +58,7 @@ public class AioServer
      */
     public void start()
     {
-//        acceptCompleteHandler = new AcceptHandler(this, serverConfig);
+        // acceptCompleteHandler = new AcceptHandler(this, serverConfig);
         weaponAcceptHandler = new WeaponAcceptHandler(this, serverConfig);
         ThreadFactory threadFactory = new ThreadFactory() {
             int i = 1;
@@ -83,8 +82,8 @@ public class AioServer
             }
             serverSocketChannel = AsynchronousServerSocketChannel.open(channelGroup).bind(new InetSocketAddress(serverConfig.getPort()));
             logger.info("监听启动");
-//            serverSocketChannel.accept(null, acceptCompleteHandler);
-             serverSocketChannel.accept(null , weaponAcceptHandler);
+            // serverSocketChannel.accept(null, acceptCompleteHandler);
+            serverSocketChannel.accept(null, weaponAcceptHandler);
         }
         catch (IOException e)
         {
