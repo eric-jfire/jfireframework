@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.x.impl;
+package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -10,7 +10,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
-import com.jfireframework.jnet.server.CompletionHandler.x.WeaponReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.x.capacity.WeaponReadHandler;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
