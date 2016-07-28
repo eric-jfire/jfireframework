@@ -23,7 +23,7 @@ import com.jfireframework.jnet.server.util.WorkMode;
 
 public class SingleSpeedTest
 {
-    private int    threadCount = 10;
+    private int    threadCount = 1;
     private int    sendCount   = 1000;
     private String ip          = "127.0.0.1";
     
