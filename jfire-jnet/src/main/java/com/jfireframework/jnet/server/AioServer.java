@@ -84,9 +84,8 @@ public class AioServer
             logger.info("监听启动");
             // serverSocketChannel.accept(null, acceptCompleteHandler);
             weaponAcceptHandler = new WeaponAcceptHandler(this, serverConfig);
-            // WeaponSingleAcceptHandler acceptHandler = new
-            // WeaponSingleAcceptHandler(this, serverConfig);
-            serverSocketChannel.accept(null, weaponAcceptHandler);
+            WeaponSingleAcceptHandler acceptHandler = new WeaponSingleAcceptHandler(this, serverConfig);
+            serverSocketChannel.accept(null, acceptHandler);
         }
         catch (IOException e)
         {

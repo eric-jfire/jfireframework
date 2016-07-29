@@ -39,7 +39,15 @@ public class JsonObject extends HashMap<String, Object> implements Json
     
     public Integer getWInteger(String key)
     {
-        return ((Long) get(key)).intValue();
+        Long value = (Long) get(key);
+        if (value == null)
+        {
+            return null;
+        }
+        else
+        {
+            return value.intValue();
+        }
     }
     
     public Double getWDouble(String key)
@@ -87,7 +95,15 @@ public class JsonObject extends HashMap<String, Object> implements Json
     
     public Character getWCharacter(String key)
     {
-        return ((String) get(key)).charAt(0);
+        String value = (String) get(key);
+        if (value != null)
+        {
+            return value.charAt(0);
+        }
+        else
+        {
+            return null;
+        }
     }
     
     public int getInt(String key)

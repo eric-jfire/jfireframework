@@ -17,11 +17,13 @@ import sun.misc.Unsafe;
 public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
 {
     
-    class BufHolder
+    public static class BufHolder
     {
         public long                 p1, p2, p3, p4, p5, p6, p7;
+        public int                  p8;
         private volatile ByteBuf<?> buf;
-        public long                 p9, p10, p11, p12, p13, p14, p15;
+        public int                  p9;
+        public long                 p10, p11, p12, p13, p14, p15, p16;
         
         public ByteBuf<?> getBuf()
         {
@@ -35,7 +37,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
         
         public long nouse()
         {
-            return p1 + p2 + p3 + p4 + p5 + p6 + p7 + p9 + p10 + p11 + p12 + p13 + p14 + p15;
+            return p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10 + p11 + p12 + p13 + p14 + p15 + p16;
         }
     }
     
@@ -145,6 +147,8 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
             }
             else
             {
+                // 假设程序这个时候走到这里，然后失去了cpu时间。读取处理器此时读取了数据进来，并且唤醒了写处理器。
+                // 然后在别的线程中，写处理器将所有的数据都处理完毕了，再次回到idle状态。然后这个时候程序进去其实是没有数据可以写的
                 getIntoWork();
             }
         }
@@ -187,11 +191,27 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
     
     private void getIntoWork()
     {
-        if (state.value() == idle && state.compareAndSwap(idle, work))
+        while (state.value() == idle && state.compareAndSwap(idle, work))
         {
-            ByteBuf<?> buf = getBuf(sendSequence);
-            serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
-            return;
+            long current = putSequence.value();
+            if (sendSequence < current)
+            {
+                ByteBuf<?> buf = getBuf(sendSequence);
+                serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+                return;
+            }
+            else
+            {
+                state.set(idle);
+                if (current == putSequence.value())
+                {
+                    return;
+                }
+                else
+                {
+                    continue;
+                }
+            }
         }
     }
     

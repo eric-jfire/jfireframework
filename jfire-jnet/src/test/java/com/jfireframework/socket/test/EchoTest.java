@@ -1,5 +1,6 @@
 package com.jfireframework.socket.test;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -14,6 +15,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
@@ -46,16 +48,18 @@ public class EchoTest
         ServerConfig config = new ServerConfig();
         config.setSocketThreadSize(4);
         config.setChannelCapacity(16);
-        config.setInitListener(new ChannelInitListener() {
-            
-            @Override
-            public void channelInit(JnetChannel serverChannelInfo)
-            {
-                serverChannelInfo.setCapacity(1024);
-                serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
-                serverChannelInfo.setHandlers(new EchoHandler());
-            }
-        });
+        config.setInitListener(
+                new ChannelInitListener() {
+                    
+                    @Override
+                    public void channelInit(JnetChannel serverChannelInfo)
+                    {
+                        serverChannelInfo.setCapacity(1024);
+                        serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
+                        serverChannelInfo.setHandlers(new EchoHandler());
+                    }
+                }
+        );
         config.setPort(port);
         AioServer aioServer = new AioServer(config);
         aioServer.start();
@@ -65,22 +69,24 @@ public class EchoTest
             Thread[] threads = new Thread[index];
             for (int i = 0; i < threads.length; i++)
             {
-                threads[i] = new Thread(new Runnable() {
-                    
-                    @Override
-                    public void run()
-                    {
-                        try
-                        {
-                            connecttest();
-                        }
-                        catch (Throwable e)
-                        {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-                    }
-                }, "测试线程_" + index + "_" + i);
+                threads[i] = new Thread(
+                        new Runnable() {
+                            
+                            @Override
+                            public void run()
+                            {
+                                try
+                                {
+                                    connecttest();
+                                }
+                                catch (Throwable e)
+                                {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                            }
+                        }, "测试线程_" + index + "_" + i
+                );
                 threads[i].start();
             }
             Timewatch timewatch = new Timewatch();
@@ -118,8 +124,8 @@ public class EchoTest
         }
         try
         {
-            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-hh_mm_ss");
-            FileOutputStream outputStream = new FileOutputStream(format.format(new Date()) + ".xls");
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH_mm_ss");
+            FileOutputStream outputStream = new FileOutputStream("target" + File.separator + format.format(new Date()) + ".xls");
             workbook.write(outputStream);
             outputStream.close();
         }
@@ -135,54 +141,60 @@ public class EchoTest
         AioClient client = new AioClient(false);
         client.setAddress(ip);
         client.setPort(port);
-        client.setWriteHandlers(new DataHandler() {
-            
-            @Override
-            public Object handle(Object data, InternalTask result) throws JnetException
-            {
-                ByteBuf<?> buf = DirectByteBuf.allocate(100);
-                buf.addWriteIndex(4);
-                buf.writeString((String) data);
-                return buf;
-            }
-            
-            @Override
-            public Object catchException(Object data, InternalTask result)
-            {
-                // ((Throwable) data).printStackTrace();
-                return data;
-            }
-        }, new LengthPreHandler(0, 4));
-        client.setInitListener(new ChannelInitListener() {
-            
-            @Override
-            public void channelInit(JnetChannel jnetChannel)
-            {
-                jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoderByHeap(0, 4, 4, 500));
-                jnetChannel.setCapacity(1024);
-                jnetChannel.setHandlers(new DataHandler() {
+        client.setWriteHandlers(
+                new DataHandler() {
                     
                     @Override
                     public Object handle(Object data, InternalTask result) throws JnetException
                     {
-                        // System.out.println("收到数据");
-                        ByteBuf<?> buf = (ByteBuf<?>) data;
-                        String value = null;
-                        value = buf.readString();
-                        buf.release();
-                        return value;
+                        ByteBuf<?> buf = DirectByteBuf.allocate(100);
+                        buf.addWriteIndex(4);
+                        buf.writeString((String) data);
+                        return buf;
                     }
                     
                     @Override
                     public Object catchException(Object data, InternalTask result)
                     {
-                        // System.err.println("客户端");
                         // ((Throwable) data).printStackTrace();
                         return data;
                     }
-                });
-            }
-        });
+                }, new LengthPreHandler(0, 4)
+        );
+        client.setInitListener(
+                new ChannelInitListener() {
+                    
+                    @Override
+                    public void channelInit(JnetChannel jnetChannel)
+                    {
+                        jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoderByHeap(0, 4, 4, 500));
+                        jnetChannel.setCapacity(2048);
+                        jnetChannel.setHandlers(
+                                new DataHandler() {
+                                    
+                                    @Override
+                                    public Object handle(Object data, InternalTask result) throws JnetException
+                                    {
+                                        // System.out.println("收到数据");
+                                        ByteBuf<?> buf = (ByteBuf<?>) data;
+                                        String value = null;
+                                        value = buf.readString();
+                                        buf.release();
+                                        return value;
+                                    }
+                                    
+                                    @Override
+                                    public Object catchException(Object data, InternalTask result)
+                                    {
+                                        // System.err.println("客户端");
+                                        // ((Throwable) data).printStackTrace();
+                                        return data;
+                                    }
+                                }
+                        );
+                    }
+                }
+        );
         for (int i = 0; i < sendCount; i++)
         {
             try
@@ -196,9 +208,7 @@ public class EchoTest
         Future<?> future = client.connect().write("987654321");
         try
         {
-            // Assert.assertEquals("987654321", (String) future.get(20000,
-            // TimeUnit.MILLISECONDS));
-            future.get(20, TimeUnit.SECONDS);
+            Assert.assertEquals("987654321", (String) future.get(20000, TimeUnit.MILLISECONDS));
         }
         catch (Exception e)
         {
