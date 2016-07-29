@@ -44,12 +44,12 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
     protected static final Unsafe unsafe = ReflectUtil.getUnsafe();
     static
     {
-        base = unsafe.arrayBaseOffset(Object[].class);
-        if (4 == unsafe.arrayIndexScale(Object[].class))
+        base = unsafe.arrayBaseOffset(BufHolder[].class);
+        if (4 == unsafe.arrayIndexScale(BufHolder[].class))
         {
             scale = 2;
         }
-        else if (8 == unsafe.arrayIndexScale(Object[].class))
+        else if (8 == unsafe.arrayIndexScale(BufHolder[].class))
         {
             scale = 3;
         }

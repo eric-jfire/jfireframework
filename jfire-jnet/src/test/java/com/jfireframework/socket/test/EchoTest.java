@@ -36,8 +36,8 @@ public class EchoTest
 {
     private int    threadCountStart = 1;
     private int    threadCountEnd   = 80;
-    private int    sendCount        = 10;
-    private String ip               = "127.0.0.1";
+    private int    sendCount        = 10000;
+    private String ip               = "192.168.10.51";
     private int    port             = 5689;
     
     @Test
