@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl;
+package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -23,9 +23,17 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
     private final DataHandler[]          handlers;
     private final DirectByteBuf          ioBuf          = DirectByteBuf.allocate(100);
     private final ServerChannel          serverChannel;
-    public final static int              WORK           = 1;
-    public final static int              IDLE           = 2;
-    public final static int              YIDLE          = 3;
+    private final static int             WORK           = 1;
+    private final static int             IDLE           = 2;
+    /**
+     * 本线程仍然持有控制权
+     */
+    private final static int             ON_CONTROL     = 1;
+    
+    /**
+     * 本线程让渡出控制权
+     */
+    private final static int             YIDLE          = 2;
     private final CpuCachePadingInt      readState      = new CpuCachePadingInt(IDLE);
     // 读取超时时间
     private final long                   readTimeout;
@@ -116,9 +124,9 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
             try
             {
                 int result = frameAndHandle();
-                if (result == WORK)
+                if (result == ON_CONTROL)
                 {
-                    readAndWait();
+                    readAndWait(false);
                     return;
                 }
                 else
@@ -128,7 +136,7 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
             }
             catch (LessThanProtocolException e)
             {
-                readAndWait();
+                readAndWait(false);
                 return;
             }
             catch (BufNotEnoughException e)
@@ -182,31 +190,56 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
                 }
                 else
                 {
-                    waitForSendBuf = (ByteBuf<?>) intermediateResult;
-                    readState.set(IDLE);
-                    if (writeHandler.noMoreSend())
+                    int result = retrySend((ByteBuf<?>) intermediateResult);
+                    if (result == YIDLE)
                     {
-                        if (readState.compareAndSwap(IDLE, WORK))
-                        {
-                            // 此时是必然成功的
-                            ByteBuf<?> send = waitForSendBuf;
-                            waitForSendBuf = null;
-                            writeHandler.trySend(send);
-                        }
-                        else
-                        {
-                            return YIDLE;
-                        }
-                    }
-                    else
-                    {
-                        return IDLE;
+                        return YIDLE;
                     }
                 }
             }
             if (ioBuf.remainRead() == 0)
             {
-                return WORK;
+                return ON_CONTROL;
+            }
+        }
+    }
+    
+    private int retrySend(ByteBuf<?> mayBeSend)
+    {
+        while (true)
+        {
+            waitForSendBuf = mayBeSend;
+            // 在将自身状态设置为空闲之前，一定要让waitForSendBuf有值。这样别的争抢到控制权的线程，才能正确的将这个数据发出
+            readState.set(IDLE);
+            // 如果没有更多空间了，那意味着而可以尝试再次发送。否则的话，等待发送完成将自身唤醒即可
+            if (writeHandler.available())
+            {
+                if (readState.compareAndSwap(IDLE, WORK))
+                {
+                    // 当抢占到控制权的时候这些竞争资源的指向可能已经变化了，不是之前的那个"waitForSend"
+                    // 举个例子，如果线程设置完成idle状态后空闲比较长时间。其他的线程取得了控制权并且执行了大量的操作，没有空间可以发送后再次让渡出控制权，
+                    // 而该线程在这个时候获取到了控制权。那么waitForSend就不是上面代码中指向的那个值了
+                    mayBeSend = waitForSendBuf;
+                    waitForSendBuf = null;
+                    if (writeHandler.trySend(mayBeSend))
+                    {
+                        return ON_CONTROL;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    // 如果尝试失败，就叫唤出该线程内的尝试权利
+                    return YIDLE;
+                }
+            }
+            else
+            {
+                // 发送失败，并且有空间，尝试别的线程中来唤醒读取控制器
+                return YIDLE;
             }
         }
     }
@@ -214,8 +247,12 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
     /**
      * 开始空闲读取等待，并且将倒数计时状态重置为false
      */
-    public void readAndWait()
+    public void readAndWait(boolean init)
     {
+        if (init)
+        {
+            readState.set(WORK);
+        }
         startCountdown = false;
         serverChannel.getSocketChannel().read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, serverChannel, this);
     }
@@ -264,11 +301,17 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
     {
         if (readState.value() == IDLE && readState.compareAndSwap(IDLE, WORK))
         {
-            if (waitForSendBuf != null)
+            if (writeHandler.trySend(waitForSendBuf))
             {
-                ByteBuf<?> send = waitForSendBuf;
-                waitForSendBuf = null;
-                writeHandler.trySend(send);
+                ;
+            }
+            else
+            {
+                int result = retrySend(waitForSendBuf);
+                if (result == YIDLE)
+                {
+                    return;
+                }
             }
             if (ioBuf.remainRead() > 0)
             {
@@ -276,7 +319,7 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
             }
             else
             {
-                readAndWait();
+                readAndWait(false);
             }
         }
     }

@@ -12,5 +12,7 @@ public interface WeaponReadHandler extends CompletionHandler<Integer, ServerChan
      */
     public void notifyRead();
     
+    public void readAndWait(boolean init);
+    
     public void catchThrowable(Throwable e);
 }

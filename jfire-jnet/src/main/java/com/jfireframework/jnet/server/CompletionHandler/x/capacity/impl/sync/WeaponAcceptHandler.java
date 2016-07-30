@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl;
+package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync;
 
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -43,7 +43,7 @@ public class WeaponAcceptHandler implements CompletionHandler<AsynchronousSocket
             channelInfo.setChannel(socketChannel);
             initListener.channelInit(channelInfo);
             WeaponReadHandler weaponReadHandler = new WeaponSyncReadHandlerImpl(channelInfo);
-            weaponReadHandler.notifyRead();
+            weaponReadHandler.readAndWait(true);
             aioServer.getServerSocketChannel().accept(null, this);
         }
         catch (Exception e)

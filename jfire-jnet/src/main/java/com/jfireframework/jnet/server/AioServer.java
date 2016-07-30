@@ -15,7 +15,7 @@ import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.server.CompletionHandler.single.impl.WeaponSingleAcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.WeaponAcceptHandler;
+import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync.WeaponAcceptHandler;
 import com.jfireframework.jnet.server.util.ExecutorMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
 import com.jfireframework.jnet.server.util.WorkMode;
@@ -85,7 +85,7 @@ public class AioServer
             // serverSocketChannel.accept(null, acceptCompleteHandler);
             weaponAcceptHandler = new WeaponAcceptHandler(this, serverConfig);
             WeaponSingleAcceptHandler acceptHandler = new WeaponSingleAcceptHandler(this, serverConfig);
-            serverSocketChannel.accept(null, acceptHandler);
+            serverSocketChannel.accept(null, weaponAcceptHandler);
         }
         catch (IOException e)
         {
