@@ -137,7 +137,7 @@ public class WeaponSingleReadHandlerImpl implements WeaponSingleReadHandler
         }
     }
     
-    public void frameAndHandle() throws Exception
+    public void frameAndHandle() throws Throwable
     {
         Object intermediateResult = frameDecodec.decodec(ioBuf);
         waeponTask.setChannelInfo(serverChannel);

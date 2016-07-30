@@ -149,19 +149,19 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
             {
                 logger.debug("协议错误，关闭链接");
                 catchThrowable(e);
-                ioBuf.release();
+                serverChannel.closeChannel();
                 return;
             }
             catch (Throwable e)
             {
                 catchThrowable(e);
-                ioBuf.release();
+                serverChannel.closeChannel();
                 return;
             }
         }
     }
     
-    public int frameAndHandle() throws Exception
+    public int frameAndHandle() throws Throwable
     {
         while (true)
         {
@@ -211,8 +211,7 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
             waitForSendBuf = mayBeSend;
             // 在将自身状态设置为空闲之前，一定要让waitForSendBuf有值。这样别的争抢到控制权的线程，才能正确的将这个数据发出
             readState.set(IDLE);
-            // 如果没有更多空间了，那意味着而可以尝试再次发送。否则的话，等待发送完成将自身唤醒即可
-            if (writeHandler.available())
+            if (writeHandler.availablePut())
             {
                 if (readState.compareAndSwap(IDLE, WORK))
                 {

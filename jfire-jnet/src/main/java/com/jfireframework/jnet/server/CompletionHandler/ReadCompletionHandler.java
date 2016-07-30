@@ -157,13 +157,13 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             {
                 logger.debug("协议错误，关闭链接");
                 catchThrowable(e);
-                ioBuf.release();
+                serverChannel.closeChannel();
                 return;
             }
             catch (Throwable e)
             {
                 catchThrowable(e);
-                ioBuf.release();
+                serverChannel.closeChannel();
                 return;
             }
         }
@@ -182,7 +182,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
         }
     }
     
-    public int frameAndHandle() throws Exception
+    public int frameAndHandle() throws Throwable
     {
         while (true)
         {

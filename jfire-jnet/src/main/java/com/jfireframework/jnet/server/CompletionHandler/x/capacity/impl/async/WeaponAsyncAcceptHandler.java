@@ -3,6 +3,9 @@ package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.async;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
+import com.jfireframework.baseutil.disruptor.Disruptor;
+import com.jfireframework.baseutil.disruptor.EntryAction;
+import com.jfireframework.baseutil.disruptor.waitstrategy.ParkWaitStrategy;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
@@ -10,8 +13,6 @@ import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.AioServer;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.WeaponReadHandler;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync.WeaponSyncReadHandlerImpl;
 import com.jfireframework.jnet.server.util.ServerConfig;
 
 public class WeaponAsyncAcceptHandler implements AcceptHandler
@@ -20,6 +21,7 @@ public class WeaponAsyncAcceptHandler implements AcceptHandler
     private Logger              logger = ConsoleLogFactory.getLogger();
     private ChannelInitListener initListener;
     private final int           capacity;
+    private final Disruptor     disruptor;
     
     public WeaponAsyncAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
@@ -28,10 +30,22 @@ public class WeaponAsyncAcceptHandler implements AcceptHandler
         Verify.notNull(initListener, "initListener不能为空");
         this.aioServer = aioServer;
         initListener = serverConfig.getInitListener();
+        EntryAction[] actions = new EntryAction[serverConfig.getAsyncThreadSize()];
+        for (int i = 0; i < actions.length; i++)
+        {
+            actions[i] = new AsyncTaskAction();
+        }
+        Thread[] threads = new Thread[actions.length];
+        for (int i = 0; i < threads.length; i++)
+        {
+            threads[i] = new Thread(actions[i], "disruptor-" + i);
+        }
+        disruptor = new Disruptor(serverConfig.getAsyncCapacity(), actions, threads, new ParkWaitStrategy(threads));
     }
     
     public void stop()
     {
+        disruptor.stop();
     }
     
     @Override
@@ -43,8 +57,8 @@ public class WeaponAsyncAcceptHandler implements AcceptHandler
             channelInfo.setCapacity(capacity);
             channelInfo.setChannel(socketChannel);
             initListener.channelInit(channelInfo);
-            WeaponReadHandler weaponReadHandler = new WeaponSyncReadHandlerImpl(channelInfo);
-            weaponReadHandler.readAndWait(true);
+            WeaponAsyncReadHandler readHandler = new WeaponAsyncReadHandlerImpl(channelInfo, disruptor);
+            readHandler.readAndWait(true);
             aioServer.getServerSocketChannel().accept(null, this);
         }
         catch (Exception e)

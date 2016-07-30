@@ -9,18 +9,18 @@ import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.AioServer;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.WeaponAcceptHandler;
+import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
 import com.jfireframework.jnet.server.CompletionHandler.x.capacity.WeaponReadHandler;
 import com.jfireframework.jnet.server.util.ServerConfig;
 
-public class WeaponAcceptHandlerImpl implements WeaponAcceptHandler
+public class WeaponAcceptHandler implements AcceptHandler
 {
     private AioServer           aioServer;
     private Logger              logger = ConsoleLogFactory.getLogger();
     private ChannelInitListener initListener;
     private final int           capacity;
     
-    public WeaponAcceptHandlerImpl(AioServer aioServer, ServerConfig serverConfig)
+    public WeaponAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
         capacity = serverConfig.getChannelCapacity();
         this.initListener = serverConfig.getInitListener();

@@ -151,7 +151,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
             sendSequence += 1;
             readHandler.notifyRead();
         }
-        if (available())
+        if (availableSend())
         {
             buf = getBuf(sendSequence);
             serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
@@ -201,8 +201,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
         }
     }
     
-    @Override
-    public boolean available()
+    private boolean availableSend()
     {
         if (sendSequence < wrapSendSequence)
         {
@@ -216,6 +215,27 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
         else
         {
             return false;
+        }
+    }
+    
+    @Override
+    public boolean availablePut()
+    {
+        if (putSequence.value() < wrapPutSequence)
+        {
+            return true;
+        }
+        else
+        {
+            wrapPutSequence = sendSequence + lengthMask;
+            if (putSequence.value() < wrapPutSequence)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
     

@@ -2,6 +2,7 @@ package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.async;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
+import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingLong;
@@ -15,7 +16,6 @@ import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.WeaponTask;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.WeaponWriteHandler;
 import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync.WeaponSyncWriteHandler;
 import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync.WeaponSyncWriteHandlerImpl;
 
@@ -186,41 +186,6 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
         }
     }
     
-    @Override
-    public void endAsyncTryPublish()
-    {
-        if (putSequenc.value() != sendSequence.value())
-        {
-            disruptor.publish(this);
-        }
-        else
-        {
-            while (true)
-            {
-                publishState.set(OUT_OF_PUBLISH);
-                if (putSequenc.value() != sendSequence.value())
-                {
-                    if (publishState.compareAndSwap(OUT_OF_PUBLISH, IN_PUBLISH))
-                    {
-                        if (putSequenc.value() != sendSequence.value())
-                        {
-                            disruptor.publish(this);
-                            return;
-                        }
-                        else
-                        {
-                            continue;
-                        }
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-            }
-        }
-    }
-    
     private int frameAndHandle() throws Exception
     {
         while (true)
@@ -268,7 +233,7 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
         {
             return true;
         }
-        wrapPut = sendSequence.value();
+        wrapPut = sendSequence.value() + mask;
         if (putSequenc.value() < wrapPut)
         {
             return true;
@@ -334,23 +299,98 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
     @Override
     public void notifyRead()
     {
-        if (readState.value() == IDLE && readState.compareAndSwap(IDLE, WORK))
+        while (readState.value() == IDLE && readState.compareAndSwap(IDLE, WORK))
         {
-            if (ioBuf.remainRead() > 0)
+            if (availablePut() == false)
             {
-                doRead();
+                readState.set(IDLE);
+                if (availablePut() == false)
+                {
+                    if (publishState.compareAndSwap(OUT_OF_PUBLISH, IN_PUBLISH))
+                    {
+                        disruptor.publish(this);
+                        return;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    continue;
+                }
             }
             else
             {
-                readAndWait(false);
+                if (ioBuf.remainRead() > 0)
+                {
+                    doRead();
+                }
+                else
+                {
+                    readAndWait(false);
+                }
             }
         }
     }
     
     @Override
-    public WeaponSyncWriteHandler writeHandler()
+    public void asyncHandle()
     {
-        return writeHandler;
+        try
+        {
+            while (writeHandler.availablePut())
+            {
+                long current = sendSequence.value();
+                if (current >= wrapSend)
+                {
+                    wrapSend = putSequenc.value();
+                }
+                if (current < wrapSend)
+                {
+                    WeaponTask task = tasks[(int) (current & mask)];
+                    Object intermediateResult = task.getData();
+                    for (int i = 0; i < handlers.length;)
+                    {
+                        intermediateResult = handlers[i].handle(intermediateResult, task);
+                        if (i == task.getIndex())
+                        {
+                            i++;
+                            task.setIndex(i);
+                        }
+                        else
+                        {
+                            i = task.getIndex();
+                        }
+                    }
+                    if (intermediateResult instanceof ByteBuf<?>)
+                    {
+                        // 上面已经判断过是否能放入了
+                        writeHandler.trySend((ByteBuf<?>) intermediateResult);
+                    }
+                    sendSequence.set(current + 1);
+                }
+                else
+                {
+                    break;
+                }
+            }
+            publishState.set(OUT_OF_PUBLISH);
+            if (writeHandler.availablePut() == false)
+            {
+                return;
+            }
+            else
+            {
+                notifyRead();
+            }
+        }
+        catch (Throwable e)
+        {
+            catchThrowable(e);
+            serverChannel.closeChannel();
+        }
     }
     
 }

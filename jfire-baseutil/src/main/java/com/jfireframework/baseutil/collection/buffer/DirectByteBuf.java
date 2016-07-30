@@ -88,6 +88,7 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
     @Override
     public byte get(int index)
     {
+        changeToReadState();
         return memory.get(index);
     }
     

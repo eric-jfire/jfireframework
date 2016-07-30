@@ -4,5 +4,5 @@ import com.jfireframework.jnet.server.CompletionHandler.x.capacity.WeaponWriteHa
 
 public interface WeaponSyncWriteHandler extends WeaponWriteHandler
 {
-    public boolean available();
+    public boolean availablePut();
 }

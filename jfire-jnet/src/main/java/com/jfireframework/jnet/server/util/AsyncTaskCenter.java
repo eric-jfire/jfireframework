@@ -110,10 +110,10 @@ public class AsyncTaskCenter
                             
                         }
                     }
-                    catch (Exception e)
+                    catch (Throwable e)
                     {
-                        e.printStackTrace();
                         task.getReadCompletionHandler().catchThrowable(e);
+                        task.getChannelInfo().closeChannel();
                     }
                 }
                 catch (Exception e)

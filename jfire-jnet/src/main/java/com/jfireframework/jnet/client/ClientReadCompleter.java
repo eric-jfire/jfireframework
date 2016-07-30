@@ -103,11 +103,13 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
             catch (NotFitProtocolException e)
             {
                 catchThrowable(e);
+                channelInfo.closeChannel();
                 return;
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
                 catchThrowable(e);
+                channelInfo.closeChannel();
                 return;
             }
         } while (decodeResult != null);

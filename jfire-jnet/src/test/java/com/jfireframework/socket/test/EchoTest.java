@@ -9,7 +9,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import javax.sound.sampled.Port;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -30,9 +29,7 @@ import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
 import com.jfireframework.jnet.common.result.InternalTask;
 import com.jfireframework.jnet.server.AioServer;
-import com.jfireframework.jnet.server.util.DisruptorWaitMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
-import com.jfireframework.jnet.server.util.WorkMode;
 
 public class EchoTest
 {
@@ -47,6 +44,7 @@ public class EchoTest
     {
         ServerConfig config = new ServerConfig();
         config.setSocketThreadSize(4);
+        config.setAsyncCapacity(4096);
         config.setChannelCapacity(16);
         config.setInitListener(new ChannelInitListener() {
             

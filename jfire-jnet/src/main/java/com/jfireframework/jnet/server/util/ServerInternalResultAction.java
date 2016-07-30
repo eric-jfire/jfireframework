@@ -58,9 +58,10 @@ public final class ServerInternalResultAction extends AbstractExclusiveEntryActi
                 
             }
         }
-        catch (Exception e)
+        catch (Throwable e)
         {
             result.getReadCompletionHandler().catchThrowable(e);
+            result.getChannelInfo().closeChannel();
         }
     }
     
