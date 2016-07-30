@@ -3,24 +3,24 @@ package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.CompletionHandler;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.AioServer;
+import com.jfireframework.jnet.server.CompletionHandler.x.capacity.WeaponAcceptHandler;
 import com.jfireframework.jnet.server.CompletionHandler.x.capacity.WeaponReadHandler;
 import com.jfireframework.jnet.server.util.ServerConfig;
 
-public class WeaponAcceptHandler implements CompletionHandler<AsynchronousSocketChannel, Object>
+public class WeaponAcceptHandlerImpl implements WeaponAcceptHandler
 {
     private AioServer           aioServer;
     private Logger              logger = ConsoleLogFactory.getLogger();
     private ChannelInitListener initListener;
     private final int           capacity;
     
-    public WeaponAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
+    public WeaponAcceptHandlerImpl(AioServer aioServer, ServerConfig serverConfig)
     {
         capacity = serverConfig.getChannelCapacity();
         this.initListener = serverConfig.getInitListener();

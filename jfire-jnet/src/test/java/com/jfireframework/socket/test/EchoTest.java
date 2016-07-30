@@ -53,7 +53,6 @@ public class EchoTest
             @Override
             public void channelInit(JnetChannel serverChannelInfo)
             {
-                serverChannelInfo.setCapacity(1024);
                 serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
                 serverChannelInfo.setHandlers(new EchoHandler());
             }

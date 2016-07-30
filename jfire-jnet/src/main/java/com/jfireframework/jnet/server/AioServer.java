@@ -14,8 +14,8 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.jnet.server.CompletionHandler.single.impl.WeaponSingleAcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync.WeaponAcceptHandler;
+import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
+import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync.WeaponAcceptHandlerImpl;
 import com.jfireframework.jnet.server.util.ExecutorMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
 import com.jfireframework.jnet.server.util.WorkMode;
@@ -24,8 +24,7 @@ public class AioServer
 {
     private Lock                            lock     = new ReentrantLock();
     private Condition                       shutdown = lock.newCondition();
-    private WeaponAcceptHandler             weaponAcceptHandler;
-    // private AcceptHandler acceptCompleteHandler;
+    private AcceptHandler                   acceptHandler;
     private AsynchronousServerSocketChannel serverSocketChannel;
     private Logger                          logger   = ConsoleLogFactory.getLogger();
     private AsynchronousChannelGroup        channelGroup;
@@ -59,7 +58,6 @@ public class AioServer
      */
     public void start()
     {
-        // acceptCompleteHandler = new AcceptHandler(this, serverConfig);
         ThreadFactory threadFactory = new ThreadFactory() {
             int i = 1;
             
@@ -82,10 +80,8 @@ public class AioServer
             }
             serverSocketChannel = AsynchronousServerSocketChannel.open(channelGroup).bind(new InetSocketAddress(serverConfig.getPort()));
             logger.info("监听启动");
-            // serverSocketChannel.accept(null, acceptCompleteHandler);
-            weaponAcceptHandler = new WeaponAcceptHandler(this, serverConfig);
-            WeaponSingleAcceptHandler acceptHandler = new WeaponSingleAcceptHandler(this, serverConfig);
-            serverSocketChannel.accept(null, weaponAcceptHandler);
+            acceptHandler = new WeaponAcceptHandlerImpl(this, serverConfig);
+            serverSocketChannel.accept(null, acceptHandler);
         }
         catch (IOException e)
         {
@@ -103,7 +99,6 @@ public class AioServer
         }
         catch (InterruptedException e)
         {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         finally
@@ -121,7 +116,7 @@ public class AioServer
                 channelGroup.shutdownNow();
                 channelGroup.awaitTermination(10, TimeUnit.SECONDS);
             }
-            // acceptCompleteHandler.stop();
+            acceptHandler.stop();
             logger.info("服务器关闭");
             lock.lock();
             try

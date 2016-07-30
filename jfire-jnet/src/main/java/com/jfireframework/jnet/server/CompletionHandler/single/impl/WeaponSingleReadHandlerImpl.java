@@ -12,7 +12,7 @@ import com.jfireframework.jnet.common.exception.BufNotEnoughException;
 import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
-import com.jfireframework.jnet.common.result.WaeponTask;
+import com.jfireframework.jnet.common.result.WeaponTask;
 import com.jfireframework.jnet.server.CompletionHandler.single.WeaponSingleReadHandler;
 import com.jfireframework.jnet.server.CompletionHandler.single.WeaponSingleWriteHandler;
 
@@ -33,7 +33,7 @@ public class WeaponSingleReadHandlerImpl implements WeaponSingleReadHandler
     private long                           endReadTime;
     // 启动读取超时的计数
     private boolean                        startCountdown = false;
-    private final WaeponTask               waeponTask     = new WaeponTask();
+    private final WeaponTask               waeponTask     = new WeaponTask();
     private final WeaponSingleWriteHandler writeHandler;
     
     public WeaponSingleReadHandlerImpl(ServerChannel serverChannel)
@@ -74,7 +74,7 @@ public class WeaponSingleReadHandlerImpl implements WeaponSingleReadHandler
     {
         try
         {
-            WaeponTask task = new WaeponTask();
+            WeaponTask task = new WeaponTask();
             task.setChannelInfo(serverChannel);
             task.setData(exc);
             task.setIndex(0);

@@ -11,6 +11,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
+import com.jfireframework.jnet.server.CompletionHandler.x.capacity.WeaponReadHandler;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
@@ -75,7 +76,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
     private volatile long               sendSequence     = 0;
     private long                        wrapSendSequence = 0;
     private long                        wrapPutSequence  = 0;
-    private final WeaponSyncReadHandler readHandler;
+    private final WeaponReadHandler     readHandler;
     private final ServerChannel         serverChannel;
     private final int                   idle             = 0;
     private final int                   work             = 1;
@@ -88,7 +89,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
     private static final int            push             = 1;
     private final CpuCachePadingInt     pushState        = new CpuCachePadingInt(response);
     
-    public WeaponSyncWriteHandlerImpl(ServerChannel serverChannel, WeaponSyncReadHandler readHandler)
+    public WeaponSyncWriteHandlerImpl(ServerChannel serverChannel, WeaponReadHandler readHandler)
     {
         this.readHandler = readHandler;
         this.serverChannel = serverChannel;
@@ -150,26 +151,10 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
             sendSequence += 1;
             readHandler.notifyRead();
         }
-        if (sendSequence >= wrapSendSequence)
-        {
-            wrapSendSequence = putSequence.value();
-        }
-        if (sendSequence < wrapSendSequence)
+        if (available())
         {
             buf = getBuf(sendSequence);
-            try
-            {
-                serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-                System.out.println("sequence:" + sendSequence);
-                System.out.println("wrapsequence:" + wrapSendSequence);
-                System.out.println("wrapput:" + wrapPutSequence);
-                System.out.println("put:" + putSequence.value());
-                
-            }
+            serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
             return;
         }
         else
@@ -219,7 +204,19 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
     @Override
     public boolean available()
     {
-        return sendSequence == putSequence.value();
+        if (sendSequence < wrapSendSequence)
+        {
+            return true;
+        }
+        wrapSendSequence = putSequence.value();
+        if (sendSequence < wrapSendSequence)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
     
     private void retryWrite()

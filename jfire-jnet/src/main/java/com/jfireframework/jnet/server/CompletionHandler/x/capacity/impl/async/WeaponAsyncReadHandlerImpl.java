@@ -1,10 +1,11 @@
-package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync;
+package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.async;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
-import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
+import com.jfireframework.baseutil.concurrent.CpuCachePadingLong;
+import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
@@ -14,10 +15,12 @@ import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.WeaponTask;
+import com.jfireframework.jnet.server.CompletionHandler.x.capacity.WeaponWriteHandler;
+import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync.WeaponSyncWriteHandler;
+import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync.WeaponSyncWriteHandlerImpl;
 
-public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
+public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
 {
-    
     private static final Logger          logger         = ConsoleLogFactory.getLogger();
     private final FrameDecodec           frameDecodec;
     private final DataHandler[]          handlers;
@@ -44,18 +47,40 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
     private long                         endReadTime;
     // 启动读取超时的计数
     private boolean                      startCountdown = false;
-    private final WeaponTask             waeponTask     = new WeaponTask();
+    private final WeaponTask[]           tasks;
+    private final int                    mask;
+    // 下一个放入task的位置
+    private CpuCachePadingLong           putSequenc     = new CpuCachePadingLong(0);
+    private long                         wrapPut        = 0;
+    // 下一个发送的位置
+    private CpuCachePadingLong           sendSequence   = new CpuCachePadingLong(0);
+    private long                         wrapSend       = 0;
+    private final Disruptor              disruptor;
+    private static final int             OUT_OF_PUBLISH = 0;
+    private static final int             IN_PUBLISH     = 1;
+    private final CpuCachePadingInt      publishState   = new CpuCachePadingInt(OUT_OF_PUBLISH);
     private final WeaponSyncWriteHandler writeHandler;
-    private volatile ByteBuf<?>          waitForSendBuf;
     
-    public WeaponSyncReadHandlerImpl(ServerChannel serverChannel)
+    public WeaponAsyncReadHandlerImpl(ServerChannel serverChannel, Disruptor disruptor)
     {
-        this.serverChannel = serverChannel;
         writeHandler = new WeaponSyncWriteHandlerImpl(serverChannel, this);
+        this.serverChannel = serverChannel;
         frameDecodec = serverChannel.getFrameDecodec();
         handlers = serverChannel.getHandlers();
         readTimeout = serverChannel.getReadTimeout();
         waitTimeout = serverChannel.getWaitTimeout();
+        int capacity = 1;
+        while (capacity < serverChannel.capacity())
+        {
+            capacity <<= 1;
+        }
+        tasks = new WeaponTask[capacity];
+        for (int i = 0; i < tasks.length; i++)
+        {
+            tasks[i] = new WeaponTask();
+        }
+        mask = capacity - 1;
+        this.disruptor = disruptor;
     }
     
     @Override
@@ -161,86 +186,96 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
         }
     }
     
-    public int frameAndHandle() throws Exception
+    @Override
+    public void endAsyncTryPublish()
+    {
+        if (putSequenc.value() != sendSequence.value())
+        {
+            disruptor.publish(this);
+        }
+        else
+        {
+            while (true)
+            {
+                publishState.set(OUT_OF_PUBLISH);
+                if (putSequenc.value() != sendSequence.value())
+                {
+                    if (publishState.compareAndSwap(OUT_OF_PUBLISH, IN_PUBLISH))
+                    {
+                        if (putSequenc.value() != sendSequence.value())
+                        {
+                            disruptor.publish(this);
+                            return;
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    
+    private int frameAndHandle() throws Exception
     {
         while (true)
         {
-            Object intermediateResult = frameDecodec.decodec(ioBuf);
-            waeponTask.setChannelInfo(serverChannel);
-            waeponTask.setData(intermediateResult);
-            waeponTask.setIndex(0);
-            for (int i = 0; i < handlers.length;)
+            if (availablePut() == false)
             {
-                intermediateResult = handlers[i].handle(intermediateResult, waeponTask);
-                if (i == waeponTask.getIndex())
+                readState.set(IDLE);
+                if (availablePut() == false)
                 {
-                    i++;
-                    waeponTask.setIndex(i);
+                    return YIDLE;
                 }
                 else
                 {
-                    i = waeponTask.getIndex();
-                }
-            }
-            if (intermediateResult instanceof ByteBuf<?>)
-            {
-                if (writeHandler.trySend((ByteBuf<?>) intermediateResult))
-                {
-                    ;
-                }
-                else
-                {
-                    int result = retrySend((ByteBuf<?>) intermediateResult);
-                    if (result == YIDLE)
+                    if (readState.compareAndSwap(IDLE, WORK))
+                    {
+                        continue;
+                    }
+                    else
                     {
                         return YIDLE;
                     }
                 }
+            }
+            Object intermediateResult = frameDecodec.decodec(ioBuf);
+            WeaponTask task = tasks[(int) (putSequenc.value() & mask)];
+            task.setChannelInfo(serverChannel);
+            task.setData(intermediateResult);
+            task.setIndex(0);
+            putSequenc.set(putSequenc.value() + 1);
+            if (publishState.value() == OUT_OF_PUBLISH && publishState.compareAndSwap(OUT_OF_PUBLISH, IN_PUBLISH))
+            {
+                disruptor.publish(this);
             }
             if (ioBuf.remainRead() == 0)
             {
                 return ON_CONTROL;
             }
         }
+        
     }
     
-    private int retrySend(ByteBuf<?> mayBeSend)
+    private boolean availablePut()
     {
-        while (true)
+        if (putSequenc.value() < wrapPut)
         {
-            waitForSendBuf = mayBeSend;
-            // 在将自身状态设置为空闲之前，一定要让waitForSendBuf有值。这样别的争抢到控制权的线程，才能正确的将这个数据发出
-            readState.set(IDLE);
-            // 如果没有更多空间了，那意味着而可以尝试再次发送。否则的话，等待发送完成将自身唤醒即可
-            if (writeHandler.available())
-            {
-                if (readState.compareAndSwap(IDLE, WORK))
-                {
-                    // 当抢占到控制权的时候这些竞争资源的指向可能已经变化了，不是之前的那个"waitForSend"
-                    // 举个例子，如果线程设置完成idle状态后空闲比较长时间。其他的线程取得了控制权并且执行了大量的操作，没有空间可以发送后再次让渡出控制权，
-                    // 而该线程在这个时候获取到了控制权。那么waitForSend就不是上面代码中指向的那个值了
-                    mayBeSend = waitForSendBuf;
-                    waitForSendBuf = null;
-                    if (writeHandler.trySend(mayBeSend))
-                    {
-                        return ON_CONTROL;
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                }
-                else
-                {
-                    // 如果尝试失败，就叫唤出该线程内的尝试权利
-                    return YIDLE;
-                }
-            }
-            else
-            {
-                // 发送失败，并且有空间，尝试别的线程中来唤醒读取控制器
-                return YIDLE;
-            }
+            return true;
+        }
+        wrapPut = sendSequence.value();
+        if (putSequenc.value() < wrapPut)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
     
@@ -301,18 +336,6 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
     {
         if (readState.value() == IDLE && readState.compareAndSwap(IDLE, WORK))
         {
-            if (writeHandler.trySend(waitForSendBuf))
-            {
-                ;
-            }
-            else
-            {
-                int result = retrySend(waitForSendBuf);
-                if (result == YIDLE)
-                {
-                    return;
-                }
-            }
             if (ioBuf.remainRead() > 0)
             {
                 doRead();
@@ -322,6 +345,12 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
                 readAndWait(false);
             }
         }
+    }
+    
+    @Override
+    public WeaponSyncWriteHandler writeHandler()
+    {
+        return writeHandler;
     }
     
 }
