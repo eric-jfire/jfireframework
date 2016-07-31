@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.single.impl;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.single.impl;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -8,8 +8,8 @@ import com.jfireframework.baseutil.concurrent.MPSCLinkedQueue;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
-import com.jfireframework.jnet.server.CompletionHandler.single.WeaponSingleReadHandler;
-import com.jfireframework.jnet.server.CompletionHandler.single.WeaponSingleWriteHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.single.WeaponSingleReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.single.WeaponSingleWriteHandler;
 
 public class WeaponSingleWriteHandlerImpl implements WeaponSingleWriteHandler
 {

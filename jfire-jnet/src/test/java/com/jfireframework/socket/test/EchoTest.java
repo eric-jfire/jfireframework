@@ -31,11 +31,12 @@ import com.jfireframework.jnet.common.result.InternalTask;
 import com.jfireframework.jnet.server.AioServer;
 import com.jfireframework.jnet.server.util.ExecutorMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
+import com.jfireframework.jnet.server.util.WorkMode;
 
 public class EchoTest
 {
-    private int    threadCountStart = 1;
-    private int    threadCountEnd   = 80;
+    private int    threadCountStart = 80;
+    private int    threadCountEnd   = 150;
     private int    sendCount        = 100;
     private String ip               = "127.0.0.1";
     private int    port             = 5689;
@@ -44,10 +45,8 @@ public class EchoTest
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setAsyncThreadSize(2);
         config.setSocketThreadSize(4);
-        config.setAsyncCapacity(64);
-        config.setChannelCapacity(16);
+//        config.setAsyncThreadSize(100);
         config.setExecutorMode(ExecutorMode.FIX);
         config.setInitListener(new ChannelInitListener() {
             
@@ -108,7 +107,7 @@ public class EchoTest
         Row timeRow = sheet.createRow(1);
         cell = timeRow.createCell(0);
         cell.setCellValue("时间");
-        int i = 1;
+        int i = threadCountStart;
         for (Long each : timeCount)
         {
             cell = threadRow.createCell(i);
@@ -198,7 +197,7 @@ public class EchoTest
         Future<?> future = client.connect().write("987654321");
         try
         {
-            Assert.assertEquals("987654321", (String) future.get(20000, TimeUnit.MILLISECONDS));
+            Assert.assertEquals("987654321", (String) future.get(3, TimeUnit.SECONDS));
         }
         catch (Exception e)
         {

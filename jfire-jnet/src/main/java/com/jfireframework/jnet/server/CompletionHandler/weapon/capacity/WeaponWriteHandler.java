@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.x.capacity;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity;
 
 import java.nio.channels.CompletionHandler;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;

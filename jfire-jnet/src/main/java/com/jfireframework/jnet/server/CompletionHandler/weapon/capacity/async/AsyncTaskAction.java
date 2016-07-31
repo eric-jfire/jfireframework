@@ -1,17 +1,16 @@
-package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.async2;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.async;
 
 import com.jfireframework.baseutil.disruptor.AbstractExclusiveEntryAction;
 import com.jfireframework.baseutil.disruptor.Entry;
 
-public class Async2TaskAction extends AbstractExclusiveEntryAction
+public class AsyncTaskAction extends AbstractExclusiveEntryAction
 {
     
     @Override
     public void doJob(Entry entry)
     {
-        WeaponAsync2ReadHandler readHandler = (WeaponAsync2ReadHandler) entry.getData();
+        WeaponAsyncReadHandler readHandler = (WeaponAsyncReadHandler) entry.getData();
         readHandler.asyncHandle();
-        
     }
     
 }

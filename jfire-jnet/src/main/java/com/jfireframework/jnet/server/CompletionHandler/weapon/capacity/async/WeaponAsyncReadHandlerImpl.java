@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.async;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.async;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -16,8 +16,8 @@ import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.WeaponTask;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync.WeaponSyncWriteHandler;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync.WeaponSyncWriteHandlerImpl;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponSyncWriteHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponSyncWriteHandlerImpl;
 
 public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
 {
@@ -341,7 +341,6 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
     {
         try
         {
-            int count = 0;
             while (writeHandler.availablePut())
             {
                 long current = sendSequence.value();
@@ -372,14 +371,12 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
                         writeHandler.trySend((ByteBuf<?>) intermediateResult);
                     }
                     sendSequence.set(current + 1);
-                    count += 1;
                 }
                 else
                 {
                     break;
                 }
             }
-            System.out.println(count);
             publishState.set(OUT_OF_PUBLISH);
             if (writeHandler.availablePut() == false)
             {

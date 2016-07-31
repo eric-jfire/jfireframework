@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.single.impl;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.single.impl;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -13,8 +13,8 @@ import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.WeaponTask;
-import com.jfireframework.jnet.server.CompletionHandler.single.WeaponSingleReadHandler;
-import com.jfireframework.jnet.server.CompletionHandler.single.WeaponSingleWriteHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.single.WeaponSingleReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.single.WeaponSingleWriteHandler;
 
 public class WeaponSingleReadHandlerImpl implements WeaponSingleReadHandler
 {

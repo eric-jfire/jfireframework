@@ -1,11 +1,10 @@
-package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.async2;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.async2;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
-import com.jfireframework.baseutil.concurrent.CpuCachePadingLong;
 import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
@@ -16,8 +15,8 @@ import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.WeaponTask;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync.WeaponSyncWriteHandler;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync.WeaponSyncWriteHandlerImpl;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponSyncWriteHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponSyncWriteHandlerImpl;
 
 public class WeaponAsync2ReadHandlerImpl implements WeaponAsync2ReadHandler
 {

@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync;
 
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -10,7 +10,7 @@ import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.AioServer;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.WeaponReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.WeaponReadHandler;
 import com.jfireframework.jnet.server.util.ServerConfig;
 
 public class WeaponAcceptHandler implements AcceptHandler

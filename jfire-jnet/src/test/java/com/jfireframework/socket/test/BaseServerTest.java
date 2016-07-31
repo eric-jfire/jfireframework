@@ -27,7 +27,7 @@ public class BaseServerTest
         ServerConfig config = new ServerConfig();
         // 服务端监听的端口
         config.setPort(81);
-        config.setWorkMode(WorkMode.ASYNC_WITH_ORDER);
+        config.setWorkMode(WorkMode.SYNC_WITH_ORDER);
         config.setInitListener(new myInitListener());
         // 设置包解码器。包解码器用来从tcp的数据流中截取出一个完整的tcp报文
         // 这个解码器是行解码器。使用换行符进行报文切割
@@ -90,7 +90,7 @@ public class BaseServerTest
         });
         // 使用对应的参数链接服务端
         aioClient.connect();
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < 100; i++)
         {
             Future<?> future = aioClient.write("你好，这里是客户端");
             // future.get();

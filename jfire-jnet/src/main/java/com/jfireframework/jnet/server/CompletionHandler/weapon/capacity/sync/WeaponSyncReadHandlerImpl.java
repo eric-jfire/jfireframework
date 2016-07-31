@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;

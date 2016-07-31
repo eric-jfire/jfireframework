@@ -15,9 +15,7 @@ import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.async.WeaponAsyncAcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.async2.WeaponAsync2AcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.x.capacity.impl.sync.WeaponAcceptHandler;
+import com.jfireframework.jnet.server.CompletionHandler.AcceptHandlerImpl;
 import com.jfireframework.jnet.server.util.ExecutorMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
 import com.jfireframework.jnet.server.util.WorkMode;
@@ -82,7 +80,7 @@ public class AioServer
             }
             serverSocketChannel = AsynchronousServerSocketChannel.open(channelGroup).bind(new InetSocketAddress(serverConfig.getPort()));
             logger.info("监听启动");
-            acceptHandler = new WeaponAcceptHandler(this, serverConfig);
+            acceptHandler = new AcceptHandlerImpl(this, serverConfig);
             serverSocketChannel.accept(null, acceptHandler);
         }
         catch (IOException e)
