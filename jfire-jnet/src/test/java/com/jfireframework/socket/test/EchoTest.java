@@ -29,6 +29,7 @@ import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
 import com.jfireframework.jnet.common.result.InternalTask;
 import com.jfireframework.jnet.server.AioServer;
+import com.jfireframework.jnet.server.util.AcceptMode;
 import com.jfireframework.jnet.server.util.ExecutorMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
 import com.jfireframework.jnet.server.util.WorkMode;
@@ -45,9 +46,12 @@ public class EchoTest
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setSocketThreadSize(4);
-//        config.setAsyncThreadSize(100);
+        config.setAcceptMode(AcceptMode.weapon_sync);
+        config.setSocketThreadSize(100);
+        config.setAsyncCapacity(1024);
+        config.setChannelCapacity(8);
         config.setExecutorMode(ExecutorMode.FIX);
+        config.setAsyncThreadSize(100);
         config.setInitListener(new ChannelInitListener() {
             
             @Override
@@ -94,10 +98,10 @@ public class EchoTest
             System.out.println("线程数量：" + index + ",运行完毕:" + timewatch.getTotal());
             timeCount.add(timewatch.getTotal());
         }
-        exportExcel(timeCount);
+        exportExcel(timeCount, config);
     }
     
-    private void exportExcel(List<Long> timeCount)
+    private void exportExcel(List<Long> timeCount, ServerConfig serverConfig)
     {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet();
@@ -107,20 +111,20 @@ public class EchoTest
         Row timeRow = sheet.createRow(1);
         cell = timeRow.createCell(0);
         cell.setCellValue("时间");
-        int i = threadCountStart;
+        int i = 0;
         for (Long each : timeCount)
         {
-            cell = threadRow.createCell(i);
+            cell = threadRow.createCell(i + 1);
             // 线程数
-            cell.setCellValue(String.valueOf(i));
-            cell = timeRow.createCell(i);
+            cell.setCellValue(String.valueOf(i + threadCountStart));
+            cell = timeRow.createCell(i + 1);
             cell.setCellValue(each.toString());
             i += 1;
         }
         try
         {
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH_mm_ss");
-            FileOutputStream outputStream = new FileOutputStream("target" + File.separator + format.format(new Date()) + ".xls");
+            FileOutputStream outputStream = new FileOutputStream("target" + File.separator + serverConfig.getAcceptMode().name() + "_" + format.format(new Date()) + ".xls");
             workbook.write(outputStream);
             outputStream.close();
         }
@@ -197,7 +201,7 @@ public class EchoTest
         Future<?> future = client.connect().write("987654321");
         try
         {
-            Assert.assertEquals("987654321", (String) future.get(3, TimeUnit.SECONDS));
+            Assert.assertEquals("987654321", (String) future.get(30, TimeUnit.SECONDS));
         }
         catch (Exception e)
         {

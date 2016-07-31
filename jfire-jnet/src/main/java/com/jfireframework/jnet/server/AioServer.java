@@ -16,6 +16,10 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandlerImpl;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.async.WeaponAsyncAcceptHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.async2.WeaponAsync2AcceptHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponAcceptHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.single.impl.WeaponSingleAcceptHandler;
 import com.jfireframework.jnet.server.util.ExecutorMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
 import com.jfireframework.jnet.server.util.WorkMode;
@@ -80,7 +84,23 @@ public class AioServer
             }
             serverSocketChannel = AsynchronousServerSocketChannel.open(channelGroup).bind(new InetSocketAddress(serverConfig.getPort()));
             logger.info("监听启动");
-            acceptHandler = new AcceptHandlerImpl(this, serverConfig);
+            switch (serverConfig.getAcceptMode())
+            {
+                case origin:
+                    acceptHandler = new AcceptHandlerImpl(this, serverConfig);
+                    break;
+                case weapon_sync:
+                    acceptHandler = new WeaponAcceptHandler(this, serverConfig);
+                    break;
+                case weapon_async:
+                    acceptHandler = new WeaponAsyncAcceptHandler(this, serverConfig);
+                    break;
+                case weapon_async2:
+                    acceptHandler = new WeaponAsync2AcceptHandler(this, serverConfig);
+                    break;
+                case weapon_single:
+                    acceptHandler = new WeaponSingleAcceptHandler(this, serverConfig);
+            }
             serverSocketChannel.accept(null, acceptHandler);
         }
         catch (IOException e)

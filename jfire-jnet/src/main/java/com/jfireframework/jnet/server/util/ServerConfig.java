@@ -25,9 +25,20 @@ public class ServerConfig
     private WorkMode            workMode         = WorkMode.SYNC_WITH_ORDER;
     private WriteMode           writeMode        = WriteMode.BATCH_WRITE;
     private ExecutorMode        executorMode     = ExecutorMode.CACHED;
+    private AcceptMode          acceptMode       = AcceptMode.weapon_async;
     private int                 maxBatchWriteNum = 10;
     private int                 channelCapacity  = 16;
     private int                 asyncCapacity    = 1024;
+    
+    public AcceptMode getAcceptMode()
+    {
+        return acceptMode;
+    }
+    
+    public void setAcceptMode(AcceptMode acceptMode)
+    {
+        this.acceptMode = acceptMode;
+    }
     
     public int getAsyncCapacity()
     {
