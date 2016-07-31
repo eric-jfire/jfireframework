@@ -86,6 +86,7 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
     @Override
     public void completed(Integer read, ServerChannel channelInfo)
     {
+        
         if (read == -1)
         {
             channelInfo.closeChannel();
@@ -186,10 +187,12 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
         }
     }
     
+    
     private int frameAndHandle() throws Exception
     {
         while (true)
         {
+            
             if (availablePut() == false)
             {
                 readState.set(IDLE);
@@ -209,6 +212,7 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
                     }
                 }
             }
+           
             long put = putSequenc.value();
             Object intermediateResult = frameDecodec.decodec(ioBuf);
             WeaponTask task = tasks[(int) (put & mask)];
@@ -224,6 +228,7 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
             {
                 return ON_CONTROL;
             }
+//            System.out.println("a");
         }
         
     }
@@ -341,7 +346,7 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
     {
         try
         {
-            while (writeHandler.availablePut())
+            while (writeHandler.availablePut() != -1)
             {
                 long current = sendSequence.value();
                 if (current >= wrapSend)
@@ -378,7 +383,7 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
                 }
             }
             publishState.set(OUT_OF_PUBLISH);
-            if (writeHandler.availablePut() == false)
+            if (writeHandler.availablePut() == -1)
             {
                 return;
             }

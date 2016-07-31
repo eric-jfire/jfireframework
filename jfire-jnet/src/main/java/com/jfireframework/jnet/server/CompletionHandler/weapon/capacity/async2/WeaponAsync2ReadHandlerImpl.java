@@ -153,10 +153,10 @@ public class WeaponAsync2ReadHandlerImpl implements WeaponAsync2ReadHandler
     {
         while (true)
         {
-            if (writeHandler.availablePut() == false)
+            if (writeHandler.availablePut() == -1)
             {
                 readState.set(IDLE);
-                if (writeHandler.availablePut() == false)
+                if (writeHandler.availablePut() == -1)
                 {
                     return;
                 }

@@ -14,6 +14,7 @@ import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.InternalTask;
 import com.jfireframework.jnet.server.AioServer;
+import com.jfireframework.jnet.server.util.AcceptMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
 import com.jfireframework.jnet.server.util.WorkMode;
 
@@ -27,6 +28,8 @@ public class BaseServerTest
         ServerConfig config = new ServerConfig();
         // 服务端监听的端口
         config.setPort(81);
+        config.setSocketThreadSize(100);
+        config.setAcceptMode(AcceptMode.weapon_async);
         config.setWorkMode(WorkMode.SYNC_WITH_ORDER);
         config.setInitListener(new myInitListener());
         // 设置包解码器。包解码器用来从tcp的数据流中截取出一个完整的tcp报文
@@ -70,7 +73,7 @@ public class BaseServerTest
                     @Override
                     public Object handle(Object data, InternalTask result) throws JnetException
                     {
-                        System.out.println("收到数据");
+//                        System.out.println("收到数据");
                         ByteBuf<?> buf = (ByteBuf<?>) data;
                         String value = buf.readString();
                         buf.release();
@@ -94,8 +97,9 @@ public class BaseServerTest
         {
             Future<?> future = aioClient.write("你好，这里是客户端");
             // future.get();
-            System.out.println("+++" + future.get());
         }
+        Future<?> future = aioClient.write("你好，这里是客户端");
+        System.out.println("+++" + future.get());
         // 服务端关闭
         aioServer.stop();
     }
@@ -125,7 +129,7 @@ class myInitListener implements ChannelInitListener
             public Object handle(Object data, InternalTask result) throws JnetException
             {
                 ByteBuf<?> buf = (ByteBuf<?>) data;
-                System.out.println("收到消息:" + buf.readString());
+//                System.out.println("收到消息:" + buf.readString());
                 buf.release();
                 return "客户端你好，我收到消息了";
             }

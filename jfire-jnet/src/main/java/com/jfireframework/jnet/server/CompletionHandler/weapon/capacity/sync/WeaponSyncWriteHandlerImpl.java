@@ -73,7 +73,8 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
     /**
      * 写出处理器写一个发送数据的位置
      */
-    private volatile long               sendSequence     = 0;
+    // private volatile long sendSequence = 0;
+    private CpuCachePadingLong          sendSequence     = new CpuCachePadingLong(0);
     private long                        wrapSendSequence = 0;
     private long                        wrapPutSequence  = 0;
     private final WeaponReadHandler     readHandler;
@@ -148,12 +149,14 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
         }
         else
         {
-            sendSequence += 1;
+            // sendSequence += 1;
+            sendSequence.set(sendSequence.value() + 1);
             readHandler.notifyRead();
         }
-        if (availableSend())
+        long current = availableSend();
+        if (current != -1)
         {
-            buf = getBuf(sendSequence);
+            buf = getBuf(current);
             serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
             return;
         }
@@ -174,6 +177,13 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
         readHandler.catchThrowable(exc);
     }
     
+    public void write(ByteBuf<?> buf, long index)
+    {
+        setBuf(buf, index);
+        putSequence.set(index + 1);
+        retryWrite();
+    }
+    
     @Override
     public boolean trySend(ByteBuf<?> buf)
     {
@@ -186,7 +196,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
         }
         else
         {
-            wrapPutSequence = sendSequence + lengthMask;
+            wrapPutSequence = sendSequence.value() + lengthMask;
             if (putSequence.value() < wrapPutSequence)
             {
                 setBuf(buf, putSequence.value());
@@ -201,40 +211,42 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
         }
     }
     
-    private boolean availableSend()
+    private long availableSend()
     {
-        if (sendSequence < wrapSendSequence)
+        long current = sendSequence.value();
+        if (current < wrapSendSequence)
         {
-            return true;
+            return current;
         }
         wrapSendSequence = putSequence.value();
-        if (sendSequence < wrapSendSequence)
+        if (current < wrapSendSequence)
         {
-            return true;
+            return current;
         }
         else
         {
-            return false;
+            return -1;
         }
     }
     
     @Override
-    public boolean availablePut()
+    public long availablePut()
     {
-        if (putSequence.value() < wrapPutSequence)
+        long current = putSequence.value();
+        if (current < wrapPutSequence)
         {
-            return true;
+            return current;
         }
         else
         {
-            wrapPutSequence = sendSequence + lengthMask;
-            if (putSequence.value() < wrapPutSequence)
+            wrapPutSequence = sendSequence.value() + lengthMask;
+            if (current < wrapPutSequence)
             {
-                return true;
+                return current;
             }
             else
             {
-                return false;
+                return -1;
             }
         }
     }
@@ -246,9 +258,10 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
             if (idleState.value() == idle && idleState.compareAndSwap(idle, work))
             {
                 wrapSendSequence = putSequence.value();
-                if (sendSequence < wrapSendSequence)
+                long current = sendSequence.value();
+                if (current < wrapSendSequence)
                 {
-                    ByteBuf<?> buf = getBuf(sendSequence);
+                    ByteBuf<?> buf = getBuf(current);
                     pushState.set(response);
                     serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
                     return;

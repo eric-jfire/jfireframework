@@ -46,7 +46,6 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
     private boolean                      startCountdown = false;
     private final WeaponTask             waeponTask     = new WeaponTask();
     private final WeaponSyncWriteHandler writeHandler;
-    private volatile ByteBuf<?>          waitForSendBuf;
     
     public WeaponSyncReadHandlerImpl(ServerChannel serverChannel)
     {
@@ -119,45 +118,40 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
     
     public void doRead()
     {
-        while (true)
+        try
         {
-            try
-            {
-                int result = frameAndHandle();
-                if (result == ON_CONTROL)
-                {
-                    readAndWait(false);
-                    return;
-                }
-                else
-                {
-                    return;
-                }
-            }
-            catch (LessThanProtocolException e)
+            int result = frameAndHandle();
+            if (result == ON_CONTROL)
             {
                 readAndWait(false);
                 return;
             }
-            catch (BufNotEnoughException e)
+            else
             {
-                ioBuf.compact().ensureCapacity(e.getNeedSize());
-                continueRead();
                 return;
             }
-            catch (NotFitProtocolException e)
-            {
-                logger.debug("协议错误，关闭链接");
-                catchThrowable(e);
-                serverChannel.closeChannel();
-                return;
-            }
-            catch (Throwable e)
-            {
-                catchThrowable(e);
-                serverChannel.closeChannel();
-                return;
-            }
+        }
+        catch (LessThanProtocolException e)
+        {
+            readAndWait(false);
+            return;
+        }
+        catch (BufNotEnoughException e)
+        {
+            ioBuf.compact().ensureCapacity(e.getNeedSize());
+            continueRead();
+            return;
+        }
+        catch (NotFitProtocolException e)
+        {
+            logger.debug("协议错误，关闭链接");
+            catchThrowable(e);
+            return;
+        }
+        catch (Throwable e)
+        {
+            catchThrowable(e);
+            return;
         }
     }
     
@@ -165,80 +159,53 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
     {
         while (true)
         {
-            Object intermediateResult = frameDecodec.decodec(ioBuf);
-            waeponTask.setChannelInfo(serverChannel);
-            waeponTask.setData(intermediateResult);
-            waeponTask.setIndex(0);
-            for (int i = 0; i < handlers.length;)
+            long index = writeHandler.availablePut();
+            if (index != -1)
             {
-                intermediateResult = handlers[i].handle(intermediateResult, waeponTask);
-                if (i == waeponTask.getIndex())
+                Object intermediateResult = frameDecodec.decodec(ioBuf);
+                waeponTask.setChannelInfo(serverChannel);
+                waeponTask.setData(intermediateResult);
+                waeponTask.setIndex(0);
+                for (int i = 0; i < handlers.length;)
                 {
-                    i++;
-                    waeponTask.setIndex(i);
-                }
-                else
-                {
-                    i = waeponTask.getIndex();
-                }
-            }
-            if (intermediateResult instanceof ByteBuf<?>)
-            {
-                if (writeHandler.trySend((ByteBuf<?>) intermediateResult))
-                {
-                    ;
-                }
-                else
-                {
-                    int result = retrySend((ByteBuf<?>) intermediateResult);
-                    if (result == YIDLE)
+                    intermediateResult = handlers[i].handle(intermediateResult, waeponTask);
+                    if (i == waeponTask.getIndex())
                     {
-                        return YIDLE;
-                    }
-                }
-            }
-            if (ioBuf.remainRead() == 0)
-            {
-                return ON_CONTROL;
-            }
-        }
-    }
-    
-    private int retrySend(ByteBuf<?> mayBeSend)
-    {
-        while (true)
-        {
-            waitForSendBuf = mayBeSend;
-            // 在将自身状态设置为空闲之前，一定要让waitForSendBuf有值。这样别的争抢到控制权的线程，才能正确的将这个数据发出
-            readState.set(IDLE);
-            if (writeHandler.availablePut())
-            {
-                if (readState.compareAndSwap(IDLE, WORK))
-                {
-                    // 当抢占到控制权的时候这些竞争资源的指向可能已经变化了，不是之前的那个"waitForSend"
-                    // 举个例子，如果线程设置完成idle状态后空闲比较长时间。其他的线程取得了控制权并且执行了大量的操作，没有空间可以发送后再次让渡出控制权，
-                    // 而该线程在这个时候获取到了控制权。那么waitForSend就不是上面代码中指向的那个值了
-                    mayBeSend = waitForSendBuf;
-                    waitForSendBuf = null;
-                    if (writeHandler.trySend(mayBeSend))
-                    {
-                        return ON_CONTROL;
+                        i++;
+                        waeponTask.setIndex(i);
                     }
                     else
                     {
-                        continue;
+                        i = waeponTask.getIndex();
                     }
                 }
-                else
+                if (intermediateResult instanceof ByteBuf<?>)
                 {
-                    // 如果尝试失败，就叫唤出该线程内的尝试权利
-                    return YIDLE;
+                    writeHandler.write((ByteBuf<?>) intermediateResult, index);
+                }
+                if (ioBuf.remainRead() == 0)
+                {
+                    return ON_CONTROL;
                 }
             }
             else
             {
-                // 发送失败，并且有空间，尝试别的线程中来唤醒读取控制器
-                return YIDLE;
+                readState.set(IDLE);
+                if (writeHandler.availablePut() == -1)
+                {
+                    return YIDLE;
+                }
+                else
+                {
+                    if (readState.compareAndSwap(IDLE, WORK))
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        return YIDLE;
+                    }
+                }
             }
         }
     }
@@ -300,18 +267,18 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
     {
         if (readState.value() == IDLE && readState.compareAndSwap(IDLE, WORK))
         {
-            if (writeHandler.trySend(waitForSendBuf))
-            {
-                ;
-            }
-            else
-            {
-                int result = retrySend(waitForSendBuf);
-                if (result == YIDLE)
-                {
-                    return;
-                }
-            }
+            // if (writeHandler.trySend(waitForSendBuf))
+            // {
+            // ;
+            // }
+            // else
+            // {
+            // int result = retrySend(waitForSendBuf);
+            // if (result == YIDLE)
+            // {
+            // return;
+            // }
+            // }
             if (ioBuf.remainRead() > 0)
             {
                 doRead();

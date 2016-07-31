@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.apache.poi.ss.usermodel.Cell;
@@ -36,9 +37,9 @@ import com.jfireframework.jnet.server.util.WorkMode;
 
 public class EchoTest
 {
-    private int    threadCountStart = 80;
-    private int    threadCountEnd   = 150;
-    private int    sendCount        = 100;
+    private int    threadCountStart = 1;
+    private int    threadCountEnd   = 80;
+    private int    sendCount        = 1000;
     private String ip               = "127.0.0.1";
     private int    port             = 5689;
     
@@ -46,12 +47,13 @@ public class EchoTest
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setAcceptMode(AcceptMode.weapon_sync);
-        config.setSocketThreadSize(100);
+        config.setAcceptMode(AcceptMode.weapon_async2);
+        config.setSocketThreadSize(2);
         config.setAsyncCapacity(1024);
-        config.setChannelCapacity(8);
+        config.setChannelCapacity(16);
+        config.setWorkMode(WorkMode.SYNC_WITH_ORDER);
         config.setExecutorMode(ExecutorMode.FIX);
-        config.setAsyncThreadSize(100);
+        config.setAsyncThreadSize(3);
         config.setInitListener(new ChannelInitListener() {
             
             @Override
@@ -67,6 +69,7 @@ public class EchoTest
         List<Long> timeCount = new LinkedList<>();
         for (int index = threadCountStart; index <= threadCountEnd; index++)
         {
+            final CyclicBarrier barrier = new CyclicBarrier(index);
             Thread[] threads = new Thread[index];
             for (int i = 0; i < threads.length; i++)
             {
@@ -77,6 +80,7 @@ public class EchoTest
                     {
                         try
                         {
+                            barrier.await();
                             connecttest();
                         }
                         catch (Throwable e)
@@ -164,7 +168,7 @@ public class EchoTest
             public void channelInit(JnetChannel jnetChannel)
             {
                 jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoderByHeap(0, 4, 4, 500));
-                jnetChannel.setCapacity(2048);
+                jnetChannel.setCapacity(128);
                 jnetChannel.setHandlers(new DataHandler() {
                     
                     @Override
@@ -201,7 +205,8 @@ public class EchoTest
         Future<?> future = client.connect().write("987654321");
         try
         {
-            Assert.assertEquals("987654321", (String) future.get(30, TimeUnit.SECONDS));
+//            System.out.println("all test");
+            Assert.assertEquals("987654321", (String) future.get(300, TimeUnit.SECONDS));
         }
         catch (Exception e)
         {
