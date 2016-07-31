@@ -174,13 +174,13 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
             {
                 logger.debug("协议错误，关闭链接");
                 catchThrowable(e);
-                ioBuf.release();
+                serverChannel.closeChannel();
                 return;
             }
             catch (Throwable e)
             {
                 catchThrowable(e);
-                ioBuf.release();
+                serverChannel.closeChannel();
                 return;
             }
         }
@@ -209,12 +209,13 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
                     }
                 }
             }
+            long put = putSequenc.value();
             Object intermediateResult = frameDecodec.decodec(ioBuf);
-            WeaponTask task = tasks[(int) (putSequenc.value() & mask)];
+            WeaponTask task = tasks[(int) (put & mask)];
             task.setChannelInfo(serverChannel);
             task.setData(intermediateResult);
             task.setIndex(0);
-            putSequenc.set(putSequenc.value() + 1);
+            putSequenc.set(put + 1);
             if (publishState.value() == OUT_OF_PUBLISH && publishState.compareAndSwap(OUT_OF_PUBLISH, IN_PUBLISH))
             {
                 disruptor.publish(this);
@@ -340,6 +341,7 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
     {
         try
         {
+            int count = 0;
             while (writeHandler.availablePut())
             {
                 long current = sendSequence.value();
@@ -370,12 +372,14 @@ public class WeaponAsyncReadHandlerImpl implements WeaponAsyncReadHandler
                         writeHandler.trySend((ByteBuf<?>) intermediateResult);
                     }
                     sendSequence.set(current + 1);
+                    count += 1;
                 }
                 else
                 {
                     break;
                 }
             }
+            System.out.println(count);
             publishState.set(OUT_OF_PUBLISH);
             if (writeHandler.availablePut() == false)
             {
