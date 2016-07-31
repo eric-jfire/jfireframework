@@ -90,11 +90,11 @@ public class BaseServerTest
         });
         // 使用对应的参数链接服务端
         aioClient.connect();
-        for (int i = 0; i < 1000000; i++)
+        for (int i = 0; i < 1; i++)
         {
             Future<?> future = aioClient.write("你好，这里是客户端");
-//            future.get();
-//            System.out.println("+++" + future.get());
+            // future.get();
+            System.out.println("+++" + future.get());
         }
         // 服务端关闭
         aioServer.stop();

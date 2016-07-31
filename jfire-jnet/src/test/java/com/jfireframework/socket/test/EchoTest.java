@@ -29,6 +29,7 @@ import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
 import com.jfireframework.jnet.common.result.InternalTask;
 import com.jfireframework.jnet.server.AioServer;
+import com.jfireframework.jnet.server.util.ExecutorMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
 
 public class EchoTest
@@ -43,9 +44,11 @@ public class EchoTest
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
+        config.setAsyncThreadSize(2);
         config.setSocketThreadSize(4);
-        config.setAsyncCapacity(4096);
+        config.setAsyncCapacity(64);
         config.setChannelCapacity(16);
+        config.setExecutorMode(ExecutorMode.FIX);
         config.setInitListener(new ChannelInitListener() {
             
             @Override
