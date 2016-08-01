@@ -32,7 +32,7 @@ public class SingleSpeedTest
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setWorkMode(WorkMode.ASYNC_WITH_ORDER);
+        config.setWorkMode(WorkMode.ASYNC);
         config.setSocketThreadSize(16);
         config.setAsyncThreadSize(4);
         config.setChannelCapacity(4);

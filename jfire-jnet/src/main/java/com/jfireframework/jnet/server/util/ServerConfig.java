@@ -22,13 +22,24 @@ public class ServerConfig
      * 异步处理线程数。这个数字是disruptor的处理线程数。如果异步任务执行时间较长，适当增大该数字可以得到吞吐量的提升。
      */
     private int                 asyncThreadSize  = Runtime.getRuntime().availableProcessors();
-    private WorkMode            workMode         = WorkMode.SYNC_WITH_ORDER;
+    private WorkMode            workMode         = WorkMode.SYNC;
     private WriteMode           writeMode        = WriteMode.BATCH_WRITE;
     private ExecutorMode        executorMode     = ExecutorMode.CACHED;
-    private AcceptMode          acceptMode       = AcceptMode.weapon_async;
+    private AcceptMode          acceptMode       = AcceptMode.weapon_capacity;
+    private PushMode            pushMode         = PushMode.OFF;
     private int                 maxBatchWriteNum = 10;
     private int                 channelCapacity  = 16;
     private int                 asyncCapacity    = 1024;
+    
+    public PushMode getPushMode()
+    {
+        return pushMode;
+    }
+    
+    public void setPushMode(PushMode pushMode)
+    {
+        this.pushMode = pushMode;
+    }
     
     public AcceptMode getAcceptMode()
     {

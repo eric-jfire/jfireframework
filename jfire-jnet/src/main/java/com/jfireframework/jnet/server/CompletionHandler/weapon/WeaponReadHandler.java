@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity;
+package com.jfireframework.jnet.server.CompletionHandler.weapon;
 
 import java.nio.channels.CompletionHandler;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
@@ -12,7 +12,10 @@ public interface WeaponReadHandler extends CompletionHandler<Integer, ServerChan
      */
     public void notifyRead();
     
-    public void readAndWait(boolean init);
+    /**
+     * 读取处理器开始读取并且等待数据到达
+     */
+    public void readAndWait();
     
     public void catchThrowable(Throwable e);
 }

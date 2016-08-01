@@ -16,10 +16,8 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandlerImpl;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.async.WeaponAsyncAcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.async2.WeaponAsync2AcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponAcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.single.impl.WeaponSingleAcceptHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.impl.WeaponCapacityAcceptHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.single.WeaponSingleAcceptHandler;
 import com.jfireframework.jnet.server.util.ExecutorMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
 import com.jfireframework.jnet.server.util.WorkMode;
@@ -44,7 +42,7 @@ public class AioServer
     {
         WorkMode workMode = serverConfig.getWorkMode();
         ExecutorMode executorMode = serverConfig.getExecutorMode();
-        if (workMode != WorkMode.SYNC_WITH_ORDER && executorMode == ExecutorMode.FIX)
+        if (workMode != WorkMode.SYNC && executorMode == ExecutorMode.FIX)
         {
             throw new UnSupportException(StringUtil.format("配置错误！如果选择异步模式或者混合模式，那么线程池类型应该选择cached模式"));
         }
@@ -89,17 +87,12 @@ public class AioServer
                 case origin:
                     acceptHandler = new AcceptHandlerImpl(this, serverConfig);
                     break;
-                case weapon_sync:
-                    acceptHandler = new WeaponAcceptHandler(this, serverConfig);
-                    break;
-                case weapon_async:
-                    acceptHandler = new WeaponAsyncAcceptHandler(this, serverConfig);
-                    break;
-                case weapon_async2:
-                    acceptHandler = new WeaponAsync2AcceptHandler(this, serverConfig);
+                case weapon_capacity:
+                    acceptHandler = new WeaponCapacityAcceptHandler(this, serverConfig);
                     break;
                 case weapon_single:
                     acceptHandler = new WeaponSingleAcceptHandler(this, serverConfig);
+                    break;
             }
             serverSocketChannel.accept(null, acceptHandler);
         }

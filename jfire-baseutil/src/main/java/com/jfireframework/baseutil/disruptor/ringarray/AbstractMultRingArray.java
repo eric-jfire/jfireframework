@@ -89,6 +89,12 @@ public abstract class AbstractMultRingArray implements RingArray
     
     protected abstract long getNext();
     
+    /**
+     * 获取所有的处理器中，最小的可以处理的序号。
+     * 该序号意味着在循环数组上，放入的序号不可以覆盖该序号的内容
+     * 
+     * @return
+     */
     private long getMin()
     {
         long min = Long.MAX_VALUE;

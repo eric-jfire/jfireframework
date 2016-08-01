@@ -16,10 +16,10 @@ import com.jfireframework.baseutil.simplelog.Logger;
 public abstract class AbstractExclusiveEntryAction implements ExclusiveEntryAction
 {
     // 当前准备处理的序号
-    private long         cursor = 0;
-    protected Logger     logger = ConsoleLogFactory.getLogger();
-    protected RingArray  ringArray;
-    private volatile int canRun = 0;
+    private volatile long cursor = 0;
+    protected Logger      logger = ConsoleLogFactory.getLogger();
+    protected RingArray   ringArray;
+    private volatile int  canRun = 0;
     
     @Override
     public void run()

@@ -1,6 +1,6 @@
 package com.jfireframework.jnet.server.util;
 
-public enum WorkMode
+public enum PushMode
 {
-    SYNC, ASYNC
+    OFF, ON
 }

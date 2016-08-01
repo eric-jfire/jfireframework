@@ -1,10 +1,9 @@
-package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.single.sync;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
-import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
@@ -14,43 +13,31 @@ import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.WeaponTask;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponWriteHandler;
 
-public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
+public abstract class AbstractReadHandler implements WeaponReadHandler
 {
-    
-    private static final Logger          logger         = ConsoleLogFactory.getLogger();
-    private final FrameDecodec           frameDecodec;
-    private final DataHandler[]          handlers;
-    private final DirectByteBuf          ioBuf          = DirectByteBuf.allocate(100);
-    private final ServerChannel          serverChannel;
-    private final static int             WORK           = 1;
-    private final static int             IDLE           = 2;
-    /**
-     * 本线程仍然持有控制权
-     */
-    private final static int             ON_CONTROL     = 1;
-    
-    /**
-     * 本线程让渡出控制权
-     */
-    private final static int             YIDLE          = 2;
-    private final CpuCachePadingInt      readState      = new CpuCachePadingInt(IDLE);
+    protected static final Logger logger         = ConsoleLogFactory.getLogger();
+    protected final FrameDecodec  frameDecodec;
+    protected final DataHandler[] handlers;
+    protected final DirectByteBuf ioBuf          = DirectByteBuf.allocate(100);
+    protected final ServerChannel serverChannel;
     // 读取超时时间
-    private final long                   readTimeout;
-    private final long                   waitTimeout;
+    protected final long          readTimeout;
+    protected final long          waitTimeout;
     // 最后一次读取时间
-    private long                         lastReadTime;
+    protected long                lastReadTime;
     // 本次读取的截止时间
-    private long                         endReadTime;
+    protected long                endReadTime;
     // 启动读取超时的计数
-    private boolean                      startCountdown = false;
-    private final WeaponTask             waeponTask     = new WeaponTask();
-    private final WeaponSyncWriteHandler writeHandler;
+    protected boolean             startCountdown = false;
+    protected final WeaponTask    waeponTask     = new WeaponTask();
+    protected WeaponWriteHandler  writeHandler;
     
-    public WeaponSyncReadHandlerImpl(ServerChannel serverChannel)
+    public AbstractReadHandler(ServerChannel serverChannel)
     {
         this.serverChannel = serverChannel;
-        writeHandler = new WeaponSyncWriteHandlerImpl(serverChannel, this);
         frameDecodec = serverChannel.getFrameDecodec();
         handlers = serverChannel.getHandlers();
         readTimeout = serverChannel.getReadTimeout();
@@ -120,20 +107,11 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
     {
         try
         {
-            int result = frameAndHandle();
-            if (result == ON_CONTROL)
-            {
-                readAndWait(false);
-                return;
-            }
-            else
-            {
-                return;
-            }
+            frameAndHandle();
         }
         catch (LessThanProtocolException e)
         {
-            readAndWait(false);
+            readAndWait();
             return;
         }
         catch (BufNotEnoughException e)
@@ -155,70 +133,54 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
         }
     }
     
-    public int frameAndHandle() throws Throwable
+    public void frameAndHandle() throws Throwable
     {
         while (true)
         {
-            long index = writeHandler.availablePut();
-            if (index != -1)
+            Object intermediateResult = frameDecodec.decodec(ioBuf);
+            waeponTask.setChannelInfo(serverChannel);
+            waeponTask.setData(intermediateResult);
+            waeponTask.setIndex(0);
+            for (int i = 0; i < handlers.length;)
             {
-                Object intermediateResult = frameDecodec.decodec(ioBuf);
-                waeponTask.setChannelInfo(serverChannel);
-                waeponTask.setData(intermediateResult);
-                waeponTask.setIndex(0);
-                for (int i = 0; i < handlers.length;)
+                intermediateResult = handlers[i].handle(intermediateResult, waeponTask);
+                if (i == waeponTask.getIndex())
                 {
-                    intermediateResult = handlers[i].handle(intermediateResult, waeponTask);
-                    if (i == waeponTask.getIndex())
-                    {
-                        i++;
-                        waeponTask.setIndex(i);
-                    }
-                    else
-                    {
-                        i = waeponTask.getIndex();
-                    }
-                }
-                if (intermediateResult instanceof ByteBuf<?>)
-                {
-                    writeHandler.write((ByteBuf<?>) intermediateResult, index);
-                }
-                if (ioBuf.remainRead() == 0)
-                {
-                    return ON_CONTROL;
-                }
-            }
-            else
-            {
-                readState.set(IDLE);
-                if (writeHandler.availablePut() == -1)
-                {
-                    return YIDLE;
+                    i++;
+                    waeponTask.setIndex(i);
                 }
                 else
                 {
-                    if (readState.compareAndSwap(IDLE, WORK))
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        return YIDLE;
-                    }
+                    i = waeponTask.getIndex();
+                }
+            }
+            if (intermediateResult instanceof ByteBuf<?>)
+            {
+                doWrite((ByteBuf<?>) intermediateResult);
+                break;
+            }
+            else
+            {
+                if (ioBuf.remainRead() > 0)
+                {
+                    continue;
+                }
+                else
+                {
+                    readAndWait();
+                    break;
                 }
             }
         }
     }
     
+    protected abstract void doWrite(ByteBuf<?> buf);
+    
     /**
      * 开始空闲读取等待，并且将倒数计时状态重置为false
      */
-    public void readAndWait(boolean init)
+    public void readAndWait()
     {
-        if (init)
-        {
-            readState.set(WORK);
-        }
         startCountdown = false;
         serverChannel.getSocketChannel().read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, serverChannel, this);
     }
@@ -228,7 +190,7 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
      * 
      * @return
      */
-    private ByteBuffer getWriteBuffer()
+    protected ByteBuffer getWriteBuffer()
     {
         ioBuf.compact();
         ByteBuffer ioBuffer = ioBuf.nioBuffer();
@@ -256,38 +218,10 @@ public class WeaponSyncReadHandlerImpl implements WeaponSyncReadHandler
      * 
      * @return
      */
-    private long getRemainTime()
+    protected long getRemainTime()
     {
         long time = endReadTime - lastReadTime;
         return time;
-    }
-    
-    @Override
-    public void notifyRead()
-    {
-        if (readState.value() == IDLE && readState.compareAndSwap(IDLE, WORK))
-        {
-            // if (writeHandler.trySend(waitForSendBuf))
-            // {
-            // ;
-            // }
-            // else
-            // {
-            // int result = retrySend(waitForSendBuf);
-            // if (result == YIDLE)
-            // {
-            // return;
-            // }
-            // }
-            if (ioBuf.remainRead() > 0)
-            {
-                doRead();
-            }
-            else
-            {
-                readAndWait(false);
-            }
-        }
     }
     
 }

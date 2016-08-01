@@ -2,7 +2,6 @@ package com.jfireframework.jnet.server.util;
 
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.disruptor.AbstractExclusiveEntryAction;
-import com.jfireframework.baseutil.disruptor.Entry;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.ServerInternalTask;
 
@@ -17,9 +16,9 @@ public final class ServerInternalResultAction extends AbstractExclusiveEntryActi
 {
     
     @Override
-    public void doJob(Entry entry)
+    public <T> void doJob(T data)
     {
-        ServerInternalTask result = (ServerInternalTask) entry.getData();
+        ServerInternalTask result = (ServerInternalTask) data;
         try
         {
             if (result.getChannelInfo().isOpen() == false)

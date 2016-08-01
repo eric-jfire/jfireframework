@@ -1,11 +1,8 @@
-package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.async;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.single;
 
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
-import com.jfireframework.baseutil.disruptor.Disruptor;
-import com.jfireframework.baseutil.disruptor.EntryAction;
-import com.jfireframework.baseutil.disruptor.waitstrategy.ParkWaitStrategy;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
@@ -13,39 +10,29 @@ import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.AioServer;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.single.sync.push.SyncReadAndPushHandlerImpl;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.single.sync.withoutpush.SyncReadHandlerImpl;
+import com.jfireframework.jnet.server.util.PushMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
+import com.jfireframework.jnet.server.util.WorkMode;
 
-public class WeaponAsyncAcceptHandler implements AcceptHandler
+public class WeaponSingleAcceptHandler implements AcceptHandler
 {
     private AioServer           aioServer;
     private Logger              logger = ConsoleLogFactory.getLogger();
     private ChannelInitListener initListener;
-    private final int           capacity;
-    private final Disruptor     disruptor;
+    private final PushMode      pushMode;
+    private final WorkMode      workMode;
     
-    public WeaponAsyncAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
+    public WeaponSingleAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
-        capacity = serverConfig.getChannelCapacity();
+        pushMode = serverConfig.getPushMode();
+        workMode = serverConfig.getWorkMode();
         this.initListener = serverConfig.getInitListener();
         Verify.notNull(initListener, "initListener不能为空");
         this.aioServer = aioServer;
         initListener = serverConfig.getInitListener();
-        EntryAction[] actions = new EntryAction[serverConfig.getAsyncThreadSize()];
-        for (int i = 0; i < actions.length; i++)
-        {
-            actions[i] = new AsyncTaskAction();
-        }
-        Thread[] threads = new Thread[actions.length];
-        for (int i = 0; i < threads.length; i++)
-        {
-            threads[i] = new Thread(actions[i], "disruptor-" + i);
-        }
-        disruptor = new Disruptor(serverConfig.getAsyncCapacity(), actions, threads, new ParkWaitStrategy(threads));
-    }
-    
-    public void stop()
-    {
-        disruptor.stop();
     }
     
     @Override
@@ -54,11 +41,25 @@ public class WeaponAsyncAcceptHandler implements AcceptHandler
         try
         {
             ServerChannel channelInfo = new ServerChannel();
-            channelInfo.setCapacity(capacity);
             channelInfo.setChannel(socketChannel);
             initListener.channelInit(channelInfo);
-            WeaponAsyncReadHandler readHandler = new WeaponAsyncReadHandlerImpl(channelInfo, disruptor);
-            readHandler.readAndWait(true);
+            WeaponReadHandler readHandler = null;
+            if (workMode == WorkMode.SYNC)
+            {
+                if (pushMode == PushMode.OFF)
+                {
+                    readHandler = new SyncReadHandlerImpl(channelInfo);
+                }
+                else
+                {
+                    readHandler = new SyncReadAndPushHandlerImpl(channelInfo);
+                }
+            }
+            else
+            {
+                
+            }
+            readHandler.readAndWait();
             aioServer.getServerSocketChannel().accept(null, this);
         }
         catch (Exception e)
@@ -83,5 +84,11 @@ public class WeaponAsyncAcceptHandler implements AcceptHandler
             logger.error("链接异常关闭", exc);
         }
         Thread.currentThread().interrupt();
+    }
+    
+    @Override
+    public void stop()
+    {
+        ;
     }
 }

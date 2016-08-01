@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.push;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -11,11 +11,12 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.WeaponReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponSyncWriteWithPushHandler;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
-public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
+public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteWithPushHandler
 {
     
     public static class BufHolder
@@ -184,33 +185,6 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
         retryWrite();
     }
     
-    @Override
-    public boolean trySend(ByteBuf<?> buf)
-    {
-        if (putSequence.value() < wrapPutSequence)
-        {
-            setBuf(buf, putSequence.value());
-            putSequence.set(putSequence.value() + 1);
-            retryWrite();
-            return true;
-        }
-        else
-        {
-            wrapPutSequence = sendSequence.value() + lengthMask;
-            if (putSequence.value() < wrapPutSequence)
-            {
-                setBuf(buf, putSequence.value());
-                putSequence.set(putSequence.value() + 1);
-                retryWrite();
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-    }
-    
     private long availableSend()
     {
         long current = sendSequence.value();
@@ -282,16 +256,13 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
                         {
                             continue;
                         }
+                        else if (asyncSendQueue.isEmpty() == false)
+                        {
+                            continue;
+                        }
                         else
                         {
-                            if (asyncSendQueue.isEmpty() == false)
-                            {
-                                continue;
-                            }
-                            else
-                            {
-                                return;
-                            }
+                            return;
                         }
                     }
                 }
@@ -308,6 +279,12 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteHandler
     {
         asyncSendQueue.add(buf);
         retryWrite();
+    }
+    
+    @Override
+    public void write(ByteBuf<?> buf)
+    {
+        throw new UnsupportedOperationException();
     }
     
 }

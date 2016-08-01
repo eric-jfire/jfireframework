@@ -29,8 +29,8 @@ public class BaseServerTest
         // 服务端监听的端口
         config.setPort(81);
         config.setSocketThreadSize(100);
-        config.setAcceptMode(AcceptMode.weapon_async);
-        config.setWorkMode(WorkMode.SYNC_WITH_ORDER);
+        config.setAcceptMode(AcceptMode.weapon_capacity);
+        config.setWorkMode(WorkMode.SYNC);
         config.setInitListener(new myInitListener());
         // 设置包解码器。包解码器用来从tcp的数据流中截取出一个完整的tcp报文
         // 这个解码器是行解码器。使用换行符进行报文切割

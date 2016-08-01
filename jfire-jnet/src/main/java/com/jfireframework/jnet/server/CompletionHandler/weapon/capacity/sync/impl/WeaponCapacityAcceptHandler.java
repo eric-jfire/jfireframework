@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.impl;
 
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -10,17 +10,18 @@ import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.AioServer;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.WeaponReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.push.ReadAndPushHandlerImpl;
 import com.jfireframework.jnet.server.util.ServerConfig;
 
-public class WeaponAcceptHandler implements AcceptHandler
+public class WeaponCapacityAcceptHandler implements AcceptHandler
 {
     private AioServer           aioServer;
     private Logger              logger = ConsoleLogFactory.getLogger();
     private ChannelInitListener initListener;
     private final int           capacity;
     
-    public WeaponAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
+    public WeaponCapacityAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
         capacity = serverConfig.getChannelCapacity();
         this.initListener = serverConfig.getInitListener();
@@ -42,8 +43,8 @@ public class WeaponAcceptHandler implements AcceptHandler
             channelInfo.setCapacity(capacity);
             channelInfo.setChannel(socketChannel);
             initListener.channelInit(channelInfo);
-            WeaponReadHandler weaponReadHandler = new WeaponSyncReadHandlerImpl(channelInfo);
-            weaponReadHandler.readAndWait(true);
+            WeaponReadHandler weaponReadHandler = new ReadAndPushHandlerImpl(channelInfo);
+            weaponReadHandler.readAndWait();
             aioServer.getServerSocketChannel().accept(null, this);
         }
         catch (Exception e)
