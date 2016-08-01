@@ -1,8 +1,7 @@
-package com.jfireframework.jnet.server.CompletionHandler.weapon.single.sync;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.single;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
-import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
@@ -16,7 +15,7 @@ import com.jfireframework.jnet.common.result.WeaponTask;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponWriteHandler;
 
-public abstract class AbstractReadHandler implements WeaponReadHandler
+public abstract class AbstractSingleReadHandler implements WeaponReadHandler
 {
     protected static final Logger logger         = ConsoleLogFactory.getLogger();
     protected final FrameDecodec  frameDecodec;
@@ -35,7 +34,7 @@ public abstract class AbstractReadHandler implements WeaponReadHandler
     protected final WeaponTask    waeponTask     = new WeaponTask();
     protected WeaponWriteHandler  writeHandler;
     
-    public AbstractReadHandler(ServerChannel serverChannel)
+    public AbstractSingleReadHandler(ServerChannel serverChannel)
     {
         this.serverChannel = serverChannel;
         frameDecodec = serverChannel.getFrameDecodec();
@@ -133,48 +132,7 @@ public abstract class AbstractReadHandler implements WeaponReadHandler
         }
     }
     
-    public void frameAndHandle() throws Throwable
-    {
-        while (true)
-        {
-            Object intermediateResult = frameDecodec.decodec(ioBuf);
-            waeponTask.setChannelInfo(serverChannel);
-            waeponTask.setData(intermediateResult);
-            waeponTask.setIndex(0);
-            for (int i = 0; i < handlers.length;)
-            {
-                intermediateResult = handlers[i].handle(intermediateResult, waeponTask);
-                if (i == waeponTask.getIndex())
-                {
-                    i++;
-                    waeponTask.setIndex(i);
-                }
-                else
-                {
-                    i = waeponTask.getIndex();
-                }
-            }
-            if (intermediateResult instanceof ByteBuf<?>)
-            {
-                doWrite((ByteBuf<?>) intermediateResult);
-                break;
-            }
-            else
-            {
-                if (ioBuf.remainRead() > 0)
-                {
-                    continue;
-                }
-                else
-                {
-                    readAndWait();
-                    break;
-                }
-            }
-        }
-    }
-    
-    protected abstract void doWrite(ByteBuf<?> buf);
+    protected abstract void frameAndHandle() throws Throwable;
     
     /**
      * 开始空闲读取等待，并且将倒数计时状态重置为false

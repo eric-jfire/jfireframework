@@ -9,13 +9,13 @@ import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponWriteHandler;
 
-public class SyncWriteHandlerImpl implements WeaponWriteHandler
+public class SyncSingleWriteHandlerImpl implements WeaponWriteHandler
 {
     private final ServerChannel     serverChannel;
     private final WeaponReadHandler readHandler;
     private Logger                  logger = ConsoleLogFactory.getLogger();
     
-    public SyncWriteHandlerImpl(ServerChannel serverChannel, WeaponReadHandler readHandler)
+    public SyncSingleWriteHandlerImpl(ServerChannel serverChannel, WeaponReadHandler readHandler)
     {
         this.serverChannel = serverChannel;
         this.readHandler = readHandler;

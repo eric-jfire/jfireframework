@@ -11,7 +11,7 @@ import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponWriteHandler;
 
-public class SyncWriteAndPushHandlerImpl implements WeaponWriteHandler
+public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
 {
     private final ServerChannel         serverChannel;
     private final WeaponReadHandler     readHandler;
@@ -21,7 +21,7 @@ public class SyncWriteAndPushHandlerImpl implements WeaponWriteHandler
     private CpuCachePadingInt           idleState    = new CpuCachePadingInt(IDLE);
     private MPSCLinkedQueue<ByteBuf<?>> waitForSends = new MPSCLinkedQueue<>();
     
-    public SyncWriteAndPushHandlerImpl(ServerChannel serverChannel, WeaponReadHandler readHandler)
+    public SyncSingleWriteAndPushHandlerImpl(ServerChannel serverChannel, WeaponReadHandler readHandler)
     {
         this.serverChannel = serverChannel;
         this.readHandler = readHandler;

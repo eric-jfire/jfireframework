@@ -2,15 +2,15 @@ package com.jfireframework.jnet.server.CompletionHandler.weapon.single.sync.with
 
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.single.sync.AbstractReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.single.sync.AbstractSyncSingleReadHandler;
 
-public class SyncReadHandlerImpl extends AbstractReadHandler
+public class SyncSingleReadHandlerImpl extends AbstractSyncSingleReadHandler
 {
     
-    public SyncReadHandlerImpl(ServerChannel serverChannel)
+    public SyncSingleReadHandlerImpl(ServerChannel serverChannel)
     {
         super(serverChannel);
-        writeHandler = new SyncWriteHandlerImpl(serverChannel, this);
+        writeHandler = new SyncSingleWriteHandlerImpl(serverChannel, this);
     }
     
     @Override
