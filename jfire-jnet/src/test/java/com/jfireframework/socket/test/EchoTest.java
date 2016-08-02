@@ -38,9 +38,9 @@ import com.jfireframework.jnet.server.util.WorkMode;
 
 public class EchoTest
 {
-    private int    threadCountStart = 3;
+    private int    threadCountStart = 1;
     private int    threadCountEnd   = 80;
-    private int    sendCount        = 1000;
+    private int    sendCount        = 100;
     private String ip               = "127.0.0.1";
     private int    port             = 5689;
     
@@ -49,14 +49,12 @@ public class EchoTest
     {
         ServerConfig config = new ServerConfig();
         config.setAcceptMode(AcceptMode.weapon_single);
-        config.setPushMode(PushMode.ON);
-        config.setWorkMode(WorkMode.SYNC);
-        config.setSocketThreadSize(80);
-        config.setAsyncCapacity(4);
-        config.setChannelCapacity(32);
-        config.setWorkMode(WorkMode.SYNC);
+        config.setPushMode(PushMode.OFF);
+        config.setWorkMode(WorkMode.ASYNC);
+        config.setSocketThreadSize(16);
+        config.setAsyncCapacity(1024);
         config.setExecutorMode(ExecutorMode.FIX);
-        config.setAsyncThreadSize(1);
+        config.setAsyncThreadSize(16);
         config.setInitListener(
                 new ChannelInitListener() {
                     
@@ -219,7 +217,7 @@ public class EchoTest
         try
         {
             // System.out.println("all test");
-            Assert.assertEquals("987654321", (String) future.get(300, TimeUnit.SECONDS));
+            Assert.assertEquals("987654321", (String) future.get(30, TimeUnit.SECONDS));
         }
         catch (Exception e)
         {

@@ -3,6 +3,7 @@ package com.jfireframework.jnet.server.CompletionHandler.weapon.single.sync.with
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.single.sync.AbstractSyncSingleReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.single.write.withoutpush.SyncSingleWriteHandlerImpl;
 
 public class SyncSingleReadHandlerImpl extends AbstractSyncSingleReadHandler
 {

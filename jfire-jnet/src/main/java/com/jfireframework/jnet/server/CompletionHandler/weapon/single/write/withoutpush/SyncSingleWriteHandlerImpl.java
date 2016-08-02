@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.weapon.single.sync.withoutpush;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.single.write.withoutpush;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;

@@ -3,6 +3,9 @@ package com.jfireframework.jnet.server.CompletionHandler.weapon.single;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
+import com.jfireframework.baseutil.disruptor.Disruptor;
+import com.jfireframework.baseutil.disruptor.EntryAction;
+import com.jfireframework.baseutil.disruptor.waitstrategy.ParkWaitStrategy;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
@@ -11,6 +14,8 @@ import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.AioServer;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.single.async.SingleAsyncAction;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.single.async.push.AsyncSingleReadWithPushHandlerImpl;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.single.async.withoutpush.AsyncSingleReadHandlerImpl;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.single.sync.push.SyncSingleReadAndPushHandlerImpl;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.single.sync.withoutpush.SyncSingleReadHandlerImpl;
@@ -25,6 +30,7 @@ public class WeaponSingleAcceptHandler implements AcceptHandler
     private ChannelInitListener initListener;
     private final PushMode      pushMode;
     private final WorkMode      workMode;
+    private final Disruptor     disruptor;
     
     public WeaponSingleAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
@@ -34,6 +40,24 @@ public class WeaponSingleAcceptHandler implements AcceptHandler
         Verify.notNull(initListener, "initListener不能为空");
         this.aioServer = aioServer;
         initListener = serverConfig.getInitListener();
+        if (workMode == WorkMode.ASYNC)
+        {
+            EntryAction[] actions = new EntryAction[serverConfig.getAsyncThreadSize()];
+            for (int i = 0; i < actions.length; i++)
+            {
+                actions[i] = new SingleAsyncAction();
+            }
+            Thread[] threads = new Thread[actions.length];
+            for (int i = 0; i < threads.length; i++)
+            {
+                threads[i] = new Thread(actions[i], "disruptor-" + i);
+            }
+            disruptor = new Disruptor(serverConfig.getAsyncCapacity(), actions, threads, new ParkWaitStrategy(threads));
+        }
+        else
+        {
+            disruptor = null;
+        }
     }
     
     @Override
@@ -58,12 +82,14 @@ public class WeaponSingleAcceptHandler implements AcceptHandler
             }
             else
             {
+                
                 if (pushMode == PushMode.OFF)
                 {
-                    readHandler = new AsyncSingleReadHandlerImpl(channelInfo, null);
+                    readHandler = new AsyncSingleReadHandlerImpl(channelInfo, disruptor);
                 }
-                else{
-                    
+                else
+                {
+                    readHandler = new AsyncSingleReadWithPushHandlerImpl(channelInfo, disruptor);
                 }
                 
             }
@@ -97,6 +123,9 @@ public class WeaponSingleAcceptHandler implements AcceptHandler
     @Override
     public void stop()
     {
-        ;
+        if (disruptor != null)
+        {
+            disruptor.stop();
+        }
     }
 }

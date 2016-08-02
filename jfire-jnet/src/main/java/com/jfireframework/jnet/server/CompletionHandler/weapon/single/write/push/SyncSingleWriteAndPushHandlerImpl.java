@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.weapon.single.sync.push;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.single.write.push;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -18,7 +18,7 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
     private Logger                      logger       = ConsoleLogFactory.getLogger();
     private static final int            IDLE         = 0;
     private static final int            WORK         = 1;
-    private CpuCachePadingInt           idleState    = new CpuCachePadingInt(IDLE);
+    private CpuCachePadingInt           writeState    = new CpuCachePadingInt(IDLE);
     private MPSCLinkedQueue<ByteBuf<?>> waitForSends = new MPSCLinkedQueue<>();
     
     public SyncSingleWriteAndPushHandlerImpl(ServerChannel serverChannel, WeaponReadHandler readHandler)
@@ -43,7 +43,7 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
             serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
             return;
         }
-        idleState.set(IDLE);
+        writeState.set(IDLE);
         while (true)
         {
             buf = waitForSends.poll();
@@ -54,7 +54,7 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
             }
             else
             {
-                if (idleState.compareAndSwap(IDLE, WORK))
+                if (writeState.compareAndSwap(IDLE, WORK))
                 {
                     buf = waitForSends.poll();
                     if (buf != null)
@@ -64,7 +64,7 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
                     }
                     else
                     {
-                        idleState.set(IDLE);
+                        writeState.set(IDLE);
                         continue;
                     }
                 }
@@ -99,14 +99,14 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
     @Override
     public void push(ByteBuf<?> buf)
     {
-        if (idleState.value() == IDLE && idleState.compareAndSwap(IDLE, WORK))
+        if (writeState.value() == IDLE && writeState.compareAndSwap(IDLE, WORK))
         {
             serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
         }
         else
         {
             waitForSends.add(buf);
-            while (idleState.value() == IDLE && idleState.compareAndSwap(IDLE, WORK))
+            while (writeState.value() == IDLE && writeState.compareAndSwap(IDLE, WORK))
             {
                 buf = waitForSends.poll();
                 if (buf != null)
@@ -116,7 +116,7 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
                 }
                 else
                 {
-                    idleState.set(IDLE);
+                    writeState.set(IDLE);
                     if (waitForSends.isEmpty())
                     {
                         break;
