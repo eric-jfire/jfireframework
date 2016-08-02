@@ -46,7 +46,7 @@ public abstract class AbstractMultRingArray implements RingArray
     
     public AbstractMultRingArray(int size, WaitStrategy waitStrategy, EntryAction[] actions)
     {
-        Verify.True(size > 1, "数组的大小必须大于1");
+        Verify.True(size >= 1, "数组的大小必须大于1");
         Verify.True(Integer.bitCount(size) == 1, "数组的大小必须是2的次方幂");
         entries = new Entry[size];
         for (int i = 0; i < size; i++)

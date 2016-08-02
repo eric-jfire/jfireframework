@@ -46,24 +46,13 @@ public class AcceptHandlerImpl implements AcceptHandler
             actions[i] = new ServerInternalResultAction();
         }
         WaitStrategy waitStrategy = null;
-        switch (serverConfig.getWaitMode())
+        Thread[] threads = new Thread[actions.length];
+        for (int i = 0; i < threads.length; i++)
         {
-            case BLOCK:
-                waitStrategy = new BlockWaitStrategy();
-                disruptor = new Disruptor(serverConfig.getAsyncCapacity(), waitStrategy, actions, Disruptor.ComplexMult, serverConfig.getAsyncThreadSize());
-                break;
-            case PARK:
-                Thread[] threads = new Thread[actions.length];
-                for (int i = 0; i < threads.length; i++)
-                {
-                    threads[i] = new Thread(actions[i]);
-                }
-                waitStrategy = new ParkWaitStrategy(threads);
-                disruptor = new Disruptor(serverConfig.getAsyncCapacity(), actions, threads, waitStrategy);
-                break;
-            default:
-                throw new UnSupportException("不应该走到这一步");
+            threads[i] = new Thread(actions[i], "disruptor-" + i);
         }
+        waitStrategy = new ParkWaitStrategy(threads);
+        disruptor = new Disruptor(serverConfig.getAsyncCapacity(), actions, threads, waitStrategy);
     }
     
     public void stop()

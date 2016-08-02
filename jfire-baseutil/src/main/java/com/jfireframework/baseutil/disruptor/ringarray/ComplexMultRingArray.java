@@ -48,14 +48,7 @@ public class ComplexMultRingArray extends AbstractMultRingArray
     
     public boolean isAvailable(long cursor)
     {
-        /*
-         * 在这里必须要使用<=这个符号。
-         * 之前使用==出现了错误。假设队列容量不大，消费者线程比较多。
-         * 如果有消费者线程被唤醒之后还没尝试处理数据前，别的消费者线程全部处理了数据就会导致整个flag数组序号递增。
-         * 进而导致该线程永远都无法判断==结果。
-         * 就会导致一个消费者线程永久性的失去作用。
-         */
-        if ((int) (cursor >>> flagShift) <= unsafe.getIntVolatile(availableFlags, intOffset + ((cursor & sizeMask) << intShift)))
+        if ((int) (cursor >>> flagShift) == unsafe.getIntVolatile(availableFlags, intOffset + ((cursor & sizeMask) << intShift)))
         {
             return true;
         }
