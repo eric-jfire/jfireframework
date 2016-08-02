@@ -9,9 +9,9 @@ import com.jfireframework.baseutil.time.Timewatch;
 
 public class ParkTest
 {
-    private int threadStart = 50;
-    private int threadEnd   = 100;
-    private int sendCount   = 10;
+    private int threadStart = 100;
+    private int threadEnd   = 200;
+    private int sendCount   = 50;
     private int actionSize  = 16;
     private int capacity    = 2;
     
