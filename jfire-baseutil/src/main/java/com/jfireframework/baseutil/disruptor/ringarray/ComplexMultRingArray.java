@@ -42,7 +42,7 @@ public class ComplexMultRingArray extends AbstractMultRingArray
     public void publish(long cursor)
     {
         // 下一步可能会使用volatile写入。所以这里只要使用ordered的写入方式，放入store-store屏障来保证上写不会重排序即可
-        unsafe.putOrderedInt(availableFlags, intOffset + ((cursor & sizeMask) << intShift), (int) (cursor >>> flagShift));
+        unsafe.putIntVolatile(availableFlags, intOffset + ((cursor & sizeMask) << intShift), (int) (cursor >>> flagShift));
         waitStrategy.signallBlockwaiting();
     }
     

@@ -54,8 +54,8 @@ public abstract class AbstractExclusiveEntryAction implements ExclusiveEntryActi
             try
             {
                 Object data = entry.getData();
-                cursor += 1;
                 doJob(data);
+                cursor += 1;
             }
             catch (Exception e)
             {

@@ -35,17 +35,6 @@ public class AioServer
     public AioServer(ServerConfig serverConfig)
     {
         this.serverConfig = serverConfig;
-        checkServerConfig();
-    }
-    
-    private void checkServerConfig()
-    {
-        WorkMode workMode = serverConfig.getWorkMode();
-        ExecutorMode executorMode = serverConfig.getExecutorMode();
-//        if (workMode != WorkMode.SYNC && executorMode == ExecutorMode.FIX)
-//        {
-//            throw new UnSupportException(StringUtil.format("配置错误！如果选择异步模式或者混合模式，那么线程池类型应该选择cached模式"));
-//        }
     }
     
     public AsynchronousServerSocketChannel getServerSocketChannel()
