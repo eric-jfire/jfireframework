@@ -103,4 +103,10 @@ public class ResultMapImpl<T> implements ResultMap<T>
         }
     }
     
+    @Override
+    public MapField[] mapFields()
+    {
+        return mapFields;
+    }
+    
 }

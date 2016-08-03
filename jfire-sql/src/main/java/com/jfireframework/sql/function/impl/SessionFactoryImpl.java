@@ -65,7 +65,7 @@ public class SessionFactoryImpl implements SessionFactory
     private String                            dbType;
     private IdentityHashMap<Class<?>, Mapper> mappers      = new IdentityHashMap<Class<?>, Mapper>(128);
     private IdentityHashMap<Class<?>, Dao<?>> daos         = new IdentityHashMap<Class<?>, Dao<?>>();
-    private Map<Class<?>, ResultMapImpl<?>>     resultMaps   = new IdentityHashMap<Class<?>, ResultMapImpl<?>>();
+    private Map<Class<?>, ResultMap<?>>       resultMaps   = new IdentityHashMap<Class<?>, ResultMap<?>>();
     private Map<String, MetaData>             metaDatas    = new HashMap<String, MetaData>();
     
     public SessionFactoryImpl()
@@ -351,8 +351,9 @@ public class SessionFactoryImpl implements SessionFactory
                     }
                     if (ckass.isAnnotationPresent(TableEntity.class))
                     {
-                        metaDatas.put(ckass.getSimpleName(), new MetaData(ckass));
-                        resultMaps.put(ckass, new ResultMapImpl(ckass));
+                        ResultMap<?> resultMap = new ResultMapImpl(ckass);
+                        resultMaps.put(ckass, resultMap);
+                        metaDatas.put(ckass.getSimpleName(), new MetaData(ckass, resultMap.mapFields()));
                     }
                 }
                 catch (ClassNotFoundException e)
