@@ -40,7 +40,7 @@ public class EventPublisherImpl implements EventPublisher
         }
         capacity = tmp;
         Thread[] threads = new Thread[threadSize];
-        EntryAction[] actions = new EntryAction[threads.length];
+        EntryAction[] actions = new EntryAction[threadSize];
         for (int i = 0; i < actions.length; i++)
         {
             actions[i] = new EventAction(handlers, idMap);
