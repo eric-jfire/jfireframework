@@ -6,6 +6,7 @@ import java.nio.channels.ClosedChannelException;
 import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.baseutil.disruptor.EntryAction;
 import com.jfireframework.baseutil.disruptor.waitstrategy.ParkWaitStrategy;
+import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
@@ -52,7 +53,8 @@ public class WeaponSingleAcceptHandler implements AcceptHandler
             {
                 threads[i] = new Thread(actions[i], "disruptor-" + i);
             }
-            disruptor = new Disruptor(serverConfig.getAsyncCapacity(), actions, threads, new ParkWaitStrategy(threads));
+            WaitStrategy waitStrategy = new ParkWaitStrategy(threads);
+            disruptor = new Disruptor(serverConfig.getAsyncCapacity(), actions, threads, waitStrategy);
         }
         else
         {

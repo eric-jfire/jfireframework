@@ -38,7 +38,7 @@ import com.jfireframework.jnet.server.util.WorkMode;
 
 public class EchoTest
 {
-    private int    threadCountStart = 100;
+    private int    threadCountStart = 1;
     private int    threadCountEnd   = 300;
     private int    sendCount        = 50;
     private String ip               = "127.0.0.1";

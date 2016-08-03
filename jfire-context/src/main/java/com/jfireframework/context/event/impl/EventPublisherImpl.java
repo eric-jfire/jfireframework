@@ -52,7 +52,7 @@ public class EventPublisherImpl implements EventPublisher
         WaitStrategy waitStrategy = new BlockWaitStrategy();
         if ("park".equals(strategy))
         {
-            waitStrategy = new ParkWaitStrategy(threads, actions);
+            waitStrategy = new ParkWaitStrategy(threads);
         }
         else if ("block".equals(strategy))
         {

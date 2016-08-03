@@ -13,7 +13,7 @@ public class ParkTest
     private int threadEnd   = 200;
     private int sendCount   = 20;
     private int actionSize  = 16;
-    private int capacity    = 256;
+    private int capacity    = 2;
     
     @Test
     public void test()
@@ -28,7 +28,7 @@ public class ParkTest
         {
             threads[i] = new Thread(actions[i], "disruptor-" + i);
         }
-        ParkWaitStrategy waitStrategy = new ParkWaitStrategy(threads, actions);
+        ParkWaitStrategy waitStrategy = new ParkWaitStrategy(threads);
         final Disruptor disruptor = new Disruptor(capacity, actions, threads, waitStrategy);
         for (int index = threadStart; index <= threadEnd; index++)
         {
