@@ -82,12 +82,12 @@ public class ResponseFuture implements Future<Object>
         {
             throw new TimeoutException("等待时间已到达");
         }
+        if (e != null)
+        {
+            throw new ExecutionException(e);
+        }
         if (result == NORESULT)
         {
-            if (e != null)
-            {
-                throw new ExecutionException(e);
-            }
             throw new TimeoutException("等待时间已到达");
         }
         else

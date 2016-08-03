@@ -23,56 +23,53 @@ import com.jfireframework.jnet.server.util.WorkMode;
 
 public class SingleSpeedTest
 {
-    private int    threadCount = 10;
-    private int    sendCount   = 1000000;
+    private int    threadCount = 1;
+    private int    sendCount   = 1000;
     private String ip          = "127.0.0.1";
+    private int    port        = 8553;
     
     @Test
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setWorkMode(WorkMode.ASYNC_WITH_ORDER);
+        config.setWorkMode(WorkMode.ASYNC);
         config.setSocketThreadSize(16);
         config.setAsyncThreadSize(4);
         config.setChannelCapacity(4);
         config.setAsyncCapacity(32);
-        config.setInitListener(
-                new ChannelInitListener() {
-                    
-                    @Override
-                    public void channelInit(JnetChannel serverChannelInfo)
-                    {
-                        serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
-                        serverChannelInfo.setHandlers(new EchoHandler());
-                    }
-                }
-        );
-        config.setPort(8554);
+        config.setInitListener(new ChannelInitListener() {
+            
+            @Override
+            public void channelInit(JnetChannel serverChannelInfo)
+            {
+                serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
+                serverChannelInfo.setHandlers(new EchoHandler());
+            }
+        });
+        config.setPort(port);
         AioServer aioServer = new AioServer(config);
         aioServer.start();
         Thread[] threads = new Thread[threadCount];
         final CyclicBarrier barrier = new CyclicBarrier(threadCount);
         for (int i = 0; i < threads.length; i++)
         {
-            threads[i] = new Thread(
-                    new Runnable() {
-                        
-                        @Override
-                        public void run()
-                        {
-                            try
-                            {
-                                barrier.await();
-                                connecttest();
-                            }
-                            catch (Throwable e)
-                            {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                            }
-                        }
-                    }, "测试线程" + i
-            );
+            threads[i] = new Thread(new Runnable() {
+                
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        barrier.await();
+                        connecttest();
+                    }
+                    catch (Throwable e)
+                    {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+            }, "测试线程" + i);
             threads[i].start();
         }
         Timewatch timewatch = new Timewatch();
@@ -89,61 +86,55 @@ public class SingleSpeedTest
     {
         AioClient client = new AioClient(false);
         client.setAddress(ip);
-        client.setPort(8554);
-        client.setWriteHandlers(
-                new DataHandler() {
+        client.setPort(port);
+        client.setWriteHandlers(new DataHandler() {
+            
+            @Override
+            public Object handle(Object data, InternalTask result) throws JnetException
+            {
+                ByteBuf<?> buf = DirectByteBuf.allocate(100);
+                buf.addWriteIndex(4);
+                buf.writeString((String) data);
+                return buf;
+            }
+            
+            @Override
+            public Object catchException(Object data, InternalTask result)
+            {
+                // ((Throwable) data).printStackTrace();
+                return data;
+            }
+        }, new LengthPreHandler(0, 4));
+        client.setInitListener(new ChannelInitListener() {
+            
+            @Override
+            public void channelInit(JnetChannel jnetChannel)
+            {
+                jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoderByHeap(0, 4, 4, 500));
+                jnetChannel.setCapacity(1024);
+                jnetChannel.setHandlers(new DataHandler() {
                     
                     @Override
                     public Object handle(Object data, InternalTask result) throws JnetException
                     {
-                        ByteBuf<?> buf = DirectByteBuf.allocate(100);
-                        buf.addWriteIndex(4);
-                        buf.writeString((String) data);
-                        return buf;
+                        // System.out.println("收到数据");
+                        ByteBuf<?> buf = (ByteBuf<?>) data;
+                        String value = null;
+                        value = buf.readString();
+                        buf.release();
+                        return value;
                     }
                     
                     @Override
                     public Object catchException(Object data, InternalTask result)
                     {
+                        // System.err.println("客户端");
                         // ((Throwable) data).printStackTrace();
                         return data;
                     }
-                }, new LengthPreHandler(0, 4)
-        );
-        client.setInitListener(
-                new ChannelInitListener() {
-                    
-                    @Override
-                    public void channelInit(JnetChannel jnetChannel)
-                    {
-                        jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoderByHeap(0, 4, 4, 500));
-                        jnetChannel.setCapacity(1024);
-                        jnetChannel.setHandlers(
-                                new DataHandler() {
-                                    
-                                    @Override
-                                    public Object handle(Object data, InternalTask result) throws JnetException
-                                    {
-                                        // System.out.println("收到数据");
-                                        ByteBuf<?> buf = (ByteBuf<?>) data;
-                                        String value = null;
-                                        value = buf.readString();
-                                        buf.release();
-                                        return value;
-                                    }
-                                    
-                                    @Override
-                                    public Object catchException(Object data, InternalTask result)
-                                    {
-                                        // System.err.println("客户端");
-                                        // ((Throwable) data).printStackTrace();
-                                        return data;
-                                    }
-                                }
-                        );
-                    }
-                }
-        );
+                });
+            }
+        });
         for (int i = 0; i < sendCount; i++)
         {
             try

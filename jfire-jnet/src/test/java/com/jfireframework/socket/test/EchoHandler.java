@@ -15,15 +15,15 @@ public class EchoHandler implements DataHandler
     public Object handle(Object data, InternalTask entry) throws JnetException
     {
         ByteBuf<?> byteBuf = (ByteBuf<?>) data;
-        try
-        {
-            Thread.sleep(10);
-        }
-        catch (InterruptedException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+//        try
+//        {
+//            Thread.sleep(10);
+//        }
+//        catch (InterruptedException e)
+//        {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        }
         byteBuf.readIndex(0);
         return byteBuf;
     }

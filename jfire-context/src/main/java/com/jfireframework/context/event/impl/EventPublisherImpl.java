@@ -19,9 +19,10 @@ public class EventPublisherImpl implements EventPublisher
 {
     private Disruptor          disruptor;
     @Resource
-    private List<EventHandler> _handlers = new LinkedList<EventHandler>();
-    private String             strategy  = "park";
-    private int                capacity  = 0;
+    private List<EventHandler> _handlers  = new LinkedList<EventHandler>();
+    private String             strategy   = "park";
+    private int                capacity   = 0;
+    private int                threadSize = Runtime.getRuntime().availableProcessors() * 2 + 1;
     
     @PostConstruct
     public void init()
@@ -38,8 +39,8 @@ public class EventPublisherImpl implements EventPublisher
             tmp <<= 1;
         }
         capacity = tmp;
-        Thread[] threads = new Thread[Runtime.getRuntime().availableProcessors()];
-        EntryAction[] actions = new EntryAction[threads.length];
+        Thread[] threads = new Thread[threadSize];
+        EntryAction[] actions = new EntryAction[threadSize];
         for (int i = 0; i < actions.length; i++)
         {
             actions[i] = new EventAction(handlers, idMap);

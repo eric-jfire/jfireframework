@@ -17,7 +17,6 @@ import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.ServerInternalTask;
-import com.jfireframework.jnet.server.util.AsyncTaskCenter;
 import com.jfireframework.jnet.server.util.WorkMode;
 import com.jfireframework.jnet.server.util.WriteMode;
 
@@ -44,14 +43,12 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     // 启动读取超时的计数
     private boolean                      startCountdown = false;
     private final WorkMode               workMode;
-    private final AsyncTaskCenter        asyncTaskCenter;
     private final int                    capacity;
     private final Disruptor              disruptor;
     
-    public ReadCompletionHandler(ServerChannel serverChannel, WorkMode workMode, AsyncTaskCenter asyncTaskCenter, WriteMode writeMode, int maxBatchWriteNum, Disruptor disruptor)
+    public ReadCompletionHandler(ServerChannel serverChannel, WorkMode workMode, WriteMode writeMode, int maxBatchWriteNum, Disruptor disruptor)
     {
         this.disruptor = disruptor;
-        this.asyncTaskCenter = asyncTaskCenter;
         this.workMode = workMode;
         this.serverChannel = serverChannel;
         capacity = serverChannel.capacity();
@@ -59,14 +56,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
         handlers = serverChannel.getHandlers();
         readTimeout = serverChannel.getReadTimeout();
         waitTimeout = serverChannel.getWaitTimeout();
-        if (workMode == WorkMode.ASYNC_WITHOUT_ORDER)
-        {
-            writeCompletionHandler = new UnOrderedWriteCompletionHandler(this, serverChannel, maxBatchWriteNum);
-        }
-        else
-        {
-            writeCompletionHandler = new OrderedWriteCompletionHandler(this, serverChannel, writeMode, maxBatchWriteNum);
-        }
+        writeCompletionHandler = new OrderedWriteCompletionHandler(this, serverChannel, writeMode, maxBatchWriteNum);
     }
     
     @Override
@@ -157,13 +147,13 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             {
                 logger.debug("协议错误，关闭链接");
                 catchThrowable(e);
-                ioBuf.release();
+                serverChannel.closeChannel();
                 return;
             }
             catch (Throwable e)
             {
                 catchThrowable(e);
-                ioBuf.release();
+                serverChannel.closeChannel();
                 return;
             }
         }
@@ -182,7 +172,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
         }
     }
     
-    public int frameAndHandle() throws Exception
+    public int frameAndHandle() throws Throwable
     {
         while (true)
         {
@@ -216,88 +206,46 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
             {
                 return IN_READ;
             }
-            if (workMode == WorkMode.ASYNC_WITHOUT_ORDER)
+            ServerInternalTask task = (ServerInternalTask) serverChannel.getData(cursor);
+            task.init(cursor, intermediateResult, serverChannel, this, writeCompletionHandler, 0);
+            sequence.set(cursor + 1);
+            switch (workMode)
             {
-                ServerInternalTask task = asyncTaskCenter.askFor();
-                task.init(-1, intermediateResult, serverChannel, this, writeCompletionHandler, 0);
-                sequence.set(cursor + 1);
-                asyncTaskCenter.addTask(task);
-                if (ioBuf.remainRead() == 0)
+                case SYNC:
                 {
-                    return IN_READ;
+                    for (int i = 0; i < handlers.length;)
+                    {
+                        intermediateResult = handlers[i].handle(intermediateResult, task);
+                        if (i == task.getIndex())
+                        {
+                            i++;
+                            task.setIndex(i);
+                        }
+                        else
+                        {
+                            i = task.getIndex();
+                        }
+                    }
+                    if (intermediateResult instanceof ByteBuf<?>)
+                    {
+                        task.setData(intermediateResult);
+                        long version = task.version();
+                        task.flowDone();
+                        task.write(version);
+                    }
+                    break;
                 }
+                case ASYNC:
+                {
+                    disruptor.publish(task);
+                    break;
+                }
+                default:
+                    throw new RuntimeException("error");
             }
-            else
+            if (ioBuf.remainRead() == 0)
             {
-                ServerInternalTask task = (ServerInternalTask) serverChannel.getData(cursor);
-                task.init(cursor, intermediateResult, serverChannel, this, writeCompletionHandler, 0);
-                sequence.set(cursor + 1);
-                switch (workMode)
-                {
-                    case MIX_WITH_ORDER:
-                    {
-                        for (int i = 0; i < handlers.length;)
-                        {
-                            intermediateResult = handlers[i].handle(intermediateResult, task);
-                            if (intermediateResult == DataHandler.skipToWorkRing)
-                            {
-                                break;
-                            }
-                            if (i == task.getIndex())
-                            {
-                                i++;
-                                task.setIndex(i);
-                            }
-                            else
-                            {
-                                i = task.getIndex();
-                            }
-                        }
-                        if (intermediateResult instanceof ByteBuf<?>)
-                        {
-                            task.setData(intermediateResult);
-                            long version = task.version();
-                            task.flowDone();
-                            task.write(version);
-                        }
-                        break;
-                    }
-                    case SYNC_WITH_ORDER:
-                    {
-                        for (int i = 0; i < handlers.length;)
-                        {
-                            intermediateResult = handlers[i].handle(intermediateResult, task);
-                            if (i == task.getIndex())
-                            {
-                                i++;
-                                task.setIndex(i);
-                            }
-                            else
-                            {
-                                i = task.getIndex();
-                            }
-                        }
-                        if (intermediateResult instanceof ByteBuf<?>)
-                        {
-                            task.setData(intermediateResult);
-                            long version = task.version();
-                            task.flowDone();
-                            task.write(version);
-                        }
-                        break;
-                    }
-                    case ASYNC_WITH_ORDER:
-                    {
-                        disruptor.publish(task);
-                        break;
-                    }
-                    default:
-                        throw new RuntimeException("error");
-                }
-                if (ioBuf.remainRead() == 0)
-                {
-                    return IN_READ;
-                }
+                return IN_READ;
             }
         }
     }
@@ -353,11 +301,6 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ServerC
     {
         long time = endReadTime - lastReadTime;
         return time;
-    }
-    
-    public void handleAsync(ServerInternalTask task)
-    {
-        asyncTaskCenter.addTask(task);
     }
     
     public long cursor()

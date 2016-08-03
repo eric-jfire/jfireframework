@@ -1,14 +1,16 @@
 package com.jfireframework.baseutil.disruptor.waitstrategy;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
+import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 
 public class ParkWaitStrategy extends AbstractWaitStrategy
 {
     
-    private final Thread[]      threads;
-    private final AtomicInteger state = new AtomicInteger(0);
+    private final Thread[]          threads;
+    private final static int        WORK     = 0;
+    private final static int        PARKED   = 1;
+    private final CpuCachePadingInt parkFlag = new CpuCachePadingInt(WORK);
     
     public ParkWaitStrategy(Thread[] threads)
     {
@@ -18,27 +20,15 @@ public class ParkWaitStrategy extends AbstractWaitStrategy
     @Override
     public void waitFor(long next, RingArray ringArray) throws WaitStrategyStopException
     {
-        if (ringArray.isAvailable(next))
-        {
-            return;
-        }
         while (ringArray.isAvailable(next) == false)
         {
-            if (state.get() == 0)
+            if (parkFlag.value() == WORK && parkFlag.compareAndSwap(WORK, PARKED))
             {
-                if (state.compareAndSet(0, 1))
+                for (Thread each : threads)
                 {
-                    if (ringArray.isAvailable(next))
-                    {
-                        state.set(0);
-                        for (Thread each : threads)
-                        {
-                            LockSupport.unpark(each);
-                        }
-                        detectStopException();
-                        break;
-                    }
+                    LockSupport.unpark(each);
                 }
+                continue;
             }
             LockSupport.park();
             detectStopException();
@@ -48,14 +38,11 @@ public class ParkWaitStrategy extends AbstractWaitStrategy
     @Override
     public void signallBlockwaiting()
     {
-        if (state.get() == 1)
+        if (parkFlag.value() == PARKED && parkFlag.compareAndSwap(PARKED, WORK))
         {
-            if (state.compareAndSet(1, 0))
+            for (Thread each : threads)
             {
-                for (Thread each : threads)
-                {
-                    LockSupport.unpark(each);
-                }
+                LockSupport.unpark(each);
             }
         }
         

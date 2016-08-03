@@ -1,6 +1,5 @@
 package com.jfireframework.baseutil.disruptor;
 
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategyStopException;
@@ -17,7 +16,7 @@ import com.jfireframework.baseutil.simplelog.Logger;
 public abstract class AbstractSharedEntryAction implements SharedEntryAction
 {
     // 当前准备处理的序号
-    private AtomicLong                cursor = new AtomicLong(0);
+    private long                      cursor = 0;
     protected Logger                  logger = ConsoleLogFactory.getLogger();
     protected RingArray               ringArray;
     private final SharedEntryAction[] preActions;
@@ -39,13 +38,12 @@ public abstract class AbstractSharedEntryAction implements SharedEntryAction
         Entry entry;
         while (true)
         {
-            long _cursor = cursor.get();
-            if (ringArray.isAvailable(_cursor) == false)
+            if (ringArray.isAvailable(cursor) == false)
             {
                 try
                 {
                     logger.debug("等待序号:{}", cursor);
-                    ringArray.waitFor(_cursor);
+                    ringArray.waitFor(cursor);
                 }
                 catch (WaitStrategyStopException e)
                 {
@@ -53,20 +51,22 @@ public abstract class AbstractSharedEntryAction implements SharedEntryAction
                     break;
                 }
             }
-            entry = ringArray.entryAt(_cursor);
+            entry = ringArray.entryAt(cursor);
             if (preActions.length > 0)
             {
                 for (SharedEntryAction eachPre : preActions)
                 {
-                    while (eachPre.cursor() <= _cursor)
+                    while (eachPre.cursor() <= cursor)
                     {
-                        
+                        ;// 这是一个不太好的做法，忙等待。但是不是好的做法
                     }
                 }
             }
             try
             {
-                doJob(entry);
+                Object data = entry.getData();
+                doJob(data);
+                cursor += 1;
             }
             catch (Exception e)
             {
@@ -74,17 +74,16 @@ public abstract class AbstractSharedEntryAction implements SharedEntryAction
                 ringArray.stop();
                 break;
             }
-            cursor.lazySet(_cursor + 1);
         }
     }
     
     @Override
     public long cursor()
     {
-        return cursor.get();
+        return cursor;
     }
     
-    public abstract void doJob(Entry entry);
+    public abstract <T> void doJob(T data);
     
     public void setRingArray(RingArray ringArray)
     {

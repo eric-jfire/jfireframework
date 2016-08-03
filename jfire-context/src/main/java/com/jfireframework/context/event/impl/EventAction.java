@@ -3,7 +3,6 @@ package com.jfireframework.context.event.impl;
 import java.util.IdentityHashMap;
 import javax.annotation.Resource;
 import com.jfireframework.baseutil.disruptor.AbstractExclusiveEntryAction;
-import com.jfireframework.baseutil.disruptor.Entry;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.context.event.ApplicationEvent;
@@ -23,11 +22,11 @@ public class EventAction extends AbstractExclusiveEntryAction
     }
     
     @Override
-    public void doJob(Entry entry)
+    public <T> void doJob(T data)
     {
         try
         {
-            ApplicationEvent event = (ApplicationEvent) entry.getData();
+            ApplicationEvent event = (ApplicationEvent) data;
             int sequence = map.get(event.getType().getClass());
             int index = event.getType().ordinal();
             for (EventHandler each : handlers[sequence][index])

@@ -23,12 +23,13 @@ public abstract class AbstractMultRingArray implements RingArray
     // 代表下一个可以增加的位置
     protected final Sequence      cursor          = new Sequence(Sequence.INIT_VALUE);
     protected static final Unsafe unsafe          = ReflectUtil.getUnsafe();
-    protected static final long   base;
     protected static final int    shift;
-    
+    // protected static final int BUFFER_PAD;
+    protected static final int    REF_ARRAY_BASE;
+    protected long                p1, p2, p3, p4, p5, p6, p7;
     static
     {
-        base = unsafe.arrayBaseOffset(Entry[].class);
+        REF_ARRAY_BASE = unsafe.arrayBaseOffset(Entry[].class);
         int scale = unsafe.arrayIndexScale(Entry[].class);
         if (scale == 8)
         {
@@ -42,14 +43,18 @@ public abstract class AbstractMultRingArray implements RingArray
         {
             throw new RuntimeException("不认识");
         }
+        // BUFFER_PAD = 128 / scale;
+        // // Including the buffer pad in the array base offset
+        // REF_ARRAY_BASE = unsafe.arrayBaseOffset(Entry[].class) + (BUFFER_PAD
+        // << shift);
     }
     
     public AbstractMultRingArray(int size, WaitStrategy waitStrategy, EntryAction[] actions)
     {
-        Verify.True(size > 1, "数组的大小必须大于1");
+        Verify.True(size >= 1, "数组的大小必须大于1");
         Verify.True(Integer.bitCount(size) == 1, "数组的大小必须是2的次方幂");
         entries = new Entry[size];
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < entries.length; i++)
         {
             entries[i] = new Entry();
         }
@@ -89,6 +94,12 @@ public abstract class AbstractMultRingArray implements RingArray
     
     protected abstract long getNext();
     
+    /**
+     * 获取所有的处理器中，最小的可以处理的序号。
+     * 该序号意味着在循环数组上，放入的序号不可以覆盖该序号的内容
+     * 
+     * @return
+     */
     private long getMin()
     {
         long min = Long.MAX_VALUE;
@@ -106,7 +117,7 @@ public abstract class AbstractMultRingArray implements RingArray
     public Entry entryAt(long cursor)
     {
         // 不需要使用volatile读取。因为数组里的元素是不会变的
-        return (Entry) unsafe.getObject(entries, base + ((cursor & sizeMask) << shift));
+        return (Entry) unsafe.getObject(entries, REF_ARRAY_BASE + ((cursor & sizeMask) << shift));
     }
     
     @Override
