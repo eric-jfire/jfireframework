@@ -19,9 +19,10 @@ public class EventPublisherImpl implements EventPublisher
 {
     private Disruptor          disruptor;
     @Resource
-    private List<EventHandler> _handlers = new LinkedList<EventHandler>();
-    private String             strategy  = "park";
-    private int                capacity  = 0;
+    private List<EventHandler> _handlers  = new LinkedList<EventHandler>();
+    private String             strategy   = "park";
+    private int                capacity   = 0;
+    private int                threadSize = Runtime.getRuntime().availableProcessors() * 2 + 1;
     
     @PostConstruct
     public void init()
@@ -38,7 +39,7 @@ public class EventPublisherImpl implements EventPublisher
             tmp <<= 1;
         }
         capacity = tmp;
-        Thread[] threads = new Thread[Runtime.getRuntime().availableProcessors()];
+        Thread[] threads = new Thread[threadSize];
         EntryAction[] actions = new EntryAction[threads.length];
         for (int i = 0; i < actions.length; i++)
         {
@@ -51,7 +52,7 @@ public class EventPublisherImpl implements EventPublisher
         WaitStrategy waitStrategy = new BlockWaitStrategy();
         if ("park".equals(strategy))
         {
-            waitStrategy = new ParkWaitStrategy(threads);
+            waitStrategy = new ParkWaitStrategy(threads, actions);
         }
         else if ("block".equals(strategy))
         {
