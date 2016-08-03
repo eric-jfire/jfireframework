@@ -1,13 +1,9 @@
 package com.jfireframework.sql.metadata;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.field.MapField;
 
 public class MetaData
 {
@@ -15,28 +11,16 @@ public class MetaData
     private Map<String, String> fieldColumnMap = new HashMap<String, String>();
     private String              simpleClassName;
     
-    public MetaData(Class<?> type)
+    public MetaData(Class<?> type, MapField[] mapFields)
     {
         simpleClassName = type.getSimpleName();
         if (type.isAnnotationPresent(TableEntity.class))
         {
             tableName = type.getAnnotation(TableEntity.class).name();
         }
-        for (Field each : ReflectUtil.getAllFields(type))
+        for (MapField each : mapFields)
         {
-            if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || each.getType().isArray())
-            {
-                continue;
-            }
-            String dbColName = each.getName();
-            if (each.isAnnotationPresent(Column.class))
-            {
-                if (each.getAnnotation(Column.class).name().equals("") == false)
-                {
-                    dbColName = each.getAnnotation(Column.class).name();
-                }
-            }
-            fieldColumnMap.put(each.getName(), dbColName);
+            fieldColumnMap.put(each.getFieldName(), each.getColName());
         }
     }
     

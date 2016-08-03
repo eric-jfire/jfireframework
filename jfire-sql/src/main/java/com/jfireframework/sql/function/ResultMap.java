@@ -3,9 +3,13 @@ package com.jfireframework.sql.function;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import com.jfireframework.sql.field.MapField;
 
 public interface ResultMap<T>
 {
+    
+    public MapField[] mapFields();
+    
     /**
      * 将resultset中的值转换到bean中,从resultset中取值使用名称，名称是属性所对应的数据库列名
      * 
