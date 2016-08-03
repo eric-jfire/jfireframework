@@ -11,9 +11,9 @@ public class ParkTest
 {
     private int threadStart = 100;
     private int threadEnd   = 200;
-    private int sendCount   = 50;
+    private int sendCount   = 20;
     private int actionSize  = 16;
-    private int capacity    = 2;
+    private int capacity    = 256;
     
     @Test
     public void test()
@@ -28,7 +28,7 @@ public class ParkTest
         {
             threads[i] = new Thread(actions[i], "disruptor-" + i);
         }
-        ParkWaitStrategy waitStrategy = new ParkWaitStrategy(threads);
+        ParkWaitStrategy waitStrategy = new ParkWaitStrategy(threads, actions);
         final Disruptor disruptor = new Disruptor(capacity, actions, threads, waitStrategy);
         for (int index = threadStart; index <= threadEnd; index++)
         {
@@ -36,27 +36,29 @@ public class ParkTest
             Thread[] testThreads = new Thread[index];
             for (int i = 0; i < testThreads.length; i++)
             {
-                testThreads[i] = new Thread(new Runnable() {
-                    
-                    @Override
-                    public void run()
-                    {
-                        try
-                        {
-                            barrier.await();
-                            ByteBuf<?> buf = DirectByteBuf.allocate(1);
-                            for (int count = 0; count < sendCount; count++)
+                testThreads[i] = new Thread(
+                        new Runnable() {
+                            
+                            @Override
+                            public void run()
                             {
-                                buf.readIndex(6);
-                                disruptor.publish(buf);
+                                try
+                                {
+                                    barrier.await();
+                                    ByteBuf<?> buf = DirectByteBuf.allocate(1);
+                                    for (int count = 0; count < sendCount; count++)
+                                    {
+                                        buf.readIndex(6);
+                                        disruptor.publish(buf);
+                                    }
+                                }
+                                catch (Throwable e)
+                                {
+                                    e.printStackTrace();
+                                }
                             }
-                        }
-                        catch (Throwable e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                }, "测试线程_" + index + "_" + i);
+                        }, "测试线程_" + index + "_" + i
+                );
                 testThreads[i].start();
             }
             Timewatch timewatch = new Timewatch();
