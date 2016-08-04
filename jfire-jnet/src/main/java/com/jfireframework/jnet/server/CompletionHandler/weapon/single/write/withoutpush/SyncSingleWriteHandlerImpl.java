@@ -30,8 +30,8 @@ public class SyncSingleWriteHandlerImpl implements WeaponWriteHandler
             serverChannel.getSocketChannel().write(buffer, 10, TimeUnit.SECONDS, buf, this);
             return;
         }
-        buf.release();
         readHandler.notifyRead();
+        buf.release();
     }
     
     @Override

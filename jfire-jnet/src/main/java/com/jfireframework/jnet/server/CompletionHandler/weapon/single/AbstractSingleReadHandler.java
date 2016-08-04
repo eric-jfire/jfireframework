@@ -150,7 +150,6 @@ public abstract class AbstractSingleReadHandler implements WeaponReadHandler
      */
     protected ByteBuffer getWriteBuffer()
     {
-        ioBuf.compact();
         ByteBuffer ioBuffer = ioBuf.nioBuffer();
         ioBuffer.position(ioBuffer.limit()).limit(ioBuffer.capacity());
         return ioBuffer;

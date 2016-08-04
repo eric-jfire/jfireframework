@@ -235,7 +235,6 @@ public class EchoTest
         try
         {
             countDownLatch.await(30,TimeUnit.SECONDS);
-            // System.out.println("all test");
 //            Assert.assertEquals("987654321", (String) future.get(50000, TimeUnit.SECONDS));
         }
         catch (Exception e)
