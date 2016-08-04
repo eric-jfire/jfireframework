@@ -10,7 +10,7 @@ public class ResponseFuture implements Future<Object>
 {
     private static final Object  NORESULT  = new Object();
     protected volatile Object    result    = NORESULT;
-    protected Thread             ownerThread;
+    protected volatile Thread    ownerThread;
     protected volatile Throwable e;
     public static final boolean  READY     = true;
     public static final boolean  UN_READY  = false;

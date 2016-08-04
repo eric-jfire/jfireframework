@@ -20,39 +20,39 @@ import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.Wea
 public class ReadAndPushHandlerImpl implements WeaponSyncReadHandler
 {
     
-    private static final Logger          logger         = ConsoleLogFactory.getLogger();
-    private final FrameDecodec           frameDecodec;
-    private final DataHandler[]          handlers;
-    private final DirectByteBuf          ioBuf          = DirectByteBuf.allocate(100);
-    private final ServerChannel          serverChannel;
-    private final static int             WORK           = 1;
-    private final static int             IDLE           = 2;
+    private static final Logger                  logger         = ConsoleLogFactory.getLogger();
+    private final FrameDecodec                   frameDecodec;
+    private final DataHandler[]                  handlers;
+    private final DirectByteBuf                  ioBuf          = DirectByteBuf.allocate(100);
+    private final ServerChannel                  serverChannel;
+    private final static int                     WORK           = 1;
+    private final static int                     IDLE           = 2;
     /**
      * 本线程仍然持有控制权
      */
-    private final static int             ON_CONTROL     = 1;
+    private final static int                     ON_CONTROL     = 1;
     
     /**
      * 本线程让渡出控制权
      */
-    private final static int             YIDLE          = 2;
-    private final CpuCachePadingInt      readState      = new CpuCachePadingInt(WORK);
+    private final static int                     YIDLE          = 2;
+    private final CpuCachePadingInt              readState      = new CpuCachePadingInt(WORK);
     // 读取超时时间
-    private final long                   readTimeout;
-    private final long                   waitTimeout;
+    private final long                           readTimeout;
+    private final long                           waitTimeout;
     // 最后一次读取时间
-    private long                         lastReadTime;
+    private long                                 lastReadTime;
     // 本次读取的截止时间
-    private long                         endReadTime;
+    private long                                 endReadTime;
     // 启动读取超时的计数
-    private boolean                      startCountdown = false;
-    private final WeaponTask             waeponTask     = new WeaponTask();
+    private boolean                              startCountdown = false;
+    private final WeaponTask                     waeponTask     = new WeaponTask();
     private final WeaponSyncWriteWithPushHandler writeHandler;
     
-    public ReadAndPushHandlerImpl(ServerChannel serverChannel)
+    public ReadAndPushHandlerImpl(ServerChannel serverChannel, int capacity)
     {
         this.serverChannel = serverChannel;
-        writeHandler = new WeaponSyncWriteHandlerImpl(serverChannel, this);
+        writeHandler = new WeaponSyncWriteHandlerImpl(serverChannel, capacity, this);
         frameDecodec = serverChannel.getFrameDecodec();
         handlers = serverChannel.getHandlers();
         readTimeout = serverChannel.getReadTimeout();

@@ -9,11 +9,11 @@ public class AsyncClientChannelInfo extends AbstractClientChannel
         return NORESULT;
     }
     
-    public void signal(Object obj, long cursor)
+    public void signal(Object obj)
     {
     }
     
-    public void signalAll(Throwable e, long cursor)
+    public void signalAll(Throwable e)
     {
     }
 }

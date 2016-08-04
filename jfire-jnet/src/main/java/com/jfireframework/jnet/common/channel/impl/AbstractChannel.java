@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 import com.jfireframework.jnet.common.handler.DataHandler;
@@ -23,31 +22,9 @@ public abstract class AbstractChannel implements JnetChannel
     protected long                      readTimeout = 3000;
     // 默认的超时等待时间是30分钟
     protected long                      waitTimeout = 1000 * 60 * 30;
-    protected Object[]                  resultArray;
-    protected int                       resultArrayLengthMask;
-    protected final static int          base;
-    protected final static int          scale;
     protected String                    remoteAddress;
     protected String                    localAddress;
     protected static final Unsafe       unsafe      = ReflectUtil.getUnsafe();
-    protected int                       capacity    = 0;
-    static
-    {
-        base = unsafe.arrayBaseOffset(Object[].class);
-        if (4 == unsafe.arrayIndexScale(Object[].class))
-        {
-            scale = 2;
-        }
-        else if (8 == unsafe.arrayIndexScale(Object[].class))
-        {
-            scale = 3;
-        }
-        else
-        {
-            throw new RuntimeException("错误的长度信息");
-        }
-    }
-    
     @Override
     public void setHandlers(DataHandler... handlers)
     {
@@ -101,6 +78,8 @@ public abstract class AbstractChannel implements JnetChannel
         {
             try
             {
+                socketChannel.shutdownInput();
+                socketChannel.shutdownOutput();
                 socketChannel.close();
             }
             catch (IOException e)
@@ -108,35 +87,6 @@ public abstract class AbstractChannel implements JnetChannel
             }
         }
     }
-    
-    @Override
-    public void setCapacity(int capacity)
-    {
-        this.capacity = capacity;
-        Verify.True(capacity > 1, "数组的大小必须大于1");
-        Verify.True(Integer.bitCount(capacity) == 1, "数组的大小必须是2的次方幂");
-        resultArray = new Object[capacity];
-        resultArrayLengthMask = capacity - 1;
-    }
-    
-    @Override
-    public Object getData(long cursor)
-    {
-        return unsafe.getObject(resultArray, base + ((cursor & resultArrayLengthMask) << scale));
-    }
-    
-    @Override
-    public Object getDataVolatile(long cursor)
-    {
-        return unsafe.getObjectVolatile(resultArray, base + ((cursor & resultArrayLengthMask) << scale));
-    }
-    
-    @Override
-    public void putDataVolatile(Object obj, long cursor)
-    {
-        unsafe.putObjectVolatile(resultArray, base + ((cursor & resultArrayLengthMask) << scale), obj);
-    }
-    
     @Override
     public void setReadTimeout(long readTimeout)
     {
@@ -159,11 +109,6 @@ public abstract class AbstractChannel implements JnetChannel
     public long getWaitTimeout()
     {
         return waitTimeout;
-    }
-    
-    public int capacity()
-    {
-        return capacity;
     }
     
     @Override
@@ -198,8 +143,4 @@ public abstract class AbstractChannel implements JnetChannel
         return remoteAddress;
     }
     
-    public Object[] getDataArray()
-    {
-        return resultArray;
-    }
 }

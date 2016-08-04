@@ -10,17 +10,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.AcceptHandlerImpl;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.impl.WeaponCapacityAcceptHandler;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.single.WeaponSingleAcceptHandler;
-import com.jfireframework.jnet.server.util.ExecutorMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
-import com.jfireframework.jnet.server.util.WorkMode;
 
 public class AioServer
 {
@@ -73,9 +68,6 @@ public class AioServer
             logger.info("监听启动");
             switch (serverConfig.getAcceptMode())
             {
-                case origin:
-                    acceptHandler = new AcceptHandlerImpl(this, serverConfig);
-                    break;
                 case weapon_capacity:
                     acceptHandler = new WeaponCapacityAcceptHandler(this, serverConfig);
                     break;

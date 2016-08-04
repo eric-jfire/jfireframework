@@ -33,6 +33,7 @@ public class AioClient
     private ChannelInitListener      initListener;
     private final boolean            async;
     private ClientInternalResult     internalResult = new ClientInternalResult();
+    private int                      capacity       = 16;
     
     public AioClient(boolean async)
     {
@@ -85,11 +86,10 @@ public class AioClient
             }
             else
             {
-                clientChannel = new FutureClientChannelInfo();
+                clientChannel = new FutureClientChannelInfo(capacity);
             }
             clientChannel.setChannel(socketChannel);
             initListener.channelInit(clientChannel);
-            Verify.notNull(clientChannel.getDataArray(), "没有设置entryArraySize");
             Verify.notNull(clientChannel.getFrameDecodec(), "没有设置framedecodec");
             Verify.notNull(clientChannel.getHandlers(), "没有设置Datahandler");
             ClientReadCompleter clientReadCompleter = new ClientReadCompleter(this, clientChannel);

@@ -40,10 +40,9 @@ public class WeaponCapacityAcceptHandler implements AcceptHandler
         try
         {
             ServerChannel channelInfo = new ServerChannel();
-            channelInfo.setCapacity(capacity);
             channelInfo.setChannel(socketChannel);
             initListener.channelInit(channelInfo);
-            WeaponReadHandler weaponReadHandler = new ReadAndPushHandlerImpl(channelInfo);
+            WeaponReadHandler weaponReadHandler = new ReadAndPushHandlerImpl(channelInfo, capacity);
             weaponReadHandler.readAndWait();
             aioServer.getServerSocketChannel().accept(null, this);
         }

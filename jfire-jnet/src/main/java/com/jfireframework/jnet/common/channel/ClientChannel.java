@@ -4,9 +4,9 @@ import java.util.concurrent.Future;
 
 public interface ClientChannel extends JnetChannel
 {
-    public void signal(Object obj, long cursor);
+    public void signal(Object obj);
     
-    public void signalAll(Throwable e, long cursor);
+    public void signalAll(Throwable e);
     
     public Future<?> addFuture();
 }

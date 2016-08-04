@@ -9,8 +9,6 @@ import com.jfireframework.jnet.common.channel.ClientChannel;
 
 public abstract class AbstractClientChannel extends AbstractChannel implements ClientChannel
 {
-    protected volatile long       writeCursor = 0;
-    protected long                wrapPoint   = 0;
     protected ClientReadCompleter readCompleter;
     // private static final Logger logger = ConsoleLogFactory.getLogger();
     public static Future<Void>    NORESULT    = new Future<Void>() {

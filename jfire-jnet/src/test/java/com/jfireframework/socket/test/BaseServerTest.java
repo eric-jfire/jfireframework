@@ -66,7 +66,6 @@ public class BaseServerTest
             @Override
             public void channelInit(JnetChannel jnetChannel)
             {
-                jnetChannel.setCapacity(128);
                 jnetChannel.setFrameDecodec(new LineBasedFrameDecodec(1000));
                 jnetChannel.setHandlers(new DataHandler() {
                     
@@ -112,7 +111,6 @@ class myInitListener implements ChannelInitListener
     @Override
     public void channelInit(JnetChannel serverChannelInfo)
     {
-        serverChannelInfo.setCapacity(128);
         serverChannelInfo.setFrameDecodec(new LineBasedFrameDecodec(1000));
         // 可以设置通道的读取超时时长。默认为3000毫秒
         serverChannelInfo.setReadTimeout(3000);

@@ -91,11 +91,11 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteWithPushHandle
     private static final int            push             = 1;
     private final CpuCachePadingInt     pushState        = new CpuCachePadingInt(response);
     
-    public WeaponSyncWriteHandlerImpl(ServerChannel serverChannel, WeaponReadHandler readHandler)
+    public WeaponSyncWriteHandlerImpl(ServerChannel serverChannel, int capacity, WeaponReadHandler readHandler)
     {
         this.readHandler = readHandler;
         this.serverChannel = serverChannel;
-        setCapacity(serverChannel.capacity());
+        setCapacity(capacity);
     }
     
     private void setCapacity(int capacity)

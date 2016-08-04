@@ -111,7 +111,6 @@ public class SingleSpeedTest
             public void channelInit(JnetChannel jnetChannel)
             {
                 jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoderByHeap(0, 4, 4, 500));
-                jnetChannel.setCapacity(1024);
                 jnetChannel.setHandlers(new DataHandler() {
                     
                     @Override

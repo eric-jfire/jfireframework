@@ -19,7 +19,6 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
     private AsynchronousSocketChannel   socketChannel;
     private DataHandler[]               handlers;
     private FrameDecodec                frameDecodec;
-    private volatile long               cursor         = 0;
     private final DirectByteBuf         ioBuf          = DirectByteBuf.allocate(100);
     private final AbstractClientChannel channelInfo;
     protected long                      readTimeout;
@@ -36,16 +35,6 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
         handlers = channelInfo.getHandlers();
         socketChannel = channelInfo.getSocketChannel();
         channelInfo.setReadCompleter(this);
-    }
-    
-    public long cursor()
-    {
-        return cursor;
-    }
-    
-    public void setCursor(long cursor)
-    {
-        this.cursor = cursor;
     }
     
     @Override
@@ -80,7 +69,7 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
                         }
                     }
                     // logger.trace("客户端处理完毕响应{}", cursor);
-                    channelInfo.signal(decodeResult, cursor);
+                    channelInfo.signal(decodeResult);
                 }
                 if (ioBuf.remainRead() == 0)
                 {
@@ -132,7 +121,7 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
             tmp = each.catchException(tmp, internalResult);
         }
         ioBuf.release();
-        channelInfo.signalAll(e, cursor);
+        channelInfo.signalAll(e);
     }
     
     public void continueRead()
