@@ -4,10 +4,10 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
+import com.jfireframework.baseutil.concurrent.CpuCachePadingLong;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityReadHandler;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityWriteHandler;
@@ -69,40 +69,32 @@ public class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWriteHandle
             throw new RuntimeException("错误的长度信息");
         }
     }
-    protected BufHolder[]                   bufArray;
+    protected final BufHolder[]             bufArray;
     protected int                           lengthMask;
-    private volatile long                   cursor    = 0;
-    private long                            wrap      = 0;
-    protected int                           capacity  = 0;
+    private volatile long                   cursor      = 0;
+    private long                            wrap        = 0;
+    /**
+     * 代表着已经被写入的序号，所以使用的时候是+1
+     */
+    private final CpuCachePadingLong        writeCursor = new CpuCachePadingLong(-1);
+    protected int                           capacity    = 0;
     private final WeaponCapacityReadHandler readHandler;
     private final ServerChannel             serverChannel;
-    private final int                       idle      = 0;
-    private final int                       work      = 1;
-    private final CpuCachePadingInt         idleState = new CpuCachePadingInt(idle);
-    private final Logger                    logger    = ConsoleLogFactory.getLogger();
+    private final int                       idle        = 0;
+    private final int                       work        = 1;
+    private final CpuCachePadingInt         idleState   = new CpuCachePadingInt(idle);
+    private static final Logger             logger      = ConsoleLogFactory.getLogger();
     
     public WeaponCapacityWriteHandlerImpl(ServerChannel serverChannel, int capacity, WeaponCapacityReadHandler readHandler)
     {
         this.readHandler = readHandler;
         this.serverChannel = serverChannel;
-        setCapacity(capacity);
-    }
-    
-    private void setCapacity(int capacity)
-    {
-        Verify.True(capacity > 1, "数组的大小必须大于1");
-        int tmp = 1;
-        while (tmp < capacity)
-        {
-            tmp <<= 1;
-        }
-        this.capacity = tmp;
-        bufArray = new BufHolder[this.capacity];
-        for (int i = 0; i < tmp; i++)
+        bufArray = new BufHolder[capacity];
+        for (int i = 0; i < capacity; i++)
         {
             bufArray[i] = new BufHolder();
         }
-        lengthMask = tmp - 1;
+        lengthMask = capacity - 1;
     }
     
     public ByteBuf<?> getBuf(long cursor)
@@ -134,9 +126,10 @@ public class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWriteHandle
         }
         else
         {
+            wrap = writeCursor.value() + 1;
             do
             {
-                wrap = readHandler.cursor();
+                // wrap = readHandler.cursor();
                 if (cursor < wrap)
                 {
                     buf = getBuf(cursor);
@@ -147,7 +140,8 @@ public class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWriteHandle
                 {
                     readHandler.notifyRead();
                     idleState.set(idle);
-                    wrap = readHandler.cursor();
+                    wrap = writeCursor.value() + 1;
+                    // wrap = readHandler.cursor();
                     if (cursor < wrap)
                     {
                         if (idleState.compareAndSwap(idle, work))
@@ -179,10 +173,19 @@ public class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWriteHandle
     public void write(ByteBuf<?> buf, long index)
     {
         setBuf(buf, index);
+        writeCursor.set(index);
         if (idleState.value() == idle && idleState.compareAndSwap(idle, work))
         {
-            buf = getBuf(cursor);
-            serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+            wrap = index + 1;
+            if (cursor < wrap)
+            {
+                buf = getBuf(cursor);
+                serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+            }
+            else
+            {
+                idleState.set(idle);
+            }
         }
     }
     

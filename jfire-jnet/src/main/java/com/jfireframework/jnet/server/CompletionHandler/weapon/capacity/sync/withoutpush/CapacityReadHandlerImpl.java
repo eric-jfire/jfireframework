@@ -53,7 +53,7 @@ public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
     private final int                        capacity;
     private long                             wrap           = 0;
     // 下一个要填充到通道的序号
-    private volatile long                    cursor         = 0;
+    private long                             cursor         = 0;
     
     public CapacityReadHandlerImpl(ServerChannel serverChannel, int capacity)
     {

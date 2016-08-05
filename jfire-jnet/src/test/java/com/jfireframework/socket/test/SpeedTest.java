@@ -41,8 +41,8 @@ import com.jfireframework.jnet.server.util.WorkMode;
 public class SpeedTest
 {
     private int    threadCountStart = 1;
-    private int    threadCountEnd   = 100;
-    private int    sendCount        = 100;
+    private int    threadCountEnd   = 200;
+    private int    sendCount        = 1000;
     private String ip               = "127.0.0.1";
     private int    port             = 7789;
     
@@ -50,12 +50,12 @@ public class SpeedTest
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setAcceptMode(AcceptMode.weapon_single);
+        config.setAcceptMode(AcceptMode.weapon_capacity);
         config.setPushMode(PushMode.OFF);
         config.setWorkMode(WorkMode.SYNC);
         config.setSocketThreadSize(40);
         config.setAsyncCapacity(16);
-        config.setChannelCapacity(4);
+        config.setChannelCapacity(8);
         config.setExecutorMode(ExecutorMode.FIX);
         config.setAsyncThreadSize(16);
         config.setInitListener(
@@ -199,7 +199,7 @@ public class SpeedTest
                                     @Override
                                     public Object handle(Object data, InternalResult result) throws JnetException
                                     {
-                                        // System.out.println("收到数据");
+//                                         System.out.println("收到数据");
                                         ByteBuf<?> buf = (ByteBuf<?>) data;
                                         String value = null;
                                         value = buf.readString();
