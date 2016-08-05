@@ -65,6 +65,7 @@ public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
         handlers = serverChannel.getHandlers();
         readTimeout = serverChannel.getReadTimeout();
         waitTimeout = serverChannel.getWaitTimeout();
+        internalResult.setChannelInfo(serverChannel);
     }
     
     @Override
@@ -172,7 +173,6 @@ public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
             if (cursor < wrap)
             {
                 Object intermediateResult = frameDecodec.decodec(ioBuf);
-                internalResult.setChannelInfo(serverChannel);
                 internalResult.setData(intermediateResult);
                 internalResult.setIndex(0);
                 for (int i = 0; i < handlers.length;)

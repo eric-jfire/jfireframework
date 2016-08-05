@@ -54,11 +54,11 @@ public class WeaponCapacityAcceptHandler implements AcceptHandler
             {
                 if (pushMode == PushMode.OFF)
                 {
-                    
+                    throw new UnsupportedOperationException();
                 }
                 else
                 {
-                    
+                    throw new UnsupportedOperationException();
                 }
             }
             else
@@ -69,7 +69,7 @@ public class WeaponCapacityAcceptHandler implements AcceptHandler
                 }
                 else
                 {
-                    
+                    throw new UnsupportedOperationException();
                 }
             }
             readHandler.readAndWait();
