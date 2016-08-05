@@ -13,7 +13,7 @@ import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
-import com.jfireframework.jnet.common.result.InternalTask;
+import com.jfireframework.jnet.common.result.InternalResult;
 import com.jfireframework.jnet.server.AioServer;
 import com.jfireframework.jnet.server.util.ServerConfig;
 
@@ -43,7 +43,7 @@ public class NewServerTest
         aioClient.setWriteHandlers(new DataHandler() {
             
             @Override
-            public Object handle(Object data, InternalTask client)
+            public Object handle(Object data, InternalResult client)
             {
                 String val = (String) data;
                 ByteBuf<?> buf = HeapByteBufPool.getInstance().get(10);
@@ -53,7 +53,7 @@ public class NewServerTest
             }
             
             @Override
-            public Object catchException(Object data, InternalTask result)
+            public Object catchException(Object data, InternalResult result)
             {
                 // TODO Auto-generated method stub
                 return null;
@@ -68,7 +68,7 @@ public class NewServerTest
                 jnetChannel.setHandlers(new DataHandler() {
                     
                     @Override
-                    public Object handle(Object data, InternalTask client)
+                    public Object handle(Object data, InternalResult client)
                     {
                         ByteBuf<?> val = (ByteBuf<?>) data;
                         System.out.println(val);
@@ -79,7 +79,7 @@ public class NewServerTest
                     }
                     
                     @Override
-                    public Object catchException(Object data, InternalTask result)
+                    public Object catchException(Object data, InternalResult result)
                     {
                         // TODO Auto-generated method stub
                         return null;

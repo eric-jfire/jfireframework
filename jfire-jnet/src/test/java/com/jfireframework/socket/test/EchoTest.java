@@ -30,7 +30,7 @@ import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
-import com.jfireframework.jnet.common.result.InternalTask;
+import com.jfireframework.jnet.common.result.InternalResult;
 import com.jfireframework.jnet.server.AioServer;
 import com.jfireframework.jnet.server.util.AcceptMode;
 import com.jfireframework.jnet.server.util.ExecutorMode;
@@ -169,7 +169,7 @@ public class EchoTest
                 new DataHandler() {
                     
                     @Override
-                    public Object handle(Object data, InternalTask result) throws JnetException
+                    public Object handle(Object data, InternalResult result) throws JnetException
                     {
                         ByteBuf<?> buf = DirectByteBuf.allocate(100);
                         buf.addWriteIndex(4);
@@ -178,7 +178,7 @@ public class EchoTest
                     }
                     
                     @Override
-                    public Object catchException(Object data, InternalTask result)
+                    public Object catchException(Object data, InternalResult result)
                     {
                         // ((Throwable) data).printStackTrace();
                         return data;
@@ -197,7 +197,7 @@ public class EchoTest
                                 new DataHandler() {
                                     
                                     @Override
-                                    public Object handle(Object data, InternalTask result) throws JnetException
+                                    public Object handle(Object data, InternalResult result) throws JnetException
                                     {
                                         // System.out.println("收到数据");
                                         ByteBuf<?> buf = (ByteBuf<?>) data;
@@ -209,7 +209,7 @@ public class EchoTest
                                     }
                                     
                                     @Override
-                                    public Object catchException(Object data, InternalTask result)
+                                    public Object catchException(Object data, InternalResult result)
                                     {
                                         // System.err.println("客户端");
                                         // ((Throwable) data).printStackTrace();

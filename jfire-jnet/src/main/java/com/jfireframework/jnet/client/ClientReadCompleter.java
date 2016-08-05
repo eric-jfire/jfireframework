@@ -12,7 +12,8 @@ import com.jfireframework.jnet.common.exception.EndOfStreamException;
 import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
-import com.jfireframework.jnet.common.result.ClientInternalResult;
+import com.jfireframework.jnet.common.result.InternalResult;
+import com.jfireframework.jnet.common.result.InternalResultImpl;
 
 public class ClientReadCompleter implements CompletionHandler<Integer, AbstractClientChannel>
 {
@@ -24,7 +25,7 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
     protected long                      readTimeout;
     protected long                      waitTimeout;
     // private static final Logger logger = ConsoleLogFactory.getLogger();
-    private ClientInternalResult        internalResult = new ClientInternalResult();
+    private InternalResult              internalResult = new InternalResultImpl();
     
     public ClientReadCompleter(AioClient aioClient, AbstractClientChannel channelInfo)
     {
@@ -47,14 +48,16 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
         }
         ioBuf.addWriteIndex(result);
         Object decodeResult = null;
-        do
+        while (true)
         {
             try
             {
                 decodeResult = frameDecodec.decodec(ioBuf);
                 if (decodeResult != null)
                 {
-                    internalResult.init(decodeResult, channelInfo, 0);
+                    internalResult.setChannelInfo(channelInfo);
+                    internalResult.setIndex(0);
+                    internalResult.setData(decodeResult);
                     for (int i = 0; i < handlers.length;)
                     {
                         decodeResult = handlers[i].handle(decodeResult, internalResult);
@@ -92,17 +95,14 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
             catch (NotFitProtocolException e)
             {
                 catchThrowable(e);
-                channelInfo.closeChannel();
                 return;
             }
             catch (Throwable e)
             {
                 catchThrowable(e);
-                channelInfo.closeChannel();
                 return;
             }
-        } while (decodeResult != null);
-        readAndWait();
+        }
     }
     
     @Override
@@ -114,7 +114,6 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
     private void catchThrowable(Throwable e)
     {
         channelInfo.closeChannel();
-        internalResult.init(e, null, 0);
         Object tmp = e;
         for (DataHandler each : handlers)
         {
@@ -136,7 +135,6 @@ public class ClientReadCompleter implements CompletionHandler<Integer, AbstractC
     
     private ByteBuffer getReadBuffer()
     {
-        ioBuf.compact();
         ByteBuffer ioBuffer = ioBuf.nioBuffer();
         ioBuffer.position(ioBuffer.limit()).limit(ioBuffer.capacity());
         return ioBuffer;

@@ -2,7 +2,7 @@ package com.jfireframework.jnet.common.result;
 
 import com.jfireframework.jnet.common.channel.JnetChannel;
 
-public interface InternalTask
+public interface InternalResult
 {
     public void setChannelInfo(JnetChannel jnetChannel);
     

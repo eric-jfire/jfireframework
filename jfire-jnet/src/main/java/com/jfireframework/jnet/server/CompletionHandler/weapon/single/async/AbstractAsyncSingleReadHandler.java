@@ -21,9 +21,9 @@ public abstract class AbstractAsyncSingleReadHandler extends AbstractSingleReadH
     protected void frameAndHandle() throws Throwable
     {
         Object intermediateResult = frameDecodec.decodec(ioBuf);
-        waeponTask.setChannelInfo(serverChannel);
-        waeponTask.setData(intermediateResult);
-        waeponTask.setIndex(0);
+        internalResult.setChannelInfo(serverChannel);
+        internalResult.setData(intermediateResult);
+        internalResult.setIndex(0);
         disruptor.publish(this);
     }
     
@@ -32,18 +32,18 @@ public abstract class AbstractAsyncSingleReadHandler extends AbstractSingleReadH
     {
         try
         {
-            Object intermediateResult = waeponTask.getData();
+            Object intermediateResult = internalResult.getData();
             for (int i = 0; i < handlers.length;)
             {
-                intermediateResult = handlers[i].handle(intermediateResult, waeponTask);
-                if (i == waeponTask.getIndex())
+                intermediateResult = handlers[i].handle(intermediateResult, internalResult);
+                if (i == internalResult.getIndex())
                 {
                     i++;
-                    waeponTask.setIndex(i);
+                    internalResult.setIndex(i);
                 }
                 else
                 {
-                    i = waeponTask.getIndex();
+                    i = internalResult.getIndex();
                 }
             }
             if (intermediateResult instanceof ByteBuf<?>)

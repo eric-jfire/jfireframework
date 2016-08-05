@@ -3,7 +3,7 @@ package com.jfireframework.socket.test;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
-import com.jfireframework.jnet.common.result.InternalTask;
+import com.jfireframework.jnet.common.result.InternalResult;
 
 public class EchoHandler implements DataHandler
 {
@@ -12,7 +12,7 @@ public class EchoHandler implements DataHandler
     private long time = System.currentTimeMillis();
     
     @Override
-    public Object handle(Object data, InternalTask entry) throws JnetException
+    public Object handle(Object data, InternalResult entry) throws JnetException
     {
         ByteBuf<?> byteBuf = (ByteBuf<?>) data;
 //        try
@@ -29,7 +29,7 @@ public class EchoHandler implements DataHandler
     }
     
     @Override
-    public Object catchException(Object data, InternalTask result)
+    public Object catchException(Object data, InternalResult result)
     {
         return null;
     }

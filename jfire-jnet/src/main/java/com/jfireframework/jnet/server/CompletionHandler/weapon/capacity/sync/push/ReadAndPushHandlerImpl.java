@@ -13,7 +13,8 @@ import com.jfireframework.jnet.common.exception.BufNotEnoughException;
 import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
-import com.jfireframework.jnet.common.result.WeaponTask;
+import com.jfireframework.jnet.common.result.InternalResult;
+import com.jfireframework.jnet.common.result.InternalResultImpl;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponSyncReadHandler;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponSyncWriteWithPushHandler;
 
@@ -46,7 +47,7 @@ public class ReadAndPushHandlerImpl implements WeaponSyncReadHandler
     private long                                 endReadTime;
     // 启动读取超时的计数
     private boolean                              startCountdown = false;
-    private final WeaponTask                     waeponTask     = new WeaponTask();
+    private final InternalResult                 internalResult = new InternalResultImpl();
     private final WeaponSyncWriteWithPushHandler writeHandler;
     
     public ReadAndPushHandlerImpl(ServerChannel serverChannel, int capacity)
@@ -87,7 +88,7 @@ public class ReadAndPushHandlerImpl implements WeaponSyncReadHandler
     {
         try
         {
-            WeaponTask task = new WeaponTask();
+            InternalResult task = new InternalResultImpl();
             task.setChannelInfo(serverChannel);
             task.setData(exc);
             task.setIndex(0);
@@ -165,20 +166,20 @@ public class ReadAndPushHandlerImpl implements WeaponSyncReadHandler
             if (index != -1)
             {
                 Object intermediateResult = frameDecodec.decodec(ioBuf);
-                waeponTask.setChannelInfo(serverChannel);
-                waeponTask.setData(intermediateResult);
-                waeponTask.setIndex(0);
+                internalResult.setChannelInfo(serverChannel);
+                internalResult.setData(intermediateResult);
+                internalResult.setIndex(0);
                 for (int i = 0; i < handlers.length;)
                 {
-                    intermediateResult = handlers[i].handle(intermediateResult, waeponTask);
-                    if (i == waeponTask.getIndex())
+                    intermediateResult = handlers[i].handle(intermediateResult, internalResult);
+                    if (i == internalResult.getIndex())
                     {
                         i++;
-                        waeponTask.setIndex(i);
+                        internalResult.setIndex(i);
                     }
                     else
                     {
-                        i = waeponTask.getIndex();
+                        i = internalResult.getIndex();
                     }
                 }
                 if (intermediateResult instanceof ByteBuf<?>)

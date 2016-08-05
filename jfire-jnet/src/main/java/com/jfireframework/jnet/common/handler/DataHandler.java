@@ -1,6 +1,6 @@
 package com.jfireframework.jnet.common.handler;
 
-import com.jfireframework.jnet.common.result.InternalTask;
+import com.jfireframework.jnet.common.result.InternalResult;
 
 public interface DataHandler
 {
@@ -13,7 +13,7 @@ public interface DataHandler
      * @param entry
      * @throws Throwable 如果方法抛出了异常，则首先会执行捕获异常的动作。然后关闭该通道
      */
-    public Object handle(Object data, InternalTask result) throws Throwable;
+    public Object handle(Object data, InternalResult result) throws Throwable;
     
     /**
      * 通道发生异常是，处理链上的该方法会被调用
@@ -22,6 +22,6 @@ public interface DataHandler
      * @param result
      * @return
      */
-    public Object catchException(Object data, InternalTask result);
+    public Object catchException(Object data, InternalResult result);
     
 }

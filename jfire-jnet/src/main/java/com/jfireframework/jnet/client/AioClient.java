@@ -15,7 +15,8 @@ import com.jfireframework.jnet.common.channel.impl.AsyncClientChannelInfo;
 import com.jfireframework.jnet.common.channel.impl.FutureClientChannelInfo;
 import com.jfireframework.jnet.common.exception.JnetException;
 import com.jfireframework.jnet.common.handler.DataHandler;
-import com.jfireframework.jnet.common.result.ClientInternalResult;
+import com.jfireframework.jnet.common.result.InternalResult;
+import com.jfireframework.jnet.common.result.InternalResultImpl;
 
 /**
  * 客户端工具类，注意，该客户端是非线程安全类，其方法不可多线程运行
@@ -32,7 +33,7 @@ public class AioClient
     private DataHandler[]            writeHandlers;
     private ChannelInitListener      initListener;
     private final boolean            async;
-    private ClientInternalResult     internalResult = new ClientInternalResult();
+    private final InternalResult     internalResult = new InternalResultImpl();
     private int                      capacity       = 16;
     
     public AioClient(boolean async)
@@ -129,7 +130,8 @@ public class AioClient
             {
                 throw new InterruptedException("链接已经中断，请重新链接后再发送信息");
             }
-            internalResult.init(data, clientChannel, index);
+            internalResult.setIndex(0);
+            internalResult.setChannelInfo(clientChannel);
             for (int i = index; i < writeHandlers.length;)
             {
                 data = writeHandlers[i].handle(data, internalResult);
@@ -142,7 +144,6 @@ public class AioClient
                 {
                     i = internalResult.getIndex();
                 }
-                
             }
             if (data instanceof ByteBuf<?>)
             {
@@ -163,7 +164,9 @@ public class AioClient
         catch (Exception e)
         {
             Object tmp = e;
-            internalResult.init(e, clientChannel, 0);
+            internalResult.setIndex(0);
+            internalResult.setChannelInfo(clientChannel);
+            internalResult.setData(e);
             for (DataHandler each : writeHandlers)
             {
                 tmp = each.catchException(tmp, internalResult);

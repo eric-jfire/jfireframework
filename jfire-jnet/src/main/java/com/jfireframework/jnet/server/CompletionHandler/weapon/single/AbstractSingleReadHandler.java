@@ -11,28 +11,29 @@ import com.jfireframework.jnet.common.exception.BufNotEnoughException;
 import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
-import com.jfireframework.jnet.common.result.WeaponTask;
+import com.jfireframework.jnet.common.result.InternalResult;
+import com.jfireframework.jnet.common.result.InternalResultImpl;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponWriteHandler;
 
 public abstract class AbstractSingleReadHandler implements WeaponReadHandler
 {
-    protected static final Logger logger         = ConsoleLogFactory.getLogger();
-    protected final FrameDecodec  frameDecodec;
-    protected final DataHandler[] handlers;
-    protected final DirectByteBuf ioBuf          = DirectByteBuf.allocate(100);
-    protected final ServerChannel serverChannel;
+    protected static final Logger  logger         = ConsoleLogFactory.getLogger();
+    protected final FrameDecodec   frameDecodec;
+    protected final DataHandler[]  handlers;
+    protected final DirectByteBuf  ioBuf          = DirectByteBuf.allocate(100);
+    protected final ServerChannel  serverChannel;
     // 读取超时时间
-    protected final long          readTimeout;
-    protected final long          waitTimeout;
+    protected final long           readTimeout;
+    protected final long           waitTimeout;
     // 最后一次读取时间
-    protected long                lastReadTime;
+    protected long                 lastReadTime;
     // 本次读取的截止时间
-    protected long                endReadTime;
+    protected long                 endReadTime;
     // 启动读取超时的计数
-    protected boolean             startCountdown = false;
-    protected final WeaponTask    waeponTask     = new WeaponTask();
-    protected WeaponWriteHandler  writeHandler;
+    protected boolean              startCountdown = false;
+    protected final InternalResult internalResult = new InternalResultImpl();
+    protected WeaponWriteHandler   writeHandler;
     
     public AbstractSingleReadHandler(ServerChannel serverChannel)
     {
@@ -71,7 +72,7 @@ public abstract class AbstractSingleReadHandler implements WeaponReadHandler
     {
         try
         {
-            WeaponTask task = new WeaponTask();
+            InternalResult task = new InternalResultImpl();
             task.setChannelInfo(serverChannel);
             task.setData(exc);
             task.setIndex(0);
