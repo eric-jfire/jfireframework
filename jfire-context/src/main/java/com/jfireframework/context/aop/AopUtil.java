@@ -27,6 +27,7 @@ import com.jfireframework.context.cache.annotation.CacheDelete;
 import com.jfireframework.context.cache.annotation.CacheGet;
 import com.jfireframework.context.cache.annotation.CachePut;
 import com.jfireframework.context.tx.RessourceManager;
+import com.jfireframework.context.tx.TransactionIsolate;
 import com.jfireframework.context.tx.TransactionManager;
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
@@ -437,7 +438,22 @@ public class AopUtil
             }
             CtMethod ctMethod = targetCc.getDeclaredMethod(method.getName(), getParamTypes(method));
             String field = "((com.jfireframework.context.tx.TransactionManager)" + txFieldName + ")";
-            ctMethod.insertBefore(field + ".buildCurrentSession();" + field + ".beginTransAction();");
+            TransactionIsolate isolate = transaction.isolate();
+            switch (isolate)
+            {
+                case USE_DB_SETING:
+                    ctMethod.insertBefore(field + ".buildCurrentSession();" + field + ".beginTransAction(-1);");
+                    break;
+                case READ_COMMITTED:
+                    ctMethod.insertBefore(field + ".buildCurrentSession();" + field + ".beginTransAction(2);");
+                    break;
+                case REPEATABLE_READ:
+                    ctMethod.insertBefore(field + ".buildCurrentSession();" + field + ".beginTransAction(4);");
+                    break;
+                case SERIALIZABLE:
+                    ctMethod.insertBefore(field + ".buildCurrentSession();" + field + ".beginTransAction(8);");
+                    break;
+            }
             ctMethod.insertAfter(field + ".commit();" + field + ".closeCurrentSession();");
             for (CtClass exCc : exCcs)
             {

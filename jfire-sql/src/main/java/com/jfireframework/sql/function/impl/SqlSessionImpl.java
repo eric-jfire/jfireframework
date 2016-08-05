@@ -56,7 +56,7 @@ public class SqlSessionImpl implements SqlSession
     }
     
     @Override
-    public void beginTransAction()
+    public void beginTransAction(int isolate)
     {
         try
         {
@@ -64,6 +64,10 @@ public class SqlSessionImpl implements SqlSession
             {
                 transNum++;
                 connection.setAutoCommit(false);
+                if (isolate > 0)
+                {
+                    connection.setTransactionIsolation(isolate);
+                }
             }
         }
         catch (SQLException e)
@@ -130,6 +134,7 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             closed = true;
+            connection.setAutoCommit(false);
             sessionFactory.removeCurrentSession();
             connection.close();
         }

@@ -47,7 +47,7 @@ public class ConcurrentTest extends BaseTestSupport
                         try
                         {
                             SqlSession session1 = sessionFactory.getOrCreateCurrentSession();
-                            session1.beginTransAction();
+                            session1.beginTransAction(-1);
                             logger.debug("线程1事务开始");
                             User user = session1.get(User.class, 1);
                             logger.debug("读取数据");
@@ -83,7 +83,7 @@ public class ConcurrentTest extends BaseTestSupport
                         try
                         {
                             Thread.sleep(500);
-                            session2.beginTransAction();
+                            session2.beginTransAction(-1);
                             logger.debug("线程2事务开始");
                             User user = session2.get(User.class, 1);
                             logger.debug("读取数据，年龄是{}", user.getAge());

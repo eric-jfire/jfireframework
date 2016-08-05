@@ -6,6 +6,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import com.jfireframework.context.tx.TransactionIsolate;
 
 /**
  * 使用该注解表明该类的公共方法或者注解方法是一个事务方法
@@ -25,4 +26,6 @@ public @interface Transaction
      * @return
      */
     public Class<?>[] exceptions() default { Throwable.class };
+    
+    public TransactionIsolate isolate() default TransactionIsolate.USE_DB_SETING;
 }

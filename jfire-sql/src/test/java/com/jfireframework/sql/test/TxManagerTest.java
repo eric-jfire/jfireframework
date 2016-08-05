@@ -13,7 +13,7 @@ public class TxManagerTest extends BaseTestSupport
         TxManager txManager = new TxManager();
         txManager.setSessionFactory(sessionFactory);
         txManager.buildCurrentSession();
-        txManager.beginTransAction();
+        txManager.beginTransAction(0);
         User4 user4 = new User4();
         user4.setId(12);
         session.save(user4);

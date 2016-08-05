@@ -107,7 +107,7 @@ public class SessionTest extends BaseTestSupport
     @Test
     public void transactionNullTest()
     {
-        session.beginTransAction();
+        session.beginTransAction(0);
         session.update("insert into user (username,age,userid,password) values('你好',12,4,'sdads')");
         SqlSession tmp = sessionFactory.openSession();
         List<Object[]> tmpResult = (List<Object[]>) tmp.listQuery(new Class<?>[] { String.class, Integer.class }, "select username,age from  user where userid=4");
@@ -119,7 +119,7 @@ public class SessionTest extends BaseTestSupport
     @Test
     public void transactionTest()
     {
-        session.beginTransAction();
+        session.beginTransAction(0);
         session.update("insert into user (username,age,userid,password) values('你好',12,4,'dasda')");
         SqlSession tmp = sessionFactory.openSession();
         session.commit();
