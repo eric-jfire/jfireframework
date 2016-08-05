@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.impl.WeaponCapacityAcceptHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityAcceptHandler;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.single.WeaponSingleAcceptHandler;
 import com.jfireframework.jnet.server.util.ServerConfig;
 
@@ -110,6 +110,7 @@ public class AioServer
                 channelGroup.shutdownNow();
                 channelGroup.awaitTermination(10, TimeUnit.SECONDS);
             }
+            serverSocketChannel.close();
             acceptHandler.stop();
             logger.info("服务器关闭");
             lock.lock();

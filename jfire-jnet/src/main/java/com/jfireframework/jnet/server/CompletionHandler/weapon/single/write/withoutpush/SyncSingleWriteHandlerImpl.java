@@ -49,12 +49,6 @@ public class SyncSingleWriteHandlerImpl implements WeaponWriteHandler
     }
     
     @Override
-    public void write(ByteBuf<?> buf, long index)
-    {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
     public void push(ByteBuf<?> buf)
     {
         throw new UnsupportedOperationException();

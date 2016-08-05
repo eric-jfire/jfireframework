@@ -1,6 +1,7 @@
-package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.impl;
+package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync;
 
 import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -11,22 +12,28 @@ import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.AioServer;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.push.ReadAndPushHandlerImpl;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.withoutpush.CapacityReadHandlerImpl;
+import com.jfireframework.jnet.server.util.PushMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
+import com.jfireframework.jnet.server.util.WorkMode;
 
 public class WeaponCapacityAcceptHandler implements AcceptHandler
 {
-    private AioServer           aioServer;
-    private Logger              logger = ConsoleLogFactory.getLogger();
-    private ChannelInitListener initListener;
-    private final int           capacity;
+    private final AsynchronousServerSocketChannel serverSocketChannel;
+    private Logger                                logger = ConsoleLogFactory.getLogger();
+    private ChannelInitListener                   initListener;
+    private final int                             capacity;
+    private final WorkMode                        workMode;
+    private final PushMode                        pushMode;
     
     public WeaponCapacityAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
+        pushMode = serverConfig.getPushMode();
+        workMode = serverConfig.getWorkMode();
         capacity = serverConfig.getChannelCapacity();
         this.initListener = serverConfig.getInitListener();
         Verify.notNull(initListener, "initListener不能为空");
-        this.aioServer = aioServer;
+        serverSocketChannel = aioServer.getServerSocketChannel();
         initListener = serverConfig.getInitListener();
     }
     
@@ -42,9 +49,31 @@ public class WeaponCapacityAcceptHandler implements AcceptHandler
             ServerChannel channelInfo = new ServerChannel();
             channelInfo.setChannel(socketChannel);
             initListener.channelInit(channelInfo);
-            WeaponReadHandler weaponReadHandler = new ReadAndPushHandlerImpl(channelInfo, capacity);
-            weaponReadHandler.readAndWait();
-            aioServer.getServerSocketChannel().accept(null, this);
+            WeaponReadHandler readHandler = null;
+            if (workMode == WorkMode.ASYNC)
+            {
+                if (pushMode == PushMode.OFF)
+                {
+                    
+                }
+                else
+                {
+                    
+                }
+            }
+            else
+            {
+                if (pushMode == PushMode.OFF)
+                {
+                    readHandler = new CapacityReadHandlerImpl(channelInfo, capacity);
+                }
+                else
+                {
+                    
+                }
+            }
+            readHandler.readAndWait();
+            serverSocketChannel.accept(null, this);
         }
         catch (Exception e)
         {

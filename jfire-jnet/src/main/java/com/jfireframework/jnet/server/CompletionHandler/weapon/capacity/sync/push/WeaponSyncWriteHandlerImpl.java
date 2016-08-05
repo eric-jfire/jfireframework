@@ -12,11 +12,11 @@ import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponSyncWriteWithPushHandler;
+import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityWriteHandler;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
-public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteWithPushHandler
+public class WeaponSyncWriteHandlerImpl implements WeaponCapacityWriteHandler
 {
     
     public static class BufHolder
@@ -285,6 +285,13 @@ public class WeaponSyncWriteHandlerImpl implements WeaponSyncWriteWithPushHandle
     public void write(ByteBuf<?> buf)
     {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long cursor()
+    {
+        // TODO Auto-generated method stub
+        return 0;
     }
     
 }

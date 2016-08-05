@@ -91,12 +91,6 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
     }
     
     @Override
-    public void write(ByteBuf<?> buf, long index)
-    {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
     public void push(ByteBuf<?> buf)
     {
         if (writeState.value() == IDLE && writeState.compareAndSwap(IDLE, WORK))

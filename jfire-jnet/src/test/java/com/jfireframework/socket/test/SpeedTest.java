@@ -7,9 +7,11 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -36,11 +38,11 @@ import com.jfireframework.jnet.server.util.PushMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
 import com.jfireframework.jnet.server.util.WorkMode;
 
-public class EchoTest
+public class SpeedTest
 {
     private int    threadCountStart = 1;
     private int    threadCountEnd   = 100;
-    private int    sendCount        = 1000;
+    private int    sendCount        = 100;
     private String ip               = "127.0.0.1";
     private int    port             = 7789;
     
@@ -53,7 +55,7 @@ public class EchoTest
         config.setWorkMode(WorkMode.SYNC);
         config.setSocketThreadSize(40);
         config.setAsyncCapacity(16);
-        config.setChannelCapacity(128);
+        config.setChannelCapacity(4);
         config.setExecutorMode(ExecutorMode.FIX);
         config.setAsyncThreadSize(16);
         config.setInitListener(
@@ -160,7 +162,7 @@ public class EchoTest
     
     public void connecttest(CpuCachePadingInt result) throws Throwable
     {
-        AioClient client = new AioClient(false);
+        AioClient client = new AioClient(true);
         client.setAddress(ip);
         client.setPort(port);
         client.setWriteHandlers(
@@ -183,6 +185,7 @@ public class EchoTest
                     }
                 }, new LengthPreHandler(0, 4)
         );
+        final CountDownLatch countDownLatch = new CountDownLatch(sendCount);
         client.setInitListener(
                 new ChannelInitListener() {
                     
@@ -201,6 +204,7 @@ public class EchoTest
                                         String value = null;
                                         value = buf.readString();
                                         buf.release();
+                                        countDownLatch.countDown();
                                         return value;
                                     }
                                     
@@ -227,10 +231,12 @@ public class EchoTest
                 result.compareAndSwap(0, 1);
             }
         }
-        Future<?> future = client.connect().write("987654321");
+        // Future<?> future = client.connect().write("987654321");
         try
         {
-            Assert.assertEquals("987654321", (String) future.get(50000, TimeUnit.SECONDS));
+            countDownLatch.await(30, TimeUnit.SECONDS);
+            // Assert.assertEquals("987654321", (String) future.get(50000,
+            // TimeUnit.SECONDS));
         }
         catch (Exception e)
         {
