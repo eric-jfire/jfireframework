@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet.common.channel.ChannelInitListener;
-import com.jfireframework.jnet.common.channel.impl.AbstractClientChannel;
+import com.jfireframework.jnet.common.channel.ClientChannel;
 import com.jfireframework.jnet.common.channel.impl.AsyncClientChannelInfo;
 import com.jfireframework.jnet.common.channel.impl.FutureClientChannelInfo;
 import com.jfireframework.jnet.common.exception.JnetException;
@@ -26,7 +26,7 @@ import com.jfireframework.jnet.common.result.InternalResultImpl;
  */
 public class AioClient
 {
-    private AbstractClientChannel    clientChannel;
+    private ClientChannel            clientChannel;
     private String                   address;
     private int                      port;
     private AsynchronousChannelGroup channelGroup;
@@ -158,7 +158,7 @@ public class AioClient
             }
             else
             {
-                return AbstractClientChannel.NORESULT;
+                return AsyncClientChannelInfo.NORESULT;
             }
         }
         catch (Exception e)

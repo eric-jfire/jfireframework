@@ -4,8 +4,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingLong;
 import com.jfireframework.jnet.client.ResponseFuture;
+import com.jfireframework.jnet.common.channel.ClientChannel;
 
-public class FutureClientChannelInfo extends AbstractClientChannel
+public class FutureClientChannelInfo extends AbstractChannel implements ClientChannel
 {
     
     class feaureHolder
