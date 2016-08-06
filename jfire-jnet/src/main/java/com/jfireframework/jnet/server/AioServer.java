@@ -4,12 +4,15 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
+import java.util.Queue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import com.jfireframework.baseutil.collection.buffer.ByteBufPool;
+import com.jfireframework.baseutil.collection.buffer.QueueFactory;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
@@ -26,6 +29,20 @@ public class AioServer
     private Logger                          logger   = ConsoleLogFactory.getLogger();
     private AsynchronousChannelGroup        channelGroup;
     private ServerConfig                    serverConfig;
+    static
+    {
+        class TransferQueueFactory implements QueueFactory
+        {
+            
+            @Override
+            public <T> Queue<T> newInstance()
+            {
+                return new java.util.concurrent.LinkedTransferQueue<T>();
+            }
+            
+        }
+        ByteBufPool.queueFactory = new TransferQueueFactory();
+    }
     
     public AioServer(ServerConfig serverConfig)
     {

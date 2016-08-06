@@ -18,13 +18,15 @@ import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.handler.LengthPreHandler;
 import com.jfireframework.jnet.common.result.InternalResult;
 import com.jfireframework.jnet.server.AioServer;
+import com.jfireframework.jnet.server.util.AcceptMode;
+import com.jfireframework.jnet.server.util.PushMode;
 import com.jfireframework.jnet.server.util.ServerConfig;
 import com.jfireframework.jnet.server.util.WorkMode;
 
 public class SingleSpeedTest
 {
     private int    threadCount = 1;
-    private int    sendCount   = 1000;
+    private int    sendCount   = 100000;
     private String ip          = "127.0.0.1";
     private int    port        = 8553;
     
@@ -32,10 +34,12 @@ public class SingleSpeedTest
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setWorkMode(WorkMode.ASYNC);
+        config.setAcceptMode(AcceptMode.weapon_capacity);
+        config.setPushMode(PushMode.OFF);
+        config.setWorkMode(WorkMode.SYNC);
         config.setSocketThreadSize(16);
         config.setAsyncThreadSize(4);
-        config.setChannelCapacity(4);
+        config.setChannelCapacity(64);
         config.setAsyncCapacity(32);
         config.setInitListener(new ChannelInitListener() {
             

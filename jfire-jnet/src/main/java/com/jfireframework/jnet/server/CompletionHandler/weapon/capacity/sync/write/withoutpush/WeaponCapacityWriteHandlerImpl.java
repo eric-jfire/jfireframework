@@ -13,26 +13,11 @@ import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.Wea
 import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityWriteHandler;
 import sun.misc.Unsafe;
 
-@SuppressWarnings("restriction")
-public class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWriteHandler
+public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWriteHandler
 {
-    
-    protected abstract class left
-    {
-        protected long p1, p2, p3, p4, p5, p6, p7;
-        protected int  p8;
-    }
-    
-    protected abstract class value extends left
+    private class BufHolder
     {
         protected volatile ByteBuf<?> buf;
-    }
-    
-    protected class BufHolder extends value
-    {
-        
-        protected int  p9;
-        protected long p10, p11, p12, p13, p14, p15, p16;
         
         public ByteBuf<?> getBuf()
         {
@@ -44,15 +29,11 @@ public class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWriteHandle
             this.buf = buf;
         }
         
-        public long nouse()
-        {
-            return p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10 + p11 + p12 + p13 + p14 + p15 + p16;
-        }
     }
     
-    protected final static int    base;
-    protected final static int    scale;
-    protected static final Unsafe unsafe = ReflectUtil.getUnsafe();
+    private final static int    base;
+    private final static int    scale;
+    private static final Unsafe unsafe = ReflectUtil.getUnsafe();
     static
     {
         base = unsafe.arrayBaseOffset(BufHolder[].class);
@@ -69,15 +50,15 @@ public class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWriteHandle
             throw new RuntimeException("错误的长度信息");
         }
     }
-    protected final BufHolder[]             bufArray;
-    protected int                           lengthMask;
+    private final BufHolder[]               bufArray;
+    private int                             lengthMask;
     private volatile long                   cursor      = 0;
     private long                            wrap        = 0;
     /**
-     * 代表着已经被写入的序号，所以使用的时候是+1
+     * 代表着已经被写入的序号，所以使用的时候，wrap的值应该是该属性的值+1
      */
     private final CpuCachePadingLong        writeCursor = new CpuCachePadingLong(-1);
-    protected int                           capacity    = 0;
+//    private int                             capacity    = 0;
     private final WeaponCapacityReadHandler readHandler;
     private final ServerChannel             serverChannel;
     private final int                       idle        = 0;
@@ -129,7 +110,6 @@ public class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWriteHandle
             wrap = writeCursor.value() + 1;
             do
             {
-                // wrap = readHandler.cursor();
                 if (cursor < wrap)
                 {
                     buf = getBuf(cursor);
@@ -141,7 +121,6 @@ public class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWriteHandle
                     readHandler.notifyRead();
                     idleState.set(idle);
                     wrap = writeCursor.value() + 1;
-                    // wrap = readHandler.cursor();
                     if (cursor < wrap)
                     {
                         if (idleState.compareAndSwap(idle, work))
