@@ -6,8 +6,8 @@ import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponWriteHandler;
+import com.jfireframework.jnet.server.CompletionHandler.WeaponReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.WeaponWriteHandler;
 
 public class SyncSingleWriteHandlerImpl implements WeaponWriteHandler
 {

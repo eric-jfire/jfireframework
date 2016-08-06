@@ -1,6 +1,6 @@
 package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync;
 
-import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.WeaponReadHandler;
 
 public interface WeaponCapacityReadHandler extends WeaponReadHandler
 {

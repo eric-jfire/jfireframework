@@ -1,7 +1,7 @@
 package com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync;
 
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponWriteHandler;
+import com.jfireframework.jnet.server.CompletionHandler.WeaponWriteHandler;
 
 public interface WeaponCapacityWriteHandler extends WeaponWriteHandler
 {

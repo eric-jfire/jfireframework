@@ -1,4 +1,4 @@
-package com.jfireframework.jnet.server.CompletionHandler.weapon;
+package com.jfireframework.jnet.server.CompletionHandler;
 
 import java.nio.channels.CompletionHandler;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;

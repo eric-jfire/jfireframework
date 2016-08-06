@@ -13,8 +13,8 @@ import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.InternalResult;
 import com.jfireframework.jnet.common.result.InternalResultImpl;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponWriteHandler;
+import com.jfireframework.jnet.server.CompletionHandler.WeaponReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.WeaponWriteHandler;
 
 public abstract class AbstractSingleReadHandler implements WeaponReadHandler
 {

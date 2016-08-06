@@ -32,6 +32,7 @@ public class TplTest
         List<Person> persons = new LinkedList<Person>();
         Person person = new Person();
         person.setName("林斌");
+        person.setAge(15);
         // data.put("person", person);
         persons.add(person);
         person = new Person();

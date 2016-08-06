@@ -14,7 +14,7 @@ import com.jfireframework.jnet.common.channel.ChannelInitListener;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.server.AioServer;
 import com.jfireframework.jnet.server.CompletionHandler.AcceptHandler;
-import com.jfireframework.jnet.server.CompletionHandler.weapon.WeaponReadHandler;
+import com.jfireframework.jnet.server.CompletionHandler.WeaponReadHandler;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.single.async.SingleAsyncAction;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.single.async.push.AsyncSingleReadWithPushHandlerImpl;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.single.async.withoutpush.AsyncSingleReadHandlerImpl;
