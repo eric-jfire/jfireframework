@@ -35,10 +35,21 @@ public class AioClient
     private final boolean            async;
     private final InternalResult     internalResult = new InternalResultImpl();
     private int                      capacity       = 16;
+    private ClientReadCompleter      clientReadCompleter;
     
     public AioClient(boolean async)
     {
         this.async = async;
+    }
+    
+    public int getCapacity()
+    {
+        return capacity;
+    }
+    
+    public void setCapacity(int capacity)
+    {
+        this.capacity = capacity;
     }
     
     public boolean isAsync()
@@ -80,7 +91,7 @@ public class AioClient
         if (clientChannel == null || clientChannel.isOpen() == false)
         {
             AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(channelGroup);
-            socketChannel.connect(new InetSocketAddress(address, port)).get(30, TimeUnit.SECONDS);
+            socketChannel.connect(new InetSocketAddress(address, port)).get(5, TimeUnit.SECONDS);
             if (async == true)
             {
                 clientChannel = new AsyncClientChannelInfo();
@@ -93,7 +104,7 @@ public class AioClient
             initListener.channelInit(clientChannel);
             Verify.notNull(clientChannel.getFrameDecodec(), "没有设置framedecodec");
             Verify.notNull(clientChannel.getHandlers(), "没有设置Datahandler");
-            ClientReadCompleter clientReadCompleter = new ClientReadCompleter(this, clientChannel);
+            clientReadCompleter = new ClientReadCompleter(this, clientChannel);
             clientReadCompleter.readAndWait();
         }
         return this;
@@ -113,6 +124,8 @@ public class AioClient
         return write(object, 0);
     }
     
+    private int total = 0;
+    
     /**
      * 将一个对象写出并且指定开始处理时的handler顺序，然后返回一个future。该future表明的是服务端对该请求报文的响应报文的处理结果
      * 
@@ -130,6 +143,7 @@ public class AioClient
             {
                 throw new InterruptedException("链接已经中断，请重新链接后再发送信息");
             }
+            Object origin = data;
             internalResult.setIndex(0);
             internalResult.setChannelInfo(clientChannel);
             for (int i = index; i < writeHandlers.length;)
@@ -147,7 +161,9 @@ public class AioClient
             }
             if (data instanceof ByteBuf<?>)
             {
-                Future<?> result = clientChannel.addFuture();
+                ResponseFuture result = (ResponseFuture) clientChannel.addFuture();
+                result.origin = origin;
+                clientReadCompleter.total += ((ByteBuf<?>) data).remainRead();
                 ByteBuffer buffer = ((ByteBuf<?>) data).nioBuffer();
                 while (buffer.hasRemaining())
                 {

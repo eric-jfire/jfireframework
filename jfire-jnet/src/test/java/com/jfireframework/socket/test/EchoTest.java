@@ -38,15 +38,21 @@ import com.jfireframework.jnet.server.util.WorkMode;
 
 public class EchoTest
 {
-    private int    threadCountStart = 1;
-    private int    threadCountEnd   = 200;
-    private int    sendCount        = 100;
-    private String ip               = "127.0.0.1";
-    private int    port             = 7789;
+    private int      threadCountStart = 100;
+    private int      threadCountEnd   = 200;
+    private int      sendCount        = 100;
+    private String   ip               = "127.0.0.1";
+    private int      port             = 7789;
+    private String[] content;
     
     @Test
     public void test() throws Throwable
     {
+        content = new String[sendCount];
+        for (int i = 0; i < sendCount; i++)
+        {
+            content[i] = String.valueOf(i);
+        }
         ServerConfig config = new ServerConfig();
         config.setAcceptMode(AcceptMode.weapon_capacity);
         config.setPushMode(PushMode.OFF);
@@ -56,17 +62,15 @@ public class EchoTest
         config.setChannelCapacity(128);
         config.setExecutorMode(ExecutorMode.FIX);
         config.setAsyncThreadSize(16);
-        config.setInitListener(
-                new ChannelInitListener() {
-                    
-                    @Override
-                    public void channelInit(JnetChannel serverChannelInfo)
-                    {
-                        serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
-                        serverChannelInfo.setHandlers(new EchoHandler());
-                    }
-                }
-        );
+        config.setInitListener(new ChannelInitListener() {
+            
+            @Override
+            public void channelInit(JnetChannel serverChannelInfo)
+            {
+                serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
+                serverChannelInfo.setHandlers(new EchoHandler());
+            }
+        });
         config.setPort(port);
         AioServer aioServer = new AioServer(config);
         aioServer.start();
@@ -78,24 +82,22 @@ public class EchoTest
             Thread[] threads = new Thread[index];
             for (int i = 0; i < threads.length; i++)
             {
-                threads[i] = new Thread(
-                        new Runnable() {
-                            
-                            @Override
-                            public void run()
-                            {
-                                try
-                                {
-                                    barrier.await();
-                                    connecttest(result);
-                                }
-                                catch (Throwable e)
-                                {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }, "测试线程_" + index + "_" + i
-                );
+                threads[i] = new Thread(new Runnable() {
+                    
+                    @Override
+                    public void run()
+                    {
+                        try
+                        {
+                            barrier.await();
+                            connecttest(result);
+                        }
+                        catch (Throwable e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+                }, "测试线程_" + index + "_" + i);
                 threads[i].start();
             }
             Timewatch timewatch = new Timewatch();
@@ -162,65 +164,60 @@ public class EchoTest
     {
         AioClient client = new AioClient(false);
         client.setAddress(ip);
+        client.setCapacity(128);
         client.setPort(port);
-        client.setWriteHandlers(
-                new DataHandler() {
+        client.setWriteHandlers(new DataHandler() {
+            
+            @Override
+            public Object handle(Object data, InternalResult result) throws JnetException
+            {
+                ByteBuf<?> buf = DirectByteBuf.allocate(100);
+                buf.addWriteIndex(4);
+                buf.writeString((String) data);
+                return buf;
+            }
+            
+            @Override
+            public Object catchException(Object data, InternalResult result)
+            {
+                // ((Throwable) data).printStackTrace();
+                return data;
+            }
+        }, new LengthPreHandler(0, 4));
+        client.setInitListener(new ChannelInitListener() {
+            
+            @Override
+            public void channelInit(JnetChannel jnetChannel)
+            {
+                jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
+                jnetChannel.setHandlers(new DataHandler() {
                     
                     @Override
                     public Object handle(Object data, InternalResult result) throws JnetException
                     {
-                        ByteBuf<?> buf = DirectByteBuf.allocate(100);
-                        buf.addWriteIndex(4);
-                        buf.writeString((String) data);
-                        return buf;
+                        // System.out.println("收到数据");
+                        ByteBuf<?> buf = (ByteBuf<?>) data;
+                        String value = null;
+                        value = buf.readString();
+                        buf.release();
+                        return value;
                     }
                     
                     @Override
                     public Object catchException(Object data, InternalResult result)
                     {
+                        // System.err.println("客户端");
                         // ((Throwable) data).printStackTrace();
                         return data;
                     }
-                }, new LengthPreHandler(0, 4)
-        );
-        client.setInitListener(
-                new ChannelInitListener() {
-                    
-                    @Override
-                    public void channelInit(JnetChannel jnetChannel)
-                    {
-                        jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
-                        jnetChannel.setHandlers(
-                                new DataHandler() {
-                                    
-                                    @Override
-                                    public Object handle(Object data, InternalResult result) throws JnetException
-                                    {
-                                        // System.out.println("收到数据");
-                                        ByteBuf<?> buf = (ByteBuf<?>) data;
-                                        String value = null;
-                                        value = buf.readString();
-                                        buf.release();
-                                        return value;
-                                    }
-                                    
-                                    @Override
-                                    public Object catchException(Object data, InternalResult result)
-                                    {
-                                        // System.err.println("客户端");
-                                        // ((Throwable) data).printStackTrace();
-                                        return data;
-                                    }
-                                }
-                        );
-                    }
-                }
-        );
+                });
+            }
+        });
         for (int i = 0; i < sendCount; i++)
         {
             try
             {
-                client.connect().write("123456");
+                client.connect().write(content[i]);
             }
             catch (Exception e)
             {

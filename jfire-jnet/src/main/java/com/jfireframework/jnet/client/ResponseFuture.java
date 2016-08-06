@@ -5,6 +5,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
+import com.sun.org.apache.xml.internal.resolver.helpers.PublicId;
 
 public class ResponseFuture implements Future<Object>
 {
@@ -15,6 +16,7 @@ public class ResponseFuture implements Future<Object>
     public static final boolean  READY     = true;
     public static final boolean  UN_READY  = false;
     protected volatile boolean   dataState = UN_READY;
+    public Object                origin;
     
     public ResponseFuture()
     {

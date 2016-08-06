@@ -5,6 +5,8 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
+import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
+import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.common.channel.ClientChannel;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 import com.jfireframework.jnet.common.exception.BufNotEnoughException;
@@ -24,8 +26,9 @@ public class ClientReadCompleter implements CompletionHandler<Integer, ClientCha
     private final ClientChannel       channelInfo;
     protected long                    readTimeout;
     protected long                    waitTimeout;
-    // private static final Logger logger = ConsoleLogFactory.getLogger();
+    private static final Logger       logger         = ConsoleLogFactory.getLogger();
     private InternalResult            internalResult = new InternalResultImpl();
+    public int                        total;
     
     public ClientReadCompleter(AioClient aioClient, ClientChannel channelInfo)
     {
@@ -98,6 +101,7 @@ public class ClientReadCompleter implements CompletionHandler<Integer, ClientCha
             }
             catch (Throwable e)
             {
+                logger.error("未知异常", e);
                 catchThrowable(e);
                 return;
             }

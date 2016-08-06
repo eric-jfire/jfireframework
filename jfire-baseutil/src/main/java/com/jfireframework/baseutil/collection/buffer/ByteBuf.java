@@ -87,14 +87,18 @@ public abstract class ByteBuf<T>
     public void releaseMemOnly()
     {
         readIndex = writeIndex = capacity = 0;
+        cachedNioBuffer = null;
         if (memHost == null)
         {
             _release();
             return;
         }
+        if (memory == null)
+        {
+            throw new NullPointerException("数据已经被释放，释放信息是:" + releaseInfo);
+        }
         memHost.offer(memory);
         memory = null;
-        cachedNioBuffer = null;
     }
     
     public void release()
@@ -102,7 +106,7 @@ public abstract class ByteBuf<T>
         releaseMemOnly();
         if (traceFlag)
         {
-            releaseInfo = CodeLocation.getCodeLocation(4);
+            releaseInfo = CodeLocation.getCodeLocation(3);
         }
         bufHost.offer(this);
     }

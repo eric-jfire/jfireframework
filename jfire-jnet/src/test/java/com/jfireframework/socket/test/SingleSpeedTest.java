@@ -39,7 +39,7 @@ public class SingleSpeedTest
         config.setWorkMode(WorkMode.SYNC);
         config.setSocketThreadSize(16);
         config.setAsyncThreadSize(4);
-        config.setChannelCapacity(64);
+        config.setChannelCapacity(16);
         config.setAsyncCapacity(32);
         config.setInitListener(new ChannelInitListener() {
             
@@ -151,7 +151,7 @@ public class SingleSpeedTest
         Future<?> future = client.connect().write("987654321");
         try
         {
-            Assert.assertEquals("987654321", (String) future.get(20, TimeUnit.SECONDS));
+            Assert.assertEquals("987654321", (String) future.get(2000, TimeUnit.SECONDS));
         }
         catch (Exception e)
         {

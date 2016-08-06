@@ -29,7 +29,8 @@ public class BaseServerTest
         ServerConfig config = new ServerConfig();
         // 服务端监听的端口
         config.setPort(81);
-        config.setSocketThreadSize(100);
+        config.setSocketThreadSize(4);
+        config.setChannelCapacity(64);
         config.setAcceptMode(AcceptMode.weapon_capacity);
         config.setWorkMode(WorkMode.SYNC);
         config.setPushMode(PushMode.OFF);
@@ -100,7 +101,7 @@ public class BaseServerTest
         );
         // 使用对应的参数链接服务端
         aioClient.connect();
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < 10; i++)
         {
             Future<?> future = aioClient.write("你好，这里是客户端");
             // future.get();
@@ -136,7 +137,7 @@ class myInitListener implements ChannelInitListener
                     public Object handle(Object data, InternalResult result) throws JnetException
                     {
                         ByteBuf<?> buf = (ByteBuf<?>) data;
-                        // System.out.println("收到消息:" + buf.readString());
+//                         System.out.println("收到消息:" + buf.readString());
                         buf.release();
                         return "客户端你好，我收到消息了";
                     }

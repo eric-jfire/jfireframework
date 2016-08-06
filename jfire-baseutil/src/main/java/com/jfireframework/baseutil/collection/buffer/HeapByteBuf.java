@@ -117,7 +117,9 @@ public class HeapByteBuf extends ByteBuf<byte[]>
         else
         {
             ByteBuffer buffer = byteBuf.nioBuffer();
-            buffer.get(memory, readIndex, length);
+            int posi = buffer.position();
+            buffer.get(memory, writeIndex, length);
+            buffer.position(posi);
         }
     }
     

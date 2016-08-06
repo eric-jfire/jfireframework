@@ -167,8 +167,13 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
         else
         {
             ByteBuffer buffer = byteBuf.nioBuffer();
-            buffer.limit(buffer.position() + length);
+            int posi = buffer.position();
+            int limit = buffer.limit();
+            buffer.limit(posi + length);
             memory.put(buffer);
+            buffer.limit(limit);
+            buffer.position(posi);
+            
         }
     }
     

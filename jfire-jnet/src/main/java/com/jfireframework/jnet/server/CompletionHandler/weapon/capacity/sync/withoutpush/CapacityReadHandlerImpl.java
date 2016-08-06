@@ -161,6 +161,7 @@ public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
         }
         catch (Throwable e)
         {
+            logger.error("未预料的异常", e);
             catchThrowable(e);
             return;
         }
@@ -210,8 +211,8 @@ public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
                     continue;
                 }
                 readState.set(IDLE);
-                wrap = writeHandler.cursor() + capacity;
-                if (cursor >= wrap)
+                long tmp = writeHandler.cursor() + capacity;
+                if (cursor >= tmp)
                 {
                     return YIDLE;
                 }
@@ -219,6 +220,7 @@ public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
                 {
                     if (readState.compareAndSwap(IDLE, WORK))
                     {
+                        wrap = writeHandler.cursor() + capacity;
                         continue;
                     }
                     else
