@@ -5,7 +5,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
-import com.sun.org.apache.xml.internal.resolver.helpers.PublicId;
 
 public class ResponseFuture implements Future<Object>
 {

@@ -150,8 +150,8 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
     public void failed(Throwable exc, ByteBuf<?> buf)
     {
         logger.error("error", exc);
-        buf.release();
         readHandler.catchThrowable(exc);
+        buf.release();
     }
     
     public void write(ByteBuf<?> buf, long index)
