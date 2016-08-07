@@ -2,20 +2,18 @@ package com.jfireframework.jnet.common.channel.impl;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 import com.jfireframework.jnet.common.handler.DataHandler;
+import com.jfireframework.jnet.common.util.ResourceState;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
 public abstract class AbstractChannel implements JnetChannel
 {
-    public final static int             OPEN        = 1;
-    public final static int             CLOSE       = 2;
     // 消息通道的打开状态
-    protected AtomicInteger             openState   = new AtomicInteger(OPEN);
+    protected final ResourceState       openState   = new ResourceState();
     protected AsynchronousSocketChannel socketChannel;
     protected FrameDecodec              frameDecodec;
     protected DataHandler[]             handlers;
@@ -25,6 +23,7 @@ public abstract class AbstractChannel implements JnetChannel
     protected String                    remoteAddress;
     protected String                    localAddress;
     protected static final Unsafe       unsafe      = ReflectUtil.getUnsafe();
+    
     @Override
     public void setHandlers(DataHandler... handlers)
     {
@@ -64,17 +63,13 @@ public abstract class AbstractChannel implements JnetChannel
     @Override
     public boolean isOpen()
     {
-        return openState.get() == OPEN;
+        return openState.isOpen();
     }
     
     @Override
     public void closeChannel()
     {
-        if (openState.get() == CLOSE)
-        {
-            return;
-        }
-        if (openState.compareAndSet(OPEN, CLOSE))
+        if (openState.close())
         {
             try
             {
@@ -87,6 +82,7 @@ public abstract class AbstractChannel implements JnetChannel
             }
         }
     }
+    
     @Override
     public void setReadTimeout(long readTimeout)
     {

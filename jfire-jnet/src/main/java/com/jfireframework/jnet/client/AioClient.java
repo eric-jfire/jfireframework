@@ -159,8 +159,7 @@ public class AioClient
             }
             if (data instanceof ByteBuf<?>)
             {
-                ResponseFuture result = (ResponseFuture) clientChannel.addFuture();
-                result.origin = origin;
+                Future<?> result = clientChannel.addFuture();
                 clientReadCompleter.total += ((ByteBuf<?>) data).remainRead();
                 ByteBuffer buffer = ((ByteBuf<?>) data).nioBuffer();
                 while (buffer.hasRemaining())

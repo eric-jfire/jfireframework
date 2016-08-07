@@ -40,7 +40,6 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
      */
     private final CpuCachePadingLong        writeCursor       = new CpuCachePadingLong(-1);
     private final WeaponCapacityReadHandler readHandler;
-    private final ServerChannel             serverChannel;
     private final int                       idle              = 0;
     private final int                       work              = 1;
     private final CpuCachePadingInt         idleState         = new CpuCachePadingInt(idle);
@@ -53,7 +52,6 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
     public WeaponCapacityWriteHandlerImpl(ServerChannel serverChannel, int capacity, WeaponCapacityReadHandler readHandler)
     {
         this.readHandler = readHandler;
-        this.serverChannel = serverChannel;
         socketChannel = serverChannel.getSocketChannel();
         bufArray = new BufHolder[capacity];
         for (int i = 0; i < capacity; i++)
@@ -81,7 +79,7 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
         ByteBuffer buffer = buf.cachedNioBuffer();
         if (buffer.hasRemaining())
         {
-            serverChannel.getSocketChannel().write(buffer, 10, TimeUnit.SECONDS, buf, this);
+            socketChannel.write(buffer, 10, TimeUnit.SECONDS, buf, this);
             return;
         }
         buf.release();
@@ -165,7 +163,7 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
             if (cursor < wrap)
             {
                 buf = getBuf(cursor);
-                serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+                socketChannel.write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
             }
             else
             {
@@ -211,7 +209,7 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
             {
                 if (buffers[i].hasRemaining())
                 {
-                    serverChannel.getSocketChannel().write(buffers, i, length - i, 10, TimeUnit.SECONDS, buffers, this);
+                    socketChannel.write(buffers, i, length - i, 10, TimeUnit.SECONDS, buffers, this);
                     return;
                 }
             }

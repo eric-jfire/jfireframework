@@ -15,7 +15,6 @@ public class ResponseFuture implements Future<Object>
     public static final boolean  READY     = true;
     public static final boolean  UN_READY  = false;
     protected volatile boolean   dataState = UN_READY;
-    public Object                origin;
     
     public ResponseFuture()
     {

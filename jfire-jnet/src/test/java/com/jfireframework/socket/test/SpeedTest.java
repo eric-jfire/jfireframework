@@ -41,8 +41,8 @@ import com.jfireframework.jnet.server.util.WorkMode;
 public class SpeedTest
 {
     private int    threadCountStart = 1;
-    private int    threadCountEnd   = 200;
-    private int    sendCount        = 1000;
+    private int    threadCountEnd   = 100;
+    private int    sendCount        = 10000;
     private String ip               = "127.0.0.1";
     private int    port             = 7789;
     
@@ -55,7 +55,7 @@ public class SpeedTest
         config.setWorkMode(WorkMode.SYNC);
         config.setSocketThreadSize(40);
         config.setAsyncCapacity(16);
-        config.setChannelCapacity(8);
+        config.setChannelCapacity(64);
         config.setExecutorMode(ExecutorMode.FIX);
         config.setAsyncThreadSize(16);
         config.setInitListener(
@@ -228,6 +228,7 @@ public class SpeedTest
             }
             catch (Exception e)
             {
+                e.printStackTrace();
                 result.compareAndSwap(0, 1);
             }
         }
