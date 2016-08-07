@@ -124,8 +124,6 @@ public class AioClient
         return write(object, 0);
     }
     
-    private int total = 0;
-    
     /**
      * 将一个对象写出并且指定开始处理时的handler顺序，然后返回一个future。该future表明的是服务端对该请求报文的响应报文的处理结果
      * 

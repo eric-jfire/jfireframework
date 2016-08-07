@@ -23,12 +23,11 @@ public abstract class AbstractBinderField implements BinderField
     {
         type = field.getDeclaringClass();
         String fieldName = field.isAnnotationPresent(MvcRename.class) ? field.getAnnotation(MvcRename.class).value() : field.getName();
-        name = StringUtil.isNotBlank(prefix) ? prefix + '.' + fieldName : fieldName;
+        name = StringUtil.isNotBlank(prefix) ? prefix + '[' + fieldName + ']' : fieldName;
         offset = unsafe.objectFieldOffset(field);
         
     }
     
-    @SuppressWarnings("restriction")
     @Override
     public Object setValue(HttpServletRequest request, Object entity, Map<String, String> map, HttpServletResponse response) throws InstantiationException, IllegalAccessException
     {

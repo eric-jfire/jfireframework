@@ -19,15 +19,13 @@ public class HeapByteBuf extends ByteBuf<byte[]>
     {
         this.memory = array;
         this.bufHost = bufHost;
-        readIndex = writeIndex = 0;
-        capacity = array.length;
+        maskRead = maskWrite = readIndex = writeIndex = 0;
         this.memHost = queue;
     }
     
     @Override
     protected void _release()
     {
-        memory = null;
     }
     
     protected void _expend(int size)

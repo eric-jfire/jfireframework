@@ -25,8 +25,7 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
         this.memory = memory;
         this.bufHost = bufHost;
         this.memHost = host;
-        readIndex = 0;
-        writeIndex = 0;
+        maskRead = maskWrite = readIndex = writeIndex = 0;
         capacity = memory.capacity();
     }
     

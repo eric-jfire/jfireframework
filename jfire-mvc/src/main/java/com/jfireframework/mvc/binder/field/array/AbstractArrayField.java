@@ -24,6 +24,7 @@ public abstract class AbstractArrayField extends AbstractBinderField
         index = matchPrefix.length();
     }
     
+    @SuppressWarnings("restriction")
     @Override
     public Object setValue(HttpServletRequest request, Object entity, Map<String, String> map, HttpServletResponse response) throws InstantiationException, IllegalAccessException
     {

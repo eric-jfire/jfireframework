@@ -86,11 +86,12 @@ public abstract class ByteBuf<T>
     
     public void releaseMemOnly()
     {
-        readIndex = writeIndex = capacity = 0;
+        maskRead = maskWrite = readIndex = writeIndex = capacity = 0;
         cachedNioBuffer = null;
         if (memHost == null)
         {
             _release();
+            memory = null;
             return;
         }
         if (memory == null)
