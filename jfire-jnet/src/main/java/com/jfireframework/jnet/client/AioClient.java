@@ -94,13 +94,12 @@ public class AioClient
             socketChannel.connect(new InetSocketAddress(address, port)).get(5, TimeUnit.SECONDS);
             if (async == true)
             {
-                clientChannel = new AsyncClientChannelInfo();
+                clientChannel = new AsyncClientChannelInfo(socketChannel);
             }
             else
             {
-                clientChannel = new FutureClientChannelInfo(capacity);
+                clientChannel = new FutureClientChannelInfo(capacity, socketChannel);
             }
-            clientChannel.setChannel(socketChannel);
             initListener.channelInit(clientChannel);
             Verify.notNull(clientChannel.getFrameDecodec(), "没有设置framedecodec");
             Verify.notNull(clientChannel.getHandlers(), "没有设置Datahandler");

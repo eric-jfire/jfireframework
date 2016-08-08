@@ -1,5 +1,6 @@
 package com.jfireframework.jnet.common.channel.impl;
 
+import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingLong;
@@ -23,8 +24,9 @@ public class FutureClientChannelInfo extends AbstractChannel implements ClientCh
     private CpuCachePadingLong putCursor    = new CpuCachePadingLong(0);
     private CpuCachePadingLong singalCursor = new CpuCachePadingLong(0);
     
-    public FutureClientChannelInfo(int capacity)
+    public FutureClientChannelInfo(int capacity, AsynchronousSocketChannel socketChannel)
     {
+        super(socketChannel);
         int tmp = 1;
         while (tmp < capacity)
         {

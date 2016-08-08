@@ -1,5 +1,6 @@
 package com.jfireframework.jnet.common.channel.impl;
 
+import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -9,6 +10,11 @@ import com.jfireframework.jnet.common.channel.ClientChannel;
 public class AsyncClientChannelInfo extends AbstractChannel implements ClientChannel
 {
     
+    public AsyncClientChannelInfo(AsynchronousSocketChannel socketChannel)
+    {
+        super(socketChannel);
+    }
+
     public static Future<Void> NORESULT = new Future<Void>() {
         
         @Override

@@ -2,41 +2,43 @@ package com.jfireframework.jnet.server.CompletionHandler.weapon.single;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
+import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
+import com.jfireframework.baseutil.resource.ResourceCloseAgent;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 import com.jfireframework.jnet.common.exception.BufNotEnoughException;
+import com.jfireframework.jnet.common.exception.EndOfStreamException;
 import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.InternalResult;
 import com.jfireframework.jnet.common.result.InternalResultImpl;
-import com.jfireframework.jnet.common.util.ResourceState;
+import com.jfireframework.jnet.common.util.BytebufReleaseCallback;
 import com.jfireframework.jnet.server.CompletionHandler.WeaponReadHandler;
 import com.jfireframework.jnet.server.CompletionHandler.WeaponWriteHandler;
 
 public abstract class AbstractSingleReadHandler implements WeaponReadHandler
 {
-    protected static final Logger  logger           = ConsoleLogFactory.getLogger();
-    protected final FrameDecodec   frameDecodec;
-    protected final DataHandler[]  handlers;
-    protected final DirectByteBuf  ioBuf            = DirectByteBuf.allocate(100);
-    protected final ServerChannel  serverChannel;
+    protected static final Logger            logger           = ConsoleLogFactory.getLogger();
+    protected final FrameDecodec             frameDecodec;
+    protected final DataHandler[]            handlers;
+    protected final DirectByteBuf            ioBuf            = DirectByteBuf.allocate(100);
+    protected final ServerChannel            serverChannel;
     // 读取超时时间
-    protected final long           readTimeout;
-    protected final long           waitTimeout;
+    protected final long                     readTimeout;
+    protected final long                     waitTimeout;
     // 最后一次读取时间
-    protected long                 lastReadTime;
+    protected long                           lastReadTime;
     // 本次读取的截止时间
-    protected long                 endReadTime;
+    protected long                           endReadTime;
     // 启动读取超时的计数
-    protected boolean              startCountdown   = false;
-    protected final InternalResult internalResult   = new InternalResultImpl();
-    protected WeaponWriteHandler   writeHandler;
-    protected ResourceState        openState        = new ResourceState();
-    protected ResourceState        iobufReleseState = new ResourceState();
+    protected boolean                        startCountdown   = false;
+    protected final InternalResult           internalResult   = new InternalResultImpl();
+    protected WeaponWriteHandler             writeHandler;
+    protected ResourceCloseAgent<ByteBuf<?>> iobufReleseState = new ResourceCloseAgent<ByteBuf<?>>(ioBuf, BytebufReleaseCallback.instance);
     
     public AbstractSingleReadHandler(ServerChannel serverChannel)
     {
@@ -52,7 +54,7 @@ public abstract class AbstractSingleReadHandler implements WeaponReadHandler
     {
         if (read == -1)
         {
-            channelInfo.closeChannel();
+            catchThrowable(EndOfStreamException.instance);
             return;
         }
         ioBuf.addWriteIndex(read);
@@ -63,10 +65,6 @@ public abstract class AbstractSingleReadHandler implements WeaponReadHandler
     public void failed(Throwable exc, ServerChannel channelInfo)
     {
         catchThrowable(exc);
-        if (iobufReleseState.close())
-        {
-            ioBuf.release();
-        }
     }
     
     /**
@@ -76,33 +74,26 @@ public abstract class AbstractSingleReadHandler implements WeaponReadHandler
      */
     public void catchThrowable(Throwable exc)
     {
-        if (openState.close())
+        if (serverChannel.closeChannel())
         {
+            InternalResult task = new InternalResultImpl();
+            task.setChannelInfo(serverChannel);
+            task.setData(exc);
+            task.setIndex(0);
+            Object intermediateResult = exc;
             try
             {
-                InternalResult task = new InternalResultImpl();
-                task.setChannelInfo(serverChannel);
-                task.setData(exc);
-                task.setIndex(0);
-                Object intermediateResult = exc;
-                try
+                for (DataHandler each : handlers)
                 {
-                    for (DataHandler each : handlers)
-                    {
-                        intermediateResult = each.catchException(intermediateResult, task);
-                    }
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
+                    intermediateResult = each.catchException(intermediateResult, task);
                 }
             }
             catch (Exception e)
             {
-                logger.error("关闭通道异常", e);
+                e.printStackTrace();
             }
-            serverChannel.closeChannel();
         }
+        iobufReleseState.close();
     }
     
     public void doRead()

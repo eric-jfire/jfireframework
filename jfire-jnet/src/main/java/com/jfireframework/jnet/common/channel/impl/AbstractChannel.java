@@ -3,26 +3,32 @@ package com.jfireframework.jnet.common.channel.impl;
 import java.io.IOException;
 import java.nio.channels.AsynchronousSocketChannel;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.baseutil.resource.ResourceCloseAgent;
 import com.jfireframework.jnet.common.channel.JnetChannel;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 import com.jfireframework.jnet.common.handler.DataHandler;
-import com.jfireframework.jnet.common.util.ResourceState;
+import com.jfireframework.jnet.common.util.ChannelCloseCallback;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
 public abstract class AbstractChannel implements JnetChannel
 {
-    // 消息通道的打开状态
-    protected final ResourceState       openState   = new ResourceState();
-    protected AsynchronousSocketChannel socketChannel;
-    protected FrameDecodec              frameDecodec;
-    protected DataHandler[]             handlers;
-    protected long                      readTimeout = 3000;
+    protected final AsynchronousSocketChannel                     socketChannel;
+    protected FrameDecodec                                        frameDecodec;
+    protected DataHandler[]                                       handlers;
+    protected long                                                readTimeout = 3000;
     // 默认的超时等待时间是30分钟
-    protected long                      waitTimeout = 1000 * 60 * 30;
-    protected String                    remoteAddress;
-    protected String                    localAddress;
-    protected static final Unsafe       unsafe      = ReflectUtil.getUnsafe();
+    protected long                                                waitTimeout = 1000 * 60 * 30;
+    protected String                                              remoteAddress;
+    protected String                                              localAddress;
+    protected static final Unsafe                                 unsafe      = ReflectUtil.getUnsafe();
+    protected final ResourceCloseAgent<AsynchronousSocketChannel> openState;
+    
+    public AbstractChannel(AsynchronousSocketChannel socketChannel)
+    {
+        this.socketChannel = socketChannel;
+        openState = new ResourceCloseAgent<AsynchronousSocketChannel>(socketChannel, ChannelCloseCallback.instance);
+    }
     
     @Override
     public void setHandlers(DataHandler... handlers)
@@ -49,12 +55,6 @@ public abstract class AbstractChannel implements JnetChannel
     }
     
     @Override
-    public void setChannel(AsynchronousSocketChannel socketChannel)
-    {
-        this.socketChannel = socketChannel;
-    }
-    
-    @Override
     public AsynchronousSocketChannel getSocketChannel()
     {
         return socketChannel;
@@ -67,20 +67,9 @@ public abstract class AbstractChannel implements JnetChannel
     }
     
     @Override
-    public void closeChannel()
+    public boolean closeChannel()
     {
-        if (openState.close())
-        {
-            try
-            {
-                socketChannel.shutdownInput();
-                socketChannel.shutdownOutput();
-                socketChannel.close();
-            }
-            catch (IOException e)
-            {
-            }
-        }
+        return openState.close();
     }
     
     @Override

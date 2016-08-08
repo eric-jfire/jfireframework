@@ -15,14 +15,12 @@ public interface JnetChannel
     
     public DataHandler[] getHandlers();
     
-    public void setChannel(AsynchronousSocketChannel socketChannel);
-    
     public AsynchronousSocketChannel getSocketChannel();
     
     /**
-     * 注意，方法的内部实现需要保证通道实际上只会被关闭一次，也就是通过一个volatile的标志位，cas的关闭
+     * 注意，方法的内部实现保证close方法实际上只会被调用一次。返回true意味着真正的调用了close方法。返回false，就意味着有别人已经调用了close方法
      */
-    public void closeChannel();
+    public boolean closeChannel();
     
     public boolean isOpen();
     

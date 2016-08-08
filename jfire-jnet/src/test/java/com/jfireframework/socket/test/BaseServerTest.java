@@ -31,7 +31,7 @@ public class BaseServerTest
         config.setPort(81);
         config.setSocketThreadSize(4);
         config.setChannelCapacity(64);
-        config.setAcceptMode(AcceptMode.weapon_capacity);
+        config.setAcceptMode(AcceptMode.weapon_single);
         config.setWorkMode(WorkMode.SYNC);
         config.setPushMode(PushMode.OFF);
         config.setInitListener(new myInitListener());
@@ -101,7 +101,7 @@ public class BaseServerTest
         );
         // 使用对应的参数链接服务端
         aioClient.connect();
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 1; i++)
         {
             Future<?> future = aioClient.write("你好，这里是客户端");
             // future.get();

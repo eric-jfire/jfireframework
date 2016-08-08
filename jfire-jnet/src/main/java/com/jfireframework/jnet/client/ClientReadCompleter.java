@@ -4,7 +4,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.TimeUnit;
+import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
+import com.jfireframework.baseutil.resource.ResourceCloseAgent;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.common.channel.ClientChannel;
@@ -16,19 +18,21 @@ import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.InternalResult;
 import com.jfireframework.jnet.common.result.InternalResultImpl;
+import com.jfireframework.jnet.common.util.BytebufReleaseCallback;
 
 public class ClientReadCompleter implements CompletionHandler<Integer, ClientChannel>
 {
-    private AsynchronousSocketChannel socketChannel;
-    private DataHandler[]             handlers;
-    private FrameDecodec              frameDecodec;
-    private final DirectByteBuf       ioBuf          = DirectByteBuf.allocate(100);
-    private final ClientChannel       channelInfo;
-    protected long                    readTimeout;
-    protected long                    waitTimeout;
-    private static final Logger       logger         = ConsoleLogFactory.getLogger();
-    private InternalResult            internalResult = new InternalResultImpl();
-    public int                        total;
+    private AsynchronousSocketChannel            socketChannel;
+    private DataHandler[]                        handlers;
+    private FrameDecodec                         frameDecodec;
+    private final DirectByteBuf                  ioBuf          = DirectByteBuf.allocate(100);
+    private final ClientChannel                  channelInfo;
+    protected long                               readTimeout;
+    protected long                               waitTimeout;
+    private static final Logger                  logger         = ConsoleLogFactory.getLogger();
+    private InternalResult                       internalResult = new InternalResultImpl();
+    public int                                   total;
+    private final ResourceCloseAgent<ByteBuf<?>> bufState       = new ResourceCloseAgent<ByteBuf<?>>(ioBuf, BytebufReleaseCallback.instance);
     
     public ClientReadCompleter(AioClient aioClient, ClientChannel channelInfo)
     {
@@ -45,7 +49,8 @@ public class ClientReadCompleter implements CompletionHandler<Integer, ClientCha
     {
         if (result == -1)
         {
-            catchThrowable(new EndOfStreamException());
+            catchThrowable(EndOfStreamException.instance);
+            bufState.close();
             return;
         }
         ioBuf.addWriteIndex(result);
@@ -112,18 +117,20 @@ public class ClientReadCompleter implements CompletionHandler<Integer, ClientCha
     public void failed(Throwable exc, ClientChannel channelInfo)
     {
         catchThrowable(exc);
+        bufState.close();
     }
     
     private void catchThrowable(Throwable e)
     {
-        channelInfo.closeChannel();
-        Object tmp = e;
-        for (DataHandler each : handlers)
+        if (channelInfo.closeChannel())
         {
-            tmp = each.catchException(tmp, internalResult);
+            Object tmp = e;
+            for (DataHandler each : handlers)
+            {
+                tmp = each.catchException(tmp, internalResult);
+            }
+            channelInfo.signalAll(e);
         }
-        ioBuf.release();
-        channelInfo.signalAll(e);
     }
     
     public void continueRead()

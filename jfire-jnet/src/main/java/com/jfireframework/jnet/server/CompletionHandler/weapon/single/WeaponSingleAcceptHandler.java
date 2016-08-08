@@ -67,8 +67,7 @@ public class WeaponSingleAcceptHandler implements AcceptHandler
     {
         try
         {
-            ServerChannel channelInfo = new ServerChannel();
-            channelInfo.setChannel(socketChannel);
+            ServerChannel channelInfo = new ServerChannel(socketChannel);
             initListener.channelInit(channelInfo);
             WeaponReadHandler readHandler = null;
             if (workMode == WorkMode.SYNC)

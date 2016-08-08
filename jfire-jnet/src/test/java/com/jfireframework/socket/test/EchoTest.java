@@ -40,7 +40,7 @@ public class EchoTest
 {
     private int      threadCountStart = 150;
     private int      threadCountEnd   = 200;
-    private int      sendCount        = 100000;
+    private int      sendCount        = 1000;
     private String   ip               = "127.0.0.1";
     private int      port             = 7789;
     private String[] content;
@@ -54,7 +54,7 @@ public class EchoTest
             content[i] = String.valueOf(i);
         }
         ServerConfig config = new ServerConfig();
-        config.setAcceptMode(AcceptMode.weapon_capacity);
+        config.setAcceptMode(AcceptMode.weapon_single);
         config.setPushMode(PushMode.OFF);
         config.setWorkMode(WorkMode.SYNC);
         config.setSocketThreadSize(40);

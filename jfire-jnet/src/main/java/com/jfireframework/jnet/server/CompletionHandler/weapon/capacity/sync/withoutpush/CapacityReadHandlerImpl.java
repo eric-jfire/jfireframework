@@ -5,17 +5,19 @@ import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
+import com.jfireframework.baseutil.resource.ResourceCloseAgent;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet.common.decodec.FrameDecodec;
 import com.jfireframework.jnet.common.exception.BufNotEnoughException;
+import com.jfireframework.jnet.common.exception.EndOfStreamException;
 import com.jfireframework.jnet.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.InternalResult;
 import com.jfireframework.jnet.common.result.InternalResultImpl;
-import com.jfireframework.jnet.common.util.ResourceState;
+import com.jfireframework.jnet.common.util.BytebufReleaseCallback;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityReadHandler;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityWriteHandler;
 import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.write.withoutpush.WeaponCapacityWriteHandlerImpl;
@@ -23,40 +25,39 @@ import com.jfireframework.jnet.server.CompletionHandler.weapon.capacity.sync.wri
 public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
 {
     
-    private static final Logger              logger            = ConsoleLogFactory.getLogger();
-    private final FrameDecodec               frameDecodec;
-    private final DataHandler[]              handlers;
-    private final DirectByteBuf              ioBuf             = DirectByteBuf.allocate(100);
-    private final ServerChannel              serverChannel;
-    private final static int                 WORK              = 1;
-    private final static int                 IDLE              = 2;
+    private static final Logger                  logger            = ConsoleLogFactory.getLogger();
+    private final FrameDecodec                   frameDecodec;
+    private final DataHandler[]                  handlers;
+    private final DirectByteBuf                  ioBuf             = DirectByteBuf.allocate(100);
+    private final ServerChannel                  serverChannel;
+    private final static int                     WORK              = 1;
+    private final static int                     IDLE              = 2;
     /**
      * 本线程仍然持有控制权
      */
-    private final static int                 ON_CONTROL        = 1;
+    private final static int                     ON_CONTROL        = 1;
     
     /**
      * 本线程让渡出控制权
      */
-    private final static int                 YIDLE             = 2;
-    private final CpuCachePadingInt          readState         = new CpuCachePadingInt(WORK);
+    private final static int                     YIDLE             = 2;
+    private final CpuCachePadingInt              readState         = new CpuCachePadingInt(WORK);
     // 读取超时时间
-    private final long                       readTimeout;
-    private final long                       waitTimeout;
+    private final long                           readTimeout;
+    private final long                           waitTimeout;
     // 最后一次读取时间
-    private long                             lastReadTime;
+    private long                                 lastReadTime;
     // 本次读取的截止时间
-    private long                             endReadTime;
+    private long                                 endReadTime;
     // 启动读取超时的计数
-    private boolean                          startCountdown    = false;
-    private final InternalResult             internalResult    = new InternalResultImpl();
-    private final WeaponCapacityWriteHandler writeHandler;
-    private final int                        capacity;
-    private long                             wrap              = 0;
+    private boolean                              startCountdown    = false;
+    private final InternalResult                 internalResult    = new InternalResultImpl();
+    private final WeaponCapacityWriteHandler     writeHandler;
+    private final int                            capacity;
+    private long                                 wrap              = 0;
     // 下一个要填充到通道的序号
-    private long                             cursor            = 0;
-    private final ResourceState              openState         = new ResourceState();
-    private final ResourceState              iobufReleaseState = new ResourceState();
+    private long                                 cursor            = 0;
+    private final ResourceCloseAgent<ByteBuf<?>> iobufReleaseState = new ResourceCloseAgent<ByteBuf<?>>(ioBuf, BytebufReleaseCallback.instance);
     
     public CapacityReadHandlerImpl(ServerChannel serverChannel, int capacity)
     {
@@ -76,7 +77,8 @@ public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
     {
         if (read == -1)
         {
-            channelInfo.closeChannel();
+            catchThrowable(EndOfStreamException.instance);
+            iobufReleaseState.close();
             return;
         }
         ioBuf.addWriteIndex(read);
@@ -89,10 +91,7 @@ public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
         catchThrowable(exc);
         // 由于可能出现读取线程刚进入idle状态，就被写出线程抢占了work状态并且尝试读取数据，通道异常关闭后，第一次调用了fail方法。然后读取线程抢占回控制权，再次读取，立刻触发fail。导致fail方法有触发两次的风险。
         // 所以在这边使用一个资源状态来保护
-        if (iobufReleaseState.close())
-        {
-            ioBuf.release();
-        }
+        iobufReleaseState.close();
     }
     
     /**
@@ -102,7 +101,7 @@ public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
      */
     public void catchThrowable(Throwable exc)
     {
-        if (openState.close())
+        if (serverChannel.closeChannel())
         {
             try
             {
@@ -127,7 +126,7 @@ public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
             {
                 logger.error("关闭通道异常", e);
             }
-            serverChannel.closeChannel();
+            // serverChannel.closeChannel();
             // 调用这个方法是为了让readHandler中的fail方法有机会执行。进而进行iobuf的释放
             notifyRead();
         }
