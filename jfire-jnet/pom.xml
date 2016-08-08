@@ -8,10 +8,10 @@
 		<artifactId>framework-parent</artifactId>
 		<version>1.0-SNAPSHOT</version>
 	</parent>
-	<artifactId>jfire-jnet</artifactId>
-	<name>jnet</name>
+	<artifactId>jfire-jnet2</artifactId>
+	<name>jnet2</name>
 	<description>
-	Jfire - net is a server-side framework based on AIO. Users only need a simple implementation of a business logic processing interface can be the business data processing. The framework provides the client and server at the same time. Have strong connection capacity. Single server provides tens of thousands of connections.
+	Jfire - net2 is a server-side framework based on AIO. Users only need a simple implementation of a business logic processing interface can be the business data processing. The framework provides the client and server at the same time. Have strong connection capacity. Single server provides tens of thousands of connections.
 	</description>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
