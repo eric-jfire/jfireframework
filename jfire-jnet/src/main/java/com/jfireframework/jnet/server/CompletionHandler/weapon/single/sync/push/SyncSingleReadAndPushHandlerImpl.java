@@ -52,7 +52,7 @@ public class SyncSingleReadAndPushHandlerImpl extends AbstractSyncSingleReadHand
     {
         /**
          * 这边有中间状态的原因是如果在写出之前就设置为idle,那么假设尚未执行到下面的write语句，有用户主动push消息,
-         * 在写出处理器中执行了notifyread.会导致另外的线程中再次执行doread。有可能造成后来读取的消息反而先处理的错误情况
+         * 在写出处理器中执行了notifyread.会导致另外的线程中再次执行doread。就会造成数据混乱
          * 所以在这个地方加入了中间状态，保证了不会出现这种问题
          */
         readState.set(PENDING);

@@ -128,6 +128,8 @@ public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
                 logger.error("关闭通道异常", e);
             }
             serverChannel.closeChannel();
+            // 调用这个方法是为了让readHandler中的fail方法有机会执行。进而进行iobuf的释放
+            notifyRead();
         }
     }
     

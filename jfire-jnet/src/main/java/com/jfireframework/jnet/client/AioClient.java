@@ -141,7 +141,6 @@ public class AioClient
             {
                 throw new InterruptedException("链接已经中断，请重新链接后再发送信息");
             }
-            Object origin = data;
             internalResult.setIndex(0);
             internalResult.setChannelInfo(clientChannel);
             for (int i = index; i < writeHandlers.length;)

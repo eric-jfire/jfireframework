@@ -13,15 +13,16 @@ import com.jfireframework.jnet.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet.common.handler.DataHandler;
 import com.jfireframework.jnet.common.result.InternalResult;
 import com.jfireframework.jnet.common.result.InternalResultImpl;
+import com.jfireframework.jnet.common.util.ResourceState;
 import com.jfireframework.jnet.server.CompletionHandler.WeaponReadHandler;
 import com.jfireframework.jnet.server.CompletionHandler.WeaponWriteHandler;
 
 public abstract class AbstractSingleReadHandler implements WeaponReadHandler
 {
-    protected static final Logger  logger         = ConsoleLogFactory.getLogger();
+    protected static final Logger  logger           = ConsoleLogFactory.getLogger();
     protected final FrameDecodec   frameDecodec;
     protected final DataHandler[]  handlers;
-    protected final DirectByteBuf  ioBuf          = DirectByteBuf.allocate(100);
+    protected final DirectByteBuf  ioBuf            = DirectByteBuf.allocate(100);
     protected final ServerChannel  serverChannel;
     // 读取超时时间
     protected final long           readTimeout;
@@ -31,9 +32,11 @@ public abstract class AbstractSingleReadHandler implements WeaponReadHandler
     // 本次读取的截止时间
     protected long                 endReadTime;
     // 启动读取超时的计数
-    protected boolean              startCountdown = false;
-    protected final InternalResult internalResult = new InternalResultImpl();
+    protected boolean              startCountdown   = false;
+    protected final InternalResult internalResult   = new InternalResultImpl();
     protected WeaponWriteHandler   writeHandler;
+    protected ResourceState        openState        = new ResourceState();
+    protected ResourceState        iobufReleseState = new ResourceState();
     
     public AbstractSingleReadHandler(ServerChannel serverChannel)
     {
@@ -60,7 +63,10 @@ public abstract class AbstractSingleReadHandler implements WeaponReadHandler
     public void failed(Throwable exc, ServerChannel channelInfo)
     {
         catchThrowable(exc);
-        ioBuf.release();
+        if (iobufReleseState.close())
+        {
+            ioBuf.release();
+        }
     }
     
     /**
@@ -70,37 +76,33 @@ public abstract class AbstractSingleReadHandler implements WeaponReadHandler
      */
     public void catchThrowable(Throwable exc)
     {
-        try
+        if (openState.close())
         {
-            InternalResult task = new InternalResultImpl();
-            task.setChannelInfo(serverChannel);
-            task.setData(exc);
-            task.setIndex(0);
-            Object intermediateResult = exc;
             try
             {
-                for (DataHandler each : handlers)
+                InternalResult task = new InternalResultImpl();
+                task.setChannelInfo(serverChannel);
+                task.setData(exc);
+                task.setIndex(0);
+                Object intermediateResult = exc;
+                try
                 {
-                    intermediateResult = each.catchException(intermediateResult, task);
+                    for (DataHandler each : handlers)
+                    {
+                        intermediateResult = each.catchException(intermediateResult, task);
+                    }
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
                 }
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                logger.error("关闭通道异常", e);
             }
+            serverChannel.closeChannel();
         }
-        catch (Exception e)
-        {
-            logger.error("关闭通道异常", e);
-        }
-        serverChannel.closeChannel();
-        /**
-         * 这个方法里不能去释放iobuf。因为这个方法有可能是异步处理的时候被调用，这样通道还没有关闭的情况下就先释放了iobuf，
-         * 然后关闭通道又释放一次就会造成错误
-         * 或者是该方法中被释放，其他地方回收了又再次使用，然后通过中关闭的时候释放掉，就错误的释放了别的地方的ioBuf。
-         * 所以这个方法中是不可以释放iobuf的，
-         * 一定是要在ReadCompletionHandler的complete或者fail方法中完成对iobuf的释放
-         */
     }
     
     public void doRead()
