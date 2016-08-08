@@ -8,20 +8,20 @@ import org.junit.Test;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.time.Timewatch;
-import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.common.channel.ChannelInitListener;
-import com.jfireframework.jnet.common.channel.JnetChannel;
-import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
-import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoderByHeap;
-import com.jfireframework.jnet.common.exception.JnetException;
-import com.jfireframework.jnet.common.handler.DataHandler;
-import com.jfireframework.jnet.common.handler.LengthPreHandler;
-import com.jfireframework.jnet.common.result.InternalResult;
-import com.jfireframework.jnet.server.AioServer;
-import com.jfireframework.jnet.server.util.AcceptMode;
-import com.jfireframework.jnet.server.util.PushMode;
-import com.jfireframework.jnet.server.util.ServerConfig;
-import com.jfireframework.jnet.server.util.WorkMode;
+import com.jfireframework.jnet2.client.AioClient;
+import com.jfireframework.jnet2.common.channel.ChannelInitListener;
+import com.jfireframework.jnet2.common.channel.JnetChannel;
+import com.jfireframework.jnet2.common.decodec.TotalLengthFieldBasedFrameDecoder;
+import com.jfireframework.jnet2.common.decodec.TotalLengthFieldBasedFrameDecoderByHeap;
+import com.jfireframework.jnet2.common.exception.JnetException;
+import com.jfireframework.jnet2.common.handler.DataHandler;
+import com.jfireframework.jnet2.common.handler.LengthPreHandler;
+import com.jfireframework.jnet2.common.result.InternalResult;
+import com.jfireframework.jnet2.server.AioServer;
+import com.jfireframework.jnet2.server.util.AcceptMode;
+import com.jfireframework.jnet2.server.util.PushMode;
+import com.jfireframework.jnet2.server.util.ServerConfig;
+import com.jfireframework.jnet2.server.util.WorkMode;
 
 public class SingleSpeedTest
 {

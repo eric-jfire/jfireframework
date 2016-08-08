@@ -5,10 +5,10 @@ import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.jnet.common.decodec.FrameDecodec;
-import com.jfireframework.jnet.common.exception.BufNotEnoughException;
-import com.jfireframework.jnet.common.exception.LessThanProtocolException;
-import com.jfireframework.jnet.common.exception.NotFitProtocolException;
+import com.jfireframework.jnet2.common.decodec.FrameDecodec;
+import com.jfireframework.jnet2.common.exception.BufNotEnoughException;
+import com.jfireframework.jnet2.common.exception.LessThanProtocolException;
+import com.jfireframework.jnet2.common.exception.NotFitProtocolException;
 
 public class LengthFrameDecodec implements FrameDecodec
 {

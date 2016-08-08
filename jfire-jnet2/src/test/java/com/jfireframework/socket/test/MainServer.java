@@ -1,8 +1,8 @@
 package com.jfireframework.socket.test;
 
-import com.jfireframework.jnet.server.AioServer;
-import com.jfireframework.jnet.server.util.ServerConfig;
-import com.jfireframework.jnet.server.util.WorkMode;
+import com.jfireframework.jnet2.server.AioServer;
+import com.jfireframework.jnet2.server.util.ServerConfig;
+import com.jfireframework.jnet2.server.util.WorkMode;
 
 public class MainServer
 {

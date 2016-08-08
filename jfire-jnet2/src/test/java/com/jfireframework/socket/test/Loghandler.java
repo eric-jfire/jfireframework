@@ -3,9 +3,9 @@ package com.jfireframework.socket.test;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.jnet.common.exception.JnetException;
-import com.jfireframework.jnet.common.handler.DataHandler;
-import com.jfireframework.jnet.common.result.InternalResult;
+import com.jfireframework.jnet2.common.exception.JnetException;
+import com.jfireframework.jnet2.common.handler.DataHandler;
+import com.jfireframework.jnet2.common.result.InternalResult;
 
 public class Loghandler implements DataHandler
 {

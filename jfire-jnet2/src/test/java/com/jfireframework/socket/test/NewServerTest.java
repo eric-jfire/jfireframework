@@ -7,15 +7,15 @@ import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBufPool;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.jnet.client.AioClient;
-import com.jfireframework.jnet.common.channel.JnetChannel;
-import com.jfireframework.jnet.common.channel.ChannelInitListener;
-import com.jfireframework.jnet.common.decodec.TotalLengthFieldBasedFrameDecoder;
-import com.jfireframework.jnet.common.handler.DataHandler;
-import com.jfireframework.jnet.common.handler.LengthPreHandler;
-import com.jfireframework.jnet.common.result.InternalResult;
-import com.jfireframework.jnet.server.AioServer;
-import com.jfireframework.jnet.server.util.ServerConfig;
+import com.jfireframework.jnet2.client.AioClient;
+import com.jfireframework.jnet2.common.channel.ChannelInitListener;
+import com.jfireframework.jnet2.common.channel.JnetChannel;
+import com.jfireframework.jnet2.common.decodec.TotalLengthFieldBasedFrameDecoder;
+import com.jfireframework.jnet2.common.handler.DataHandler;
+import com.jfireframework.jnet2.common.handler.LengthPreHandler;
+import com.jfireframework.jnet2.common.result.InternalResult;
+import com.jfireframework.jnet2.server.AioServer;
+import com.jfireframework.jnet2.server.util.ServerConfig;
 
 public class NewServerTest
 {
