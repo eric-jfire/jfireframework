@@ -7,7 +7,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.apache.poi.ss.usermodel.Cell;
@@ -38,10 +41,10 @@ import com.jfireframework.jnet2.server.util.WorkMode;
 
 public class EchoTest
 {
-    private int      threadCountStart = 150;
-    private int      threadCountEnd   = 200;
-    private int      sendCount        = 1000;
-    private String   ip               = "127.0.0.1";
+    private int      threadCountStart = 1;
+    private int      threadCountEnd   = 300;
+    private int      sendCount        = 1000000;
+    private String   ip               = "192.168.10.51";
     private int      port             = 7789;
     private String[] content;
     
@@ -62,50 +65,52 @@ public class EchoTest
         config.setChannelCapacity(128);
         config.setExecutorMode(ExecutorMode.FIX);
         config.setAsyncThreadSize(16);
-        config.setInitListener(new ChannelInitListener() {
-            
-            @Override
-            public void channelInit(JnetChannel serverChannelInfo)
-            {
-                serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
-                serverChannelInfo.setHandlers(new EchoHandler());
-            }
-        });
+        config.setInitListener(
+                new ChannelInitListener() {
+                    
+                    @Override
+                    public void channelInit(JnetChannel serverChannelInfo)
+                    {
+                        serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
+                        serverChannelInfo.setHandlers(new EchoHandler());
+                    }
+                }
+        );
         config.setPort(port);
         AioServer aioServer = new AioServer(config);
         aioServer.start();
         List<Long> timeCount = new LinkedList<>();
         final CpuCachePadingInt result = new CpuCachePadingInt(0);
+        ExecutorService pool = Executors.newCachedThreadPool();
         for (int index = threadCountStart; index <= threadCountEnd; index++)
         {
             final CyclicBarrier barrier = new CyclicBarrier(index);
-            Thread[] threads = new Thread[index];
-            for (int i = 0; i < threads.length; i++)
+            final CountDownLatch latch = new CountDownLatch(index);
+            for (int i = 0; i < index; i++)
             {
-                threads[i] = new Thread(new Runnable() {
-                    
-                    @Override
-                    public void run()
-                    {
-                        try
-                        {
-                            barrier.await();
-                            connecttest(result);
+                pool.submit(
+                        new Runnable() {
+                            
+                            @Override
+                            public void run()
+                            {
+                                try
+                                {
+                                    barrier.await();
+                                    connecttest(result);
+                                    latch.countDown();
+                                }
+                                catch (Throwable e)
+                                {
+                                    e.printStackTrace();
+                                }
+                            }
                         }
-                        catch (Throwable e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                }, "测试线程_" + index + "_" + i);
-                threads[i].start();
+                );
             }
             Timewatch timewatch = new Timewatch();
             timewatch.start();
-            for (int i = 0; i < threads.length; i++)
-            {
-                threads[i].join();
-            }
+            latch.await();
             timewatch.end();
             SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss");
             if (result.value() == 0)
@@ -166,53 +171,59 @@ public class EchoTest
         client.setAddress(ip);
         client.setCapacity(128);
         client.setPort(port);
-        client.setWriteHandlers(new DataHandler() {
-            
-            @Override
-            public Object handle(Object data, InternalResult result) throws JnetException
-            {
-                ByteBuf<?> buf = DirectByteBuf.allocate(100);
-                buf.addWriteIndex(4);
-                buf.writeString((String) data);
-                return buf;
-            }
-            
-            @Override
-            public Object catchException(Object data, InternalResult result)
-            {
-                // ((Throwable) data).printStackTrace();
-                return data;
-            }
-        }, new LengthPreHandler(0, 4));
-        client.setInitListener(new ChannelInitListener() {
-            
-            @Override
-            public void channelInit(JnetChannel jnetChannel)
-            {
-                jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
-                jnetChannel.setHandlers(new DataHandler() {
+        client.setWriteHandlers(
+                new DataHandler() {
                     
                     @Override
                     public Object handle(Object data, InternalResult result) throws JnetException
                     {
-                        // System.out.println("收到数据");
-                        ByteBuf<?> buf = (ByteBuf<?>) data;
-                        String value = null;
-                        value = buf.readString();
-                        buf.release();
-                        return value;
+                        ByteBuf<?> buf = DirectByteBuf.allocate(100);
+                        buf.addWriteIndex(4);
+                        buf.writeString((String) data);
+                        return buf;
                     }
                     
                     @Override
                     public Object catchException(Object data, InternalResult result)
                     {
-                        // System.err.println("客户端");
                         // ((Throwable) data).printStackTrace();
                         return data;
                     }
-                });
-            }
-        });
+                }, new LengthPreHandler(0, 4)
+        );
+        client.setInitListener(
+                new ChannelInitListener() {
+                    
+                    @Override
+                    public void channelInit(JnetChannel jnetChannel)
+                    {
+                        jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
+                        jnetChannel.setHandlers(
+                                new DataHandler() {
+                                    
+                                    @Override
+                                    public Object handle(Object data, InternalResult result) throws JnetException
+                                    {
+                                        // System.out.println("收到数据");
+                                        ByteBuf<?> buf = (ByteBuf<?>) data;
+                                        String value = null;
+                                        value = buf.readString();
+                                        buf.release();
+                                        return value;
+                                    }
+                                    
+                                    @Override
+                                    public Object catchException(Object data, InternalResult result)
+                                    {
+                                        // System.err.println("客户端");
+                                        // ((Throwable) data).printStackTrace();
+                                        return data;
+                                    }
+                                }
+                        );
+                    }
+                }
+        );
         for (int i = 0; i < sendCount; i++)
         {
             try

@@ -9,15 +9,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.Future;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
@@ -41,9 +40,9 @@ import com.jfireframework.jnet2.server.util.WorkMode;
 public class SpeedTest
 {
     private int    threadCountStart = 1;
-    private int    threadCountEnd   = 100;
+    private int    threadCountEnd   = 200;
     private int    sendCount        = 10000;
-    private String ip               = "127.0.0.1";
+    private String ip               = "192.168.10.51";
     private int    port             = 7789;
     
     @Test
@@ -74,14 +73,14 @@ public class SpeedTest
         aioServer.start();
         List<Long> timeCount = new LinkedList<>();
         final CpuCachePadingInt result = new CpuCachePadingInt(0);
+        ExecutorService pool = Executors.newCachedThreadPool();
         for (int index = threadCountStart; index <= threadCountEnd; index++)
         {
             final CyclicBarrier barrier = new CyclicBarrier(index);
-            Thread[] threads = new Thread[index];
-            for (int i = 0; i < threads.length; i++)
+            final CountDownLatch latch = new CountDownLatch(index);
+            for (int i = 0; i < index; i++)
             {
-                threads[i] = new Thread(
-                        new Runnable() {
+               pool.submit( new Runnable() {
                             
                             @Override
                             public void run()
@@ -90,22 +89,18 @@ public class SpeedTest
                                 {
                                     barrier.await();
                                     connecttest(result);
+                                    latch.countDown();
                                 }
                                 catch (Throwable e)
                                 {
                                     e.printStackTrace();
                                 }
                             }
-                        }, "测试线程_" + index + "_" + i
-                );
-                threads[i].start();
+                        });
             }
             Timewatch timewatch = new Timewatch();
             timewatch.start();
-            for (int i = 0; i < threads.length; i++)
-            {
-                threads[i].join();
-            }
+          latch.await();
             timewatch.end();
             SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss");
             if (result.value() == 0)

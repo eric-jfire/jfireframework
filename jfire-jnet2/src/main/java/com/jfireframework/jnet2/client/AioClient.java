@@ -36,6 +36,7 @@ public class AioClient
     private final InternalResult     internalResult = new InternalResultImpl();
     private int                      capacity       = 16;
     private ClientReadCompleter      clientReadCompleter;
+    private long                     connectTimeout = 10;
     
     public AioClient(boolean async)
     {
@@ -91,7 +92,7 @@ public class AioClient
         if (clientChannel == null || clientChannel.isOpen() == false)
         {
             AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(channelGroup);
-            socketChannel.connect(new InetSocketAddress(address, port)).get(5, TimeUnit.SECONDS);
+            socketChannel.connect(new InetSocketAddress(address, port)).get(connectTimeout, TimeUnit.SECONDS);
             if (async == true)
             {
                 clientChannel = new AsyncClientChannelInfo(socketChannel);
