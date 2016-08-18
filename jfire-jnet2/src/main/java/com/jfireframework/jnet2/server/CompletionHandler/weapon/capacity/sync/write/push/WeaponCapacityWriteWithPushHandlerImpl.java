@@ -1,4 +1,4 @@
-package com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.write.withoutpush;
+package com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.write.push;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingLong;
+import com.jfireframework.baseutil.concurrent.MPSCLinkedQueue;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
@@ -14,11 +15,12 @@ import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.common.
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityReadHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityWriteHandler;
 
-public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWriteHandler
+public final class WeaponCapacityWriteWithPushHandlerImpl implements WeaponCapacityWriteHandler
 {
     
     private final BufHolder[]               bufArray;
     private int                             lengthMask;
+    // 下一个要写出的buf的序号
     private volatile long                   cursor            = 0;
     private long                            wrap              = 0;
     /**
@@ -34,8 +36,14 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
     private final AsynchronousSocketChannel socketChannel;
     private final ByteBuffer[]              batchBuffers;
     private final ByteBuf<?>[]              batchBufs;
+    private MPSCLinkedQueue<ByteBuf<?>>     asyncSendQueue    = new MPSCLinkedQueue<>();
+    // 处于响应客户端请求并且回送数据的模式
+    private static final int                response          = 0;
+    // 处于主动推送消息给客户端的模式
+    private static final int                push              = 1;
+    private final CpuCachePadingInt         pushState         = new CpuCachePadingInt(response);
     
-    public WeaponCapacityWriteHandlerImpl(ServerChannel serverChannel, int capacity, WeaponCapacityReadHandler readHandler)
+    public WeaponCapacityWriteWithPushHandlerImpl(ServerChannel serverChannel, int capacity, WeaponCapacityReadHandler readHandler)
     {
         this.readHandler = readHandler;
         socketChannel = serverChannel.getSocketChannel();
@@ -69,8 +77,25 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
             return;
         }
         buf.release();
-        cursor += 1;
-        writeNextBuf();
+        if (pushState.value() == push)
+        {
+            buf = asyncSendQueue.poll();
+            if (buf != null)
+            {
+                socketChannel.write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+                return;
+            }
+            else
+            {
+                pushState.set(response);
+                writeNextBuf();
+            }
+        }
+        else
+        {
+            cursor += 1;
+            writeNextBuf();
+        }
     }
     
     private void writeNextBuf()
@@ -92,10 +117,17 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
                 }
                 else
                 {
+                    ByteBuf<?> buf = asyncSendQueue.poll();
+                    if (buf != null)
+                    {
+                        pushState.set(push);
+                        socketChannel.write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+                        return;
+                    }
                     readHandler.notifyRead();
                     idleState.set(idle);
                     long newestWrap = writeCursor.value() + 1;
-                    if (cursor < newestWrap)
+                    if (cursor < newestWrap || asyncSendQueue.isEmpty() == false)
                     {
                         if (idleState.compareAndSwap(idle, work))
                         {

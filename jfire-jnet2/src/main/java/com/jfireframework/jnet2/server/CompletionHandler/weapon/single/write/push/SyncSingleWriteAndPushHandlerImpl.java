@@ -19,7 +19,7 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
     private static final int            IDLE         = 0;
     private static final int            WORK         = 1;
     private CpuCachePadingInt           writeState    = new CpuCachePadingInt(IDLE);
-    private MPSCLinkedQueue<ByteBuf<?>> waitForSends = new MPSCLinkedQueue<>();
+    private MPSCLinkedQueue<ByteBuf<?>> pushQueue = new MPSCLinkedQueue<>();
     
     public SyncSingleWriteAndPushHandlerImpl(ServerChannel serverChannel, WeaponReadHandler readHandler)
     {
@@ -37,7 +37,7 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
             return;
         }
         buf.release();
-        buf = waitForSends.poll();
+        buf = pushQueue.poll();
         if (buf != null)
         {
             serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
@@ -46,7 +46,7 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
         writeState.set(IDLE);
         while (true)
         {
-            buf = waitForSends.poll();
+            buf = pushQueue.poll();
             if (buf == null)
             {
                 readHandler.notifyRead();
@@ -56,7 +56,7 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
             {
                 if (writeState.compareAndSwap(IDLE, WORK))
                 {
-                    buf = waitForSends.poll();
+                    buf = pushQueue.poll();
                     if (buf != null)
                     {
                         serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
@@ -99,10 +99,10 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
         }
         else
         {
-            waitForSends.add(buf);
+            pushQueue.add(buf);
             while (writeState.value() == IDLE && writeState.compareAndSwap(IDLE, WORK))
             {
-                buf = waitForSends.poll();
+                buf = pushQueue.poll();
                 if (buf != null)
                 {
                     serverChannel.getSocketChannel().write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
@@ -111,7 +111,7 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
                 else
                 {
                     writeState.set(IDLE);
-                    if (waitForSends.isEmpty())
+                    if (pushQueue.isEmpty())
                     {
                         break;
                     }
