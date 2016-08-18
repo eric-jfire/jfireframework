@@ -1,4 +1,4 @@
-package com.jfireframework.jnet2.server.CompletionHandler.weapon.single.async;
+package com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async;
 
 import com.jfireframework.baseutil.disruptor.AbstractExclusiveEntryAction;
 

@@ -1,38 +1,25 @@
-package com.jfireframework.jnet2.server.CompletionHandler.weapon.single.async;
+package com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.sync;
 
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
-import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
-import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.AbstractSingleReadHandler;
 
-public abstract class AbstractAsyncSingleReadHandler extends AbstractSingleReadHandler implements AsyncReadHandler
+public abstract class AbstractSyncSingleReadHandler extends AbstractSingleReadHandler
 {
-    protected final Disruptor  disruptor;
-    protected final ByteBuf<?> emptyBuf = DirectByteBuf.allocate(1);
     
-    public AbstractAsyncSingleReadHandler(ServerChannel serverChannel, Disruptor disruptor)
+    public AbstractSyncSingleReadHandler(ServerChannel serverChannel)
     {
         super(serverChannel);
-        this.disruptor = disruptor;
     }
     
-    @Override
     protected void frameAndHandle() throws Throwable
     {
-        Object intermediateResult = frameDecodec.decodec(ioBuf);
-        internalResult.setChannelInfo(serverChannel);
-        internalResult.setData(intermediateResult);
-        internalResult.setIndex(0);
-        disruptor.publish(this);
-    }
-    
-    @Override
-    public void asyncHandle()
-    {
-        try
+        while (true)
         {
-            Object intermediateResult = internalResult.getData();
+            Object intermediateResult = frameDecodec.decodec(ioBuf);
+            internalResult.setChannelInfo(serverChannel);
+            internalResult.setData(intermediateResult);
+            internalResult.setIndex(0);
             for (int i = 0; i < handlers.length;)
             {
                 intermediateResult = handlers[i].handle(intermediateResult, internalResult);
@@ -49,15 +36,20 @@ public abstract class AbstractAsyncSingleReadHandler extends AbstractSingleReadH
             if (intermediateResult instanceof ByteBuf<?>)
             {
                 doWrite((ByteBuf<?>) intermediateResult);
+                break;
             }
             else
             {
-                doWrite(emptyBuf);
+                if (ioBuf.remainRead() > 0)
+                {
+                    continue;
+                }
+                else
+                {
+                    readAndWait();
+                    break;
+                }
             }
-        }
-        catch (Throwable e)
-        {
-            catchThrowable(e);
         }
     }
     

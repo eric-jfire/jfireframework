@@ -12,7 +12,7 @@ import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.server.AioServer;
 import com.jfireframework.jnet2.server.CompletionHandler.AcceptHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.WeaponReadHandler;
-import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.withoutpush.CapacityReadHandlerImpl;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.read.withoutpush.CapacityReadHandlerImpl;
 import com.jfireframework.jnet2.server.util.PushMode;
 import com.jfireframework.jnet2.server.util.ServerConfig;
 import com.jfireframework.jnet2.server.util.WorkMode;
