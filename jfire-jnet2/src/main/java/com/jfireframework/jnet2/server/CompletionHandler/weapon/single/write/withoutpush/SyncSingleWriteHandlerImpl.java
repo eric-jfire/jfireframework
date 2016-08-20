@@ -7,15 +7,15 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.server.CompletionHandler.WeaponWriteHandler;
-import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.WeaponSingleReadHandler;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.SingleReadHandler;
 
 public class SyncSingleWriteHandlerImpl implements WeaponWriteHandler
 {
     private final ServerChannel           serverChannel;
-    private final WeaponSingleReadHandler readHandler;
+    private final SingleReadHandler readHandler;
     private final static Logger           logger = ConsoleLogFactory.getLogger();
     
-    public SyncSingleWriteHandlerImpl(ServerChannel serverChannel, WeaponSingleReadHandler readHandler)
+    public SyncSingleWriteHandlerImpl(ServerChannel serverChannel, SingleReadHandler readHandler)
     {
         this.serverChannel = serverChannel;
         this.readHandler = readHandler;

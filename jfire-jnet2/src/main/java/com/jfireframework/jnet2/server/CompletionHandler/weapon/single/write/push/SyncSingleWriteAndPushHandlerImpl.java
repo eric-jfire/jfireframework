@@ -9,19 +9,19 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.server.CompletionHandler.WeaponWriteHandler;
-import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.WeaponSingleReadHandler;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.SingleReadHandler;
 
 public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
 {
     private final ServerChannel         serverChannel;
-    private final WeaponSingleReadHandler     readHandler;
+    private final SingleReadHandler     readHandler;
     private Logger                      logger     = ConsoleLogFactory.getLogger();
     private static final int            IDLE       = 0;
     private static final int            WORK       = 1;
     private CpuCachePadingInt           writeState = new CpuCachePadingInt(IDLE);
     private MPSCLinkedQueue<ByteBuf<?>> pushQueue  = new MPSCLinkedQueue<>();
     
-    public SyncSingleWriteAndPushHandlerImpl(ServerChannel serverChannel, WeaponSingleReadHandler readHandler)
+    public SyncSingleWriteAndPushHandlerImpl(ServerChannel serverChannel, SingleReadHandler readHandler)
     {
         this.serverChannel = serverChannel;
         this.readHandler = readHandler;
