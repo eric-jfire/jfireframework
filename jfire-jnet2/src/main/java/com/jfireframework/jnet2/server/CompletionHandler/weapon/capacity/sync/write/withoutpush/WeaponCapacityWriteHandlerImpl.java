@@ -13,6 +13,7 @@ import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.common.BufHolder;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityReadHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityWriteHandler;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.write.push.SyncSingleWriteAndPushHandlerImpl;
 
 public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWriteHandler
 {
@@ -78,6 +79,7 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
         if (cursor < wrap)
         {
             batchWrite();
+//            singleWrite();
             return;
         }
         else
@@ -88,6 +90,7 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
                 if (cursor < wrap)
                 {
                     batchWrite();
+//                    singleWrite();
                     return;
                 }
                 else
@@ -130,6 +133,12 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
         socketChannel.write(batchBuffers, 0, length, 10, TimeUnit.SECONDS, batchBuffers, batchWriteHandler);
     }
     
+    private void singleWrite()
+    {
+        ByteBuf<?> buf = getBuf(cursor);
+        socketChannel.write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+    }
+    
     @Override
     public void failed(Throwable exc, ByteBuf<?> buf)
     {
@@ -145,7 +154,7 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
         if (idleState.value() == idle && idleState.compareAndSwap(idle, work))
         {
             // 由于取得了所有权，所以可以更改。并且由于当前只有该写入者。所以wrap的最大值只可能是index+1
-            wrap = index + 1;
+            wrap = writeCursor.value() + 1;
             if (cursor < wrap)
             {
                 buf = getBuf(cursor);

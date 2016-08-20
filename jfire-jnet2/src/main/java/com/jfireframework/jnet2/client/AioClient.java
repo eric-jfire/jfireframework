@@ -143,6 +143,7 @@ public class AioClient
             }
             internalResult.setIndex(0);
             internalResult.setChannelInfo(clientChannel);
+            Object origin = data;
             for (int i = index; i < writeHandlers.length;)
             {
                 data = writeHandlers[i].handle(data, internalResult);
@@ -159,6 +160,7 @@ public class AioClient
             if (data instanceof ByteBuf<?>)
             {
                 Future<?> result = clientChannel.addFuture();
+                ((ResponseFuture) result).originData = origin;
                 clientReadCompleter.total += ((ByteBuf<?>) data).remainRead();
                 ByteBuffer buffer = ((ByteBuf<?>) data).nioBuffer();
                 while (buffer.hasRemaining())

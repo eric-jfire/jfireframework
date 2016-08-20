@@ -32,7 +32,7 @@ public class BaseServerTest
         config.setSocketThreadSize(4);
         config.setChannelCapacity(64);
         config.setAcceptMode(AcceptMode.weapon_single);
-        config.setWorkMode(WorkMode.SYNC);
+        config.setWorkMode(WorkMode.ASYNC);
         config.setPushMode(PushMode.OFF);
         config.setInitListener(new myInitListener());
         // 设置包解码器。包解码器用来从tcp的数据流中截取出一个完整的tcp报文

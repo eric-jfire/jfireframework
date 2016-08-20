@@ -81,7 +81,14 @@ public class AioServer
                     channelGroup = AsynchronousChannelGroup.withCachedThreadPool(Executors.newCachedThreadPool(threadFactory), serverConfig.getSocketThreadSize());
                     break;
             }
-            serverSocketChannel = AsynchronousServerSocketChannel.open(channelGroup).bind(new InetSocketAddress(serverConfig.getPort()));
+            if (serverConfig.isLocalTestMode())
+            {
+                serverSocketChannel = AsynchronousServerSocketChannel.open(channelGroup).bind(new InetSocketAddress("127.0.0.1", serverConfig.getPort()));
+            }
+            else
+            {
+                serverSocketChannel = AsynchronousServerSocketChannel.open(channelGroup).bind(new InetSocketAddress(serverConfig.getPort()));
+            }
             logger.info("监听启动");
             switch (serverConfig.getAcceptMode())
             {

@@ -26,7 +26,7 @@ import com.jfireframework.jnet2.server.util.WorkMode;
 public class SingleSpeedTest
 {
     private int    threadCount = 1;
-    private int    sendCount   = 100000;
+    private int    sendCount   = 10000;
     private String ip          = "127.0.0.1";
     private int    port        = 8553;
     
@@ -34,7 +34,7 @@ public class SingleSpeedTest
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setAcceptMode(AcceptMode.weapon_capacity);
+        config.setAcceptMode(AcceptMode.weapon_single);
         config.setPushMode(PushMode.OFF);
         config.setWorkMode(WorkMode.SYNC);
         config.setSocketThreadSize(16);

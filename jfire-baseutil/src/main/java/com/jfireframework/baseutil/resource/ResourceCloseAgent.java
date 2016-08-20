@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ResourceCloseAgent<T>
 {
-    private static final int               OPEN  = 1;
+    private static final int               OPEN  = 0;
     private static final int               CLOSE = 1;
     private final AtomicInteger            state = new AtomicInteger(OPEN);
     private final T                        resource;

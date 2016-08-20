@@ -10,10 +10,9 @@ import com.jfireframework.baseutil.resource.ResourceCloseAgent;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet2.common.channel.ClientChannel;
+import com.jfireframework.jnet2.common.decodec.DecodeResult;
 import com.jfireframework.jnet2.common.decodec.FrameDecodec;
-import com.jfireframework.jnet2.common.exception.BufNotEnoughException;
 import com.jfireframework.jnet2.common.exception.EndOfStreamException;
-import com.jfireframework.jnet2.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet2.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet2.common.handler.DataHandler;
 import com.jfireframework.jnet2.common.result.InternalResult;
@@ -54,55 +53,51 @@ public class ClientReadCompleter implements CompletionHandler<Integer, ClientCha
             return;
         }
         ioBuf.addWriteIndex(result);
-        Object decodeResult = null;
         while (true)
         {
             try
             {
-                decodeResult = frameDecodec.decodec(ioBuf);
-                if (decodeResult != null)
+                DecodeResult decodeResult = frameDecodec.decodec(ioBuf);
+                switch (decodeResult.getType())
                 {
-                    internalResult.setChannelInfo(channelInfo);
-                    internalResult.setIndex(0);
-                    internalResult.setData(decodeResult);
-                    for (int i = 0; i < handlers.length;)
-                    {
-                        decodeResult = handlers[i].handle(decodeResult, internalResult);
-                        if (i == internalResult.getIndex())
+                    case LESS_THAN_PROTOCOL:
+                        readAndWait();
+                        return;
+                    case BUF_NOT_ENOUGH:
+                        ioBuf.compact().ensureCapacity(decodeResult.getNeed());
+                        continueRead();
+                        return;
+                    case NOT_FIT_PROTOCOL:
+                        logger.debug("协议错误，关闭链接");
+                        catchThrowable(NotFitProtocolException.instance);
+                        return;
+                    case NORMAL:
+                        Object intermediateResult = decodeResult.getBuf();
+                        internalResult.setChannelInfo(channelInfo);
+                        internalResult.setIndex(0);
+                        internalResult.setData(intermediateResult);
+                        for (int i = 0; i < handlers.length;)
                         {
-                            i++;
-                            internalResult.setIndex(i);
+                            intermediateResult = handlers[i].handle(intermediateResult, internalResult);
+                            if (i == internalResult.getIndex())
+                            {
+                                i++;
+                                internalResult.setIndex(i);
+                            }
+                            else
+                            {
+                                i = internalResult.getIndex();
+                            }
                         }
-                        else
-                        {
-                            i = internalResult.getIndex();
-                        }
-                    }
-                    // logger.trace("客户端处理完毕响应{}", cursor);
-                    channelInfo.signal(decodeResult);
+                        // logger.trace("客户端处理完毕响应{}", cursor);
+                        channelInfo.signal(intermediateResult);
+                        break;
                 }
                 if (ioBuf.remainRead() == 0)
                 {
                     readAndWait();
                     return;
                 }
-            }
-            catch (BufNotEnoughException e)
-            {
-                ioBuf.compact();
-                ioBuf.ensureCapacity(e.getNeedSize());
-                continueRead();
-                return;
-            }
-            catch (LessThanProtocolException e)
-            {
-                readAndWait();
-                return;
-            }
-            catch (NotFitProtocolException e)
-            {
-                catchThrowable(e);
-                return;
             }
             catch (Throwable e)
             {

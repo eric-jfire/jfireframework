@@ -2,6 +2,8 @@ package com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.syn
 
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
+import com.jfireframework.jnet2.common.decodec.DecodeResult;
+import com.jfireframework.jnet2.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.AbstractSingleReadHandler;
 
 public abstract class AbstractSyncSingleReadHandler extends AbstractSingleReadHandler
@@ -14,42 +16,43 @@ public abstract class AbstractSyncSingleReadHandler extends AbstractSingleReadHa
     
     protected void frameAndHandle() throws Throwable
     {
-        while (true)
+        DecodeResult decodeResult = frameDecodec.decodec(ioBuf);
+        switch (decodeResult.getType())
         {
-            Object intermediateResult = frameDecodec.decodec(ioBuf);
-            internalResult.setChannelInfo(serverChannel);
-            internalResult.setData(intermediateResult);
-            internalResult.setIndex(0);
-            for (int i = 0; i < handlers.length;)
-            {
-                intermediateResult = handlers[i].handle(intermediateResult, internalResult);
-                if (i == internalResult.getIndex())
-                {
-                    i++;
-                    internalResult.setIndex(i);
-                }
-                else
-                {
-                    i = internalResult.getIndex();
-                }
-            }
-            if (intermediateResult instanceof ByteBuf<?>)
-            {
-                doWrite((ByteBuf<?>) intermediateResult);
+            case LESS_THAN_PROTOCOL:
+                readAndWait();
                 break;
-            }
-            else
-            {
-                if (ioBuf.remainRead() > 0)
+            case BUF_NOT_ENOUGH:
+                ioBuf.compact().ensureCapacity(decodeResult.getNeed());
+                continueRead();
+                break;
+            case NOT_FIT_PROTOCOL:
+                logger.debug("协议错误，关闭链接");
+                catchThrowable(NotFitProtocolException.instance);
+                break;
+            case NORMAL:
+                Object intermediateResult = decodeResult.getBuf();
+                internalResult.setChannelInfo(serverChannel);
+                internalResult.setData(intermediateResult);
+                internalResult.setIndex(0);
+                for (int i = 0; i < handlers.length;)
                 {
-                    continue;
+                    intermediateResult = handlers[i].handle(intermediateResult, internalResult);
+                    if (i == internalResult.getIndex())
+                    {
+                        i++;
+                        internalResult.setIndex(i);
+                    }
+                    else
+                    {
+                        i = internalResult.getIndex();
+                    }
                 }
-                else
+                if (intermediateResult instanceof ByteBuf<?>)
                 {
-                    readAndWait();
-                    break;
+                    doWrite((ByteBuf<?>) intermediateResult);
                 }
-            }
+                break;
         }
     }
     

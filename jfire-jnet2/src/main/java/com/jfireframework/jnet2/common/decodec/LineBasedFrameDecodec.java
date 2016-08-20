@@ -3,13 +3,11 @@ package com.jfireframework.jnet2.common.decodec;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBufPool;
-import com.jfireframework.jnet2.common.exception.BufNotEnoughException;
-import com.jfireframework.jnet2.common.exception.LessThanProtocolException;
-import com.jfireframework.jnet2.common.exception.NotFitProtocolException;
 
 public class LineBasedFrameDecodec implements FrameDecodec
 {
-    private int maxLineLength;
+    private int                maxLineLength;
+    private final DecodeResult result = new DecodeResult();
     
     /**
      * 换行符报文解码器。
@@ -22,18 +20,21 @@ public class LineBasedFrameDecodec implements FrameDecodec
     }
     
     @Override
-    public ByteBuf<?> decodec(ByteBuf<?> ioBuffer) throws NotFitProtocolException, BufNotEnoughException, LessThanProtocolException
+    public DecodeResult decodec(ByteBuf<?> ioBuffer)
     {
         int eol = getEndOfLine(ioBuffer);
         if (eol == -1)
         {
             if (ioBuffer.remainRead() > maxLineLength)
             {
-                throw NotFitProtocolException.instance;
+                result.setType(DecodeResultType.NOT_FIT_PROTOCOL);
+                return result;
             }
             else
             {
-                throw new BufNotEnoughException(1000);
+                result.setType(DecodeResultType.BUF_NOT_ENOUGH);
+                result.setNeed(1000);
+                return result;
             }
         }
         else
@@ -50,7 +51,9 @@ public class LineBasedFrameDecodec implements FrameDecodec
             DirectByteBuf frame = DirectByteBufPool.getInstance().get(length);
             frame.put(ioBuffer, length);
             ioBuffer.readIndex(eol + 1);
-            return frame;
+            result.setType(DecodeResultType.NORMAL);
+            result.setBuf(frame);
+            return result;
         }
     }
     

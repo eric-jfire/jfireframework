@@ -3,9 +3,6 @@ package com.jfireframework.jnet2.common.decodec;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBufPool;
-import com.jfireframework.jnet2.common.exception.BufNotEnoughException;
-import com.jfireframework.jnet2.common.exception.LessThanProtocolException;
-import com.jfireframework.jnet2.common.exception.NotFitProtocolException;
 
 /**
  * 特定结束符整包解码器
@@ -15,8 +12,9 @@ import com.jfireframework.jnet2.common.exception.NotFitProtocolException;
  */
 public class DelimiterBasedFrameDecodec implements FrameDecodec
 {
-    private byte[] delimiter;
-    private int    maxLength;
+    private byte[]             delimiter;
+    private int                maxLength;
+    private final DecodeResult result = new DecodeResult();
     
     /**
      * 
@@ -30,17 +28,20 @@ public class DelimiterBasedFrameDecodec implements FrameDecodec
     }
     
     @Override
-    public ByteBuf<?> decodec(ByteBuf<?> ioBuffer) throws NotFitProtocolException, BufNotEnoughException, LessThanProtocolException
+    public DecodeResult decodec(ByteBuf<?> ioBuffer)
     {
         if (ioBuffer.remainRead() > maxLength)
         {
-            throw NotFitProtocolException.instance;
+            result.setType(DecodeResultType.NOT_FIT_PROTOCOL);
+            return result;
         }
         ioBuffer.maskRead();
         int index = ioBuffer.indexOf(delimiter);
         if (index == -1)
         {
-            throw new BufNotEnoughException(ioBuffer.remainRead());
+            result.setType(DecodeResultType.BUF_NOT_ENOUGH);
+            result.setNeed(ioBuffer.remainRead());
+            return result;
         }
         else
         {
@@ -48,7 +49,9 @@ public class DelimiterBasedFrameDecodec implements FrameDecodec
             DirectByteBuf buf = DirectByteBufPool.getInstance().get(contentLength);
             buf.put(ioBuffer, contentLength);
             ioBuffer.readIndex(index + delimiter.length);
-            return buf;
+            result.setType(DecodeResultType.NORMAL);
+            result.setBuf(buf);
+            return result;
         }
     }
     

@@ -15,11 +15,11 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
 {
     private final ServerChannel         serverChannel;
     private final WeaponReadHandler     readHandler;
-    private Logger                      logger       = ConsoleLogFactory.getLogger();
-    private static final int            IDLE         = 0;
-    private static final int            WORK         = 1;
-    private CpuCachePadingInt           writeState    = new CpuCachePadingInt(IDLE);
-    private MPSCLinkedQueue<ByteBuf<?>> pushQueue = new MPSCLinkedQueue<>();
+    private Logger                      logger     = ConsoleLogFactory.getLogger();
+    private static final int            IDLE       = 0;
+    private static final int            WORK       = 1;
+    private CpuCachePadingInt           writeState = new CpuCachePadingInt(IDLE);
+    private MPSCLinkedQueue<ByteBuf<?>> pushQueue  = new MPSCLinkedQueue<>();
     
     public SyncSingleWriteAndPushHandlerImpl(ServerChannel serverChannel, WeaponReadHandler readHandler)
     {
@@ -44,10 +44,10 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
             return;
         }
         writeState.set(IDLE);
-        while (true)
+        do
         {
-            buf = pushQueue.poll();
-            if (buf == null)
+            // 处于空闲状态的时候只能通过isEmpty来判断是否有数据，有数据之后要争夺使用权之后才能才能提取数据
+            if (pushQueue.isEmpty())
             {
                 readHandler.notifyRead();
                 break;
@@ -73,7 +73,7 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
                     break;
                 }
             }
-        }
+        } while (true);
     }
     
     @Override

@@ -4,6 +4,8 @@ import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
 import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
+import com.jfireframework.jnet2.common.decodec.DecodeResult;
+import com.jfireframework.jnet2.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.AbstractSingleReadHandler;
 
 public abstract class AbstractAsyncSingleReadHandler extends AbstractSingleReadHandler implements AsyncReadHandler
@@ -20,11 +22,28 @@ public abstract class AbstractAsyncSingleReadHandler extends AbstractSingleReadH
     @Override
     protected void frameAndHandle() throws Throwable
     {
-        Object intermediateResult = frameDecodec.decodec(ioBuf);
-        internalResult.setChannelInfo(serverChannel);
-        internalResult.setData(intermediateResult);
-        internalResult.setIndex(0);
-        disruptor.publish(this);
+        DecodeResult decodeResult = frameDecodec.decodec(ioBuf);
+        switch (decodeResult.getType())
+        {
+            case LESS_THAN_PROTOCOL:
+                readAndWait();
+                break;
+            case BUF_NOT_ENOUGH:
+                ioBuf.compact().ensureCapacity(decodeResult.getNeed());
+                continueRead();
+                break;
+            case NOT_FIT_PROTOCOL:
+                logger.debug("协议错误，关闭链接");
+                catchThrowable(NotFitProtocolException.instance);
+                break;
+            case NORMAL:
+                Object intermediateResult = decodeResult.getBuf();
+                internalResult.setChannelInfo(serverChannel);
+                internalResult.setData(intermediateResult);
+                internalResult.setIndex(0);
+                disruptor.publish(this);
+                break;
+        }
     }
     
     @Override

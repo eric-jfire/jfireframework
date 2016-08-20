@@ -217,8 +217,8 @@ public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
                 }
                 readState.set(IDLE);
                 // 假设在这边失去控制权，然后写线程得到了控制权，然后注册了读取，通道异常关闭，触发一个fail操作。这边再次获得控制权后尝试读取。又会再次触发fail操作。导致iobuf被释放两次
-                long tmp = writeHandler.cursor() + capacity;
-                if (cursor >= tmp)
+                long _wrap = writeHandler.cursor() + capacity;
+                if (cursor >= _wrap)
                 {
                     return YIDLE;
                 }

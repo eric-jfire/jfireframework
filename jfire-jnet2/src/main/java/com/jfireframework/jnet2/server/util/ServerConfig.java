@@ -25,11 +25,22 @@ public class ServerConfig
     private WorkMode            workMode         = WorkMode.SYNC;
     private WriteMode           writeMode        = WriteMode.BATCH_WRITE;
     private ExecutorMode        executorMode     = ExecutorMode.CACHED;
-    private AcceptMode          acceptMode       = AcceptMode.weapon_capacity;
+    private AcceptMode          acceptMode       = AcceptMode.weapon_single;
     private PushMode            pushMode         = PushMode.OFF;
     private int                 maxBatchWriteNum = 10;
     private int                 channelCapacity  = 16;
     private int                 asyncCapacity    = 1024;
+    private boolean             localTestMode    = false;
+    
+    public boolean isLocalTestMode()
+    {
+        return localTestMode;
+    }
+    
+    public void setLocalTestMode(boolean localTestMode)
+    {
+        this.localTestMode = localTestMode;
+    }
     
     public PushMode getPushMode()
     {

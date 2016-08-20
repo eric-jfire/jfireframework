@@ -3,7 +3,6 @@ package com.jfireframework.jnet2.common.channel.impl;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.LockSupport;
-import com.jfireframework.baseutil.concurrent.CpuCachePadingLong;
 import com.jfireframework.jnet2.client.ResponseFuture;
 import com.jfireframework.jnet2.common.channel.ClientChannel;
 
@@ -15,14 +14,14 @@ public class FutureClientChannelInfo extends AbstractChannel implements ClientCh
         private ResponseFuture future;
     }
     
-    private feaureHolder[]     holders;
-    private Thread             writeThread;
-    private volatile boolean   needUnpark   = false;
-    private final int          mask;
-    private final int          capacity;
-    private long               wrapPoint    = 0;
-    private CpuCachePadingLong putCursor    = new CpuCachePadingLong(0);
-    private CpuCachePadingLong singalCursor = new CpuCachePadingLong(0);
+    private feaureHolder[]   holders;
+    private Thread           writeThread;
+    private volatile boolean needUnpark   = false;
+    private final int        mask;
+    private final int        capacity;
+    private long             wrap         = 0;
+    private volatile long    putCursor    = 0;
+    private volatile long    singalCursor = 0;
     
     public FutureClientChannelInfo(int capacity, AsynchronousSocketChannel socketChannel)
     {
@@ -44,11 +43,10 @@ public class FutureClientChannelInfo extends AbstractChannel implements ClientCh
     
     public final void signal(Object obj)
     {
-        long current = singalCursor.value();
         // 可以考虑一种很难出现的情况就是服务端收到一个请求的时候发送了两个响应。这样就会导致读取到不合适位置的future
-        ResponseFuture future = holders[(int) (current & mask)].future;
+        ResponseFuture future = holders[(int) (singalCursor & mask)].future;
         future.ready(obj, null);
-        singalCursor.set(current + 1);
+        singalCursor += 1;
         if (needUnpark)
         {
             // 这里设置为false，避免不必要的对一个线程进行unpark操作
@@ -60,14 +58,14 @@ public class FutureClientChannelInfo extends AbstractChannel implements ClientCh
     public final void signalAll(Throwable e)
     {
         ResponseFuture future;
-        long current = singalCursor.value();
-        while (current < putCursor.value())
+        long current = singalCursor;
+        while (current < putCursor)
         {
             future = holders[(int) (current & mask)].future;
             future.ready(null, e);
             current += 1;
         }
-        singalCursor.set(current);
+        singalCursor = current;
         if (needUnpark)
         {
             needUnpark = false;
@@ -77,11 +75,11 @@ public class FutureClientChannelInfo extends AbstractChannel implements ClientCh
     
     public Future<?> addFuture()
     {
-        long current = putCursor.value();
-        while (current >= wrapPoint)
+        long current = putCursor;
+        while (current >= wrap)
         {
-            wrapPoint = singalCursor.value() + capacity;
-            if (current < wrapPoint)
+            wrap = singalCursor + capacity;
+            if (current < wrap)
             {
                 break;
             }
@@ -89,8 +87,8 @@ public class FutureClientChannelInfo extends AbstractChannel implements ClientCh
             writeThread = Thread.currentThread();
             needUnpark = true;
             // 在设置needUnpark之后进行检查，以避免数据其实都已经被读取而没有线程可以unpark该线程
-            wrapPoint = singalCursor.value() + capacity;
-            if (current >= wrapPoint)
+            wrap = singalCursor + capacity;
+            if (current >= wrap)
             {
                 LockSupport.park();
             }
@@ -103,7 +101,7 @@ public class FutureClientChannelInfo extends AbstractChannel implements ClientCh
         // 客户端每一个future都代表一个结果，不可以被复用。因为外部环境需要保留所有的result
         ResponseFuture future = new ResponseFuture();
         holders[(int) (current & mask)].future = future;
-        putCursor.set(current + 1);
+        putCursor = current + 1;
         return future;
     }
 }

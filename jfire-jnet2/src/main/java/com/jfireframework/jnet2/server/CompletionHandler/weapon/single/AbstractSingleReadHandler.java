@@ -9,10 +9,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.common.decodec.FrameDecodec;
-import com.jfireframework.jnet2.common.exception.BufNotEnoughException;
 import com.jfireframework.jnet2.common.exception.EndOfStreamException;
-import com.jfireframework.jnet2.common.exception.LessThanProtocolException;
-import com.jfireframework.jnet2.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet2.common.handler.DataHandler;
 import com.jfireframework.jnet2.common.result.InternalResult;
 import com.jfireframework.jnet2.common.result.InternalResultImpl;
@@ -101,23 +98,6 @@ public abstract class AbstractSingleReadHandler implements WeaponReadHandler
         try
         {
             frameAndHandle();
-        }
-        catch (LessThanProtocolException e)
-        {
-            readAndWait();
-            return;
-        }
-        catch (BufNotEnoughException e)
-        {
-            ioBuf.compact().ensureCapacity(e.getNeedSize());
-            continueRead();
-            return;
-        }
-        catch (NotFitProtocolException e)
-        {
-            logger.debug("协议错误，关闭链接");
-            catchThrowable(e);
-            return;
         }
         catch (Throwable e)
         {
