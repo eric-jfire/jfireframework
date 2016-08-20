@@ -13,13 +13,13 @@ import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.SingleRea
 
 public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
 {
-    private final ServerChannel         serverChannel;
-    private final SingleReadHandler     readHandler;
-    private Logger                      logger     = ConsoleLogFactory.getLogger();
-    private static final int            IDLE       = 0;
-    private static final int            WORK       = 1;
-    private CpuCachePadingInt           writeState = new CpuCachePadingInt(IDLE);
-    private MPSCLinkedQueue<ByteBuf<?>> pushQueue  = new MPSCLinkedQueue<>();
+    private final ServerChannel               serverChannel;
+    private final SingleReadHandler           readHandler;
+    private final static Logger               logger     = ConsoleLogFactory.getLogger();
+    private static final int                  IDLE       = 0;
+    private static final int                  WORK       = 1;
+    private final CpuCachePadingInt           writeState = new CpuCachePadingInt(IDLE);
+    private final MPSCLinkedQueue<ByteBuf<?>> pushQueue  = new MPSCLinkedQueue<>();
     
     public SyncSingleWriteAndPushHandlerImpl(ServerChannel serverChannel, SingleReadHandler readHandler)
     {
