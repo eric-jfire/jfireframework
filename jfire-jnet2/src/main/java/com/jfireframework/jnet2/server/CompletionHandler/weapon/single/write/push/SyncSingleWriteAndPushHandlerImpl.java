@@ -8,20 +8,20 @@ import com.jfireframework.baseutil.concurrent.MPSCLinkedQueue;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
-import com.jfireframework.jnet2.server.CompletionHandler.WeaponReadHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.WeaponWriteHandler;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.WeaponSingleReadHandler;
 
 public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
 {
     private final ServerChannel         serverChannel;
-    private final WeaponReadHandler     readHandler;
+    private final WeaponSingleReadHandler     readHandler;
     private Logger                      logger     = ConsoleLogFactory.getLogger();
     private static final int            IDLE       = 0;
     private static final int            WORK       = 1;
     private CpuCachePadingInt           writeState = new CpuCachePadingInt(IDLE);
     private MPSCLinkedQueue<ByteBuf<?>> pushQueue  = new MPSCLinkedQueue<>();
     
-    public SyncSingleWriteAndPushHandlerImpl(ServerChannel serverChannel, WeaponReadHandler readHandler)
+    public SyncSingleWriteAndPushHandlerImpl(ServerChannel serverChannel, WeaponSingleReadHandler readHandler)
     {
         this.serverChannel = serverChannel;
         this.readHandler = readHandler;

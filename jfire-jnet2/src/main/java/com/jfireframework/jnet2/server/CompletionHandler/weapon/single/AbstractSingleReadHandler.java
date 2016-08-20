@@ -14,10 +14,9 @@ import com.jfireframework.jnet2.common.handler.DataHandler;
 import com.jfireframework.jnet2.common.result.InternalResult;
 import com.jfireframework.jnet2.common.result.InternalResultImpl;
 import com.jfireframework.jnet2.common.util.BytebufReleaseCallback;
-import com.jfireframework.jnet2.server.CompletionHandler.WeaponReadHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.WeaponWriteHandler;
 
-public abstract class AbstractSingleReadHandler implements WeaponReadHandler
+public abstract class AbstractSingleReadHandler implements WeaponSingleReadHandler
 {
     protected static final Logger            logger           = ConsoleLogFactory.getLogger();
     protected final FrameDecodec             frameDecodec;

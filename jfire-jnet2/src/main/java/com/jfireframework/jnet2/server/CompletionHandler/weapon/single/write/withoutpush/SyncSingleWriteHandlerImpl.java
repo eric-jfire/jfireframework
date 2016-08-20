@@ -6,16 +6,16 @@ import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
-import com.jfireframework.jnet2.server.CompletionHandler.WeaponReadHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.WeaponWriteHandler;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.WeaponSingleReadHandler;
 
 public class SyncSingleWriteHandlerImpl implements WeaponWriteHandler
 {
-    private final ServerChannel     serverChannel;
-    private final WeaponReadHandler readHandler;
-    private Logger                  logger = ConsoleLogFactory.getLogger();
+    private final ServerChannel           serverChannel;
+    private final WeaponSingleReadHandler readHandler;
+    private final static Logger           logger = ConsoleLogFactory.getLogger();
     
-    public SyncSingleWriteHandlerImpl(ServerChannel serverChannel, WeaponReadHandler readHandler)
+    public SyncSingleWriteHandlerImpl(ServerChannel serverChannel, WeaponSingleReadHandler readHandler)
     {
         this.serverChannel = serverChannel;
         this.readHandler = readHandler;
@@ -30,8 +30,8 @@ public class SyncSingleWriteHandlerImpl implements WeaponWriteHandler
             serverChannel.getSocketChannel().write(buffer, 10, TimeUnit.SECONDS, buf, this);
             return;
         }
-        readHandler.notifyRead();
         buf.release();
+        readHandler.notifyRead();
     }
     
     @Override

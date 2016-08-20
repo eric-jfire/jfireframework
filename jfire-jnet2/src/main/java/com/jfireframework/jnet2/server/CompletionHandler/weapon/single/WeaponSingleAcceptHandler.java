@@ -14,7 +14,6 @@ import com.jfireframework.jnet2.common.channel.ChannelInitListener;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.server.AioServer;
 import com.jfireframework.jnet2.server.CompletionHandler.AcceptHandler;
-import com.jfireframework.jnet2.server.CompletionHandler.WeaponReadHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async.SingleAsyncAction;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async.push.AsyncSingleReadWithPushHandlerImpl;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async.withoutpush.AsyncSingleReadHandlerImpl;
@@ -69,7 +68,7 @@ public class WeaponSingleAcceptHandler implements AcceptHandler
         {
             ServerChannel channelInfo = new ServerChannel(socketChannel);
             initListener.channelInit(channelInfo);
-            WeaponReadHandler readHandler = null;
+            WeaponSingleReadHandler readHandler = null;
             if (workMode == WorkMode.SYNC)
             {
                 if (pushMode == PushMode.OFF)
