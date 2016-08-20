@@ -23,7 +23,7 @@ import com.jfireframework.jnet2.server.util.PushMode;
 import com.jfireframework.jnet2.server.util.ServerConfig;
 import com.jfireframework.jnet2.server.util.WorkMode;
 
-public class WeaponSingleAcceptHandler implements AcceptHandler
+public class SingleAcceptHandler implements AcceptHandler
 {
     private AioServer           aioServer;
     private Logger              logger = ConsoleLogFactory.getLogger();
@@ -32,7 +32,7 @@ public class WeaponSingleAcceptHandler implements AcceptHandler
     private final WorkMode      workMode;
     private final Disruptor     disruptor;
     
-    public WeaponSingleAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
+    public SingleAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
         pushMode = serverConfig.getPushMode();
         workMode = serverConfig.getWorkMode();

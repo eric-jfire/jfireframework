@@ -17,7 +17,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet2.server.CompletionHandler.AcceptHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityAcceptHandler;
-import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.WeaponSingleAcceptHandler;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.SingleAcceptHandler;
 import com.jfireframework.jnet2.server.util.ServerConfig;
 
 public class AioServer
@@ -96,7 +96,7 @@ public class AioServer
                     acceptHandler = new WeaponCapacityAcceptHandler(this, serverConfig);
                     break;
                 case weapon_single:
-                    acceptHandler = new WeaponSingleAcceptHandler(this, serverConfig);
+                    acceptHandler = new SingleAcceptHandler(this, serverConfig);
                     break;
             }
             serverSocketChannel.accept(null, acceptHandler);
