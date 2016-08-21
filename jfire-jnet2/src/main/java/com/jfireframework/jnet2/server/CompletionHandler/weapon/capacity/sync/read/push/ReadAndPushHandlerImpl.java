@@ -15,10 +15,10 @@ import com.jfireframework.jnet2.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet2.common.handler.DataHandler;
 import com.jfireframework.jnet2.common.result.InternalResult;
 import com.jfireframework.jnet2.common.result.InternalResultImpl;
-import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityReadHandler;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.CapacityReadHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityWriteHandler;
 
-public class ReadAndPushHandlerImpl implements WeaponCapacityReadHandler
+public class ReadAndPushHandlerImpl implements CapacityReadHandler
 {
     
     private static final Logger                  logger         = ConsoleLogFactory.getLogger();

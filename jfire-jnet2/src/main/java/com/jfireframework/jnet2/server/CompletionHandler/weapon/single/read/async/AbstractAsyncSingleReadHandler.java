@@ -71,7 +71,7 @@ public abstract class AbstractAsyncSingleReadHandler extends AbstractSingleReadH
             }
             else
             {
-                doWrite(emptyBuf);
+                notifyRead();
             }
         }
         catch (Throwable e)

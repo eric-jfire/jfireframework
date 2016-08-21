@@ -11,7 +11,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
-import com.jfireframework.jnet2.server.CompletionHandler.WeaponReadHandler;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.CapacityReadHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityWriteHandler;
 import sun.misc.Unsafe;
 
@@ -78,7 +78,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponCapacityWriteHandler
     private CpuCachePadingLong          sendSequence     = new CpuCachePadingLong(0);
     private long                        wrapSendSequence = 0;
     private long                        wrapPutSequence  = 0;
-    private final WeaponReadHandler     readHandler;
+    private final CapacityReadHandler   readHandler;
     private final ServerChannel         serverChannel;
     private final int                   idle             = 0;
     private final int                   work             = 1;
@@ -91,7 +91,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponCapacityWriteHandler
     private static final int            push             = 1;
     private final CpuCachePadingInt     pushState        = new CpuCachePadingInt(response);
     
-    public WeaponSyncWriteHandlerImpl(ServerChannel serverChannel, int capacity, WeaponReadHandler readHandler)
+    public WeaponSyncWriteHandlerImpl(ServerChannel serverChannel, int capacity, CapacityReadHandler readHandler)
     {
         this.readHandler = readHandler;
         this.serverChannel = serverChannel;
@@ -286,7 +286,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponCapacityWriteHandler
     {
         throw new UnsupportedOperationException();
     }
-
+    
     @Override
     public long cursor()
     {

@@ -18,11 +18,11 @@ import com.jfireframework.jnet2.common.handler.DataHandler;
 import com.jfireframework.jnet2.common.result.InternalResult;
 import com.jfireframework.jnet2.common.result.InternalResultImpl;
 import com.jfireframework.jnet2.common.util.BytebufReleaseCallback;
-import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityReadHandler;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.CapacityReadHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityWriteHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.write.withoutpush.WeaponCapacityWriteHandlerImpl;
 
-public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
+public class CapacityReadHandlerImpl implements CapacityReadHandler
 {
     
     private static final Logger                  logger            = ConsoleLogFactory.getLogger();
@@ -95,7 +95,7 @@ public class CapacityReadHandlerImpl implements WeaponCapacityReadHandler
     }
     
     /**
-     * 使用处理器处理异常，处理之后关闭当前的通道
+     * 关闭通道，并且执行异常处理。关闭通道的机会只有一次，同样的，异常处理也只会有一次
      * 
      * @param exc
      */

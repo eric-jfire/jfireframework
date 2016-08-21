@@ -16,7 +16,7 @@ import com.jfireframework.baseutil.collection.buffer.QueueFactory;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet2.server.CompletionHandler.AcceptHandler;
-import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityAcceptHandler;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.CapacityAcceptHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.SingleAcceptHandler;
 import com.jfireframework.jnet2.server.util.ServerConfig;
 
@@ -93,7 +93,7 @@ public class AioServer
             switch (serverConfig.getAcceptMode())
             {
                 case weapon_capacity:
-                    acceptHandler = new WeaponCapacityAcceptHandler(this, serverConfig);
+                    acceptHandler = new CapacityAcceptHandler(this, serverConfig);
                     break;
                 case weapon_single:
                     acceptHandler = new SingleAcceptHandler(this, serverConfig);

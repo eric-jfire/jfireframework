@@ -12,7 +12,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.common.BufHolder;
-import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityReadHandler;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.CapacityReadHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityWriteHandler;
 
 public final class WeaponCapacityWriteWithPushHandlerImpl implements WeaponCapacityWriteHandler
@@ -27,7 +27,7 @@ public final class WeaponCapacityWriteWithPushHandlerImpl implements WeaponCapac
      * 代表着已经被写入的序号，所以使用的时候，wrap的值应该是该属性的值+1
      */
     private final CpuCachePadingLong        writeCursor       = new CpuCachePadingLong(-1);
-    private final WeaponCapacityReadHandler readHandler;
+    private final CapacityReadHandler readHandler;
     private final int                       idle              = 0;
     private final int                       work              = 1;
     private final CpuCachePadingInt         idleState         = new CpuCachePadingInt(idle);
@@ -43,7 +43,7 @@ public final class WeaponCapacityWriteWithPushHandlerImpl implements WeaponCapac
     private static final int                push              = 1;
     private final CpuCachePadingInt         pushState         = new CpuCachePadingInt(response);
     
-    public WeaponCapacityWriteWithPushHandlerImpl(ServerChannel serverChannel, int capacity, WeaponCapacityReadHandler readHandler)
+    public WeaponCapacityWriteWithPushHandlerImpl(ServerChannel serverChannel, int capacity, CapacityReadHandler readHandler)
     {
         this.readHandler = readHandler;
         socketChannel = serverChannel.getSocketChannel();

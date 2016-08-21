@@ -89,6 +89,7 @@ public abstract class AbstractSingleReadHandler implements SingleReadHandler
                 e.printStackTrace();
             }
         }
+        //在single模式中，写线程成功后才会再次注册读取。只有失败的时候才会调用这个异常方法。所以可以这个方法中直接释放iobuf。因为后续不会再有对iobuf的操作。
         iobufReleseState.close();
     }
     

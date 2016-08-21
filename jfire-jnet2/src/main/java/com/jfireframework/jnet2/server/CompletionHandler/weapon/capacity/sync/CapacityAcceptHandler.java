@@ -11,13 +11,12 @@ import com.jfireframework.jnet2.common.channel.ChannelInitListener;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.server.AioServer;
 import com.jfireframework.jnet2.server.CompletionHandler.AcceptHandler;
-import com.jfireframework.jnet2.server.CompletionHandler.WeaponReadHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.read.withoutpush.CapacityReadHandlerImpl;
 import com.jfireframework.jnet2.server.util.PushMode;
 import com.jfireframework.jnet2.server.util.ServerConfig;
 import com.jfireframework.jnet2.server.util.WorkMode;
 
-public class WeaponCapacityAcceptHandler implements AcceptHandler
+public class CapacityAcceptHandler implements AcceptHandler
 {
     private final AsynchronousServerSocketChannel serverSocketChannel;
     private Logger                                logger = ConsoleLogFactory.getLogger();
@@ -26,7 +25,7 @@ public class WeaponCapacityAcceptHandler implements AcceptHandler
     private final WorkMode                        workMode;
     private final PushMode                        pushMode;
     
-    public WeaponCapacityAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
+    public CapacityAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
         pushMode = serverConfig.getPushMode();
         workMode = serverConfig.getWorkMode();
@@ -48,7 +47,7 @@ public class WeaponCapacityAcceptHandler implements AcceptHandler
         {
             ServerChannel channelInfo = new ServerChannel(socketChannel);
             initListener.channelInit(channelInfo);
-            WeaponReadHandler readHandler = null;
+            CapacityReadHandler readHandler = null;
             if (workMode == WorkMode.ASYNC)
             {
                 if (pushMode == PushMode.OFF)
