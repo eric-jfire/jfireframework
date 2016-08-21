@@ -35,8 +35,8 @@ public class AioClient
     private final boolean            async;
     private final InternalResult     internalResult = new InternalResultImpl();
     private int                      capacity       = 16;
-    private ClientReadCompleter      clientReadCompleter;
     private long                     connectTimeout = 10;
+    private final int                retryLimit     = 30;
     
     public AioClient(boolean async)
     {
@@ -91,21 +91,35 @@ public class AioClient
     {
         if (clientChannel == null || clientChannel.isOpen() == false)
         {
-            AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(channelGroup);
-            socketChannel.connect(new InetSocketAddress(address, port)).get(connectTimeout, TimeUnit.SECONDS);
-            if (async == true)
+            int retryCount = 0;
+            do
             {
-                clientChannel = new AsyncClientChannelInfo(socketChannel);
-            }
-            else
-            {
-                clientChannel = new FutureClientChannelInfo(capacity, socketChannel);
-            }
-            initListener.channelInit(clientChannel);
-            Verify.notNull(clientChannel.getFrameDecodec(), "没有设置framedecodec");
-            Verify.notNull(clientChannel.getHandlers(), "没有设置Datahandler");
-            clientReadCompleter = new ClientReadCompleter(this, clientChannel);
-            clientReadCompleter.readAndWait();
+                try
+                {
+                    AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(channelGroup);
+                    socketChannel.connect(new InetSocketAddress(address, port)).get(connectTimeout, TimeUnit.SECONDS);
+                    if (async == true)
+                    {
+                        clientChannel = new AsyncClientChannelInfo(socketChannel);
+                    }
+                    else
+                    {
+                        clientChannel = new FutureClientChannelInfo(capacity, socketChannel);
+                    }
+                    initListener.channelInit(clientChannel);
+                    Verify.notNull(clientChannel.getFrameDecodec(), "没有设置framedecodec");
+                    Verify.notNull(clientChannel.getHandlers(), "没有设置Datahandler");
+                    ClientReadCompleter clientReadCompleter = new ClientReadCompleter(this, clientChannel);
+                    clientReadCompleter.readAndWait();
+                    return this;
+                }
+                catch (Exception e)
+                {
+                    retryCount += 1;
+                    Thread.sleep(1000);
+                }
+            } while (retryCount < retryLimit);
+            throw new RuntimeException("重试次数内，无法连接客户端");
         }
         return this;
     }
@@ -161,7 +175,6 @@ public class AioClient
             {
                 Future<?> result = clientChannel.addFuture();
                 ((ResponseFuture) result).originData = origin;
-                clientReadCompleter.total += ((ByteBuf<?>) data).remainRead();
                 ByteBuffer buffer = ((ByteBuf<?>) data).nioBuffer();
                 while (buffer.hasRemaining())
                 {

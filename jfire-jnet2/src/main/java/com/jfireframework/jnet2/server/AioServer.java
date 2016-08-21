@@ -92,10 +92,10 @@ public class AioServer
             logger.info("监听启动");
             switch (serverConfig.getAcceptMode())
             {
-                case weapon_capacity:
+                case CAPACITY:
                     acceptHandler = new CapacityAcceptHandler(this, serverConfig);
                     break;
-                case weapon_single:
+                case SINGLE:
                     acceptHandler = new SingleAcceptHandler(this, serverConfig);
                     break;
             }

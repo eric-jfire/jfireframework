@@ -9,10 +9,9 @@ import com.jfireframework.baseutil.resource.ResourceCloseAgent;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
+import com.jfireframework.jnet2.common.decodec.DecodeResult;
 import com.jfireframework.jnet2.common.decodec.FrameDecodec;
-import com.jfireframework.jnet2.common.exception.BufNotEnoughException;
 import com.jfireframework.jnet2.common.exception.EndOfStreamException;
-import com.jfireframework.jnet2.common.exception.LessThanProtocolException;
 import com.jfireframework.jnet2.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet2.common.handler.DataHandler;
 import com.jfireframework.jnet2.common.result.InternalResult;
@@ -32,15 +31,6 @@ public class CapacityReadHandlerImpl implements CapacityReadHandler
     private final ServerChannel                  serverChannel;
     private final static int                     WORK              = 1;
     private final static int                     IDLE              = 2;
-    /**
-     * 本线程仍然持有控制权
-     */
-    private final static int                     ON_CONTROL        = 1;
-    
-    /**
-     * 本线程让渡出控制权
-     */
-    private final static int                     YIDLE             = 2;
     private final CpuCachePadingInt              readState         = new CpuCachePadingInt(WORK);
     // 读取超时时间
     private final long                           readTimeout;
@@ -136,76 +126,61 @@ public class CapacityReadHandlerImpl implements CapacityReadHandler
     {
         try
         {
-            int result = frameAndHandle();
-            if (result == ON_CONTROL)
-            {
-                readAndWait();
-                return;
-            }
-            else
-            {
-                return;
-            }
-        }
-        catch (LessThanProtocolException e)
-        {
-            readAndWait();
-            return;
-        }
-        catch (BufNotEnoughException e)
-        {
-            ioBuf.compact().ensureCapacity(e.getNeedSize());
-            continueRead();
-            return;
-        }
-        catch (NotFitProtocolException e)
-        {
-            logger.debug("协议错误，关闭链接");
-            catchThrowable(e);
-            return;
+            frameAndHandle();
         }
         catch (Throwable e)
         {
             logger.error("未预料的异常", e);
             catchThrowable(e);
+            // 上面的方法中，由于此时仍然持有读取控制权，因此不会注册读取，也就不会走到fail方法。所以这里要执行关闭。由于采用cas防御性的编程，所以不需要担心重复释放的问题
+            iobufReleaseState.close();
             return;
         }
     }
     
-    public int frameAndHandle() throws Throwable
+    public void frameAndHandle() throws Throwable
     {
-        while (true)
+        do
         {
             if (cursor < wrap)
             {
-                Object intermediateResult = frameDecodec.decodec(ioBuf);
-                internalResult.setData(intermediateResult);
-                internalResult.setIndex(0);
-                for (int i = 0; i < handlers.length;)
+                DecodeResult decodeResult = frameDecodec.decodec(ioBuf);
+                switch (decodeResult.getType())
                 {
-                    intermediateResult = handlers[i].handle(intermediateResult, internalResult);
-                    if (i == internalResult.getIndex())
-                    {
-                        i++;
-                        internalResult.setIndex(i);
-                    }
-                    else
-                    {
-                        i = internalResult.getIndex();
-                    }
-                }
-                if (intermediateResult instanceof ByteBuf<?>)
-                {
-                    writeHandler.write((ByteBuf<?>) intermediateResult, cursor);
-                    cursor += 1;
-                }
-                if (ioBuf.remainRead() == 0)
-                {
-                    return ON_CONTROL;
-                }
-                else
-                {
-                    continue;
+                    case LESS_THAN_PROTOCOL:
+                        readAndWait();
+                        return;
+                    case BUF_NOT_ENOUGH:
+                        ioBuf.compact().ensureCapacity(decodeResult.getNeed());
+                        continueRead();
+                        return;
+                    case NOT_FIT_PROTOCOL:
+                        logger.debug("协议错误，关闭链接");
+                        catchThrowable(NotFitProtocolException.instance);
+                        return;
+                    case NORMAL:
+                        Object intermediateResult = decodeResult.getBuf();
+                        internalResult.setData(intermediateResult);
+                        internalResult.setIndex(0);
+                        for (int i = 0; i < handlers.length;)
+                        {
+                            intermediateResult = handlers[i].handle(intermediateResult, internalResult);
+                            if (i == internalResult.getIndex())
+                            {
+                                i++;
+                                internalResult.setIndex(i);
+                            }
+                            else
+                            {
+                                i = internalResult.getIndex();
+                            }
+                        }
+                        if (intermediateResult instanceof ByteBuf<?>)
+                        {
+                            writeHandler.write((ByteBuf<?>) intermediateResult, cursor);
+                            cursor += 1;
+                        }
+                        break;
                 }
             }
             else
@@ -220,7 +195,7 @@ public class CapacityReadHandlerImpl implements CapacityReadHandler
                 long _wrap = writeHandler.cursor() + capacity;
                 if (cursor >= _wrap)
                 {
-                    return YIDLE;
+                    return;
                 }
                 else
                 {
@@ -231,11 +206,11 @@ public class CapacityReadHandlerImpl implements CapacityReadHandler
                     }
                     else
                     {
-                        return YIDLE;
+                        return;
                     }
                 }
             }
-        }
+        } while (true);
     }
     
     /**
@@ -244,7 +219,15 @@ public class CapacityReadHandlerImpl implements CapacityReadHandler
     public void readAndWait()
     {
         startCountdown = false;
-        serverChannel.getSocketChannel().read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, serverChannel, this);
+        try
+        {
+            serverChannel.getSocketChannel().read(getWriteBuffer(), waitTimeout, TimeUnit.MILLISECONDS, serverChannel, this);
+        }
+        catch (Exception e)
+        {
+            catchThrowable(e);
+            iobufReleaseState.close();
+        }
     }
     
     /**
@@ -270,7 +253,15 @@ public class CapacityReadHandlerImpl implements CapacityReadHandler
             endReadTime = lastReadTime + readTimeout;
             startCountdown = true;
         }
-        serverChannel.getSocketChannel().read(getWriteBuffer(), getRemainTime(), TimeUnit.MILLISECONDS, serverChannel, this);
+        try
+        {
+            serverChannel.getSocketChannel().read(getWriteBuffer(), getRemainTime(), TimeUnit.MILLISECONDS, serverChannel, this);
+        }
+        catch (Exception e)
+        {
+            catchThrowable(e);
+            iobufReleaseState.close();
+        }
         lastReadTime = System.currentTimeMillis();
     }
     

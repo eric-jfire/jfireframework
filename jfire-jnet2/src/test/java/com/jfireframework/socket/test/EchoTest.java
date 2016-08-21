@@ -60,13 +60,13 @@ public class EchoTest
         }
         ServerConfig config = new ServerConfig();
         config.setLocalTestMode(true);
-        config.setAcceptMode(AcceptMode.weapon_single);
+        config.setAcceptMode(AcceptMode.CAPACITY);
         config.setPushMode(PushMode.OFF);
         config.setWorkMode(WorkMode.SYNC);
-        config.setSocketThreadSize(4);
+        config.setSocketThreadSize(5);
         config.setChannelCapacity(4);
         config.setExecutorMode(ExecutorMode.FIX);
-        config.setAsyncThreadSize(16);
+        config.setAsyncThreadSize(4);
         config.setInitListener(new ChannelInitListener() {
             
             @Override
@@ -232,6 +232,7 @@ public class EchoTest
             }
             catch (Exception e)
             {
+//                e.printStackTrace();
                 result.incrementAndGet();
             }
         }

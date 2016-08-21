@@ -13,7 +13,6 @@ import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.common.BufHolder;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.CapacityReadHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.capacity.sync.WeaponCapacityWriteHandler;
-import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.write.push.SyncSingleWriteAndPushHandlerImpl;
 
 public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWriteHandler
 {
@@ -26,7 +25,7 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
      * 代表着已经被写入的序号，所以使用的时候，wrap的值应该是该属性的值+1
      */
     private final CpuCachePadingLong        writeCursor       = new CpuCachePadingLong(-1);
-    private final CapacityReadHandler readHandler;
+    private final CapacityReadHandler       readHandler;
     private final int                       idle              = 0;
     private final int                       work              = 1;
     private final CpuCachePadingInt         idleState         = new CpuCachePadingInt(idle);
@@ -79,7 +78,7 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
         if (cursor < wrap)
         {
             batchWrite();
-//            singleWrite();
+            // singleWrite();
             return;
         }
         else
@@ -90,7 +89,7 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
                 if (cursor < wrap)
                 {
                     batchWrite();
-//                    singleWrite();
+                    // singleWrite();
                     return;
                 }
                 else
@@ -130,7 +129,18 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
             batchBuffers[length++] = buf.nioBuffer();
         }
         batchWriteHandler.length = length;
-        socketChannel.write(batchBuffers, 0, length, 10, TimeUnit.SECONDS, batchBuffers, batchWriteHandler);
+        try
+        {
+            socketChannel.write(batchBuffers, 0, length, 10, TimeUnit.SECONDS, batchBuffers, batchWriteHandler);
+        }
+        catch (Exception e)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                batchBufs[i].release();
+            }
+            readHandler.catchThrowable(e);
+        }
     }
     
     private void singleWrite()
@@ -157,8 +167,10 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
             wrap = writeCursor.value() + 1;
             if (cursor < wrap)
             {
-                buf = getBuf(cursor);
-                socketChannel.write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
+                // buf = getBuf(cursor);
+                // socketChannel.write(buf.cachedNioBuffer(), 10,
+                // TimeUnit.SECONDS, buf, this);
+                writeNextBuf();
             }
             else
             {

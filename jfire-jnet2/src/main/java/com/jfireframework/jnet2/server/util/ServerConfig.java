@@ -25,7 +25,7 @@ public class ServerConfig
     private WorkMode            workMode         = WorkMode.SYNC;
     private WriteMode           writeMode        = WriteMode.BATCH_WRITE;
     private ExecutorMode        executorMode     = ExecutorMode.CACHED;
-    private AcceptMode          acceptMode       = AcceptMode.weapon_single;
+    private AcceptMode          acceptMode       = AcceptMode.SINGLE;
     private PushMode            pushMode         = PushMode.OFF;
     private int                 maxBatchWriteNum = 10;
     private int                 channelCapacity  = 16;

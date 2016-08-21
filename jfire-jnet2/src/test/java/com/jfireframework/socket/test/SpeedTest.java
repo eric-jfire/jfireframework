@@ -49,7 +49,7 @@ public class SpeedTest
     public void test() throws Throwable
     {
         ServerConfig config = new ServerConfig();
-        config.setAcceptMode(AcceptMode.weapon_capacity);
+        config.setAcceptMode(AcceptMode.CAPACITY);
         config.setPushMode(PushMode.OFF);
         config.setWorkMode(WorkMode.SYNC);
         config.setSocketThreadSize(40);
