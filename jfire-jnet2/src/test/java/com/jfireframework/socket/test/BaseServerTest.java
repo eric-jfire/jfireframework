@@ -78,7 +78,6 @@ public class BaseServerTest
                         ByteBuf<?> buf = (ByteBuf<?>) data;
                         String value = buf.readString();
                         // System.out.println("收到数据:" + value);
-                        buf.release();
                         return value;
                     }
                     

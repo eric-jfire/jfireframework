@@ -42,9 +42,17 @@ public class TotalLengthFieldBasedFrameDecoder implements FrameDecodec
     public DecodeResult decodec(ByteBuf<?> ioBuffer)
     {
         ioBuffer.maskRead();
-        if (lengthFieldEndOffset > ioBuffer.remainRead())
+        int left = ioBuffer.remainRead();
+        if (left == 0)
         {
             result.setType(DecodeResultType.LESS_THAN_PROTOCOL);
+            ioBuffer.compact();
+            return result;
+        }
+        if (lengthFieldEndOffset > left)
+        {
+            result.setType(DecodeResultType.BUF_NOT_ENOUGH);
+            result.setNeed(lengthFieldEndOffset);
             return result;
         }
         // iobuffer中可能包含好几个报文，所以这里应该是增加的方式而不是直接设置的方式

@@ -25,8 +25,8 @@ import com.jfireframework.jnet2.server.util.WorkMode;
 
 public class SingleSpeedTest
 {
-    private int    threadCount = 100;
-    private int    sendCount   = 1000000;
+    private int    threadCount = 1;
+    private int    sendCount   = 1000;
     private String ip          = "127.0.0.1";
     private int    port        = 8553;
     
@@ -124,7 +124,6 @@ public class SingleSpeedTest
                         ByteBuf<?> buf = (ByteBuf<?>) data;
                         String value = null;
                         value = buf.readString();
-                        buf.release();
                         return value;
                     }
                     
