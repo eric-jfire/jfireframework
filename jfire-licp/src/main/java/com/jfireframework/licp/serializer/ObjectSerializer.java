@@ -10,7 +10,7 @@ import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.licp.Licp;
-import com.jfireframework.licp.LispIgnore;
+import com.jfireframework.licp.LicpIgnore;
 import com.jfireframework.licp.field.CacheField;
 import com.jfireframework.licp.field.FieldFactory;
 import sun.misc.Unsafe;
@@ -37,7 +37,7 @@ public class ObjectSerializer implements LicpSerializer
         List<Field> list = new LinkedList<Field>();
         for (Field each : fields)
         {
-            if (Modifier.isStatic(each.getModifiers()) || each.isAnnotationPresent(LispIgnore.class))
+            if (Modifier.isStatic(each.getModifiers()) || each.isAnnotationPresent(LicpIgnore.class))
             {
                 continue;
             }
