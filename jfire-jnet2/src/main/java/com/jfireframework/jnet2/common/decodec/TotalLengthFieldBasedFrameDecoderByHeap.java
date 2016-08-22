@@ -38,8 +38,7 @@ public class TotalLengthFieldBasedFrameDecoderByHeap implements FrameDecodec
         ioBuffer.maskRead();
         if (lengthFieldEndOffset > ioBuffer.remainRead())
         {
-            result.setType(DecodeResultType.BUF_NOT_ENOUGH);
-            result.setNeed(lengthFieldEndOffset);
+            result.setType(DecodeResultType.LESS_THAN_PROTOCOL);
             return result;
         }
         // iobuffer中可能包含好几个报文，所以这里应该是增加的方式而不是直接设置的方式

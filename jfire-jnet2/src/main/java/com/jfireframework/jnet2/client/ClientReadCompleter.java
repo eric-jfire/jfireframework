@@ -91,6 +91,7 @@ public class ClientReadCompleter implements CompletionHandler<Integer, ClientCha
                         }
                         // logger.trace("客户端处理完毕响应{}", cursor);
                         channelInfo.signal(intermediateResult);
+                        decodeResult.getBuf().release();
                         break;
                 }
                 if (ioBuf.remainRead() == 0)
