@@ -42,8 +42,8 @@ public class EchoTest
 {
     private int      threadCountStart = 100;
     private int      threadCountEnd   = 300;
-    private int      sendCount        = 100000;
-    private String   ip               = "192.168.10.51";
+    private int      sendCount        = 1000;
+    private String   ip               = "127.0.0.1";
     private int      port             = 7789;
     private String[] content;
     private byte[][] contentBytes;

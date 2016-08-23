@@ -48,6 +48,7 @@ public class CapacityReadHandlerImpl implements CapacityReadHandler
     // 下一个要填充到通道的序号
     private long                                 cursor            = 0;
     private final ResourceCloseAgent<ByteBuf<?>> iobufReleaseState = new ResourceCloseAgent<ByteBuf<?>>(ioBuf, BytebufReleaseCallback.instance);
+    private final ByteBuffer                     activeFlag        = ByteBuffer.allocateDirect(0);
     
     public CapacityReadHandlerImpl(ServerChannel serverChannel, int capacity)
     {
@@ -281,14 +282,15 @@ public class CapacityReadHandlerImpl implements CapacityReadHandler
     {
         if (readState.value() == IDLE && readState.compareAndSwap(IDLE, WORK))
         {
-            if (ioBuf.remainRead() > 0)
-            {
-                doRead();
-            }
-            else
-            {
-                readAndWait();
-            }
+//             if (ioBuf.remainRead() > 0)
+//             {
+//             doRead();
+//             }
+//             else
+//             {
+//             readAndWait();
+//             }
+            serverChannel.getSocketChannel().read(activeFlag, serverChannel, this);
         }
     }
     
