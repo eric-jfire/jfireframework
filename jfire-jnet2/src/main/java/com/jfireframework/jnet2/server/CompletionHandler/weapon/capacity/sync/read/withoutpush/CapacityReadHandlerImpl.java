@@ -246,7 +246,7 @@ public class CapacityReadHandlerImpl implements CapacityReadHandler
     /**
      * 在通道上继续读取未读取完整的数据
      */
-    public void continueRead()
+    private void continueRead()
     {
         if (startCountdown == false)
         {
@@ -254,15 +254,7 @@ public class CapacityReadHandlerImpl implements CapacityReadHandler
             endReadTime = lastReadTime + readTimeout;
             startCountdown = true;
         }
-        try
-        {
-            serverChannel.getSocketChannel().read(getWriteBuffer(), getRemainTime(), TimeUnit.MILLISECONDS, serverChannel, this);
-        }
-        catch (Exception e)
-        {
-            catchThrowable(e);
-            iobufReleaseState.close();
-        }
+        serverChannel.getSocketChannel().read(getWriteBuffer(), getRemainTime(), TimeUnit.MILLISECONDS, serverChannel, this);
         lastReadTime = System.currentTimeMillis();
     }
     
