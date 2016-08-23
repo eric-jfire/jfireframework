@@ -67,15 +67,17 @@ public class EchoTest
         config.setChannelCapacity(4);
         config.setExecutorMode(ExecutorMode.FIX);
         config.setAsyncThreadNum(4);
-        config.setInitListener(new ChannelInitListener() {
-            
-            @Override
-            public void channelInit(JnetChannel serverChannelInfo)
-            {
-                serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
-                serverChannelInfo.setHandlers(new EchoHandler());
-            }
-        });
+        config.setInitListener(
+                new ChannelInitListener() {
+                    
+                    @Override
+                    public void channelInit(JnetChannel serverChannelInfo)
+                    {
+                        serverChannelInfo.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
+                        serverChannelInfo.setHandlers(new EchoHandler());
+                    }
+                }
+        );
         config.setPort(port);
         AioServer aioServer = new AioServer(config);
         aioServer.start();
@@ -88,23 +90,25 @@ public class EchoTest
             final CountDownLatch latch = new CountDownLatch(index);
             for (int i = 0; i < index; i++)
             {
-                pool.submit(new Runnable() {
-                    
-                    @Override
-                    public void run()
-                    {
-                        try
-                        {
-                            barrier.await();
-                            connecttest(result);
-                            latch.countDown();
+                pool.submit(
+                        new Runnable() {
+                            
+                            @Override
+                            public void run()
+                            {
+                                try
+                                {
+                                    barrier.await();
+                                    connecttest(result);
+                                    latch.countDown();
+                                }
+                                catch (Throwable e)
+                                {
+                                    e.printStackTrace();
+                                }
+                            }
                         }
-                        catch (Throwable e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                });
+                );
             }
             Timewatch timewatch = new Timewatch();
             timewatch.start();
@@ -165,74 +169,80 @@ public class EchoTest
         client.setAddress(ip);
         client.setCapacity(1024);
         client.setPort(port);
-        client.setWriteHandlers(new DataHandler() {
-            
-            @Override
-            public Object handle(Object data, InternalResult result) throws JnetException
-            {
-                ByteBuf<?> buf = DirectByteBuf.allocate(100);
-                buf.addWriteIndex(4);
-                // buf.writeString((String) data);
-                buf.put((byte[]) data);
-                return buf;
-            }
-            
-            @Override
-            public Object catchException(Object data, InternalResult result)
-            {
-                // ((Throwable) data).printStackTrace();
-                return data;
-            }
-        }, new LengthPreHandler(0, 4));
-        client.setInitListener(new ChannelInitListener() {
-            
-            @Override
-            public void channelInit(JnetChannel jnetChannel)
-            {
-                jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
-                jnetChannel.setHandlers(new DataHandler() {
+        client.setWriteHandlers(
+                new DataHandler() {
                     
                     @Override
                     public Object handle(Object data, InternalResult result) throws JnetException
                     {
-                        // System.out.println("收到数据");
-                        ByteBuf<?> buf = (ByteBuf<?>) data;
-                        // String value = null;
-                        // value = buf.readString();
-                        // buf.release();
-                        // return value;
-                        byte[] src = new byte[buf.remainRead()];
-                        buf.get(src, src.length);
-                        return new String(src);
+                        ByteBuf<?> buf = DirectByteBuf.allocate(100);
+                        buf.addWriteIndex(4);
+                        // buf.writeString((String) data);
+                        buf.put((byte[]) data);
+                        return buf;
                     }
                     
                     @Override
                     public Object catchException(Object data, InternalResult result)
                     {
-                        // System.err.println("客户端");
                         // ((Throwable) data).printStackTrace();
                         return data;
                     }
-                });
-            }
-        });
+                }, new LengthPreHandler(0, 4)
+        );
+        client.setInitListener(
+                new ChannelInitListener() {
+                    
+                    @Override
+                    public void channelInit(JnetChannel jnetChannel)
+                    {
+                        jnetChannel.setFrameDecodec(new TotalLengthFieldBasedFrameDecoder(0, 4, 4, 500));
+                        jnetChannel.setHandlers(
+                                new DataHandler() {
+                                    
+                                    @Override
+                                    public Object handle(Object data, InternalResult result) throws JnetException
+                                    {
+                                        // System.out.println("收到数据");
+                                        ByteBuf<?> buf = (ByteBuf<?>) data;
+                                        // String value = null;
+                                        // value = buf.readString();
+                                        // buf.release();
+                                        // return value;
+                                        byte[] src = new byte[buf.remainRead()];
+                                        buf.get(src, src.length);
+                                        return new String(src);
+                                    }
+                                    
+                                    @Override
+                                    public Object catchException(Object data, InternalResult result)
+                                    {
+                                        // System.err.println("客户端");
+                                        // ((Throwable) data).printStackTrace();
+                                        return data;
+                                    }
+                                }
+                        );
+                    }
+                }
+        );
         for (int i = 0; i < sendCount; i++)
         {
             try
             {
-//                if ((i & 1023) == 0)
-//                {
-//                    Future<?> future = client.connect().write(contentBytes[i]);
-//                    Assert.assertEquals(content[i], (String) future.get());
-//                }
-//                else
-//                {
-                    client.connect().write(contentBytes[i]);
-//                }
+                // if ((i & 1023) == 0)
+                // {
+                // Future<?> future = client.connect().write(contentBytes[i]);
+                // Assert.assertEquals(content[i], (String) future.get());
+                // }
+                // else
+                // {
+                client.connect().write(contentBytes[i]);
+                // }
             }
             catch (Exception e)
             {
-//                e.printStackTrace();
+                // e.printStackTrace();
                 result.incrementAndGet();
             }
         }

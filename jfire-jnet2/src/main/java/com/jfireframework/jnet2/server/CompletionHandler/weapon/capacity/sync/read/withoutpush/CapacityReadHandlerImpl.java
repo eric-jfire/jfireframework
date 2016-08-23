@@ -282,14 +282,14 @@ public class CapacityReadHandlerImpl implements CapacityReadHandler
     {
         if (readState.value() == IDLE && readState.compareAndSwap(IDLE, WORK))
         {
-//             if (ioBuf.remainRead() > 0)
-//             {
-//             doRead();
-//             }
-//             else
-//             {
-//             readAndWait();
-//             }
+            // if (ioBuf.remainRead() > 0)
+            // {
+            // doRead();
+            // }
+            // else
+            // {
+            // readAndWait();
+            // }
             serverChannel.getSocketChannel().read(activeFlag, serverChannel, this);
         }
     }

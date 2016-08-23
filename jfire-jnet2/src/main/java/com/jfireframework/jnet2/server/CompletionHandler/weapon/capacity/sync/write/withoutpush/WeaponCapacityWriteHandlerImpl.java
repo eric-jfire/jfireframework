@@ -78,7 +78,6 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
         if (cursor < wrap)
         {
             batchWrite();
-            // singleWrite();
             return;
         }
         else
@@ -89,11 +88,18 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
                 if (cursor < wrap)
                 {
                     batchWrite();
-                    // singleWrite();
                     return;
                 }
                 else
                 {
+                    /*
+                     * 在进入idle状态前，一定要尝试唤醒读取一次。否则的话，由于读取已经处于休眠状态，写出也进入休眠状态，
+                     * 尝试之后仍然是休眠状态退出。这个通道就卡住了。
+                     * 如果唤醒了读取线程，则会有新的数据进入，通道就能持续运作。
+                     * 对于唤醒读取的时机选择很重要。为了性能的最大化考虑，一个是在写出线程进入idle状态前唤醒，一个是在批量写出,
+                     * cursor前进的时候唤醒。
+                     * 这些时候唤醒，都存在着可以让读取进程有空间写入的时机。
+                     */
                     readHandler.notifyRead();
                     idleState.set(idle);
                     long newestWrap = writeCursor.value() + 1;
@@ -129,6 +135,9 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
             batchBuffers[length++] = buf.nioBuffer();
         }
         batchWriteHandler.length = length;
+        // 因为这些数据已经有地方存放了，所以这里可以直接让序号前进
+        cursor = wrap;
+        readHandler.notifyRead();
         try
         {
             socketChannel.write(batchBuffers, 0, length, 10, TimeUnit.SECONDS, batchBuffers, batchWriteHandler);
@@ -141,12 +150,6 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
             }
             readHandler.catchThrowable(e);
         }
-    }
-    
-    private void singleWrite()
-    {
-        ByteBuf<?> buf = getBuf(cursor);
-        socketChannel.write(buf.cachedNioBuffer(), 10, TimeUnit.SECONDS, buf, this);
     }
     
     @Override
@@ -224,7 +227,6 @@ public final class WeaponCapacityWriteHandlerImpl implements WeaponCapacityWrite
             {
                 batchBufs[i].release();
             }
-            cursor = wrap;
             writeNextBuf();
         }
         
