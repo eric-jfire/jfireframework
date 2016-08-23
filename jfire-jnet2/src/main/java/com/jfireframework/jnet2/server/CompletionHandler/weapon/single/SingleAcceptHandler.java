@@ -42,7 +42,7 @@ public class SingleAcceptHandler implements AcceptHandler
         initListener = serverConfig.getInitListener();
         if (workMode == WorkMode.ASYNC)
         {
-            EntryAction[] actions = new EntryAction[serverConfig.getAsyncThreadSize()];
+            EntryAction[] actions = new EntryAction[serverConfig.getAsyncThreadNum()];
             for (int i = 0; i < actions.length; i++)
             {
                 actions[i] = new SingleAsyncAction();

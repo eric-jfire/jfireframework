@@ -37,8 +37,8 @@ public class SingleSpeedTest
         config.setAcceptMode(AcceptMode.CAPACITY);
         config.setPushMode(PushMode.OFF);
         config.setWorkMode(WorkMode.SYNC);
-        config.setSocketThreadSize(16);
-        config.setAsyncThreadSize(4);
+        config.setSocketThreadNum(16);
+        config.setAsyncThreadNum(4);
         config.setChannelCapacity(16);
         config.setAsyncCapacity(32);
         config.setInitListener(new ChannelInitListener() {

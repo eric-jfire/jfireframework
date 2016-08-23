@@ -63,10 +63,10 @@ public class EchoTest
         config.setAcceptMode(AcceptMode.CAPACITY);
         config.setPushMode(PushMode.OFF);
         config.setWorkMode(WorkMode.SYNC);
-        config.setSocketThreadSize(5);
+        config.setSocketThreadNum(5);
         config.setChannelCapacity(4);
         config.setExecutorMode(ExecutorMode.FIX);
-        config.setAsyncThreadSize(4);
+        config.setAsyncThreadNum(4);
         config.setInitListener(new ChannelInitListener() {
             
             @Override

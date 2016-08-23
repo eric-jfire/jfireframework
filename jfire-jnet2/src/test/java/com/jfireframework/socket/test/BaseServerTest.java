@@ -29,7 +29,7 @@ public class BaseServerTest
         ServerConfig config = new ServerConfig();
         // 服务端监听的端口
         config.setPort(81);
-        config.setSocketThreadSize(4);
+        config.setSocketThreadNum(4);
         config.setChannelCapacity(64);
         config.setAcceptMode(AcceptMode.CAPACITY);
         config.setWorkMode(WorkMode.SYNC);

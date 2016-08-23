@@ -52,11 +52,11 @@ public class SpeedTest
         config.setAcceptMode(AcceptMode.CAPACITY);
         config.setPushMode(PushMode.OFF);
         config.setWorkMode(WorkMode.SYNC);
-        config.setSocketThreadSize(40);
+        config.setSocketThreadNum(40);
         config.setAsyncCapacity(16);
         config.setChannelCapacity(64);
         config.setExecutorMode(ExecutorMode.FIX);
-        config.setAsyncThreadSize(16);
+        config.setAsyncThreadNum(16);
         config.setInitListener(
                 new ChannelInitListener() {
                     

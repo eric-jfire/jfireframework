@@ -75,10 +75,10 @@ public class AioServer
             switch (serverConfig.getExecutorMode())
             {
                 case FIX:
-                    channelGroup = AsynchronousChannelGroup.withFixedThreadPool(serverConfig.getSocketThreadSize(), threadFactory);
+                    channelGroup = AsynchronousChannelGroup.withFixedThreadPool(serverConfig.getSocketThreadNum(), threadFactory);
                     break;
                 case CACHED:
-                    channelGroup = AsynchronousChannelGroup.withCachedThreadPool(Executors.newCachedThreadPool(threadFactory), serverConfig.getSocketThreadSize());
+                    channelGroup = AsynchronousChannelGroup.withCachedThreadPool(Executors.newCachedThreadPool(threadFactory), serverConfig.getSocketThreadNum());
                     break;
             }
             if (serverConfig.isLocalTestMode())

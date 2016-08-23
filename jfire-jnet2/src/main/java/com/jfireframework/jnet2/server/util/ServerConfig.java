@@ -13,24 +13,22 @@ public class ServerConfig
     private ChannelInitListener initListener;
     // 服务器的启动端口
     private int                 port;
-    private DisruptorWaitMode   waitMode         = DisruptorWaitMode.PARK;
+    private DisruptorWaitMode   waitMode        = DisruptorWaitMode.PARK;
     /**
      * 处理socket事件的起始线程数。如果线程池模式选择固定线程数模式的话，则这个数值就是线程数的值。如果线程池模式选择cache模式的话，则这个数值是初始线程数。
      */
-    private int                 socketThreadSize = Runtime.getRuntime().availableProcessors();
+    private int                 socketThreadNum = Runtime.getRuntime().availableProcessors();
     /**
      * 异步处理线程数。这个数字是disruptor的处理线程数。如果异步任务执行时间较长，适当增大该数字可以得到吞吐量的提升。
      */
-    private int                 asyncThreadSize  = Runtime.getRuntime().availableProcessors();
-    private WorkMode            workMode         = WorkMode.SYNC;
-    private WriteMode           writeMode        = WriteMode.BATCH_WRITE;
-    private ExecutorMode        executorMode     = ExecutorMode.CACHED;
-    private AcceptMode          acceptMode       = AcceptMode.SINGLE;
-    private PushMode            pushMode         = PushMode.OFF;
-    private int                 maxBatchWriteNum = 10;
-    private int                 channelCapacity  = 16;
-    private int                 asyncCapacity    = 1024;
-    private boolean             localTestMode    = false;
+    private int                 asyncThreadNum  = Runtime.getRuntime().availableProcessors();
+    private ExecutorMode        executorMode    = ExecutorMode.FIX;
+    private WorkMode            workMode        = WorkMode.SYNC;
+    private AcceptMode          acceptMode      = AcceptMode.SINGLE;
+    private PushMode            pushMode        = PushMode.OFF;
+    private int                 channelCapacity = 8;
+    private int                 asyncCapacity   = 1024;
+    private boolean             localTestMode   = false;
     
     public boolean isLocalTestMode()
     {
@@ -73,17 +71,6 @@ public class ServerConfig
         return this;
     }
     
-    public WriteMode getWriteMode()
-    {
-        return writeMode;
-    }
-    
-    public ServerConfig setWriteMode(WriteMode writeMode)
-    {
-        this.writeMode = writeMode;
-        return this;
-    }
-    
     public ChannelInitListener getInitListener()
     {
         return initListener;
@@ -120,17 +107,6 @@ public class ServerConfig
         return this;
     }
     
-    public int getSocketThreadSize()
-    {
-        return socketThreadSize;
-    }
-    
-    public ServerConfig setSocketThreadSize(int socketThreadSize)
-    {
-        this.socketThreadSize = socketThreadSize;
-        return this;
-    }
-    
     public WorkMode getWorkMode()
     {
         return workMode;
@@ -139,28 +115,6 @@ public class ServerConfig
     public ServerConfig setWorkMode(WorkMode workMode)
     {
         this.workMode = workMode;
-        return this;
-    }
-    
-    public int getAsyncThreadSize()
-    {
-        return asyncThreadSize;
-    }
-    
-    public ServerConfig setAsyncThreadSize(int asyncThreadSize)
-    {
-        this.asyncThreadSize = asyncThreadSize;
-        return this;
-    }
-    
-    public int getMaxBatchWriteNum()
-    {
-        return maxBatchWriteNum;
-    }
-    
-    public ServerConfig setMaxBatchWriteNum(int maxBatchWriteNum)
-    {
-        this.maxBatchWriteNum = maxBatchWriteNum;
         return this;
     }
     
@@ -183,6 +137,28 @@ public class ServerConfig
     public void setExecutorMode(ExecutorMode executorMode)
     {
         this.executorMode = executorMode;
+    }
+    
+    public int getSocketThreadNum()
+    {
+        return socketThreadNum;
+    }
+    
+    public ServerConfig setSocketThreadNum(int socketThreadNum)
+    {
+        this.socketThreadNum = socketThreadNum;
+        return this;
+    }
+    
+    public int getAsyncThreadNum()
+    {
+        return asyncThreadNum;
+    }
+    
+    public ServerConfig setAsyncThreadNum(int asyncThreadNum)
+    {
+        this.asyncThreadNum = asyncThreadNum;
+        return this;
     }
     
 }
