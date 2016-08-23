@@ -12,7 +12,7 @@ public class ServerConfig
 {
     private ChannelInitListener initListener;
     // 服务器的启动端口
-    private int                 port;
+    private int                 port            = -1;
     private DisruptorWaitMode   waitMode        = DisruptorWaitMode.PARK;
     /**
      * 处理socket事件的起始线程数。如果线程池模式选择固定线程数模式的话，则这个数值就是线程数的值。如果线程池模式选择cache模式的话，则这个数值是初始线程数。
