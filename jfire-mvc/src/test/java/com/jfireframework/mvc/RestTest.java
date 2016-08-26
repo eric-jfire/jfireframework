@@ -27,6 +27,9 @@ public class RestTest
         restfulRule = new RestfulRule("/user/{name}/{password}");
         assertTrue(restfulRule.match("/user/121/212"));
         assertFalse(restfulRule.match("//user/121/212"));
+
+        assertFalse(restfulRule.match("/action/1212/1212/get/2323/set/1212/serer"));
+        assertFalse(restfulRule.match("/action/1212/get/2323/set/1212/serer/serer"));
     }
     
     @Test

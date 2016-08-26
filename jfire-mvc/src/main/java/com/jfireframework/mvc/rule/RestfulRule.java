@@ -63,7 +63,11 @@ public class RestfulRule
         int index = 0;
         for (int i = 0; i < rules.length; i++)
         {
-            index = url.indexOf(rules[i], index);
+            int newIndex= url.indexOf(rules[i], index);
+            if (url.indexOf('/', index) < newIndex) {
+                return false;
+            }
+            index = newIndex;
             if (index < 0)
             {
                 return false;
