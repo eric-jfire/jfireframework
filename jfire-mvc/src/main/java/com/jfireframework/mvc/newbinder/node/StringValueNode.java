@@ -1,6 +1,6 @@
-package com.jfireframework.mvc.newbinder;
+package com.jfireframework.mvc.newbinder.node;
 
-public class StringValueNode implements ParamTreeNode
+public class StringValueNode implements ParamNode
 {
     private final String value;
     

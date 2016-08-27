@@ -7,11 +7,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.mvc.newbinder.DataBinder;
-import com.jfireframework.mvc.newbinder.ParamTreeNode;
-import com.jfireframework.mvc.newbinder.TreeValueNode;
 import com.jfireframework.mvc.newbinder.field.AbstractBinderField;
 import com.jfireframework.mvc.newbinder.field.BinderField;
+import com.jfireframework.mvc.newbinder.node.ParamNode;
+import com.jfireframework.mvc.newbinder.node.TreeValueNode;
 
 public class ObjectDataBinder implements DataBinder
 {
@@ -48,7 +47,7 @@ public class ObjectDataBinder implements DataBinder
             Object entity = ckass.newInstance();
             for (BinderField each : fields)
             {
-                ParamTreeNode node = treeValueNode.get(each.getName());
+                ParamNode node = treeValueNode.get(each.getName());
                 if (node != null)
                 {
                     each.setValue(request, response, node, entity);

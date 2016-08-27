@@ -6,10 +6,10 @@ import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.mvc.newbinder.node.ParamNode;
 import com.jfireframework.mvc.newbinder.node.StringValueNode;
 
-public class StringField extends AbstractBinderField
+public class WIntegerField extends AbstractBinderField
 {
     
-    public StringField(Field field)
+    public WIntegerField(Field field)
     {
         super(field);
     }
@@ -17,8 +17,9 @@ public class StringField extends AbstractBinderField
     @Override
     public void setValue(HttpServletRequest request, HttpServletResponse response, ParamNode node, Object entity)
     {
-        StringValueNode realNode = (StringValueNode) node;
-        unsafe.putObject(entity, offset, realNode.getValue());
+        String value = ((StringValueNode) node).getValue();
+        Integer i = Integer.valueOf(value);
+        unsafe.putObject(entity, offset, i);
     }
     
 }

@@ -1,8 +1,8 @@
-package com.jfireframework.mvc.newbinder;
+package com.jfireframework.mvc.newbinder.node;
 
 import java.util.ArrayList;
 
-public class ArrayNode implements ParamTreeNode
+public class ArrayNode implements ParamNode
 {
     private ArrayList<String> array = new ArrayList<>();
     

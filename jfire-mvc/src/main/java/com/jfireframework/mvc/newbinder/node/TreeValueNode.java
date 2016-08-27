@@ -1,15 +1,14 @@
-package com.jfireframework.mvc.newbinder;
+package com.jfireframework.mvc.newbinder.node;
 
 import java.util.HashMap;
 
-public class TreeValueNode extends HashMap<String, ParamTreeNode> implements ParamTreeNode
+public class TreeValueNode extends HashMap<String, ParamNode> implements ParamNode
 {
     /**
      * 
      */
     private static final long serialVersionUID = -7949905578641740166L;
     
-    // private HashMap<String, ParamTreeNode> content = new HashMap<>();
     public TreeValueNode()
     {
     }
@@ -91,11 +90,12 @@ public class TreeValueNode extends HashMap<String, ParamTreeNode> implements Par
             {
                 if (containsKey(text))
                 {
-                    ParamTreeNode node = get(text);
+                    ParamNode node = get(text);
                     if (node instanceof StringValueNode)
                     {
                         ArrayNode arrayNode = new ArrayNode();
                         arrayNode.add(((StringValueNode) node).getValue());
+                        arrayNode.add(value);
                         put(text, arrayNode);
                     }
                     else if (node instanceof ArrayNode)

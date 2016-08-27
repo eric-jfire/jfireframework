@@ -1,0 +1,763 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x000000005d784e09, pid=6028, tid=5872
+#
+# JRE version: Java(TM) SE Runtime Environment (7.0_80-b15) (build 1.7.0_80-b15)
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (24.80-b11 mixed mode windows-amd64 compressed oops)
+# Problematic frame:
+# V  [jvm.dll+0xa4e09]
+#
+# Failed to write core dump. Minidumps are not enabled by default on client versions of Windows
+#
+# If you would like to submit a bug report, please visit:
+#   http://bugreport.java.com/bugreport/crash.jsp
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x0000000002a7e800):  JavaThread "main" [_thread_in_vm, id=5872, stack(0x0000000002a80000,0x0000000002b80000)]
+
+siginfo: ExceptionCode=0xc0000005, reading address 0x0000000000000010
+
+Registers:
+RAX=0x0000000000000008, RBX=0x0000000000000000, RCX=0x0000000002b82538, RDX=0x0000000002b824e0
+RSP=0x0000000002b7e5e0, RBP=0x0000000002b824e8, RSI=0x0000000002b82528, RDI=0x0000000002b82530
+R8 =0x000000077b13cdf0, R9 =0x000000000000006b, R10=0x000000077b13cdf0, R11=0x0000000002b824f0
+R12=0x0000000002a7e800, R13=0x0000000000000015, R14=0x0000000002bcb2c0, R15=0x0000000002bcb4e0
+RIP=0x000000005d784e09, EFLAGS=0x0000000000010202
+
+Top of Stack: (sp=0x0000000002b7e5e0)
+0x0000000002b7e5e0:   0000000000000000 0000000000000000
+0x0000000002b7e5f0:   0000000002b820a0 0000000000000000
+0x0000000002b7e600:   00000000000003d8 0000000002a7e800
+0x0000000002b7e610:   0000000002a7e800 000000005d760bef
+0x0000000002b7e620:   0000000002b82480 0000000002b82508
+0x0000000002b7e630:   00000000000000b6 0000000000000001
+0x0000000002b7e640:   000000077b13de17 0000000000000000
+0x0000000002b7e650:   0000000002b824e0 0000000002a7e800
+0x0000000002b7e660:   0000000002b7e749 000000005d78507c
+0x0000000002b7e670:   0000000002b7e710 0000000002b824e0
+0x0000000002b7e680:   0000000002b824e8 0000000000000000
+0x0000000002b7e690:   0000000002a7e800 0000000002b7e7e0
+0x0000000002b7e6a0:   0000000002b824e0 000000005d77f77b
+0x0000000002b7e6b0:   0000000002bcb4e0 000000077b13dee0
+0x0000000002b7e6c0:   000000000b091ba0 0000000002a7e800
+0x0000000002b7e6d0:   00000000000000b6 0000000002a7e800 
+
+Instructions: (pc=0x000000005d784e09)
+0x000000005d784de9:   24 08 0f 85 82 00 00 00 48 8b 94 24 98 00 00 00
+0x000000005d784df9:   48 85 d2 74 44 38 1d 0c 54 6b 00 48 8b 02 74 15
+0x000000005d784e09:   8b 40 08 8b 0d a6 5a 65 00 48 d3 e0 48 03 05 94
+0x000000005d784e19:   5a 65 00 eb 04 48 8b 40 08 48 85 c0 74 1b 49 8b 
+
+
+Register to memory mapping:
+
+RAX=0x0000000000000008 is an unknown value
+RBX=0x0000000000000000 is an unknown value
+RCX=0x0000000002b82538 is an unknown value
+RDX=0x0000000002b824e0 is an unknown value
+RSP=0x0000000002b7e5e0 is pointing into the stack for thread: 0x0000000002a7e800
+RBP=0x0000000002b824e8 is an unknown value
+RSI=0x0000000002b82528 is an unknown value
+RDI=0x0000000002b82530 is an unknown value
+R8 =0x000000077b13cdf0 is an oop
+{constant pool} 
+ - klass: {other class}
+ - holder: 0x000000077b13dfa0
+ - cache: 0x000000077b1fb8a8
+ -   1 :  : 'com/jfireframework/mvc/NewBinderTest'
+ -   2 :  : 'com/jfireframework/mvc/NewBinderTest'
+ -   3 :  : 'java/lang/Object' {0x7ae02bf8}
+ -   4 :  : 'java/lang/Object'
+ -   5 :  : '<init>'
+ -   6 :  : '()V'
+ -   7 :  : 'Code'
+ -   8 :  : klass_index=3 name_and_type_index=9
+ -   9 :  : name_index=5 signature_index=6
+ -  10 :  : 'LineNumberTable'
+ -  11 :  : 'LocalVariableTable'
+ -  12 :  : 'this'
+ -  13 :  : 'Lcom/jfireframework/mvc/NewBinderTest;'
+ -  14 :  : 'test'
+ -  15 :  : 'RuntimeVisibleAnnotations'
+ -  16 :  : 'Lorg/junit/Test;'
+ -  17 :  : 'com/jfireframework/mvc/newbinder/TreeValueNode' {0x7b259170}
+ -  18 :  : 'com/jfireframework/mvc/newbinder/TreeValueNode'
+ -  19 :  : klass_index=17 name_and_type_index=9
+ -  20 :  : "foo[bar][numbers][]" {0xd5aed490}
+ -  21 :  : 'foo[bar][numbers][]'
+ -  22 :  : "1" {0xd5a95d88}
+ -  23 :  : '1'
+ -  24 :  : klass_index=17 name_and_type_index=25
+ -  25 :  : name_index=26 signature_index=27
+ -  26 :  : 'put'
+ -  27 :  : '(Ljava/lang/String;Ljava/lang/String;)V'
+ -  28 :  : "2" {0xd5aed4e0}
+ -  29 :  : '2'
+ -  30 :  : "3" {0xd5aed510}
+ -  31 :  : '3'
+ -  32 :  : "foo[id]" {0xd5aed540}
+ -  33 :  : 'foo[id]'
+ -  34 :  : "foo01" {0xd5aed578}
+ -  35 :  : 'foo01'
+ -  36 :  : "foo[bar][id]" {0xd5aed5b0}
+ -  37 :  : 'foo[bar][id]'
+ -  38 :  : "bar01" {0xd5aed5f0}
+ -  39 :  : 'bar01'
+ -  40 :  : "foo[barsMap][bar02][id]" {0xd5aed628}
+ -  41 :  : 'foo[barsMap][bar02][id]'
+ -  42 :  : "19" {0xd5aed680}
+ -  43 :  : '19'
+ -  44 :  : "foo[barsMap][bar02][numbers][]" {0xd5aed6b0}
+ -  45 :  : 'foo[barsMap][bar02][numbers][]'
+ -  46 :  : "foo[barsMap][bar03][id]" {0xd5aed718}
+ -  47 :  : 'foo[barsMap][bar03][id]'
+ -  48 :  : "foo[barsMap][bar03][numbers][]" {0xd5aed770}
+ -  49 :  : 'foo[barsMap][bar03][numbers][]'
+ -  50 :  : klass_index=51 name_and_type_index=53
+ -  51 :  : 'java/lang/System'
+ -  52 :  : 'java/lang/System'
+ -  53 :  : name_index=54 signature_index=55
+ -  54 :  : 'out'
+ -  55 :  : 'Ljava/io/PrintStream;'
+ -  56 :  : klass_index=57 name_and_type_index=59
+ -  57 :  : 'com/jfireframework/codejson/JsonTool'
+ -  58 :  : 'com/jfireframework/codejson/JsonTool'
+ -  59 :  : name_index=60 signature_index=61
+ -  60 :  : 'write'
+ -  61 :  : '(Ljava/lang/Object;)Ljava/lang/String;'
+ -  62 :  : klass_index=63 name_and_type_index=65
+ -  63 :  : 'java/io/PrintStream'
+ -  64 :  : 'java/io/PrintStream'
+ -  65 :  : name_index=66 signature_index=67
+ -  66 :  : 'println'
+ -  67 :  : '(Ljava/lang/String;)V'
+ -  68 :  : 'paramTree'
+ -  69 :  : 'Lcom/jfireframework/mvc/newbinder/TreeValueNode;'
+ -  70 :  : 'test2'
+ -  71 :  : 'com/jfireframework/mvc/newbinder/impl/ObjectDataBinder' {0x7b25ad20}
+ -  72 :  : 'com/jfireframework/mvc/newbinder/impl/ObjectDataBinder'
+ -  73 :  : 'com/jfireframework/mvc/vo/Desk'
+ -  74 :  : 'com/jfireframework/mvc/vo/Desk'
+ -  75 :  : "" {0xd5506518}
+ -  76 :  : ''
+ -  77 :  : klass_index=71 name_and_type_index=78
+ -  78 :  : name_index=5 signature_index=79
+ -  79 :  : '(Ljava/lang/Class;Ljava/lang/String;)V'
+ -  80 :  : "name" {0xd55106c8}
+ -  81 :  : 'name'
+ -  82 :  : "hello" {0xd5aed7d8}
+ -  83 :  : 'hello'
+ -  84 :  : "width" {0xd5a96318}
+ -  85 :  : 'width'
+ -  86 :  : "20" {0xd5aed810}
+ -  87 :  : '20'
+ -  88 :  : klass_index=71 name_and_type_index=89
+ -  89 :  : name_index=90 signature_index=91
+ -  90 :  : 'binder'
+ -  91 :  : '(Ljavax/servlet/http/HttpServletRequest;Lcom/jfireframework/mvc/newbinder/TreeValueNode;Ljavax/servlet/http/HttpServletResponse;)Ljava/lang/Object;'
+ -  92 :  : klass_index=73 name_and_type_index=93
+ -  93 :  : name_index=94 signature_index=95
+ -  94 :  : 'getName'
+ -  95 :  : '()Ljava/lang/String;'
+ -  96 :  : klass_index=97 name_and_type_index=99
+ -  97 :  : 'org/junit/Assert' {0x7b242008}
+ -  98 :  : 'org/junit/Assert'
+ -  99 :  : name_index=100 signature_index=101
+ - 100 :  : 'assertEquals'
+ - 101 :  : '(Ljava/lang/Object;Ljava/lang/Object;)V'
+ - 102 :  : 20
+ - 104 :  : klass_index=73 name_and_type_index=105
+ - 105 :  : name_index=106 signature_index=107
+ - 106 :  : 'getWidth'
+ - 107 :  : '()I'
+ - 108 :  : klass_index=97 name_and_type_index=109
+ - 109 :  : name_index=100 signature_index=110
+ - 110 :  : '(JJ)V'
+ - 111 :  : "desk" {0xd5aed840}
+ - 112 :  : 'desk'
+ - 113 :  : klass_index=17 name_and_type_index=114
+ - 114 :  : name_index=115 signature_index=6
+ - 115 :  : 'clear'
+ - 116 :  : "desk[name]" {0xd5aed870}
+ - 117 :  : 'desk[name]'
+ - 118 :  : "desk[width]" {0xd5aed8b0}
+ - 119 :  : 'desk[width]'
+ - 120 :  : 'Lcom/jfireframework/mvc/newbinder/impl/ObjectDataBinder;'
+ - 121 :  : 'Lcom/jfireframework/mvc/vo/Desk;'
+ - 122 :  : 'test3'
+ - 123 :  : 'com/jfireframework/mvc/vo/Person' {0x7b26da18}
+ - 124 :  : 'com/jfireframework/mvc/vo/Person'
+ - 125 :  : "age" {0xd5ad36d0}
+ - 126 :  : 'age'
+ - 127 :  : "15" {0xd5aed8f0}
+ - 128 :  : '15'
+ - 129 :  : "test" {0xd59ccdb8}
+ - 130 :  : "weight" {0xd5ad3748}
+ - 131 :  : 'weight'
+ - 132 :  : "15.36" {0xd5aed920}
+ - 133 :  : '15.36'
+ - 134 :  : "ids[0]" {0xd5aed958}
+ - 135 :  : 'ids[0]'
+ - 136 :  : "ids[1]" {0xd5aed990}
+ - 137 :  : 'ids[1]'
+ - 138 :  : "ids[2]" {0xd5aed9c8}
+ - 139 :  : 'ids[2]'
+ - 140 :  : 15
+ - 142 :  : klass_index=123 name_and_type_index=143
+ - 143 :  : name_index=144 signature_index=107
+ - 144 :  : 'getAge'
+ - 145 :  : klass_index=123 name_and_type_index=93
+ - 146 :  : 15.360000
+ - 148 :  : klass_index=123 name_and_type_index=149
+ - 149 :  : name_index=150 signature_index=151
+ - 150 :  : 'getWeight'
+ - 151 :  : '()F'
+ - 152 :  : 0.000100
+ - 154 :  : klass_index=97 name_and_type_index=155
+ - 155 :  : name_index=100 signature_index=156
+ - 156 :  : '(DDD)V'
+ - 157 :  : klass_index=123 name_and_type_index=158
+ - 158 :  : name_index=159 signature_index=160
+ - 159 :  : 'getIds'
+ - 160 :  : '()[Ljava/lang/Integer;'
+ - 161 :  : 'java/lang/Integer' {0x7aea6f28}
+ - 162 :  : 'java/lang/Integer'
+ - 163 :  : klass_index=161 name_and_type_index=164
+ - 164 :  : name_index=165 signature_index=166
+ - 165 :  : 'valueOf'
+ - 166 :  : '(I)Ljava/lang/Integer;'
+ - 167 :  : klass_index=97 name_and_type_index=168
+ - 168 :  : name_index=169 signature_index=170
+ - 169 :  : 'assertArrayEquals'
+ - 170 :  : '([Ljava/lang/Object;[Ljava/lang/Object;)V'
+ - 171 :  : 'node'
+ - 172 :  : 'person'
+ - 173 :  : 'Lcom/jfireframework/mvc/vo/Person;'
+ - 174 :  : 'ids'
+ - 175 :  : '[Ljava/lang/Integer;'
+ - 176 :  : 'test4'
+ - 177 :  : "host[name]" {0xd5a93550}
+ - 178 :  : 'host[name]'
+ - 179 :  : "—Œ" {0xd5a93590}
+ - 180 :  : 'æž—æ–Œ'
+ - 181 :  : "host[age]" {0xd5a95ac8}
+ - 182 :  : 'host[age]'
+ - 183 :  : "25" {0xd5a95b08}
+ - 184 :  : '25'
+ - 185 :  : "host[weight]" {0xd5a95c00}
+ - 186 :  : 'host[weight]'
+ - 187 :  : "75.26" {0xd5a95c40}
+ - 188 :  : '75.26'
+ - 189 :  : "host[ids][0]" {0xd5a95d48}
+ - 190 :  : 'host[ids][0]'
+ - 191 :  : "host[ids][1]" {0xd5a95f80}
+ - 192 :  : 'host[ids][1]'
+ - 193 :  : "10" {0xd5a95fc0}
+ - 194 :  : '10'
+ - 195 :  : "host[ids][3]" {0xd5a96118}
+ - 196 :  : 'host[ids][3]'
+ - 197 :  : "100" {0xd5a96158}
+ - 198 :  : '100'
+ - 199 :  : "length" {0xd5a962b0}
+ - 200 :  : 'length'
+ - 201 :  : "50" {0xd5a96350}
+ - 202 :  : '50'
+ - 203 :  : "desks[0].name" {0xd5a963b0}
+ - 204 :  : 'desks[0].name'
+ - 205 :  : "desk1" {0xd5a963f8}
+ - 206 :  : 'desk1'
+ - 207 :  : "desks[0].width" {0xd5a96678}
+ - 208 :  : 'desks[0].width'
+ - 209 :  : "11" {0xd5a966c0}
+ - 210 :  : '11'
+ - 211 :  : "desks[1].name" {0xd5a96800}
+ - 212 :  : 'desks[1].name'
+ - 213 :  : "desk2" {0xd5a96848}
+ - 214 :  : 'desk2'
+ - 215 :  : "desks[1].width" {0xd5a96a28}
+ - 216 :  : 'desks[1].width'
+ - 217 :  : "12" {0xd5a96a70}
+ - 218 :  : '12'
+ - 219 :  : 'com/jfireframework/mvc/vo/Home' {0x7b25cb40}
+ - 220 :  : 'com/jfireframework/mvc/vo/Home'
+ - 221 :  : klass_index=219 name_and_type_index=222
+ - 222 :  : name_index=223 signature_index=224
+ - 223 :  : 'getHost'
+ - 224 :  : '()Lcom/jfireframework/mvc/vo/Person;'
+ - 225 :  : 25
+ - 227 :  : 75.260000
+ - 229 :  : 0.001000
+ - 231 :  : klass_index=161 name_and_type_index=232
+ - 232 :  : name_index=233 signature_index=107
+ - 233 :  : 'intValue'
+ - 234 :  : 10
+ - 236 :  : 100
+ - 238 :  : klass_index=219 name_and_type_index=239
+ - 239 :  : name_index=240 signature_index=241
+ - 240 :  : 'getDesks'
+ - 241 :  : '()[Lcom/jfireframework/mvc/vo/Desk;'
+ - 242 :  : 11
+ - 244 :  : 12
+ - 246 :  : 'map'
+ - 247 :  : 'home'
+ - 248 :  : 'Lcom/jfireframework/mvc/vo/Home;'
+ - 249 :  : 'desks'
+ - 250 :  : '[Lcom/jfireframework/mvc/vo/Desk;'
+ - 251 :  : 'SourceFile'
+ - 252 :  : 'NewBinderTest.java'
+
+R9 =0x000000000000006b is an unknown value
+R10=0x000000077b13cdf0 is an oop
+{constant pool} 
+ - klass: {other class}
+ - holder: 0x000000077b13dfa0
+ - cache: 0x000000077b1fb8a8
+ -   1 :  : 'com/jfireframework/mvc/NewBinderTest'
+ -   2 :  : 'com/jfireframework/mvc/NewBinderTest'
+ -   3 :  : 'java/lang/Object' {0x7ae02bf8}
+ -   4 :  : 'java/lang/Object'
+ -   5 :  : '<init>'
+ -   6 :  : '()V'
+ -   7 :  : 'Code'
+ -   8 :  : klass_index=3 name_and_type_index=9
+ -   9 :  : name_index=5 signature_index=6
+ -  10 :  : 'LineNumberTable'
+ -  11 :  : 'LocalVariableTable'
+ -  12 :  : 'this'
+ -  13 :  : 'Lcom/jfireframework/mvc/NewBinderTest;'
+ -  14 :  : 'test'
+ -  15 :  : 'RuntimeVisibleAnnotations'
+ -  16 :  : 'Lorg/junit/Test;'
+ -  17 :  : 'com/jfireframework/mvc/newbinder/TreeValueNode' {0x7b259170}
+ -  18 :  : 'com/jfireframework/mvc/newbinder/TreeValueNode'
+ -  19 :  : klass_index=17 name_and_type_index=9
+ -  20 :  : "foo[bar][numbers][]" {0xd5aed490}
+ -  21 :  : 'foo[bar][numbers][]'
+ -  22 :  : "1" {0xd5a95d88}
+ -  23 :  : '1'
+ -  24 :  : klass_index=17 name_and_type_index=25
+ -  25 :  : name_index=26 signature_index=27
+ -  26 :  : 'put'
+ -  27 :  : '(Ljava/lang/String;Ljava/lang/String;)V'
+ -  28 :  : "2" {0xd5aed4e0}
+ -  29 :  : '2'
+ -  30 :  : "3" {0xd5aed510}
+ -  31 :  : '3'
+ -  32 :  : "foo[id]" {0xd5aed540}
+ -  33 :  : 'foo[id]'
+ -  34 :  : "foo01" {0xd5aed578}
+ -  35 :  : 'foo01'
+ -  36 :  : "foo[bar][id]" {0xd5aed5b0}
+ -  37 :  : 'foo[bar][id]'
+ -  38 :  : "bar01" {0xd5aed5f0}
+ -  39 :  : 'bar01'
+ -  40 :  : "foo[barsMap][bar02][id]" {0xd5aed628}
+ -  41 :  : 'foo[barsMap][bar02][id]'
+ -  42 :  : "19" {0xd5aed680}
+ -  43 :  : '19'
+ -  44 :  : "foo[barsMap][bar02][numbers][]" {0xd5aed6b0}
+ -  45 :  : 'foo[barsMap][bar02][numbers][]'
+ -  46 :  : "foo[barsMap][bar03][id]" {0xd5aed718}
+ -  47 :  : 'foo[barsMap][bar03][id]'
+ -  48 :  : "foo[barsMap][bar03][numbers][]" {0xd5aed770}
+ -  49 :  : 'foo[barsMap][bar03][numbers][]'
+ -  50 :  : klass_index=51 name_and_type_index=53
+ -  51 :  : 'java/lang/System'
+ -  52 :  : 'java/lang/System'
+ -  53 :  : name_index=54 signature_index=55
+ -  54 :  : 'out'
+ -  55 :  : 'Ljava/io/PrintStream;'
+ -  56 :  : klass_index=57 name_and_type_index=59
+ -  57 :  : 'com/jfireframework/codejson/JsonTool'
+ -  58 :  : 'com/jfireframework/codejson/JsonTool'
+ -  59 :  : name_index=60 signature_index=61
+ -  60 :  : 'write'
+ -  61 :  : '(Ljava/lang/Object;)Ljava/lang/String;'
+ -  62 :  : klass_index=63 name_and_type_index=65
+ -  63 :  : 'java/io/PrintStream'
+ -  64 :  : 'java/io/PrintStream'
+ -  65 :  : name_index=66 signature_index=67
+ -  66 :  : 'println'
+ -  67 :  : '(Ljava/lang/String;)V'
+ -  68 :  : 'paramTree'
+ -  69 :  : 'Lcom/jfireframework/mvc/newbinder/TreeValueNode;'
+ -  70 :  : 'test2'
+ -  71 :  : 'com/jfireframework/mvc/newbinder/impl/ObjectDataBinder' {0x7b25ad20}
+ -  72 :  : 'com/jfireframework/mvc/newbinder/impl/ObjectDataBinder'
+ -  73 :  : 'com/jfireframework/mvc/vo/Desk'
+ -  74 :  : 'com/jfireframework/mvc/vo/Desk'
+ -  75 :  : "" {0xd5506518}
+ -  76 :  : ''
+ -  77 :  : klass_index=71 name_and_type_index=78
+ -  78 :  : name_index=5 signature_index=79
+ -  79 :  : '(Ljava/lang/Class;Ljava/lang/String;)V'
+ -  80 :  : "name" {0xd55106c8}
+ -  81 :  : 'name'
+ -  82 :  : "hello" {0xd5aed7d8}
+ -  83 :  : 'hello'
+ -  84 :  : "width" {0xd5a96318}
+ -  85 :  : 'width'
+ -  86 :  : "20" {0xd5aed810}
+ -  87 :  : '20'
+ -  88 :  : klass_index=71 name_and_type_index=89
+ -  89 :  : name_index=90 signature_index=91
+ -  90 :  : 'binder'
+ -  91 :  : '(Ljavax/servlet/http/HttpServletRequest;Lcom/jfireframework/mvc/newbinder/TreeValueNode;Ljavax/servlet/http/HttpServletResponse;)Ljava/lang/Object;'
+ -  92 :  : klass_index=73 name_and_type_index=93
+ -  93 :  : name_index=94 signature_index=95
+ -  94 :  : 'getName'
+ -  95 :  : '()Ljava/lang/String;'
+ -  96 :  : klass_index=97 name_and_type_index=99
+ -  97 :  : 'org/junit/Assert' {0x7b242008}
+ -  98 :  : 'org/junit/Assert'
+ -  99 :  : name_index=100 signature_index=101
+ - 100 :  : 'assertEquals'
+ - 101 :  : '(Ljava/lang/Object;Ljava/lang/Object;)V'
+ - 102 :  : 20
+ - 104 :  : klass_index=73 name_and_type_index=105
+ - 105 :  : name_index=106 signature_index=107
+ - 106 :  : 'getWidth'
+ - 107 :  : '()I'
+ - 108 :  : klass_index=97 name_and_type_index=109
+ - 109 :  : name_index=100 signature_index=110
+ - 110 :  : '(JJ)V'
+ - 111 :  : "desk" {0xd5aed840}
+ - 112 :  : 'desk'
+ - 113 :  : klass_index=17 name_and_type_index=114
+ - 114 :  : name_index=115 signature_index=6
+ - 115 :  : 'clear'
+ - 116 :  : "desk[name]" {0xd5aed870}
+ - 117 :  : 'desk[name]'
+ - 118 :  : "desk[width]" {0xd5aed8b0}
+ - 119 :  : 'desk[width]'
+ - 120 :  : 'Lcom/jfireframework/mvc/newbinder/impl/ObjectDataBinder;'
+ - 121 :  : 'Lcom/jfireframework/mvc/vo/Desk;'
+ - 122 :  : 'test3'
+ - 123 :  : 'com/jfireframework/mvc/vo/Person' {0x7b26da18}
+ - 124 :  : 'com/jfireframework/mvc/vo/Person'
+ - 125 :  : "age" {0xd5ad36d0}
+ - 126 :  : 'age'
+ - 127 :  : "15" {0xd5aed8f0}
+ - 128 :  : '15'
+ - 129 :  : "test" {0xd59ccdb8}
+ - 130 :  : "weight" {0xd5ad3748}
+ - 131 :  : 'weight'
+ - 132 :  : "15.36" {0xd5aed920}
+ - 133 :  : '15.36'
+ - 134 :  : "ids[0]" {0xd5aed958}
+ - 135 :  : 'ids[0]'
+ - 136 :  : "ids[1]" {0xd5aed990}
+ - 137 :  : 'ids[1]'
+ - 138 :  : "ids[2]" {0xd5aed9c8}
+ - 139 :  : 'ids[2]'
+ - 140 :  : 15
+ - 142 :  : klass_index=123 name_and_type_index=143
+ - 143 :  : name_index=144 signature_index=107
+ - 144 :  : 'getAge'
+ - 145 :  : klass_index=123 name_and_type_index=93
+ - 146 :  : 15.360000
+ - 148 :  : klass_index=123 name_and_type_index=149
+ - 149 :  : name_index=150 signature_index=151
+ - 150 :  : 'getWeight'
+ - 151 :  : '()F'
+ - 152 :  : 0.000100
+ - 154 :  : klass_index=97 name_and_type_index=155
+ - 155 :  : name_index=100 signature_index=156
+ - 156 :  : '(DDD)V'
+ - 157 :  : klass_index=123 name_and_type_index=158
+ - 158 :  : name_index=159 signature_index=160
+ - 159 :  : 'getIds'
+ - 160 :  : '()[Ljava/lang/Integer;'
+ - 161 :  : 'java/lang/Integer' {0x7aea6f28}
+ - 162 :  : 'java/lang/Integer'
+ - 163 :  : klass_index=161 name_and_type_index=164
+ - 164 :  : name_index=165 signature_index=166
+ - 165 :  : 'valueOf'
+ - 166 :  : '(I)Ljava/lang/Integer;'
+ - 167 :  : klass_index=97 name_and_type_index=168
+ - 168 :  : name_index=169 signature_index=170
+ - 169 :  : 'assertArrayEquals'
+ - 170 :  : '([Ljava/lang/Object;[Ljava/lang/Object;)V'
+ - 171 :  : 'node'
+ - 172 :  : 'person'
+ - 173 :  : 'Lcom/jfireframework/mvc/vo/Person;'
+ - 174 :  : 'ids'
+ - 175 :  : '[Ljava/lang/Integer;'
+ - 176 :  : 'test4'
+ - 177 :  : "host[name]" {0xd5a93550}
+ - 178 :  : 'host[name]'
+ - 179 :  : "—Œ" {0xd5a93590}
+ - 180 :  : 'æž—æ–Œ'
+ - 181 :  : "host[age]" {0xd5a95ac8}
+ - 182 :  : 'host[age]'
+ - 183 :  : "25" {0xd5a95b08}
+ - 184 :  : '25'
+ - 185 :  : "host[weight]" {0xd5a95c00}
+ - 186 :  : 'host[weight]'
+ - 187 :  : "75.26" {0xd5a95c40}
+ - 188 :  : '75.26'
+ - 189 :  : "host[ids][0]" {0xd5a95d48}
+ - 190 :  : 'host[ids][0]'
+ - 191 :  : "host[ids][1]" {0xd5a95f80}
+ - 192 :  : 'host[ids][1]'
+ - 193 :  : "10" {0xd5a95fc0}
+ - 194 :  : '10'
+ - 195 :  : "host[ids][3]" {0xd5a96118}
+ - 196 :  : 'host[ids][3]'
+ - 197 :  : "100" {0xd5a96158}
+ - 198 :  : '100'
+ - 199 :  : "length" {0xd5a962b0}
+ - 200 :  : 'length'
+ - 201 :  : "50" {0xd5a96350}
+ - 202 :  : '50'
+ - 203 :  : "desks[0].name" {0xd5a963b0}
+ - 204 :  : 'desks[0].name'
+ - 205 :  : "desk1" {0xd5a963f8}
+ - 206 :  : 'desk1'
+ - 207 :  : "desks[0].width" {0xd5a96678}
+ - 208 :  : 'desks[0].width'
+ - 209 :  : "11" {0xd5a966c0}
+ - 210 :  : '11'
+ - 211 :  : "desks[1].name" {0xd5a96800}
+ - 212 :  : 'desks[1].name'
+ - 213 :  : "desk2" {0xd5a96848}
+ - 214 :  : 'desk2'
+ - 215 :  : "desks[1].width" {0xd5a96a28}
+ - 216 :  : 'desks[1].width'
+ - 217 :  : "12" {0xd5a96a70}
+ - 218 :  : '12'
+ - 219 :  : 'com/jfireframework/mvc/vo/Home' {0x7b25cb40}
+ - 220 :  : 'com/jfireframework/mvc/vo/Home'
+ - 221 :  : klass_index=219 name_and_type_index=222
+ - 222 :  : name_index=223 signature_index=224
+ - 223 :  : 'getHost'
+ - 224 :  : '()Lcom/jfireframework/mvc/vo/Person;'
+ - 225 :  : 25
+ - 227 :  : 75.260000
+ - 229 :  : 0.001000
+ - 231 :  : klass_index=161 name_and_type_index=232
+ - 232 :  : name_index=233 signature_index=107
+ - 233 :  : 'intValue'
+ - 234 :  : 10
+ - 236 :  : 100
+ - 238 :  : klass_index=219 name_and_type_index=239
+ - 239 :  : name_index=240 signature_index=241
+ - 240 :  : 'getDesks'
+ - 241 :  : '()[Lcom/jfireframework/mvc/vo/Desk;'
+ - 242 :  : 11
+ - 244 :  : 12
+ - 246 :  : 'map'
+ - 247 :  : 'home'
+ - 248 :  : 'Lcom/jfireframework/mvc/vo/Home;'
+ - 249 :  : 'desks'
+ - 250 :  : '[Lcom/jfireframework/mvc/vo/Desk;'
+ - 251 :  : 'SourceFile'
+ - 252 :  : 'NewBinderTest.java'
+
+R11=0x0000000002b824f0 is an unknown value
+R12=0x0000000002a7e800 is a thread
+R13=0x0000000000000015 is an unknown value
+R14=0x0000000002bcb2c0 is an unknown value
+R15=0x0000000002bcb4e0 is an unknown value
+
+
+Stack: [0x0000000002a80000,0x0000000002b80000],  sp=0x0000000002b7e5e0,  free space=1017k
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [jvm.dll+0xa4e09]
+
+Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)
+j  com.jfireframework.mvc.NewBinderTest.test4()V+183
+v  ~StubRoutines::call_stub
+j  sun.reflect.NativeMethodAccessorImpl.invoke0(Ljava/lang/reflect/Method;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+0
+j  sun.reflect.NativeMethodAccessorImpl.invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+87
+j  sun.reflect.DelegatingMethodAccessorImpl.invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+6
+j  java.lang.reflect.Method.invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+57
+j  org.junit.runners.model.FrameworkMethod$1.runReflectiveCall()Ljava/lang/Object;+15
+j  org.junit.internal.runners.model.ReflectiveCallable.run()Ljava/lang/Object;+1
+j  org.junit.runners.model.FrameworkMethod.invokeExplosively(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+10
+j  org.junit.internal.runners.statements.InvokeMethod.evaluate()V+12
+j  org.junit.runners.ParentRunner.runLeaf(Lorg/junit/runners/model/Statement;Lorg/junit/runner/Description;Lorg/junit/runner/notification/RunNotifier;)V+17
+j  org.junit.runners.BlockJUnit4ClassRunner.runChild(Lorg/junit/runners/model/FrameworkMethod;Lorg/junit/runner/notification/RunNotifier;)V+32
+j  org.junit.runners.BlockJUnit4ClassRunner.runChild(Ljava/lang/Object;Lorg/junit/runner/notification/RunNotifier;)V+6
+j  org.junit.runners.ParentRunner$3.run()V+12
+j  org.junit.runners.ParentRunner$1.schedule(Ljava/lang/Runnable;)V+1
+j  org.junit.runners.ParentRunner.runChildren(Lorg/junit/runner/notification/RunNotifier;)V+40
+j  org.junit.runners.ParentRunner.access$000(Lorg/junit/runners/ParentRunner;Lorg/junit/runner/notification/RunNotifier;)V+2
+j  org.junit.runners.ParentRunner$2.evaluate()V+8
+j  org.junit.runners.ParentRunner.run(Lorg/junit/runner/notification/RunNotifier;)V+20
+j  org.eclipse.jdt.internal.junit4.runner.JUnit4TestReference.run(Lorg/eclipse/jdt/internal/junit/runner/TestExecution;)V+72
+j  org.eclipse.jdt.internal.junit.runner.TestExecution.run([Lorg/eclipse/jdt/internal/junit/runner/ITestReference;)V+17
+j  org.eclipse.jdt.internal.junit.runner.RemoteTestRunner.runTests([Ljava/lang/String;Ljava/lang/String;Lorg/eclipse/jdt/internal/junit/runner/TestExecution;)V+61
+j  org.eclipse.jdt.internal.junit.runner.RemoteTestRunner.runTests(Lorg/eclipse/jdt/internal/junit/runner/TestExecution;)V+10
+j  org.eclipse.jdt.internal.junit.runner.RemoteTestRunner.run()V+70
+j  org.eclipse.jdt.internal.junit.runner.RemoteTestRunner.main([Ljava/lang/String;)V+14
+v  ~StubRoutines::call_stub
+
+---------------  P R O C E S S  ---------------
+
+Java Threads: ( => current thread )
+  0x000000000cf14000 JavaThread "ReaderThread" [_thread_in_native, id=2200, stack(0x000000000d1e0000,0x000000000d2e0000)]
+  0x000000000b0b8000 JavaThread "Service Thread" daemon [_thread_blocked, id=5132, stack(0x000000000cae0000,0x000000000cbe0000)]
+  0x000000000b0ac000 JavaThread "C2 CompilerThread1" daemon [_thread_blocked, id=4576, stack(0x000000000c9e0000,0x000000000cae0000)]
+  0x000000000b0a6000 JavaThread "C2 CompilerThread0" daemon [_thread_blocked, id=3820, stack(0x000000000c8e0000,0x000000000c9e0000)]
+  0x000000000b097800 JavaThread "JDWP Command Reader" daemon [_thread_in_native, id=5888, stack(0x000000000c7e0000,0x000000000c8e0000)]
+  0x000000000b094000 JavaThread "JDWP Event Helper Thread" daemon [_thread_blocked, id=3844, stack(0x000000000c6e0000,0x000000000c7e0000)]
+  0x000000000b086000 JavaThread "JDWP Transport Listener: dt_socket" daemon [_thread_blocked, id=5012, stack(0x000000000c5e0000,0x000000000c6e0000)]
+  0x000000000b07f800 JavaThread "Attach Listener" daemon [_thread_blocked, id=796, stack(0x000000000c4d0000,0x000000000c5d0000)]
+  0x000000000b07c000 JavaThread "Signal Dispatcher" daemon [_thread_blocked, id=1788, stack(0x000000000c3d0000,0x000000000c4d0000)]
+  0x000000000b02f800 JavaThread "Finalizer" daemon [_thread_blocked, id=3080, stack(0x000000000c2d0000,0x000000000c3d0000)]
+  0x000000000b026000 JavaThread "Reference Handler" daemon [_thread_blocked, id=2316, stack(0x000000000c1d0000,0x000000000c2d0000)]
+=>0x0000000002a7e800 JavaThread "main" [_thread_in_vm, id=5872, stack(0x0000000002a80000,0x0000000002b80000)]
+
+Other Threads:
+  0x000000000b022000 VMThread [stack: 0x000000000c0d0000,0x000000000c1d0000] [id=120]
+  0x000000000b0c2800 WatcherThread [stack: 0x000000000cbe0000,0x000000000cce0000] [id=5068]
+
+VM state:not at safepoint (normal execution)
+
+VM Mutex/Monitor currently owned by a thread: None
+
+Heap
+ PSYoungGen      total 38912K, used 6083K [0x00000007d5500000, 0x00000007d8000000, 0x0000000800000000)
+  eden space 33792K, 18% used [0x00000007d5500000,0x00000007d5af0e88,0x00000007d7600000)
+  from space 5120K, 0% used [0x00000007d7b00000,0x00000007d7b00000,0x00000007d8000000)
+  to   space 5120K, 0% used [0x00000007d7600000,0x00000007d7600000,0x00000007d7b00000)
+ ParOldGen       total 87040K, used 0K [0x0000000780000000, 0x0000000785500000, 0x00000007d5500000)
+  object space 87040K, 0% used [0x0000000780000000,0x0000000780000000,0x0000000785500000)
+ PSPermGen       total 21504K, used 4587K [0x000000077ae00000, 0x000000077c300000, 0x0000000780000000)
+  object space 21504K, 21% used [0x000000077ae00000,0x000000077b27ae20,0x000000077c300000)
+
+Card table byte_map: [0x0000000005d40000,0x0000000006170000] byte_map_base: 0x0000000002169000
+
+Polling page: 0x00000000029b0000
+
+Code Cache  [0x0000000002c80000, 0x0000000002ef0000, 0x0000000005c80000)
+ total_blobs=234 nmethods=20 adapters=176 free_code_cache=48715Kb largest_free_block=49871744
+
+Compilation events (10 events):
+Event: 0.284 Thread 0x000000000b0a6000   15             sun.net.www.ParseUtil::encodePath (336 bytes)
+Event: 0.285 Thread 0x000000000b0ac000   16             java.lang.String::startsWith (72 bytes)
+Event: 0.287 Thread 0x000000000b0ac000 nmethod 16 0x0000000002ce7e90 code [0x0000000002ce7fe0, 0x0000000002ce8298]
+Event: 0.296 Thread 0x000000000b0a6000 nmethod 15 0x0000000002ce9b50 code [0x0000000002ce9d00, 0x0000000002cea880]
+Event: 0.297 Thread 0x000000000b0ac000   17             java.lang.Object::<init> (1 bytes)
+Event: 0.298 Thread 0x000000000b0ac000 nmethod 17 0x0000000002ce9910 code [0x0000000002ce9a40, 0x0000000002ce9ad8]
+Event: 0.338 Thread 0x000000000b0a6000   19             java.lang.String::equals (81 bytes)
+Event: 0.341 Thread 0x000000000b0a6000 nmethod 19 0x0000000002cecf90 code [0x0000000002ced0e0, 0x0000000002ced3b8]
+Event: 4.400 Thread 0x000000000b0ac000   20             java.lang.AbstractStringBuilder::ensureCapacityInternal (16 bytes)
+Event: 4.404 Thread 0x000000000b0ac000 nmethod 20 0x0000000002ceca10 code [0x0000000002cecb60, 0x0000000002cecdf8]
+
+GC Heap History (0 events):
+No events
+
+Deoptimization events (2 events):
+Event: 0.208 Thread 0x0000000002a7e800 Uncommon trap: reason=unstable_if action=reinterpret pc=0x0000000002cdfcc4 method=java.lang.String.hashCode()I @ 14
+Event: 0.250 Thread 0x0000000002a7e800 Uncommon trap: reason=unstable_if action=reinterpret pc=0x0000000002ce2ff0 method=java.lang.String.indexOf([CII[CIII)I @ 123
+
+Internal exceptions (10 events):
+Event: 6.814 Thread 0x0000000002a7e800 Threw 0x00000007d5acc038 at C:\re\jdk7u80\2329\hotspot\src\share\vm\prims\jvm.cpp:1319
+Event: 6.815 Thread 0x0000000002a7e800 Threw 0x00000007d5ace4f8 at C:\re\jdk7u80\2329\hotspot\src\share\vm\prims\jvm.cpp:1319
+Event: 6.816 Thread 0x0000000002a7e800 Threw 0x00000007d5ad10c0 at C:\re\jdk7u80\2329\hotspot\src\share\vm\prims\jvm.cpp:1319
+Event: 6.818 Thread 0x0000000002a7e800 Threw 0x00000007d5ad40f0 at C:\re\jdk7u80\2329\hotspot\src\share\vm\prims\jvm.cpp:1319
+Event: 6.819 Thread 0x0000000002a7e800 Threw 0x00000007d5ad6ba8 at C:\re\jdk7u80\2329\hotspot\src\share\vm\prims\jvm.cpp:1319
+Event: 6.820 Thread 0x0000000002a7e800 Threw 0x00000007d5ad9738 at C:\re\jdk7u80\2329\hotspot\src\share\vm\prims\jvm.cpp:1319
+Event: 6.821 Thread 0x0000000002a7e800 Threw 0x00000007d5adc2d8 at C:\re\jdk7u80\2329\hotspot\src\share\vm\prims\jvm.cpp:1319
+Event: 6.826 Thread 0x0000000002a7e800 Threw 0x00000007d5adfa80 at C:\re\jdk7u80\2329\hotspot\src\share\vm\prims\jvm.cpp:1319
+Event: 6.827 Thread 0x0000000002a7e800 Threw 0x00000007d5ae3c40 at C:\re\jdk7u80\2329\hotspot\src\share\vm\prims\jvm.cpp:1319
+Event: 30.636 Thread 0x0000000002a7e800 Threw 0x00000007d5aea5d8 at C:\re\jdk7u80\2329\hotspot\src\share\vm\prims\jvm.cpp:1319
+
+Events (10 events):
+Event: 83.281 Executing VM operation: GetOrSetLocal
+Event: 83.281 Executing VM operation: GetOrSetLocal done
+Event: 83.281 Executing VM operation: GetOrSetLocal
+Event: 83.281 Executing VM operation: GetOrSetLocal done
+Event: 83.685 Executing VM operation: EnterInterpOnlyMode
+Event: 83.686 Executing VM operation: EnterInterpOnlyMode done
+Event: 83.686 Executing VM operation: GetCurrentLocation
+Event: 83.686 Executing VM operation: GetCurrentLocation done
+Event: 83.686 Executing VM operation: ChangeSingleStep
+Event: 83.686 Executing VM operation: ChangeSingleStep done
+
+
+Dynamic libraries:
+0x00007ff7acdc0000 - 0x00007ff7acdf3000 	C:\Program Files\Java\jdk1.7.0_80\bin\javaw.exe
+0x00007ffe38bf0000 - 0x00007ffe38dc1000 	C:\Windows\SYSTEM32\ntdll.dll
+0x00007ffe38b40000 - 0x00007ffe38beb000 	C:\Windows\System32\KERNEL32.DLL
+0x00007ffe35350000 - 0x00007ffe3556d000 	C:\Windows\System32\KERNELBASE.dll
+0x00007ffe367f0000 - 0x00007ffe36892000 	C:\Windows\System32\ADVAPI32.dll
+0x00007ffe38750000 - 0x00007ffe387ee000 	C:\Windows\System32\msvcrt.dll
+0x00007ffe36b30000 - 0x00007ffe36b89000 	C:\Windows\System32\sechost.dll
+0x00007ffe369b0000 - 0x00007ffe36ad1000 	C:\Windows\System32\RPCRT4.dll
+0x00007ffe365b0000 - 0x00007ffe36715000 	C:\Windows\System32\USER32.dll
+0x00007ffe36160000 - 0x00007ffe3617e000 	C:\Windows\System32\win32u.dll
+0x00007ffe38950000 - 0x00007ffe38984000 	C:\Windows\System32\GDI32.dll
+0x00007ffe35690000 - 0x00007ffe35812000 	C:\Windows\System32\gdi32full.dll
+0x00007ffe2f170000 - 0x00007ffe2f3e9000 	C:\Windows\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.14393.0_none_2d0f50fcbdb171b8\COMCTL32.dll
+0x00007ffe382e0000 - 0x00007ffe385a7000 	C:\Windows\System32\combase.dll
+0x00007ffe36060000 - 0x00007ffe36155000 	C:\Windows\System32\ucrtbase.dll
+0x00007ffe35620000 - 0x00007ffe3568a000 	C:\Windows\System32\bcryptPrimitives.dll
+0x00007ffe36ae0000 - 0x00007ffe36b0e000 	C:\Windows\System32\IMM32.DLL
+0x0000000180000000 - 0x00000001800fd000 	C:\Program Files (x86)\MacType\MacType64.dll
+0x00000000023f0000 - 0x000000000248e000 	C:\Windows\SYSTEM32\EasyHK64.dll
+0x00007ffe385b0000 - 0x00007ffe38602000 	C:\Windows\System32\SHLWAPI.dll
+0x00007ffe34a50000 - 0x00007ffe34cb9000 	C:\Windows\SYSTEM32\DWrite.dll
+0x00007ffe344f0000 - 0x00007ffe34a4f000 	C:\Windows\SYSTEM32\d2d1.dll
+0x00007ffe34cc0000 - 0x00007ffe34ccb000 	C:\Windows\SYSTEM32\CRYPTBASE.DLL
+0x00007ffe35180000 - 0x00007ffe35348000 	C:\Windows\System32\CRYPT32.dll
+0x00007ffe35170000 - 0x00007ffe35180000 	C:\Windows\System32\MSASN1.dll
+0x000000005dec0000 - 0x000000005df92000 	C:\Program Files\Java\jdk1.7.0_80\jre\bin\msvcr100.dll
+0x000000005d6e0000 - 0x000000005deb9000 	C:\Program Files\Java\jdk1.7.0_80\jre\bin\server\jvm.dll
+0x00007ffe36c00000 - 0x00007ffe36c08000 	C:\Windows\System32\PSAPI.DLL
+0x00007ffe2de10000 - 0x00007ffe2de19000 	C:\Windows\SYSTEM32\WSOCK32.dll
+0x00007ffe32870000 - 0x00007ffe32893000 	C:\Windows\SYSTEM32\WINMM.dll
+0x00007ffe36b90000 - 0x00007ffe36bfa000 	C:\Windows\System32\WS2_32.dll
+0x00000000029c0000 - 0x00000000029eb000 	C:\Windows\SYSTEM32\WINMMBASE.dll
+0x00007ffe36010000 - 0x00007ffe36052000 	C:\Windows\System32\cfgmgr32.dll
+0x000000005d6d0000 - 0x000000005d6df000 	C:\Program Files\Java\jdk1.7.0_80\jre\bin\verify.dll
+0x000000005d6a0000 - 0x000000005d6c8000 	C:\Program Files\Java\jdk1.7.0_80\jre\bin\java.dll
+0x000000005d660000 - 0x000000005d695000 	C:\Program Files\Java\jdk1.7.0_80\jre\bin\jdwp.dll
+0x000000005d650000 - 0x000000005d658000 	C:\Program Files\Java\jdk1.7.0_80\jre\bin\npt.dll
+0x000000005d630000 - 0x000000005d646000 	C:\Program Files\Java\jdk1.7.0_80\jre\bin\zip.dll
+0x000000005d620000 - 0x000000005d629000 	C:\Program Files\Java\jdk1.7.0_80\jre\bin\dt_socket.dll
+0x00007ffe2e130000 - 0x00007ffe2e146000 	C:\Windows\system32\napinsp.dll
+0x00007ffe2e110000 - 0x00007ffe2e12a000 	C:\Windows\system32\pnrpnsp.dll
+0x00007ffe323c0000 - 0x00007ffe323d8000 	C:\Windows\system32\NLAapi.dll
+0x00007ffe34250000 - 0x00007ffe342ac000 	C:\Windows\System32\mswsock.dll
+0x00007ffe34020000 - 0x00007ffe340c0000 	C:\Windows\SYSTEM32\DNSAPI.dll
+0x000000000c5d0000 - 0x000000000c5d8000 	C:\Windows\System32\NSI.dll
+0x00007ffe33fe0000 - 0x00007ffe34018000 	C:\Windows\SYSTEM32\IPHLPAPI.DLL
+0x00007ffe2e100000 - 0x00007ffe2e10e000 	C:\Windows\System32\winrnr.dll
+0x00007ffe2ea00000 - 0x00007ffe2ea6a000 	C:\Windows\System32\fwpuclnt.dll
+0x00007ffe34f90000 - 0x00007ffe34fbb000 	C:\Windows\SYSTEM32\bcrypt.dll
+0x00007ffe2e8f0000 - 0x00007ffe2e8fa000 	C:\Windows\System32\rasadhlp.dll
+0x000000005d600000 - 0x000000005d61a000 	C:\Program Files\Java\jdk1.7.0_80\jre\bin\net.dll
+0x00007ffe2aed0000 - 0x00007ffe2b062000 	C:\Windows\SYSTEM32\dbghelp.dll
+
+VM Arguments:
+jvm_args: -agentlib:jdwp=transport=dt_socket,suspend=y,address=localhost:3931 -ea -Dfile.encoding=UTF-8 
+java_command: org.eclipse.jdt.internal.junit.runner.RemoteTestRunner -version 3 -port 3930 -testLoaderClass org.eclipse.jdt.internal.junit4.runner.JUnit4TestLoader -loaderpluginname org.eclipse.jdt.junit4.runtime -test com.jfireframework.mvc.NewBinderTest:test4
+Launcher Type: SUN_STANDARD
+
+Environment Variables:
+PATH=C:\Program Files\Java\jdk1.7.0_80\jre\bin;C:/Program Files/Java/jdk1.8.0_101/bin/../jre/bin/server;C:/Program Files/Java/jdk1.8.0_101/bin/../jre/bin;C:/Program Files/Java/jdk1.8.0_101/bin/../jre/lib/amd64;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files (x86)\MacType;C:\Users\ÁÖ±ó\AppData\Local\Microsoft\WindowsApps;;D:\eclipse;
+USERNAME=ÁÖ±ó
+OS=Windows_NT
+PROCESSOR_IDENTIFIER=AMD64 Family 16 Model 4 Stepping 3, AuthenticAMD
+
+
+
+---------------  S Y S T E M  ---------------
+
+OS: Windows 8.1 , 64 bit Build 9600 
+
+CPU:total 4 (4 cores per cpu, 1 threads per core) family 16 model 4 stepping 3, cmov, cx8, fxsr, mmx, sse, sse2, sse3, popcnt, mmxext, 3dnowpref, lzcnt, sse4a, tsc, tscinvbit, tscinv
+
+Memory: 4k page, physical 8386676k(5284692k free), swap 9697396k(5570444k free)
+
+vm_info: Java HotSpot(TM) 64-Bit Server VM (24.80-b11) for windows-amd64 JRE (1.7.0_80-b15), built on Apr 10 2015 11:26:34 by "java_re" with unknown MS VC++:1600
+
+time: Sat Aug 27 12:22:01 2016
+elapsed time: 83 seconds
+

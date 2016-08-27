@@ -1,7 +1,8 @@
-package com.jfireframework.mvc.newbinder;
+package com.jfireframework.mvc.newbinder.impl;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import com.jfireframework.mvc.newbinder.node.TreeValueNode;
 
 public interface DataBinder
 {
