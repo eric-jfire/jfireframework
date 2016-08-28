@@ -14,7 +14,7 @@ public interface DataBinder
      * @param response
      * @return
      */
-    public Object binder(HttpServletRequest request, TreeValueNode treeValueNode, HttpServletResponse response);
+    public Object bind(HttpServletRequest request, TreeValueNode treeValueNode, HttpServletResponse response);
     
     /**
      * 该参数的名称

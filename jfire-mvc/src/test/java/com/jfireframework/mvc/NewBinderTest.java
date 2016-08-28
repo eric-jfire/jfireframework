@@ -1,16 +1,9 @@
 package com.jfireframework.mvc;
 
-import static org.junit.Assert.*;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
-import com.jfireframework.baseutil.time.ThreadTimewatch;
 import com.jfireframework.codejson.JsonTool;
-import com.jfireframework.mvc.binder.DataBinder;
-import com.jfireframework.mvc.binder.DataBinderFactory;
-import com.jfireframework.mvc.binder.ParamInfo;
-import com.jfireframework.mvc.data.MockRequest;
 import com.jfireframework.mvc.newbinder.impl.ObjectDataBinder;
 import com.jfireframework.mvc.newbinder.node.TreeValueNode;
 import com.jfireframework.mvc.vo.Desk;
@@ -39,18 +32,18 @@ public class NewBinderTest
     @Test
     public void test2()
     {
-        ObjectDataBinder binder = new ObjectDataBinder(Desk.class, "");
+        ObjectDataBinder binder = new ObjectDataBinder(Desk.class, "", null);
         TreeValueNode paramTree = new TreeValueNode();
         paramTree.put("name", "hello");
         paramTree.put("width", "20");
-        Desk desk = (Desk) binder.binder(null, paramTree, null);
+        Desk desk = (Desk) binder.bind(null, paramTree, null);
         assertEquals("hello", desk.getName());
         assertEquals(20, desk.getWidth());
-        binder = new ObjectDataBinder(Desk.class, "desk");
+        binder = new ObjectDataBinder(Desk.class, "desk", null);
         paramTree.clear();
         paramTree.put("desk[name]", "hello");
         paramTree.put("desk[width]", "20");
-        desk = (Desk) binder.binder(null, paramTree, null);
+        desk = (Desk) binder.bind(null, paramTree, null);
         assertEquals("hello", desk.getName());
         assertEquals(20, desk.getWidth());
     }
@@ -58,7 +51,7 @@ public class NewBinderTest
     @Test
     public void test3()
     {
-        ObjectDataBinder binder = new ObjectDataBinder(Person.class, "");
+        ObjectDataBinder binder = new ObjectDataBinder(Person.class, "", null);
         TreeValueNode node = new TreeValueNode();
         node.put("age", "15");
         node.put("name", "test");
@@ -66,7 +59,7 @@ public class NewBinderTest
         node.put("ids[0]", "1");
         node.put("ids[1]", "2");
         node.put("ids[2]", "3");
-        Person person = (Person) binder.binder(null, node, null);
+        Person person = (Person) binder.bind(null, node, null);
         assertEquals(15, person.getAge());
         assertEquals("test", person.getName());
         assertEquals(15.36, person.getWeight(), 0.0001);
@@ -90,8 +83,8 @@ public class NewBinderTest
         map.put("desks[0][width]", "11");
         map.put("desks[1][name]", "desk2");
         map.put("desks[1][width]", "12");
-        ObjectDataBinder binder = new ObjectDataBinder(Home.class, "");
-        Home home = (Home) binder.binder(null, map, null);
+        ObjectDataBinder binder = new ObjectDataBinder(Home.class, "", null);
+        Home home = (Home) binder.bind(null, map, null);
         assertEquals(home.getHost().getName(), "林斌");
         assertEquals(home.getHost().getAge(), 25);
         assertEquals(home.getHost().getWeight(), 75.26, 0.001);

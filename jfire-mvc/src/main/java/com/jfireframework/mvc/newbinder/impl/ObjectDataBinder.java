@@ -1,5 +1,6 @@
 package com.jfireframework.mvc.newbinder.impl;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.LinkedList;
@@ -7,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.mvc.annotation.MvcIgnore;
 import com.jfireframework.mvc.newbinder.field.AbstractBinderField;
 import com.jfireframework.mvc.newbinder.field.BinderField;
 import com.jfireframework.mvc.newbinder.node.ParamNode;
@@ -18,7 +20,7 @@ public class ObjectDataBinder implements DataBinder
     private final BinderField[] fields;
     private final Class<?>      ckass;
     
-    public ObjectDataBinder(Class<?> ckass, String prefixName)
+    public ObjectDataBinder(Class<?> ckass, String prefixName, Annotation[] annotations)
     {
         this.ckass = ckass;
         this.prefixName = prefixName;
@@ -26,7 +28,7 @@ public class ObjectDataBinder implements DataBinder
         LinkedList<BinderField> list = new LinkedList<BinderField>();
         for (Field each : t_fFields)
         {
-            if (Modifier.isStatic(each.getModifiers()) || Modifier.isFinal(each.getModifiers()))
+            if (Modifier.isStatic(each.getModifiers()) || Modifier.isFinal(each.getModifiers()) || each.isAnnotationPresent(MvcIgnore.class))
             {
                 continue;
             }
@@ -36,7 +38,7 @@ public class ObjectDataBinder implements DataBinder
     }
     
     @Override
-    public Object binder(HttpServletRequest request, TreeValueNode treeValueNode, HttpServletResponse response)
+    public Object bind(HttpServletRequest request, TreeValueNode treeValueNode, HttpServletResponse response)
     {
         if (prefixName.length() != 0)
         {
@@ -44,12 +46,16 @@ public class ObjectDataBinder implements DataBinder
         }
         try
         {
-            Object entity = ckass.newInstance();
+            Object entity = null;
             for (BinderField each : fields)
             {
                 ParamNode node = treeValueNode.get(each.getName());
                 if (node != null)
                 {
+                    if (entity == null)
+                    {
+                        entity = ckass.newInstance();
+                    }
                     each.setValue(request, response, node, entity);
                 }
             }

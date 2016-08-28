@@ -1,9 +1,12 @@
-package com.jfireframework.mvc.newbinder.field.array;
+package com.jfireframework.mvc.newbinder.field.array.base;
 
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map.Entry;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Set;
+import com.jfireframework.mvc.newbinder.field.array.AbstractArrayField;
 import com.jfireframework.mvc.newbinder.node.ParamNode;
 import com.jfireframework.mvc.newbinder.node.StringValueNode;
 
@@ -16,7 +19,7 @@ public class ArrayShortField extends AbstractArrayField
     }
     
     @Override
-    protected Object buildFromArray(int size, List<String> values)
+    protected Object buildFromArray(int size, List<String> values, HttpServletRequest request, HttpServletResponse response)
     {
         short[] array = new short[size];
         int index = 0;
@@ -29,7 +32,7 @@ public class ArrayShortField extends AbstractArrayField
     }
     
     @Override
-    protected Object buildFromTree(int size, Set<Entry<String, ParamNode>> set)
+    protected Object buildFromTree(int size, Set<Entry<String, ParamNode>> set, HttpServletRequest request, HttpServletResponse response)
     {
         short[] array = new short[size];
         for (Entry<String, ParamNode> each : set)
