@@ -7,10 +7,10 @@ import java.util.Set;
 import com.jfireframework.mvc.newbinder.node.ParamNode;
 import com.jfireframework.mvc.newbinder.node.StringValueNode;
 
-public class ArrayWIntegerField extends AbstractArrayField
+public class ArrayShortField extends AbstractArrayField
 {
     
-    public ArrayWIntegerField(Field field)
+    public ArrayShortField(Field field)
     {
         super(field);
     }
@@ -18,11 +18,11 @@ public class ArrayWIntegerField extends AbstractArrayField
     @Override
     protected Object buildFromArray(int size, List<String> values)
     {
-        Integer[] array = new Integer[size];
+        short[] array = new short[size];
         int index = 0;
         for (String each : values)
         {
-            array[index] = Integer.valueOf(each);
+            array[index] = Short.valueOf(each);
             index += 1;
         }
         return array;
@@ -31,11 +31,11 @@ public class ArrayWIntegerField extends AbstractArrayField
     @Override
     protected Object buildFromTree(int size, Set<Entry<String, ParamNode>> set)
     {
-        Integer[] array = new Integer[size];
+        short[] array = new short[size];
         for (Entry<String, ParamNode> each : set)
         {
             int tmp = Integer.valueOf(each.getKey());
-            array[tmp] = Integer.valueOf(((StringValueNode) each.getValue()).getValue());
+            array[tmp] = Short.valueOf(((StringValueNode) each.getValue()).getValue());
         }
         return array;
     }

@@ -127,7 +127,7 @@ public class ActionFactory
             throw new JustThrowException(e);
         }
         Bean[] beans = jfireContext.getBeanByInterface(ActionInterceptor.class);
-        List<ActionInterceptor> interceptors = new ArrayList<>();
+        List<ActionInterceptor> interceptors = new ArrayList<ActionInterceptor>();
         next: for (Bean each : beans)
         {
             ActionInterceptor interceptor = (ActionInterceptor) each.getInstance();

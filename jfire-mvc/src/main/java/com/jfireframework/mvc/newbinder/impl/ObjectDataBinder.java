@@ -23,7 +23,7 @@ public class ObjectDataBinder implements DataBinder
         this.ckass = ckass;
         this.prefixName = prefixName;
         Field[] t_fFields = ReflectUtil.getAllFields(ckass);
-        LinkedList<BinderField> list = new LinkedList<>();
+        LinkedList<BinderField> list = new LinkedList<BinderField>();
         for (Field each : t_fFields)
         {
             if (Modifier.isStatic(each.getModifiers()) || Modifier.isFinal(each.getModifiers()))
@@ -55,7 +55,7 @@ public class ObjectDataBinder implements DataBinder
             }
             return entity;
         }
-        catch (InstantiationException | IllegalAccessException e)
+        catch (Exception e)
         {
             throw new JustThrowException(e);
         }

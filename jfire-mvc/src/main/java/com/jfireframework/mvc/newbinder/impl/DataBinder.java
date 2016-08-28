@@ -7,14 +7,19 @@ import com.jfireframework.mvc.newbinder.node.TreeValueNode;
 public interface DataBinder
 {
     /**
-     * 从request中获取信息并且完成参数的绑定，将绑定后的参数返回
+     * 执行参数绑定动作，可以提取的参数从三个地方而来，request和response，以及其中提取的信息转变而来的treevaluenode
      * 
-     * @param map TODO
-     * @param response TODO
-     * 
+     * @param request
+     * @param treeValueNode
+     * @param response
      * @return
      */
     public Object binder(HttpServletRequest request, TreeValueNode treeValueNode, HttpServletResponse response);
     
+    /**
+     * 该参数的名称
+     * 
+     * @return
+     */
     public String getParamName();
 }

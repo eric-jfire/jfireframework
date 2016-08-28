@@ -67,9 +67,6 @@ public class Action
         {
             switch (resultType)
             {
-                case LITL:
-                    contentType = ContentType.HTML;
-                    break;
                 case Json:
                     contentType = ContentType.JSON;
                     break;

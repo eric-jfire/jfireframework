@@ -2,7 +2,6 @@ package com.jfireframework.mvc.binder.field;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.sql.Date;
 import java.util.Calendar;
@@ -34,7 +33,7 @@ import com.jfireframework.mvc.binder.field.impl.ObjectBinderField;
 
 public class FieldFactory
 {
-    private static final ConcurrentHashMap<Class<?>, Constructor<?>> binderMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Class<?>, Constructor<?>> binderMap = new ConcurrentHashMap<Class<?>, Constructor<?>>();
     static
     {
         try
@@ -65,7 +64,7 @@ public class FieldFactory
             binderMap.put(Float[].class, ArrayWFloatField.class.getConstructor(String.class, Field.class, Set.class));
             binderMap.put(Long[].class, ArrayWLongField.class.getConstructor(String.class, Field.class, Set.class));
         }
-        catch (NoSuchMethodException | SecurityException e)
+        catch (Exception e)
         {
             throw new JustThrowException(e);
         }
@@ -74,7 +73,7 @@ public class FieldFactory
     public static BinderField[] build(String prefix, Class<?> entityClass, Set<Class<?>> cycleSet)
     {
         Field[] fields = ReflectUtil.getAllFields(entityClass);
-        List<BinderField> list = new LinkedList<>();
+        List<BinderField> list = new LinkedList<BinderField>();
         for (Field each : fields)
         {
             if (Modifier.isStatic(each.getModifiers()) || Modifier.isFinal(each.getModifiers()) || each.isAnnotationPresent(MvcIgnore.class) || List.class.isAssignableFrom(each.getType()) || Map.class.isAssignableFrom(each.getType()) || each.getType().equals(each.getDeclaringClass()))
@@ -88,7 +87,7 @@ public class FieldFactory
                 {
                     list.add((BinderField) constructor.newInstance(prefix, each, cycleSet));
                 }
-                catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+                catch (Exception e)
                 {
                     throw new JustThrowException(e);
                 }

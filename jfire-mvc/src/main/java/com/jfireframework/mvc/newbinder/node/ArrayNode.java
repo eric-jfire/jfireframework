@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class ArrayNode implements ParamNode
 {
-    private ArrayList<String> array = new ArrayList<>();
+    private ArrayList<String> array = new ArrayList<String>();
     
     public void add(String value)
     {

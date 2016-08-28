@@ -14,7 +14,7 @@ import com.jfireframework.mvc.binder.ParamInfo;
 public class ArrayObjectField extends AbstractArrayField
 {
     private DataBinder                                   dataBinder;
-    private final ConcurrentHashMap<Integer, DataBinder> binderMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, DataBinder> binderMap = new ConcurrentHashMap<Integer, DataBinder>();
     private final Class<?>                               fieldType;
     
     public ArrayObjectField(String prefix, Field field, Set<Class<?>> set)

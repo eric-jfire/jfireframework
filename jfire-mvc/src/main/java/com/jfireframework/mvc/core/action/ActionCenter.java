@@ -14,7 +14,7 @@ public final class ActionCenter
     private final ActionClassify      postAction;
     private final ActionClassify      delAction;
     private final ActionClassify      putAction;
-    private final Map<String, Action> tokenActionMap = new HashMap<>();
+    private final Map<String, Action> tokenActionMap = new HashMap<String, Action>();
     
     class ActionClassify
     {

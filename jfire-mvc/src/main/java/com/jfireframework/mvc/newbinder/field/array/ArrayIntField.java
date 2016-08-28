@@ -1,16 +1,13 @@
 package com.jfireframework.mvc.newbinder.field.array;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Map.Entry;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import com.jfireframework.mvc.newbinder.field.AbstractBinderField;
-import com.jfireframework.mvc.newbinder.node.ArrayNode;
+import java.util.Set;
 import com.jfireframework.mvc.newbinder.node.ParamNode;
 import com.jfireframework.mvc.newbinder.node.StringValueNode;
-import com.jfireframework.mvc.newbinder.node.TreeValueNode;
 
-public class ArrayIntField extends AbstractBinderField
+public class ArrayIntField extends AbstractArrayField
 {
     
     public ArrayIntField(Field field)
@@ -19,40 +16,28 @@ public class ArrayIntField extends AbstractBinderField
     }
     
     @Override
-    public void setValue(HttpServletRequest request, HttpServletResponse response, ParamNode node, Object entity)
+    protected Object buildFromArray(int size, List<String> values)
     {
-        if (node instanceof ArrayNode)
+        int[] array = new int[size];
+        int index = 0;
+        for (String each : values)
         {
-            ArrayNode arrayNode = (ArrayNode) node;
-            int[] array = new int[arrayNode.getArray().size()];
-            int index = 0;
-            for (String each : arrayNode.getArray())
-            {
-                array[index] = Integer.valueOf(each).intValue();
-                index += 1;
-            }
-            unsafe.putObject(entity, offset, array);
+            array[index] = Integer.valueOf(each);
+            index += 1;
         }
-        else if (node instanceof TreeValueNode)
+        return array;
+    }
+    
+    @Override
+    protected Object buildFromTree(int size, Set<Entry<String, ParamNode>> set)
+    {
+        int[] array = new int[size];
+        for (Entry<String, ParamNode> each : set)
         {
-            TreeValueNode treeValueNode = (TreeValueNode) node;
-            int max = 0;
-            for (String each : treeValueNode.keySet())
-            {
-                int tmp = Integer.valueOf(each);
-                if (max < tmp)
-                {
-                    max = tmp;
-                }
-            }
-            int[] array = new int[max + 1];
-            for (Entry<String, ParamNode> each : treeValueNode.entrySet())
-            {
-                int tmp = Integer.valueOf(each.getKey());
-                array[tmp] = Integer.valueOf(((StringValueNode) each.getValue()).getValue());
-            }
-            unsafe.putObject(entity, offset, array);
+            int tmp = Integer.valueOf(each.getKey());
+            array[tmp] = Integer.valueOf(((StringValueNode) each.getValue()).getValue());
         }
+        return array;
     }
     
 }

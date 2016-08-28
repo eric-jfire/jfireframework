@@ -39,8 +39,8 @@ public class HeaderRule
         else
         {
             ignore = false;
-            List<String> tmp1 = new LinkedList<>();
-            List<headerAndValue> tmp2 = new LinkedList<>();
+            List<String> tmp1 = new LinkedList<String>();
+            List<headerAndValue> tmp2 = new LinkedList<headerAndValue>();
             for (String rule : rules)
             {
                 // 是成对的规则，那么就代表这个header是值判断类型

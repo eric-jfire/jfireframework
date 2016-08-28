@@ -2,7 +2,6 @@ package com.jfireframework.mvc.binder;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.Date;
@@ -35,7 +34,7 @@ import com.jfireframework.mvc.binder.impl.UploadBinder;
 
 public class DataBinderFactory
 {
-    private static ConcurrentHashMap<Class<?>, Constructor<?>> constructorMap = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<Class<?>, Constructor<?>> constructorMap = new ConcurrentHashMap<Class<?>, Constructor<?>>();
     
     static
     {
@@ -62,7 +61,7 @@ public class DataBinderFactory
             constructorMap.put(Float.class, BaseBinder.class.getConstructor(ParamInfo.class, Set.class));
             constructorMap.put(Long.class, BaseBinder.class.getConstructor(ParamInfo.class, Set.class));
         }
-        catch (NoSuchMethodException | SecurityException e)
+        catch (Exception e)
         {
             throw new JustThrowException(e);
         }
@@ -120,7 +119,7 @@ public class DataBinderFactory
             {
                 return (DataBinder) constructor.newInstance(info, cycleSet);
             }
-            catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+            catch (Exception e)
             {
                 throw new JustThrowException(e);
             }
