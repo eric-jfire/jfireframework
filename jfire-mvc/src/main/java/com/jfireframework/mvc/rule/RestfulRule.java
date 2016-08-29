@@ -2,7 +2,7 @@ package com.jfireframework.mvc.rule;
 
 import java.util.LinkedList;
 import java.util.List;
-import com.jfireframework.mvc.newbinder.node.TreeValueNode;
+import com.jfireframework.mvc.binder.node.TreeValueNode;
 
 public class RestfulRule
 {

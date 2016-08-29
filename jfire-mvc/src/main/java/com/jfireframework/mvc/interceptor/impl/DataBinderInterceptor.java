@@ -4,10 +4,10 @@ import java.util.Map.Entry;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import com.jfireframework.mvc.binder.DataBinder;
+import com.jfireframework.mvc.binder.node.TreeValueNode;
 import com.jfireframework.mvc.core.action.Action;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
-import com.jfireframework.mvc.newbinder.DataBinder;
-import com.jfireframework.mvc.newbinder.node.TreeValueNode;
 
 @Resource
 public class DataBinderInterceptor implements ActionInterceptor

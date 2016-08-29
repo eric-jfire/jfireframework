@@ -1,10 +1,10 @@
 package com.jfireframework.mvc.core.action;
 
 import java.lang.reflect.Method;
+import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.config.RequestMethod;
 import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
-import com.jfireframework.mvc.newbinder.DataBinder;
 import com.jfireframework.mvc.rule.HeaderRule;
 import com.jfireframework.mvc.rule.RestfulRule;
 import com.jfireframework.mvc.viewrender.ViewRender;
