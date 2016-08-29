@@ -1,25 +1,25 @@
 package com.jfireframework.mvc.interceptor.impl;
 
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Map.Entry;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.core.action.Action;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
+import com.jfireframework.mvc.newbinder.DataBinder;
+import com.jfireframework.mvc.newbinder.node.TreeValueNode;
 
 @Resource
 public class DataBinderInterceptor implements ActionInterceptor
 {
-    public static final String                            DATABINDERKEY = "databinder_key" + System.currentTimeMillis();
-    private static final ThreadLocal<Map<String, String>> mapLocal      = new ThreadLocal<Map<String, String>>() {
-                                                                            protected Map<String, String> initialValue()
-                                                                            {
-                                                                                return new HashMap<String, String>();
-                                                                            }
-                                                                        };
+    public static final String                      DATABINDERKEY = "databinder_key" + System.currentTimeMillis();
+    private static final ThreadLocal<TreeValueNode> nodeLocal     = new ThreadLocal<TreeValueNode>() {
+                                                                      @Override
+                                                                      protected TreeValueNode initialValue()
+                                                                      {
+                                                                          return new TreeValueNode();
+                                                                      }
+                                                                  };
     
     @Override
     public int getOrder()
@@ -30,34 +30,34 @@ public class DataBinderInterceptor implements ActionInterceptor
     @Override
     public boolean interceptor(HttpServletRequest request, HttpServletResponse response, Action action)
     {
-        Map<String, String> map = mapLocal.get();
-        map.clear();
+        TreeValueNode node = nodeLocal.get();
+        node.clear();
         if (action.isReadStream() == false)
         {
-            Enumeration<String> names = request.getParameterNames();
-            String name = null;
-            while (names.hasMoreElements())
+            for (Entry<String, String[]> each : request.getParameterMap().entrySet())
             {
-                name = names.nextElement();
-                map.put(name, request.getParameter(name));
+                for (String value : each.getValue())
+                {
+                    node.put(each.getKey(), value);
+                }
             }
         }
         if (action.isRest())
         {
-            action.getRestfulRule().getObtain(request.getRequestURI(), map);
+            action.getRestfulRule().getObtain(request.getRequestURI(), node);
         }
-        request.setAttribute(DATABINDERKEY, buildParams(action, request, map, response));
+        request.setAttribute(DATABINDERKEY, buildParams(action, request, node, response));
         return true;
     }
     
-    private Object[] buildParams(Action action, HttpServletRequest request, Map<String, String> map, HttpServletResponse response)
+    private Object[] buildParams(Action action, HttpServletRequest request, TreeValueNode node, HttpServletResponse response)
     {
         DataBinder[] dataBinders = action.getDataBinders();
         int length = dataBinders.length;
         Object[] param = new Object[length];
         for (int i = 0; i < length; i++)
         {
-            param[i] = dataBinders[i].binder(request, map, response);
+            param[i] = dataBinders[i].bind(request, node, response);
         }
         return param;
     }

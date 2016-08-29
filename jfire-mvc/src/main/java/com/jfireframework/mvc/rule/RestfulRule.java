@@ -2,7 +2,7 @@ package com.jfireframework.mvc.rule;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import com.jfireframework.mvc.newbinder.node.TreeValueNode;
 
 public class RestfulRule
 {
@@ -63,8 +63,9 @@ public class RestfulRule
         int index = 0;
         for (int i = 0; i < rules.length; i++)
         {
-            int newIndex= url.indexOf(rules[i], index);
-            if (url.indexOf('/', index) < newIndex) {
+            int newIndex = url.indexOf(rules[i], index);
+            if (url.indexOf('/', index) < newIndex)
+            {
                 return false;
             }
             index = newIndex;
@@ -102,12 +103,12 @@ public class RestfulRule
         }
     }
     
-    public void getObtain(String rul, Map<String, String> map)
+    public void getObtain(String rul, TreeValueNode node)
     {
         String[] values = getObtain(rul);
         for (int i = 0; i < valueLength; i++)
         {
-            map.put(names[i], values[i]);
+            node.put(names[i], values[i]);
         }
         
     }

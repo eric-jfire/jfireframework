@@ -2,10 +2,10 @@ package com.jfireframework.mvc.core.action;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
@@ -20,17 +20,15 @@ import com.jfireframework.context.aop.AopUtil;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.mvc.annotation.RequestMapping;
 import com.jfireframework.mvc.annotation.RequestParam;
-import com.jfireframework.mvc.binder.DataBinder;
-import com.jfireframework.mvc.binder.DataBinderFactory;
-import com.jfireframework.mvc.binder.ParamInfo;
-import com.jfireframework.mvc.binder.impl.CookieBinder;
-import com.jfireframework.mvc.binder.impl.HeaderBinder;
-import com.jfireframework.mvc.binder.impl.HttpRequestBinder;
-import com.jfireframework.mvc.binder.impl.HttpResponseBinder;
-import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
-import com.jfireframework.mvc.binder.impl.ServletContextBinder;
 import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
+import com.jfireframework.mvc.newbinder.BinderFactory;
+import com.jfireframework.mvc.newbinder.DataBinder;
+import com.jfireframework.mvc.newbinder.impl.CookieBinder;
+import com.jfireframework.mvc.newbinder.impl.HeaderBinder;
+import com.jfireframework.mvc.newbinder.impl.HttpServletRequestBinder;
+import com.jfireframework.mvc.newbinder.impl.HttpServletResponseBinder;
+import com.jfireframework.mvc.newbinder.impl.HttpSessionBinder;
 import com.jfireframework.mvc.rule.RestfulRule;
 import com.jfireframework.mvc.viewrender.RenderFactory;
 
@@ -96,9 +94,8 @@ public class ActionFactory
                     {
                         if (
                             each instanceof HttpSessionBinder //
-                                    || each instanceof HttpRequestBinder //
-                                    || each instanceof HttpResponseBinder //
-                                    || each instanceof ServletContextBinder //
+                                    || each instanceof HttpServletRequestBinder //
+                                    || each instanceof HttpServletResponseBinder //
                                     || each instanceof CookieBinder //
                                     || each instanceof HeaderBinder
                         )
@@ -182,18 +179,11 @@ public class ActionFactory
         {
             return new DataBinder[0];
         }
-        Class<?>[] paramTypes = method.getParameterTypes();
+        Type[] paramTypes = method.getGenericParameterTypes();
+        Class<?>[] ckasss = method.getParameterTypes();
         String[] paramNames = getParamNames(method);
         Annotation[][] annotations = method.getParameterAnnotations();
-        DataBinder[] dataBinders = new DataBinder[paramNames.length];
-        for (int i = 0; i < paramNames.length; i++)
-        {
-            ParamInfo info = new ParamInfo();
-            info.setAnnotations(annotations[i]);
-            info.setEntityClass(paramTypes[i]);
-            info.setPrefix(paramNames[i]);
-            dataBinders[i] = DataBinderFactory.build(info, new HashSet<Class<?>>());
-        }
+        DataBinder[] dataBinders = BinderFactory.build(ckasss, paramTypes, paramNames, annotations);
         return dataBinders;
     }
     

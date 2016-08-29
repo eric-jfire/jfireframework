@@ -1,4 +1,4 @@
-package com.jfireframework.mvc.binder;
+package com.jfireframework.mvc.newbinder;
 
 import java.io.File;
 import java.io.FileOutputStream;
