@@ -1,4 +1,4 @@
-package com.jfireframework.mvc.newbinder.field.array;
+package com.jfireframework.mvc.newbinder.field.array.extra;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import com.jfireframework.mvc.newbinder.field.array.AbstractArrayField;
 import com.jfireframework.mvc.newbinder.impl.ObjectDataBinder;
 import com.jfireframework.mvc.newbinder.node.ParamNode;
 import com.jfireframework.mvc.newbinder.node.TreeValueNode;
