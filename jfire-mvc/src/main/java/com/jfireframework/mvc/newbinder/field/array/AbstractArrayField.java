@@ -1,5 +1,6 @@
 package com.jfireframework.mvc.newbinder.field.array;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map.Entry;
@@ -13,10 +14,12 @@ import com.jfireframework.mvc.newbinder.node.TreeValueNode;
 
 public abstract class AbstractArrayField extends AbstractBinderField
 {
+    private final Class<?> ckass;
     
     public AbstractArrayField(Field field)
     {
         super(field);
+        ckass = field.getType().getComponentType();
     }
     
     @Override
@@ -44,7 +47,31 @@ public abstract class AbstractArrayField extends AbstractBinderField
         }
     }
     
-    protected abstract Object buildFromArray(int size, List<String> values, HttpServletRequest request, HttpServletResponse response);
+    protected Object buildFromArray(int size, List<String> values, HttpServletRequest request, HttpServletResponse response)
+    {
+        Object array = Array.newInstance(ckass, size);
+        int index = 0;
+        for (String each : values)
+        {
+            Array.set(array, index, buildByString(each));
+            index += 1;
+        }
+        return array;
+    }
     
-    protected abstract Object buildFromTree(int size, Set<Entry<String, ParamNode>> set, HttpServletRequest request, HttpServletResponse response);
+    protected abstract Object buildByString(String str);
+    
+    protected Object buildFromTree(int size, Set<Entry<String, ParamNode>> set, HttpServletRequest request, HttpServletResponse response)
+    {
+        Object array = Array.newInstance(ckass, size);
+        for (Entry<String, ParamNode> each : set)
+        {
+            int index = Integer.valueOf(each.getKey());
+            Array.set(array, index, buildByNode(each.getValue(), request, response));
+        }
+        return array;
+    }
+    
+    protected abstract Object buildByNode(ParamNode node, HttpServletRequest request, HttpServletResponse response);
+    
 }

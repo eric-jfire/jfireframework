@@ -1,10 +1,6 @@
 package com.jfireframework.mvc.newbinder.field.array.extra;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.mvc.newbinder.field.array.AbstractArrayField;
@@ -23,23 +19,19 @@ public class ArrayObjectField extends AbstractArrayField
         ckass = field.getType().getComponentType();
         binder = new ObjectDataBinder(ckass, "", null);
     }
-    
+
     @Override
-    protected Object buildFromArray(int size, List<String> values, HttpServletRequest request, HttpServletResponse response)
+    protected Object buildByString(String str)
     {
-        throw new UnsupportedOperationException();
+     throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected Object buildByNode(ParamNode node, HttpServletRequest request, HttpServletResponse response)
+    {
+        return binder.bind(request, (TreeValueNode) node, response);
     }
     
-    @Override
-    protected Object buildFromTree(int size, Set<Entry<String, ParamNode>> set, HttpServletRequest request, HttpServletResponse response)
-    {
-        Object[] array = (Object[]) Array.newInstance(ckass, size);
-        for (Entry<String, ParamNode> each : set)
-        {
-            int tmp = Integer.valueOf(each.getKey());
-            array[tmp] = binder.bind(request, (TreeValueNode) each.getValue(), response);
-        }
-        return array;
-    }
+   
     
 }
