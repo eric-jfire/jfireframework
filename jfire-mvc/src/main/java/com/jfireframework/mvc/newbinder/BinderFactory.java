@@ -17,6 +17,7 @@ import com.jfireframework.mvc.newbinder.impl.CookieBinder;
 import com.jfireframework.mvc.newbinder.impl.DateBinder;
 import com.jfireframework.mvc.newbinder.impl.HeaderBinder;
 import com.jfireframework.mvc.newbinder.impl.HttpServletRequestBinder;
+import com.jfireframework.mvc.newbinder.impl.HttpServletResponseBinder;
 import com.jfireframework.mvc.newbinder.impl.HttpSessionBinder;
 import com.jfireframework.mvc.newbinder.impl.ListBinder;
 import com.jfireframework.mvc.newbinder.impl.ListUploadBinder;
@@ -52,16 +53,14 @@ public class BinderFactory
             {
                 binders.add(new BaseBinder(target, prefixName, annotations));
             }
-            else if (
-                target == Integer.class //
-                        || target == Short.class //
-                        || target == Long.class //
-                        || target == Float.class //
-                        || target == Double.class //
-                        || target == Boolean.class //
-                        || target == Byte.class //
-                        || target == Character.class
-            )
+            else if (target == Integer.class //
+                    || target == Short.class //
+                    || target == Long.class //
+                    || target == Float.class //
+                    || target == Double.class //
+                    || target == Boolean.class //
+                    || target == Byte.class //
+                    || target == Character.class)
             {
                 binders.add(new WrapperBinder(target, prefixName, annotations));
             }
@@ -79,7 +78,7 @@ public class BinderFactory
             }
             else if (target == HttpServletResponse.class)
             {
-                binders.add(new HttpServletRequestBinder(target, prefixName, annotations));
+                binders.add(new HttpServletResponseBinder(target, prefixName, annotations));
             }
             else if (target == HttpSession.class)
             {
