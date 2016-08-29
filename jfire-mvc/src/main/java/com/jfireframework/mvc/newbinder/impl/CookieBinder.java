@@ -8,6 +8,7 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.reflect.trans.Transfer;
 import com.jfireframework.baseutil.reflect.trans.TransferFactory;
 import com.jfireframework.mvc.annotation.CookieValue;
+import com.jfireframework.mvc.newbinder.DataBinder;
 import com.jfireframework.mvc.newbinder.node.TreeValueNode;
 
 public class CookieBinder implements DataBinder

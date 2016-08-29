@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.mvc.annotation.MvcIgnore;
+import com.jfireframework.mvc.newbinder.DataBinder;
 import com.jfireframework.mvc.newbinder.field.AbstractBinderField;
 import com.jfireframework.mvc.newbinder.field.BinderField;
 import com.jfireframework.mvc.newbinder.node.ParamNode;

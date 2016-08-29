@@ -3,6 +3,7 @@ package com.jfireframework.mvc.newbinder.impl;
 import java.lang.annotation.Annotation;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import com.jfireframework.mvc.newbinder.DataBinder;
 import com.jfireframework.mvc.newbinder.node.TreeValueNode;
 
 public class HttpServletResponseBinder implements DataBinder

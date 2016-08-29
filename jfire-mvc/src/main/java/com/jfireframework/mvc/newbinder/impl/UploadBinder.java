@@ -5,6 +5,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.mvc.interceptor.impl.UploadInterceptor;
+import com.jfireframework.mvc.newbinder.DataBinder;
 import com.jfireframework.mvc.newbinder.node.TreeValueNode;
 
 public class UploadBinder implements DataBinder

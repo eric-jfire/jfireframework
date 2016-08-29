@@ -1,4 +1,4 @@
-package com.jfireframework.mvc.newbinder.impl;
+package com.jfireframework.mvc.newbinder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

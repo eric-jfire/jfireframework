@@ -10,7 +10,6 @@ import com.jfireframework.mvc.rule.RestfulRule;
 import com.jfireframework.mvc.viewrender.ViewRender;
 import sun.reflect.MethodAccessor;
 
-@SuppressWarnings("restriction")
 public class ActionInfo
 {
     private Object              entity;

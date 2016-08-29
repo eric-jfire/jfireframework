@@ -7,6 +7,7 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.trans.Transfer;
 import com.jfireframework.baseutil.reflect.trans.TransferFactory;
+import com.jfireframework.mvc.newbinder.DataBinder;
 import com.jfireframework.mvc.newbinder.node.ParamNode;
 import com.jfireframework.mvc.newbinder.node.StringValueNode;
 import com.jfireframework.mvc.newbinder.node.TreeValueNode;

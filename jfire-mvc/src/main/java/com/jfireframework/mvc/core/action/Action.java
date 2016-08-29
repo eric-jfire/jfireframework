@@ -22,7 +22,6 @@ import sun.reflect.MethodAccessor;
  * @author 林斌（windfire@zailanghua.com）
  * 
  */
-@SuppressWarnings("restriction")
 public class Action
 {
     /** 调用该action的对象实例 */
