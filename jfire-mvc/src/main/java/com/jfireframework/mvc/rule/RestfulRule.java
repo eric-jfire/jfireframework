@@ -108,7 +108,10 @@ public class RestfulRule
         String[] values = getObtain(rul);
         for (int i = 0; i < valueLength; i++)
         {
-            node.put(names[i], values[i]);
+            if ("".equals(values[i]) == false)
+            {
+                node.put(names[i], values[i]);
+            }
         }
         
     }
