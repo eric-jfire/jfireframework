@@ -20,7 +20,7 @@ public interface TransactionManager
     /**
      * 事务回滚,但是并不关闭连接
      */
-    public void rollback();
+    public void rollback(Throwable e);
     
     /**
      * 关闭当前的session环境

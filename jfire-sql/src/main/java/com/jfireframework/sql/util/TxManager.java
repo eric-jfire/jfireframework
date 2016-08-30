@@ -40,13 +40,13 @@ public class TxManager implements TransactionManager
     }
     
     @Override
-    public void rollback()
+    public void rollback(Throwable e)
     {
         logger.trace("事务回滚");
         SqlSession session = sessionFactory.getCurrentSession();
         if (session == null)
         {
-            throw new UnSupportException("准备回滚事务但是没有session,请检查");
+            throw new UnSupportException("准备回滚事务但是没有session,请检查", e);
         }
         session.rollback();
     }

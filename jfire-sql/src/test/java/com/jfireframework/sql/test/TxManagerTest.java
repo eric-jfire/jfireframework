@@ -17,7 +17,7 @@ public class TxManagerTest extends BaseTestSupport
         User4 user4 = new User4();
         user4.setId(12);
         session.save(user4);
-        txManager.rollback();
+        txManager.rollback(null);
         Assert.assertNull(session.get(User4.class, 12));
         session.close();
         try

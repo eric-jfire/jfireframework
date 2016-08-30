@@ -69,6 +69,10 @@ public class SqlSessionImpl implements SqlSession
                     connection.setTransactionIsolation(isolate);
                 }
             }
+            else
+            {
+                transNum++;
+            }
         }
         catch (SQLException e)
         {
@@ -154,7 +158,7 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> T get(Class<T> entityClass, Object pk)
     {
-        return (T) sessionFactory.getDao(entityClass).getById(pk, connection);
+        return sessionFactory.getDao(entityClass).getById(pk, connection);
     }
     
     @SuppressWarnings("unchecked")
@@ -171,6 +175,7 @@ public class SqlSessionImpl implements SqlSession
         sessionFactory.getDao((Class<T>) entitys.get(0).getClass()).batchInsert(entitys, connection);
     }
     
+    @Override
     @SuppressWarnings("unchecked")
     public <T> void insert(T entity)
     {
@@ -477,7 +482,7 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> T get(Class<T> entityClass, Object pk, LockMode mode)
     {
-        return (T) sessionFactory.getDao(entityClass).getById(pk, connection, mode);
+        return sessionFactory.getDao(entityClass).getById(pk, connection, mode);
     }
     
     @SuppressWarnings("unchecked")
@@ -490,7 +495,7 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> T get(Class<T> entityClass, Object pk, String fieldNames)
     {
-        return (T) sessionFactory.getDao(entityClass).getById(pk, connection, fieldNames);
+        return sessionFactory.getDao(entityClass).getById(pk, connection, fieldNames);
     }
     
     @Override
