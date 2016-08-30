@@ -1,16 +1,14 @@
 package com.jfireframework.sql.test;
 
 import java.util.List;
-import javax.annotation.Resource;
-import com.jfireframework.context.bean.load.LoadBy;
 import com.jfireframework.sql.annotation.BatchUpdate;
 import com.jfireframework.sql.annotation.Query;
 import com.jfireframework.sql.annotation.Update;
+import com.jfireframework.sql.jfirecontext.MapperOp;
 import com.jfireframework.sql.page.MysqlPage;
 import com.jfireframework.sql.test.entity.User;
 
-@Resource
-@LoadBy(factoryBeanName = "sessionFactory")
+@MapperOp
 public interface UserDAO
 {
     @Query(sql = "select * from User [$name.contains(\"asd\")  && $name.length()>2] where name like $%name% #", paramNames = "name")
