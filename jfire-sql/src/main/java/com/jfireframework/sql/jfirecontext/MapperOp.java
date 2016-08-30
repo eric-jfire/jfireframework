@@ -17,5 +17,4 @@ import com.jfireframework.context.bean.load.LoadBy;
 @LoadBy(factoryBeanName = "sessionFactory")
 public @interface MapperOp
 {
-    
 }

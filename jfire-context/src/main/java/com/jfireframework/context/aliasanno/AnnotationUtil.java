@@ -1,15 +1,18 @@
 package com.jfireframework.context.aliasanno;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
@@ -17,7 +20,7 @@ import com.jfireframework.baseutil.exception.UnSupportException;
 
 public class AnnotationUtil
 {
-    private static final Map<Annotation, AliasAnno> aliasMap = new ConcurrentHashMap<Annotation, AnnotationUtil.AliasAnno>();
+    private static final Map<Annotation, AnnoContext> aliasMap = new ConcurrentHashMap<Annotation, AnnoContext>(256);
     
     public static boolean isPresent(Class<? extends Annotation> annoType, Field field)
     {
@@ -44,34 +47,6 @@ public class AnnotationUtil
             return true;
         }
         return getAnnotation(annoType, method) != null;
-    }
-    
-    public static Annotation[][] getParameterAnnotations(Method method)
-    {
-        Annotation[][] annotations = method.getParameterAnnotations();
-        List<Annotation[]> list = new LinkedList<Annotation[]>();
-        for (Annotation[] each : annotations)
-        {
-            List<Annotation> tmp = new LinkedList<Annotation>();
-            for (Annotation annotation : each)
-            {
-                AliasAnno aliasAnno = getAliasAnno(annotation);
-                tmp.add(aliasAnno.target());
-            }
-            list.add(tmp.toArray(new Annotation[tmp.size()]));
-        }
-        return list.toArray(new Annotation[list.size()][]);
-    }
-    
-    private static AliasAnno getAliasAnno(Annotation anno)
-    {
-        AliasAnno aliasAnno = aliasMap.get(anno);
-        if (aliasAnno == null)
-        {
-            aliasAnno = new AliasAnno(anno, new HashMap<String, Object>());
-            aliasMap.put(anno, aliasAnno);
-        }
-        return aliasAnno;
     }
     
     public static <T extends Annotation> T getAnnotation(Class<T> annoType, Method method)
@@ -101,10 +76,15 @@ public class AnnotationUtil
     {
         for (Annotation each : annotations)
         {
-            AliasAnno aliasAnno = getAliasAnno(each);
-            if (aliasAnno.rootType() == annoType)
+            AnnoContext annoContext = aliasMap.get(each);
+            if (annoContext == null)
             {
-                return (T) aliasAnno.target();
+                annoContext = new AnnoContext(each);
+                aliasMap.put(each, annoContext);
+            }
+            if (annoContext.isPresent(annoType))
+            {
+                return annoContext.getAnno(annoType);
             }
         }
         return null;
@@ -125,22 +105,32 @@ public class AnnotationUtil
         return getAnnotation(annotationType, target.getAnnotations());
     }
     
-    static class AliasAnno
+    static class AnnoContext
     {
-        private final Annotation                  target;
-        private final Class<? extends Annotation> rootType;
+        private final Map<String, Object>              valueMap = new HashMap<String, Object>();
+        private final Set<Class<? extends Annotation>> types    = new HashSet<Class<? extends Annotation>>();
+        private final ClassLoader                      classLoader;
         
-        public AliasAnno(Annotation anno, final Map<String, Object> valueMap)
+        public AnnoContext(Annotation annotation)
         {
-            Annotation superAnno = null;
-            boolean hasAlias = false;
-            for (Method each : anno.annotationType().getMethods())
+            classLoader = annotation.annotationType().getClassLoader();
+            fillAnnoValues(annotation);
+        }
+        
+        private void fillAnnoValues(Annotation annotation)
+        {
+            types.add(annotation.annotationType());
+            for (Method each : annotation.annotationType().getMethods())
             {
+                if (each.getParameterTypes().length != 0)
+                {
+                    continue;
+                }
+                String name = null;
+                Object value = null;
                 if (each.isAnnotationPresent(AliasFor.class))
                 {
-                    hasAlias = true;
                     AliasFor aliasFor = each.getAnnotation(AliasFor.class);
-                    String name;
                     try
                     {
                         name = aliasFor.annotation().getName() + "." + aliasFor.annotation().getMethod(aliasFor.value()).getName();
@@ -149,116 +139,76 @@ public class AnnotationUtil
                     {
                         throw new UnSupportException(StringUtil.format("别名注解的属性不存在，请检查{}.{}中的别名是否拼写错误", each.getDeclaringClass().getName(), each.getName()), e);
                     }
-                    Object value;
                     try
                     {
-                        value = each.invoke(anno);
+                        value = each.invoke(annotation);
                     }
                     catch (Exception e)
                     {
                         throw new JustThrowException(e);
                     }
-                    /**
-                     * 下面的代码主要是指定一种注解值的传递关系。比如注解a的属性a1别名了注解b的属性b1，而这个b1的属性别名了注解c的属性c1.
-                     * 那么本来放入值的时候应该b1用自身的值放入属性c1中。但是发现自己的原本属性名b1已经被a1别名，那么久会使用a1的值，最终的结果就是c1是使用a1的值，而不是b1的值。
-                     * 也就是说，在最上层的别名具有优先权
-                     */
-                    String originName = each.getDeclaringClass().getName() + "." + each.getName();
-                    if (valueMap.containsKey(originName))
+                }
+                else
+                {
+                    name = each.getDeclaringClass().getName() + '.' + each.getName();
+                    try
+                    {
+                        value = each.invoke(annotation);
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                        throw new JustThrowException(e);
+                    }
+                }
+                String originName = each.getDeclaringClass().getName() + '.' + each.getName();
+                if (valueMap.containsKey(originName))
+                {
+                    if (valueMap.containsKey(name) == false)
                     {
                         valueMap.put(name, valueMap.get(originName));
                     }
-                    else
+                }
+                else
+                {
+                    if (valueMap.containsKey(name) == false)
                     {
                         valueMap.put(name, value);
                     }
-                    if (anno.annotationType().isAnnotationPresent(aliasFor.annotation()))
-                    {
-                        superAnno = anno.annotationType().getAnnotation(aliasFor.annotation());
-                    }
                 }
-                else if (each.getParameterTypes().length == 0)
+                
+            }
+            for (Annotation anno : annotation.annotationType().getDeclaredAnnotations())
+            {
+                if (anno instanceof Documented || anno instanceof Target || anno instanceof Retention || anno instanceof Inherited)
                 {
-                    String name = each.getDeclaringClass().getName() + "." + each.getName();
-                    try
-                    {
-                        if (valueMap.containsKey(name) == false)
-                        {
-                            valueMap.put(name, each.invoke(anno));
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        throw new JustThrowException(e);
-                    }
+                    continue;
                 }
+                fillAnnoValues(anno);
             }
-            if (superAnno != null)
-            {
-                new AliasAnno(superAnno, valueMap);
-            }
-            else if (hasAlias == true)
-            {
-                throw new UnSupportException(StringUtil.format("注解别名错误。别名属性自身所在的注解必须被别名注解所注解。请检查{}", anno.getClass().getName()));
-            }
-            rootType = getRoot(anno.annotationType());
-            target = (Annotation) Proxy.newProxyInstance(anno.annotationType().getClassLoader(), new Class<?>[] { getRoot(anno.annotationType()) }, new aliasInvocationHandler(valueMap));
         }
         
-        public Annotation target()
+        public boolean isPresent(Class<? extends Annotation> type)
         {
-            return target;
+            return types.contains(type);
         }
         
-        public Class<? extends Annotation> rootType()
+        @SuppressWarnings("unchecked")
+        public <T extends Annotation> T getAnno(Class<T> type)
         {
-            return rootType;
-        }
-        
-        private Class<? extends Annotation> getRoot(Class<? extends Annotation> type)
-        {
-            Class<? extends Annotation> superAnno = null;
-            for (Method each : type.getMethods())
-            {
-                if (each.isAnnotationPresent(AliasFor.class))
-                {
-                    AliasFor aliasFor = each.getAnnotation(AliasFor.class);
-                    if (type.isAnnotationPresent(aliasFor.annotation()))
-                    {
-                        superAnno = aliasFor.annotation();
-                        break;
-                    }
-                }
-            }
-            if (superAnno != null)
-            {
-                return getRoot(superAnno);
-            }
-            else
-            {
-                return type;
-            }
+            return (T) Proxy.newProxyInstance(classLoader, new Class<?>[] { type }, new aliasInvocationHandler());
         }
         
         class aliasInvocationHandler implements InvocationHandler
         {
-            private final Map<String, Object> map = new HashMap<String, Object>();
-            
-            public aliasInvocationHandler(Map<String, Object> valueMap)
-            {
-                for (Entry<String, Object> entry : valueMap.entrySet())
-                {
-                    String name = entry.getKey();
-                    name = name.substring(name.lastIndexOf('.') + 1);
-                    map.put(name, entry.getValue());
-                }
-            }
             
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
             {
-                return map.get(method.getName());
+                String name = method.getDeclaringClass().getName() + '.' + method.getName();
+                return valueMap.get(name);
             }
         }
     }
+    
 }
