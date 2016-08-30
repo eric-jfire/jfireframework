@@ -204,7 +204,7 @@ public class ActionFactory
         {
             paramNames = new String[method.getParameterTypes().length];
         }
-        Annotation[][] annos = AnnotationUtil.getParameterAnnotations(method);
+        Annotation[][] annos = method.getParameterAnnotations();
         for (int i = 0; i < annos.length; i++)
         {
             if (annos[i].length == 0)
