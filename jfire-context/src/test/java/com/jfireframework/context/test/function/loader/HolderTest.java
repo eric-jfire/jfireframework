@@ -1,4 +1,4 @@
-package com.jfireframework.context.test.function.builder;
+package com.jfireframework.context.test.function.loader;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -10,7 +10,7 @@ public class HolderTest
     @Test
     public void test()
     {
-        JfireContext jfireContext = new JfireContextImpl("com.jfireframework.context.test.function.builder");
+        JfireContext jfireContext = new JfireContextImpl("com.jfireframework.context.test.function.loader");
         Person person = jfireContext.getBean(Person.class);
         Assert.assertEquals("name", person.getName());
         Home home = jfireContext.getBean(Home.class);

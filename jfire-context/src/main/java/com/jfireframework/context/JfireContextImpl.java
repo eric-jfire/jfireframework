@@ -29,10 +29,11 @@ import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.context.aliasanno.AnnotationUtil;
 import com.jfireframework.context.aop.AopUtil;
 import com.jfireframework.context.bean.Bean;
-import com.jfireframework.context.bean.BeanBuilder;
 import com.jfireframework.context.bean.BeanConfig;
-import com.jfireframework.context.bean.annotation.BuildBy;
+import com.jfireframework.context.bean.build.BeanClassBuilder;
+import com.jfireframework.context.bean.build.BuildBy;
 import com.jfireframework.context.bean.field.FieldFactory;
+import com.jfireframework.context.bean.load.LoadBy;
 import com.jfireframework.context.config.BeanAttribute;
 import com.jfireframework.context.config.BeanInfo;
 import com.jfireframework.context.config.ContextConfig;
@@ -40,15 +41,15 @@ import com.jfireframework.context.event.impl.EventPublisherImpl;
 
 public class JfireContextImpl implements JfireContext
 {
-    private Map<Class<?>, BeanBuilder> builders    = new IdentityHashMap<Class<?>, BeanBuilder>();
-    private Map<String, BeanConfig>    configMap   = new HashMap<String, BeanConfig>();
-    private Map<String, Bean>          beanNameMap = new HashMap<String, Bean>();
-    private Map<Class<?>, Bean>        beanTypeMap = new HashMap<Class<?>, Bean>();
-    private boolean                    init        = false;
-    private List<String>               classNames  = new LinkedList<String>();
-    private static Logger              logger      = ConsoleLogFactory.getLogger();
-    private ClassLoader                classLoader = JfireContextImpl.class.getClassLoader();
-    private BeanUtil                   beanUtil    = new BeanUtil();
+    private Map<Class<?>, BeanClassBuilder> builders    = new IdentityHashMap<Class<?>, BeanClassBuilder>();
+    private Map<String, BeanConfig>         configMap   = new HashMap<String, BeanConfig>();
+    private Map<String, Bean>               beanNameMap = new HashMap<String, Bean>();
+    private Map<Class<?>, Bean>             beanTypeMap = new HashMap<Class<?>, Bean>();
+    private boolean                         init        = false;
+    private List<String>                    classNames  = new LinkedList<String>();
+    private static Logger                   logger      = ConsoleLogFactory.getLogger();
+    private ClassLoader                     classLoader = JfireContextImpl.class.getClassLoader();
+    private BeanUtil                        beanUtil    = new BeanUtil();
     
     public JfireContextImpl()
     {
@@ -170,7 +171,7 @@ public class JfireContextImpl implements JfireContext
         {
             if (AnnotationUtil.isPresent(Resource.class, src))
             {
-                Bean bean = new Bean(src);
+                Bean bean = new Bean(src, this);
                 beanNameMap.put(bean.getBeanName(), bean);
             }
         }
@@ -180,7 +181,7 @@ public class JfireContextImpl implements JfireContext
     public void addBean(String resourceName, boolean prototype, Class<?> src)
     {
         Verify.False(init, "不能在容器初始化后再加入Bean");
-        Bean bean = new Bean(resourceName, prototype, src);
+        Bean bean = new Bean(resourceName, prototype, src, this);
         beanNameMap.put(resourceName, bean);
     }
     
@@ -335,7 +336,7 @@ public class JfireContextImpl implements JfireContext
     public void addSingletonEntity(String beanName, Object entity)
     {
         Verify.False(init, "不能在容器初始化后还加入bean,请检查{}", CodeLocation.getCodeLocation(2));
-        Bean bean = new Bean(beanName, entity);
+        Bean bean = new Bean(beanName, entity, this);
         beanNameMap.put(beanName, bean);
     }
     
@@ -361,6 +362,7 @@ public class JfireContextImpl implements JfireContext
     public void setClassLoader(ClassLoader classLoader)
     {
         this.classLoader = classLoader;
+        Thread.currentThread().setContextClassLoader(classLoader);
     }
     
     public ClassLoader getClassLoader()
@@ -414,25 +416,31 @@ public class JfireContextImpl implements JfireContext
             if (AnnotationUtil.isPresent(BuildBy.class, res))
             {
                 BuildBy buildBy = AnnotationUtil.getAnnotation(BuildBy.class, res);
-                Class<? extends BeanBuilder> ckass = buildBy.value();
-                BeanBuilder beanBuilder = builders.get(ckass);
-                if (beanBuilder == null)
+                Class<? extends BeanClassBuilder> builder_class = buildBy.buildFrom();
+                BeanClassBuilder builder = builders.get(builder_class);
+                if (builder == null)
                 {
                     try
                     {
-                        beanBuilder = ckass.newInstance();
+                        builder = builder_class.newInstance();
+                        builder.setInitArgument(buildBy.initArgument());
+                        builders.put(builder_class, builder);
                     }
                     catch (Exception e)
                     {
                         throw new JustThrowException(e);
                     }
-                    builders.put(ckass, beanBuilder);
                 }
-                bean = beanBuilder.parse(res);
+                bean = builder.build(res, JfireContextImpl.this);
+            }
+            else if (AnnotationUtil.isPresent(LoadBy.class, res))
+            {
+                LoadBy loadBy = AnnotationUtil.getAnnotation(LoadBy.class, res);
+                bean = new Bean(res, loadBy.factoryBeanName(), JfireContextImpl.this);
             }
             else if (res.isInterface() == false)
             {
-                bean = new Bean(res);
+                bean = new Bean(res, JfireContextImpl.this);
             }
             else
             {
