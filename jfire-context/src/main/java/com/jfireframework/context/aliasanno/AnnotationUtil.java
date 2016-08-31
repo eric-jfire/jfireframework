@@ -164,6 +164,10 @@ public class AnnotationUtil
                 String originName = each.getDeclaringClass().getName() + '.' + each.getName();
                 if (valueMap.containsKey(originName))
                 {
+                    /**
+                     * 这里的逻辑是，如果值域中已经包含了本注解原始名称，说明该注解的值被更高层指定了。
+                     * 那么这里需要放入的真实名称的值就要使用高层指定的值
+                     */
                     if (valueMap.containsKey(name) == false)
                     {
                         valueMap.put(name, valueMap.get(originName));

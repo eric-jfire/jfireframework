@@ -1,22 +1,24 @@
-#Jfire-Core框架
+#Jfire-Context框架
 [TOC]
-
 
 ##框架优势
 **功能齐全，注解开发，零配置**
-Jfire-core是一个IOC&AOP容器。
+Jfire-Context是一个IOC&AOP容器。
 IOC部分，基于注解实现依赖注入功能。除了依赖注入，还提供参数注入，Map注入等特殊功能。IOC容器天然提供基于注解的单例和原型对象实例功能。通过对一些接口的实现，对象可以实现对容器初始化过程的参与。
 AOP部分，基于类Aspecj描述语言实现AOP注入。提供完善的AOP功能，诸如前置，后置，环绕，异常抛出增强。采用动态代码热编译实现而非反射代理，不损失调用性能。
-通过代码初始化，只需要指定需要扫描的包路径即可，零配置。如果需要进行额外的功能，也支持json格式的配置文件，方便接单
+通过代码初始化，只需要指定需要扫描的包路径即可，零配置。如果需要进行额外的功能，也支持json格式的配置文件，方便简单
 
+**透明的事务注解**
+基于注解，提供透明的事务注解。通过实现事务管理器接口，可以接入任意的第三方持久层框架。实现对开发者透明友好的基于注解的事务管理。
+
+**内嵌的异步事件框架**
+采用disruptor思想作为异步事件分发器。框架内部支持异步事件处理，简单高效。
 
 **性能强大**
 所有的注入操作均采用内存偏移量设置完成。性能较使用反射提高约3倍。
 
-
 **轻量级，体积小**
 提供的jar只有60k。代码轻量。
-
 
 ##快速入门
 首先先有几个类，请看如下代码
@@ -81,6 +83,7 @@ Jfire-core框架将可以被框架管理的类称之为*bean*。这个bean不要
 ```java
     jfireContext.addSingletonEntity("User",new User());//往容器中添加一个名称为User的bean，并且该bean是单例，容器中存储着设置进入的单例供其他类使用
 ```
+
 ####通过配置文件指定一个类成为bean
 通过配置文件指定一个类成为bean很简单。需要配置的内容如下
 ```json
@@ -105,11 +108,56 @@ Jfire支持设置包扫描路径，在**这些路径下以及子路径**的所�
 1. **类本身有`resource`注解**：该类不在扫描路径范围内。可以使用代码手动加入`jfireContext.addBean(User.class)`.这个代码会读取类上的`resource`信息。然后组装成bean加入容器
 2. **类没有`resource`注解**：通过代码将bean名称，是否单例，类的全限定名加入到容器中。代码如`jfireContext.addBean(House.class.getName(), false, House.class)`
 
-
 ####增加一个外部对象实例到容器
 有的时候需要往容器中增加外部对象实例。这些外部示例往往是没有办法接触到源代码或者不是由自己控制初始化的。这些外部实例可以以单例的形式添加到容器中。代码是`jfireContext.addSingletonEntity("userBean",new User())`
-
-
+####由第三方提供Bean所需的class对象
+有很多第三方框架具备字节码增强的能力，也就是用户定义的类是需要这些框架增强后才能成为真正的被使用的类。这种时候，需要在IOC中管理这些类就需要一些特殊的注释。举例来说，需要在被增强的类上使用`Resource`注解，同时再使用`BuildBy`注解。来看下该注解的定义
+```java
+public @interface BuildBy
+{
+    /**
+     * 该类需要由哪一个BeanClassBuilder来进行增强
+     * 
+     * @return
+     */
+    public Class<? extends BeanClassBuilder> buildFrom();
+    
+    /**
+     * 该BeanClassBuilder实例启动后的初始化参数
+     * 
+     * @return
+     */
+    public String initArgument();
+}
+```
+当一个类上同时拥有`Resource`和`BuildBy`注解，则该类会被指定的`BeanClassBuilder`增强后作为一个bean纳入到IOC容器的管理
+####由其他的Bean实例直接提供该Bean的实例
+有些时候，第三方框架会内部生成一些可以使用的对象。如果需要在IOC内部以依赖注入的方式使用这些对象，则可以在对应的类上使用`Resource`注解和`LoadBy`注解。首先来看下`LoadBy`注解的定义
+```java
+public @interface LoadBy
+{
+    /**
+     * 可以提供Bean的工厂bean的名称
+     * 
+     * @return
+     */
+    public String factoryBeanName();
+}
+```
+而对应的工厂bean则需要实现一个接口`BeanLoadFactory`,接口的定义如下
+```java
+public interface BeanLoadFactory
+{
+    /**
+     * 根据类获得对应的对象
+     * 
+     * @param ckass
+     * @return
+     */
+    public <T, E extends T> E load(Class<T> ckass);
+}
+```
+有了`Resource`和`LoadBy`这两个注解，那么在需要这个对象实例的时候，就可以从`LoadBy`注解指定的工厂类中以该对象的Class为参数获得对应的对象实例。
 ###依赖注入
 ####普通类型注入
 依赖注入中，最常见的就是类属性的注入。也就是将一个类的实例注入到另外一个类实例的属性中。
@@ -427,3 +475,162 @@ AOP拦截中，首先是对目标类的确定。EnhanceClas上的值，就是对
 异常增强使用注解`ThrowEnhance`。表示增强方法会在目标方法抛出异常时执行。该注解具备一个属性`type`,是一个Class数组。用来表示目标方法抛出指定类型的异常时增强方法起作用。默认的值是`Throwable`.
 ###环绕增强
 环绕增强使用注解`AroundEnhance`.环绕增强中，目标方法是否执行就取决于增强方法。可以通过方法`ProceedPoint.invoke()`来执行原来的方法。如果原方法具有返回值，那么在调用`ProceedPoint.invoke()`执行原方法后，该方法会返回原方法的返回值，此时通过`ProceedPoint.setResult(Object invokedResult)`来设置最终增强方法的返回值。
+##注解集成和别名
+注解集成和别名是一个很有意思的功能。包含了集成和别名的功能。先来看下集成的功能。
+```java
+@Retention(RetentionPolicy.RUNTIME)
+@Resource(sharable=false)
+@LoadBy(factoryBeanName = "sessionFactory")
+public @interface MapperOp
+{
+}
+```
+这个`MapperOp`被`Resource`和`LoadBy`两个注解所注解。那么被`MapperOp`注解所注解的类也相当于同时被`Resource`和`LoadBy`注解。这就是作为的集成功能。在集成注解的同时，这些被集成的注解上的值也都被确定下来了。就是他们当前的取值。比如被`MapperOp`注解的类，上面也相当于有一个`@Resource(sharable=false)`的注解了。
+上面说的是集成的功能，下面来说下别名的功能。
+上面的这种方式，被集成的注解上的值就已经被确定了，那么如果想要在使用`MapperOp`的时候还能自定义，则可以使用别名的功能
+```java
+@Retention(RetentionPolicy.RUNTIME)
+@Resource(sharable=false)
+@LoadBy(factoryBeanName = "sessionFactory")
+public @interface MapperOp
+{
+    @AliasFor(annotation=Resource.class,value="name")
+    public String beanName();
+}
+```
+使用这个别名的时候，就意味着`beanName`中的值会代替`Resource`中的name的值。相当于为别的注解起了一个新的名字。
+
+从注解的别名的定义方式可以猜测到，注解别名可能会存在多个层级。请看下面的例子
+```java
+@Retention(RetentionPolicy.RUNTIME)
+@Resource
+public @interface TestAlias
+{
+    @AliasFor(annotation = Resource.class, value = "name")
+    String test() default "test";
+}
+@Retention(RetentionPolicy.RUNTIME)
+@TestAlias
+public @interface Testalis3
+{
+    @AliasFor(annotation = TestAlias.class, value = "test")
+    public String t();
+    
+    @AliasFor(annotation = Resource.class, value = "shareable")
+    public boolean s() default false;
+}
+```
+在上面的代码示例中，可以看到，首先是`TestAlias`给`Resource`中的name起了一个别名test。接着是`TestAlias3`给`TestAlias`中的test又起了一个别名t，并且给最低层级的shareable定义了一个别名s。
+对于注解别名来说。如果对同一个属性都做了别名，**则取层级最高的注解别名作为标准**。上面的这个例子中，最终底层的`Resource`的name值取决于`TestAlias3`中的t值。
+##异步事件支持
+在很多项目中，我们会需要进行一些异步的任务。对于这些异步的任务，我们希望以线程池的方式运行，并且不干扰当前的主线进程任务。此时，异步任务就派上了用场。一般而言，异步任务需要借助外部的框架或者是开发者手动造轮子（调度器，处理器等）。JfireContext原生内嵌了异步事件的解决方案。用户只需要定义事件类型，和事件对应的处理器。系统自动完成调度和分发。对用户透明且友好。
+要使用内嵌的事件机制，首先要定义自己的事件类型。框架的做法是让用户定义一些Enum类型的类。比如如下
+```java
+public enum SmsEvent
+{
+    // 欠费
+    Arrearage,
+    // 停机
+    halt
+}
+public enum NetEvent
+{
+    // 宽带开通
+    open,
+    // 宽带暂停
+    pause
+}
+```
+定义好事件后，就可以发布一个事件，示例代码如下
+```java
+@Resource
+public class MyEventHandler implements EventHandler
+{
+    //注入框架提供的事件发布器
+    @Resource
+    private EventPublisher publisher;
+        
+    @Override
+    public void afterContextInit()
+    {
+        UserPhone phone = new UserPhone();
+        phone.setPhone("1775032");
+        //异步发布事件，发布后会立刻返回,可以发布任意的数据内容和事先定义好的事件类型
+        publisher.publish(phone, SmsEvent.halt );
+    }
+    
+}
+```
+接着定义具体事件的处理器。处理器类需要实现`EventHandler`接口。示例如下
+```java
+@Resource
+@Resource
+public class HaftHandler implements EventHandler, ContextInitFinish
+{
+    @Resource
+    private EventPublisher publisher;
+    
+    //该处理器所关注的事件
+    @Override
+    public Enum<?> type()
+    {
+        return Smsevent.halt;
+    }
+    //事件的处理逻辑。
+    @Override
+    public void handle(ApplicationEvent event)
+    {
+        UserPhone myEvent = (UserPhone) event.getData();
+        System.out.println("用户:" + myEvent.getPhone() + "停机");
+    }
+}
+```
+当用户发布一个事件后，系统会自动调度对应的事件处理器来处理对应的事件。需要注意的是，一个事件也可以被多个事件处理器关注。比如我们新增一个事件处理器,示例代码如下
+```java
+@Resource
+public class HaftHandler2 implements EventHandler
+{
+    @Override
+    public void handle(ApplicationEvent event)
+    {
+        UserPhone myEvent = (UserPhone) event.getData();
+        SmsEvent type = (SmsEvent) event.getType();
+        if (type == SmsEvent.halt)
+        {
+            System.out.println("用户:" + myEvent.getPhone() + "停机,这是一个额外通知");
+        }
+    }
+    @Override
+    public Enum<?> type()
+    {
+        return  SmsEvent.halt ;
+    }
+}
+```
+当用户如上发布事件后，控制台的输出如下
+```java
+用户:1775032停机
+用户:1775032停机,这是一个额外通知
+```
+**总结**
+可以看到事件机制的使用还是很简单的，只需要定义好Enum事件类型，和事件处理器就可以使用异步事件处理了。对于常常需要使用生产者消费者模型的处理来说，是十分方便的。
+**事件支持在框架中默认是关闭的**，打开支持的方式很简单，只要指定一个bean配置。如下
+```json
+{
+    "beanConfigs": [
+        {
+            
+            "beanName": "eventPublisher",//bean的名称是固定的eventPublisher
+            "params": {
+                "capacity": "12" //将这个属性设置为大于0的数字就打开了异步事件，该数字为异步分发器的最大存储长度，所以定义一个合理的值即可。建议定义为128
+            }
+        }
+    ],
+```
+##更新信息
+|更新时间|更新内容|对应版本|备注|
+|-|
+|2016-5-31|容器增加了注解别名功能|1.0-SNAPSHOT|无|
+|2016-7-19|增加了别名注解和事件功能的说明文字|1.0-SNAPSHOT|无|
+|2016-7-20|更新了异步事件支持的描述。|1.0-SNAPSHOT|无|
+|2016-8-31|注解别名功能升级为注解集成和别名功能|1.0-SNAPSHOT|无|
