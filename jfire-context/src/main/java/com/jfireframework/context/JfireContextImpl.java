@@ -209,13 +209,17 @@ public class JfireContextImpl implements JfireContext
             if (beanConfig != null)
             {
                 each.setBeanConfig(beanConfig);
+                configMap.remove(each.getBeanName());
                 if (beanConfig.getPostConstructMethod() != null)
                 {
                     each.setPostConstructMethod(ReflectUtil.fastMethod(ReflectUtil.getMethodWithoutParam(beanConfig.getPostConstructMethod(), each.getOriginType())));
                 }
             }
         }
-        
+        for (BeanConfig each : configMap.values())
+        {
+            logger.warn("存在配置没有可识别的bean，请检查配置文件，其中需要配置的beanName为:{}", each.getBeanName());
+        }
         /**
          * 进行aop操作，将aop增强后的class放入对应的bean中。 这步必须在分析bean之前完成。
          * 因为aop进行增强时会生成子类来替代Bean中的type.
