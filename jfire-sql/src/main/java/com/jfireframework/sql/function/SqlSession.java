@@ -21,9 +21,9 @@ public interface SqlSession extends GetOperator, SaveOperator, UpdateOperator, S
     public void close();
     
     /**
-     * 启动事务,将该数据库链接设置为非自动提交模式
+     * 启动事务,将该数据库链接设置为非自动提交模式.如果给定的隔离级别大于0，则设置本连接的隔离级别。否则采用默认形式
      */
-    public void beginTransAction();
+    public void beginTransAction(int isolate);
     
     /**
      * 依据事务传播策略进行事务提交请求操作（在单一事务传播情况下，内嵌事务的提交只会消耗提交数，不会真的执行提交操作）

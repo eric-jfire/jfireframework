@@ -22,7 +22,6 @@ import sun.reflect.MethodAccessor;
  * @author 林斌（windfire@zailanghua.com）
  * 
  */
-@SuppressWarnings("restriction")
 public class Action
 {
     /** 调用该action的对象实例 */
@@ -67,9 +66,6 @@ public class Action
         {
             switch (resultType)
             {
-                case LITL:
-                    contentType = ContentType.HTML;
-                    break;
                 case Json:
                     contentType = ContentType.JSON;
                     break;

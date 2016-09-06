@@ -40,7 +40,7 @@ public class DaoTest extends BaseTestSupport
         ThreadTimewatch.end();
         logger.debug("在没有事务的情况下插入1000条数据耗时：{}", ThreadTimewatch.getTotalTime());
         ThreadTimewatch.start();
-        session.beginTransAction();
+        session.beginTransAction(0);
         for (int i = 0; i < 1000; i++)
         {
             session.save(user);
@@ -64,7 +64,7 @@ public class DaoTest extends BaseTestSupport
         ThreadTimewatch.end();
         logger.debug("在没有开启事务的情况下批量插入30000条数据耗时：{}", ThreadTimewatch.getTotalTime());
         ThreadTimewatch.start();
-        session.beginTransAction();
+        session.beginTransAction(0);
         session.batchInsert(users);
         session.commit();
         ThreadTimewatch.end();

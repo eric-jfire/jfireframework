@@ -37,6 +37,8 @@ public class CompositeByteBuf extends ByteBuf<Void>
         {
             each.release();
         }
+        nioBuffers = null;
+        bufs.clear();
     }
     
     @Override

@@ -12,36 +12,39 @@ public class ReturnEnumWriteMethodInfo extends AbstractWriteMethodInfo
         super(method, strategy, entityName);
         Class<?> returnType = method.getReturnType();
         String fieldName = NameTool.getNameFromMethod(method, strategy);
-        str = "cache.append(\"\\\"" + fieldName + "\\\":\");\n";
+        str = "" + returnType.getName() + " " + fieldName + " = " + getValue + ";\n";
+        str += "if(" + fieldName + "!=null)\n{\n";
+        str += "\tcache.append(\"\\\"" + fieldName + "\\\":\");\n";
         String key = method.getDeclaringClass().getName() + '.' + fieldName;
         if (strategy == null)
         {
-            str += "cache.append('\"').append(" + getValue + ".name()).append('\"').append(',');\n";
+            str += "\tcache.append('\"').append(" + getValue + ".name()).append('\"').append(',');\n";
         }
         else
         {
             if (strategy.containsStrategyField(key))
             {
-                str += "writeStrategy.getWriterByField(\"" + key + "\").write(" + getValue + ",cache," + entityName + ");\n";
-                str += "cache.append(',');\n";
+                str += "\twriteStrategy.getWriterByField(\"" + key + "\").write(" + getValue + ",cache," + entityName + ");\n";
+                str += "\tcache.append(',');\n";
             }
             else if (strategy.containsStrategyType(returnType))
             {
-                str += "writeStrategy.getWriter(" + returnType.getName() + ".class).write(" + getValue + ",cache," + entityName + ");\n";
-                str += "cache.append(',');\n";
+                str += "\twriteStrategy.getWriter(" + returnType.getName() + ".class).write(" + getValue + ",cache," + entityName + ");\n";
+                str += "\tcache.append(',');\n";
             }
             else
             {
                 if (strategy.isWriteEnumName())
                 {
-                    str += "cache.append('\"').append(" + getValue + ".name()).append('\"').append(',');\n";
+                    str += "\tcache.append('\"').append(" + getValue + ".name()).append('\"').append(',');\n";
                 }
                 else
                 {
-                    str += "cache.append(" + getValue + ".ordinal()).append(',');\n";
+                    str += "\tcache.append(" + getValue + ".ordinal()).append(',');\n";
                 }
             }
         }
+        str+="}\n";
     }
     
 }

@@ -3,57 +3,61 @@ package com.jfireframework.mvc.binder.impl;
 import java.lang.annotation.Annotation;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Map;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.mvc.annotation.MvcDateParse;
-import com.jfireframework.mvc.binder.ParamInfo;
+import com.jfireframework.mvc.binder.DataBinder;
+import com.jfireframework.mvc.binder.node.ParamNode;
+import com.jfireframework.mvc.binder.node.StringValueNode;
+import com.jfireframework.mvc.binder.node.TreeValueNode;
 
-public class DateBinder extends AbstractDataBinder
+public class DateBinder implements DataBinder
 {
-    protected ThreadLocal<SimpleDateFormat> formats;
+    private final String prefixName;
+    private final String pattern;
     
-    public DateBinder(ParamInfo info, Set<Class<?>> cycleSet)
+    public DateBinder(Class<?> ckass, String prefixName, Annotation[] annotations)
     {
-        super(info, cycleSet);
-        String format = "yyyy-MM-dd HH:mm:ss";
-        for (Annotation each : info.getAnnotations())
+        this.prefixName = prefixName;
+        String t_pattern = "yyyy-MM-dd HH:mm:ss";
+        for (Annotation each : annotations)
         {
             if (each instanceof MvcDateParse)
             {
-                format = ((MvcDateParse) each).date_format();
+                t_pattern = ((MvcDateParse) each).date_format();
             }
         }
-        final String result = format;
-        formats = new ThreadLocal<SimpleDateFormat>() {
-            protected SimpleDateFormat initialValue()
-            {
-                return new SimpleDateFormat(result);
-            }
-        };
+        pattern = t_pattern;
     }
     
     @Override
-    public Object binder(HttpServletRequest request, Map<String, String> map, HttpServletResponse response)
+    public Object bind(HttpServletRequest request, TreeValueNode treeValueNode, HttpServletResponse response)
     {
-        String value = map.get(paramName);
-        if (StringUtil.isNotBlank(value))
+        ParamNode node = treeValueNode.get(prefixName);
+        if (node != null)
         {
+            String value = ((StringValueNode) node).getValue();
+            SimpleDateFormat format = new SimpleDateFormat(pattern);
             try
             {
-                return formats.get().parse(value);
+                return format.parse(value);
             }
             catch (ParseException e)
             {
-                throw new RuntimeException("日期转换出错", e);
+                throw new JustThrowException(e);
             }
         }
         else
         {
             return null;
         }
+    }
+    
+    @Override
+    public String getParamName()
+    {
+        return prefixName;
     }
     
 }

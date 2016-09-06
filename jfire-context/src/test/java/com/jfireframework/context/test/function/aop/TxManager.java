@@ -8,7 +8,7 @@ public class TxManager implements TransactionManager
 {
     
     @Override
-    public void beginTransAction()
+    public void beginTransAction(int isolate)
     {
         System.out.println("事务开启");
     }
@@ -21,7 +21,7 @@ public class TxManager implements TransactionManager
     }
     
     @Override
-    public void rollback()
+    public void rollback(Throwable e)
     {
         System.out.println("事务回滚");
     }

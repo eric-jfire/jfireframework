@@ -1,59 +1,47 @@
 package com.jfireframework.mvc.binder.impl;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.annotation.Annotation;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.jfireframework.mvc.binder.ParamInfo;
+import com.jfireframework.mvc.binder.DataBinder;
+import com.jfireframework.mvc.binder.node.TreeValueNode;
 import com.jfireframework.mvc.interceptor.impl.UploadInterceptor;
 
-public class UploadBinder extends AbstractDataBinder
+public class UploadBinder implements DataBinder
 {
-    private final boolean singleItem;
+    private final String prefixName;
     
-    public UploadBinder(ParamInfo info, Set<Class<?>> cycleSet)
+    public UploadBinder(Class<?> ckass, String prefixName, Annotation[] annotations)
     {
-        super(info, cycleSet);
-        Type type = info.getEntityClass();
-        if (type instanceof ParameterizedType)
-        {
-            singleItem = false;
-        }
-        else
-        {
-            singleItem = true;
-        }
+        this.prefixName = prefixName;
     }
     
     @Override
-    public Object binder(HttpServletRequest request, Map<String, String> map, HttpServletResponse response)
+    public Object bind(HttpServletRequest request, TreeValueNode treeValueNode, HttpServletResponse response)
     {
-        if (singleItem)
+        Object value = request.getAttribute(UploadInterceptor.uploadFileList);
+        if (value == null)
         {
-            Object value = request.getAttribute(UploadInterceptor.uploadFileList);
-            if (value == null)
+            return null;
+        }
+        else
+        {
+            if (((List<?>) value).size() == 0)
             {
                 return null;
             }
             else
             {
-                if (((List<?>) value).size() == 0)
-                {
-                    return null;
-                }
-                else
-                {
-                    return ((List<?>) value).get(0);
-                }
+                return ((List<?>) value).get(0);
             }
         }
-        else
-        {
-            return request.getAttribute(UploadInterceptor.uploadFileList);
-        }
+    }
+    
+    @Override
+    public String getParamName()
+    {
+        return prefixName;
     }
     
 }

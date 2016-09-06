@@ -1,7 +1,6 @@
 package com.jfireframework.mvc.viewrender;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,8 +17,7 @@ public class RenderFactory
     private static Constructor<?>              none;
     private static Constructor<?>              redirect;
     private static Constructor<?>              string;
-    private static Constructor<?>              litl;
-    private static Map<ResultType, ViewRender> map = new HashMap<>();
+    private static Map<ResultType, ViewRender> map = new HashMap<ResultType, ViewRender>();
     
     public static void clear()
     {
@@ -37,9 +35,8 @@ public class RenderFactory
             none = Class.forName("com.jfireframework.mvc.viewrender.impl.NoneRender").getConstructor(Charset.class, ClassLoader.class);
             redirect = Class.forName("com.jfireframework.mvc.viewrender.impl.RedirectRender").getConstructor(Charset.class, ClassLoader.class);
             string = Class.forName("com.jfireframework.mvc.viewrender.impl.StringRender").getConstructor(Charset.class, ClassLoader.class);
-            litl = Class.forName("com.jfireframework.mvc.viewrender.impl.LitlRender").getConstructor(Charset.class, ClassLoader.class);
         }
-        catch (NoSuchMethodException | SecurityException | ClassNotFoundException e)
+        catch (Exception e)
         {
             throw new UnSupportException("", e);
         }
@@ -56,9 +53,6 @@ public class RenderFactory
             }
             switch (resultType)
             {
-                case LITL:
-                    viewRender = (ViewRender) litl.newInstance(charset, classLoader);
-                    break;
                 case Beetl:
                     if (beetl == null)
                     {
@@ -95,7 +89,7 @@ public class RenderFactory
             map.put(resultType, viewRender);
             return viewRender;
         }
-        catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException | ClassNotFoundException e)
+        catch (Exception e)
         {
             throw new UnSupportException("", e);
         }

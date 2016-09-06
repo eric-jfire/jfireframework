@@ -1,28 +1,29 @@
 package com.jfireframework.mvc.binder.impl;
 
 import java.lang.annotation.Annotation;
-import java.util.Map;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.reflect.trans.Transfer;
 import com.jfireframework.baseutil.reflect.trans.TransferFactory;
 import com.jfireframework.mvc.annotation.HeaderValue;
-import com.jfireframework.mvc.binder.ParamInfo;
+import com.jfireframework.mvc.binder.DataBinder;
+import com.jfireframework.mvc.binder.node.TreeValueNode;
 
-public class HeaderBinder extends AbstractDataBinder
+public class HeaderBinder implements DataBinder
 {
+    
     private final String   headerName;
     private final String   defaultValue;
     private final Transfer transfer;
+    private final String   prefixName;
     
-    public HeaderBinder(ParamInfo info, Set<Class<?>> cycleSet)
+    public HeaderBinder(Class<?> ckass, String prefixName, Annotation[] annotations)
     {
-        super(info, cycleSet);
+        this.prefixName = prefixName;
         String headerName = "";
         String defaultValue = "";
-        for (Annotation each : info.getAnnotations())
+        for (Annotation each : annotations)
         {
             if (each instanceof HeaderValue)
             {
@@ -33,7 +34,7 @@ public class HeaderBinder extends AbstractDataBinder
         }
         if (headerName.equals(""))
         {
-            headerName = paramName;
+            headerName = prefixName;
         }
         if (defaultValue.equals(""))
         {
@@ -41,11 +42,11 @@ public class HeaderBinder extends AbstractDataBinder
         }
         this.headerName = headerName;
         this.defaultValue = defaultValue;
-        transfer = TransferFactory.get((Class<?>) info.getEntityClass());
+        transfer = TransferFactory.get(ckass);
     }
     
     @Override
-    public Object binder(HttpServletRequest request, Map<String, String> map, HttpServletResponse response)
+    public Object bind(HttpServletRequest request, TreeValueNode treeValueNode, HttpServletResponse response)
     {
         String value = request.getHeader(headerName);
         if (StringUtil.isNotBlank(value))
@@ -60,6 +61,12 @@ public class HeaderBinder extends AbstractDataBinder
         {
             return null;
         }
+    }
+    
+    @Override
+    public String getParamName()
+    {
+        return prefixName;
     }
     
 }

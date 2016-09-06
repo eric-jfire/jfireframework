@@ -1,4 +1,7 @@
-<% for(person in persons){ %>你好:${person.name}<% } %> 
+<% for(person in persons){ %>
+你好:${person.name}  
+<% if(person.age > 12){%>haha<%}%>
+   <% } %> 
 <%if(stringparam == "12"){%>   asdasds
 题目是:${title}
 <%}%>       

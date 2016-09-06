@@ -83,8 +83,9 @@ public class BeetlRender implements ViewRender
         Map<String, Object> data = vm.getData();
         String ajaxId = null;
         Template template = null;
-        try (OutputStream os = response.getOutputStream();)
+        try
         {
+            OutputStream os = response.getOutputStream();
             int ajaxIdIndex = key.lastIndexOf("#");
             if (ajaxIdIndex != -1)
             {
@@ -112,6 +113,7 @@ public class BeetlRender implements ViewRender
             template.binding("ctxPath", request.getContextPath());
             template.renderTo(os);
             os.flush();
+            os.close();
         }
         catch (Exception e)
         {

@@ -1,23 +1,30 @@
 package com.jfireframework.mvc.binder.impl;
 
-import java.util.Map;
-import java.util.Set;
+import java.lang.annotation.Annotation;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.jfireframework.mvc.binder.ParamInfo;
+import com.jfireframework.mvc.binder.DataBinder;
+import com.jfireframework.mvc.binder.node.TreeValueNode;
 
-public class HttpSessionBinder extends AbstractDataBinder
+public class HttpSessionBinder implements DataBinder
 {
+    private final String prefixName;
     
-    public HttpSessionBinder(ParamInfo info, Set<Class<?>> cycleSet)
+    public HttpSessionBinder(Class<?> ckass, String prefixName, Annotation[] annotations)
     {
-        super(info, cycleSet);
+        this.prefixName = prefixName;
     }
     
     @Override
-    public Object binder(HttpServletRequest request, Map<String, String> map, HttpServletResponse response)
+    public Object bind(HttpServletRequest request, TreeValueNode treeValueNode, HttpServletResponse response)
     {
         return request.getSession();
+    }
+    
+    @Override
+    public String getParamName()
+    {
+        return prefixName;
     }
     
 }

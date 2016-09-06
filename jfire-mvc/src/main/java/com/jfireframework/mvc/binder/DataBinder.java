@@ -1,26 +1,25 @@
 package com.jfireframework.mvc.binder;
 
-import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import com.jfireframework.mvc.binder.node.TreeValueNode;
 
-/**
- * 数据绑定类，用来对request中的参数进行解析并且生成绑定参数后的对象
- * 
- * @author 林斌（windfire@zailanghua.com）
- * 
- */
 public interface DataBinder
 {
     /**
-     * 从request中获取信息并且完成参数的绑定，将绑定后的参数返回
+     * 执行参数绑定动作，可以提取的参数从三个地方而来，request和response，以及其中提取的信息转变而来的treevaluenode
      * 
-     * @param map TODO
-     * @param response TODO
+     * @param request
+     * @param treeValueNode
+     * @param response
+     * @return
+     */
+    public Object bind(HttpServletRequest request, TreeValueNode treeValueNode, HttpServletResponse response);
+    
+    /**
+     * 该参数的名称
      * 
      * @return
      */
-    public Object binder(HttpServletRequest request, Map<String, String> map, HttpServletResponse response);
-    
     public String getParamName();
 }

@@ -8,9 +8,9 @@ public interface TransactionManager
     public void buildCurrentSession();
     
     /**
-     * 开启事务
+     * 开启事务,数字为该事务的隔离级别。如果为-1，则意味着使用不修改，使用该连接自身的隔离级别
      */
-    public void beginTransAction();
+    public void beginTransAction(int isolate);
     
     /**
      * 提交事务,但是并不关闭连接
@@ -20,7 +20,7 @@ public interface TransactionManager
     /**
      * 事务回滚,但是并不关闭连接
      */
-    public void rollback();
+    public void rollback(Throwable e);
     
     /**
      * 关闭当前的session环境

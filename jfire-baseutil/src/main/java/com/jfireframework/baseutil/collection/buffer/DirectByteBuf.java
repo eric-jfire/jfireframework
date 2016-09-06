@@ -25,8 +25,7 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
         this.memory = memory;
         this.bufHost = bufHost;
         this.memHost = host;
-        readIndex = 0;
-        writeIndex = 0;
+        maskRead = maskWrite = readIndex = writeIndex = 0;
         capacity = memory.capacity();
     }
     
@@ -167,8 +166,13 @@ public class DirectByteBuf extends ByteBuf<ByteBuffer>
         else
         {
             ByteBuffer buffer = byteBuf.nioBuffer();
-            buffer.limit(buffer.position() + length);
+            int posi = buffer.position();
+            int limit = buffer.limit();
+            buffer.limit(posi + length);
             memory.put(buffer);
+            buffer.limit(limit);
+            buffer.position(posi);
+            
         }
     }
     

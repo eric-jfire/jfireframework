@@ -1,36 +1,44 @@
 package com.jfireframework.mvc.binder.impl;
 
-import java.util.Map;
-import java.util.Set;
+import java.lang.annotation.Annotation;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.reflect.trans.Transfer;
 import com.jfireframework.baseutil.reflect.trans.TransferFactory;
-import com.jfireframework.baseutil.verify.Verify;
-import com.jfireframework.mvc.binder.ParamInfo;
+import com.jfireframework.mvc.binder.DataBinder;
+import com.jfireframework.mvc.binder.node.ParamNode;
+import com.jfireframework.mvc.binder.node.StringValueNode;
+import com.jfireframework.mvc.binder.node.TreeValueNode;
 
-public class BaseBinder extends AbstractDataBinder
+public class BaseBinder implements DataBinder
 {
-    private final Transfer transfer;
-    private final boolean  primitive;
     
-    public BaseBinder(ParamInfo info, Set<Class<?>> cycleSet)
+    private final Transfer transfer;
+    private final String   prefixName;
+    
+    public BaseBinder(Class<?> ckass, String prefixName, Annotation[] annotations)
     {
-        super(info, cycleSet);
-        Class<?> type = (Class<?>) info.getEntityClass();
-        primitive = type.isPrimitive();
-        transfer = TransferFactory.get(type);
+        this.prefixName = prefixName;
+        transfer = TransferFactory.get(ckass);
     }
     
     @Override
-    public Object binder(HttpServletRequest request, Map<String, String> map, HttpServletResponse response)
+    public Object bind(HttpServletRequest request, TreeValueNode treeValueNode, HttpServletResponse response)
     {
-        String value = map.get(paramName);
-        if (primitive)
+        ParamNode node = treeValueNode.get(prefixName);
+        if (node == null)
         {
-            Verify.True(StringUtil.isNotBlank(value), "参数为基本类型，页面必须要有传参，请检查传参名字是否是{}", paramName);
+            throw new UnSupportException(StringUtil.format("参数为基本类型，页面必须要有传参，请检查传参名字是否是{}", prefixName));
         }
-        return transfer.trans(value);
+        return transfer.trans(((StringValueNode) node).getValue());
     }
+    
+    @Override
+    public String getParamName()
+    {
+        return prefixName;
+    }
+    
 }

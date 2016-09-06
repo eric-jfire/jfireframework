@@ -1,59 +1,77 @@
 package com.jfireframework.mvc.binder.field.array;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Map;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.baseutil.exception.UnSupportException;
-import com.jfireframework.mvc.binder.field.impl.AbstractBinderField;
+import com.jfireframework.mvc.binder.field.AbstractBinderField;
+import com.jfireframework.mvc.binder.node.ArrayNode;
+import com.jfireframework.mvc.binder.node.ParamNode;
+import com.jfireframework.mvc.binder.node.TreeValueNode;
 
 public abstract class AbstractArrayField extends AbstractBinderField
 {
-    protected String[]     requestParamNames;
-    protected int          length;
-    protected final String matchPrefix;
-    protected final int    index;
+    private final Class<?> ckass;
     
-    public AbstractArrayField(String prefix, Field field, Set<Class<?>> cycleSet)
+    public AbstractArrayField(Field field)
     {
-        super(prefix, field, cycleSet);
-        matchPrefix = name + "[";
-        index = matchPrefix.length();
+        super(field);
+        ckass = field.getType().getComponentType();
     }
     
     @Override
-    public Object setValue(HttpServletRequest request, Object entity, Map<String, String> map, HttpServletResponse response) throws InstantiationException, IllegalAccessException
+    public void setValue(HttpServletRequest request, HttpServletResponse response, ParamNode node, Object entity)
     {
-        Object _array = null;
-        if (entity != null)
+        
+        if (node instanceof ArrayNode)
         {
-            _array = unsafe.getObject(entity, offset);
+            ArrayNode arrayNode = (ArrayNode) node;
+            unsafe.putObject(entity, offset, buildFromArray(arrayNode.getArray().size(), arrayNode.getArray(), request, response));
         }
-        for (Entry<String, String> entry : map.entrySet())
+        else if (node instanceof TreeValueNode)
         {
-            if (entry.getKey().startsWith(matchPrefix) && StringUtil.isNotBlank(entry.getValue()))
+            TreeValueNode treeValueNode = (TreeValueNode) node;
+            int max = 0;
+            for (String each : treeValueNode.keySet())
             {
-                if (entity == null)
+                int tmp = Integer.valueOf(each);
+                if (max < tmp)
                 {
-                    entity = type.newInstance();
-                    _array = unsafe.getObject(entity, offset);
+                    max = tmp;
                 }
-                String value = entry.getKey();
-                int flag = Integer.parseInt(value.substring(index, value.indexOf("]", index)));
-                setFlagValue(entry.getValue(), _array, flag, request, entity, map, response);
             }
+            unsafe.putObject(entity, offset, buildFromTree(max + 1, treeValueNode.entrySet(), request, response));
         }
-        return entity;
     }
     
-    @Override
-    protected void set(Object entity, String value)
+    protected Object buildFromArray(int size, List<String> values, HttpServletRequest request, HttpServletResponse response)
     {
-        throw new UnSupportException("代码不应该执行到这一句");
+        Object array = Array.newInstance(ckass, size);
+        int index = 0;
+        for (String each : values)
+        {
+            Array.set(array, index, buildByString(each));
+            index += 1;
+        }
+        return array;
     }
     
-    protected abstract void setFlagValue(String value, Object _array, int flag, HttpServletRequest request, Object entity, Map<String, String> map, HttpServletResponse response);
+    protected abstract Object buildByString(String str);
+    
+    protected Object buildFromTree(int size, Set<Entry<String, ParamNode>> set, HttpServletRequest request, HttpServletResponse response)
+    {
+        Object array = Array.newInstance(ckass, size);
+        for (Entry<String, ParamNode> each : set)
+        {
+            int index = Integer.valueOf(each.getKey());
+            Array.set(array, index, buildByNode(each.getValue(), request, response));
+        }
+        return array;
+    }
+    
+    protected abstract Object buildByNode(ParamNode node, HttpServletRequest request, HttpServletResponse response);
+    
 }

@@ -13,7 +13,7 @@ public class CacheManagerTest implements CacheManager
     @Override
     public Cache get(String name)
     {
-        System.out.println(name);
+        System.out.println("cache名称：" + name);
         return cahce;
     }
     

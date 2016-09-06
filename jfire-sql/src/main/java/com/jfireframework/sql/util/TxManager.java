@@ -16,7 +16,7 @@ public class TxManager implements TransactionManager
     private Logger         logger = ConsoleLogFactory.getLogger();
     
     @Override
-    public void beginTransAction()
+    public void beginTransAction(int isolate)
     {
         logger.trace("事务开启");
         SqlSession session = sessionFactory.getCurrentSession();
@@ -24,7 +24,7 @@ public class TxManager implements TransactionManager
         {
             throw new UnSupportException("准备开启事务但是没有session,请检查");
         }
-        session.beginTransAction();
+        session.beginTransAction(isolate);
     }
     
     @Override
@@ -40,13 +40,13 @@ public class TxManager implements TransactionManager
     }
     
     @Override
-    public void rollback()
+    public void rollback(Throwable e)
     {
         logger.trace("事务回滚");
         SqlSession session = sessionFactory.getCurrentSession();
         if (session == null)
         {
-            throw new UnSupportException("准备回滚事务但是没有session,请检查");
+            throw new UnSupportException("准备回滚事务但是没有session,请检查", e);
         }
         session.rollback();
     }
@@ -70,5 +70,6 @@ public class TxManager implements TransactionManager
         {
             throw new UnSupportException("准备关闭但是没有session,请检查");
         }
+        session.close();
     }
 }

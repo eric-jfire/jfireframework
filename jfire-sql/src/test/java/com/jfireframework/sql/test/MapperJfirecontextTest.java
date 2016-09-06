@@ -5,7 +5,7 @@ import org.junit.Test;
 import com.alibaba.druid.pool.DruidDataSource;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.JfireContextImpl;
-import com.jfireframework.sql.function.impl.SessionFactoryImpl;
+import com.jfireframework.sql.jfirecontext.MapperLoadFactory;
 import com.jfireframework.sql.test.mappertest.MapperHolder;
 
 public class MapperJfirecontextTest
@@ -29,7 +29,8 @@ public class MapperJfirecontextTest
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        SessionFactoryImpl sessionFactory = new SessionFactoryImpl(dataSource);
+        MapperLoadFactory sessionFactory = new MapperLoadFactory();
+        sessionFactory.setDataSource(dataSource);
         sessionFactory.setScanPackage("com.jfireframework.sql.test");
         sessionFactory.init();
         jfireContext.addSingletonEntity("sessionFactory", sessionFactory);
