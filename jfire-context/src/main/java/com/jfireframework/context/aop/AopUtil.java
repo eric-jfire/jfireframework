@@ -500,11 +500,14 @@ public class AopUtil
             {
                 String[] names = getParamNames(each);
                 Class<?>[] types = each.getParameterTypes();
-                CtMethod originMethod = getCtMethod(each, targetCc);
-                CtMethod newTargetMethod = copyMethod(originMethod, targetCc);
-                originMethod.setName(each.getName() + "_" + System.nanoTime());
-                newTargetMethod.setModifiers(originMethod.getModifiers());
-                targetCc.addMethod(newTargetMethod);
+                CtMethod ctMethod = targetCc.getDeclaredMethod(each.getName(), getParamTypes(each));
+                // CtMethod originMethod = getCtMethod(each, targetCc);
+                // CtMethod newTargetMethod = copyMethod(originMethod,
+                // targetCc);
+                // originMethod.setName(each.getName() + "_" +
+                // System.nanoTime());
+                // newTargetMethod.setModifiers(originMethod.getModifiers());
+                // targetCc.addMethod(newTargetMethod);
                 String methodBody = null;
                 if (AnnotationUtil.isPresent(CacheGet.class, each))
                 {
@@ -512,6 +515,8 @@ public class AopUtil
                     {
                         throw new JelException(StringUtil.format("使用CacheGet注解的方法必须有返回值，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()));
                     }
+                    String returnTypeName = each.getReturnType().getName();
+                    String resultName = "result_" + System.nanoTime();
                     CacheGet cacheGet = AnnotationUtil.getAnnotation(CacheGet.class, each);
                     String key = cacheGet.value();
                     String finalKey = JelExplain.createValue(key, names, types);
@@ -519,53 +524,47 @@ public class AopUtil
                     String condition = cacheGet.condition();
                     if (condition.equals(""))
                     {
-                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
-                        methodBody += "Object result = _cache.get(($w)" + finalKey + ");\n";
-                        methodBody += "if(result!=null)\n{return ($r)result;}\n";
-                        methodBody += "else\n{\n";
-                        methodBody += "result = " + originMethod.getName() + "($$);\n";
+                        methodBody = "\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody += "Object " + resultName + " = _cache.get(($w)" + finalKey + ");\n";
+                        methodBody += "if(" + resultName + "!=null)\n{return (" + returnTypeName + ")" + resultName + ";}\n";
+                        ctMethod.insertBefore(methodBody);
+                        methodBody = "\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
                         if (cacheGet.timeToLive() == -1)
                         {
-                            methodBody += "_cache.put(($w)" + finalKey + ",result);\n";
+                            methodBody += "_cache.put(($w)" + finalKey + ",$_);\n";
                         }
                         else
                         {
-                            methodBody += "_cache.put(($w)" + finalKey + ",result," + cacheGet.timeToLive() + ");\n";
+                            methodBody += "_cache.put(($w)" + finalKey + "$_," + cacheGet.timeToLive() + ");\n";
                         }
-                        methodBody += "return ($r)result;\n}\n}";
+                        ctMethod.insertAfter(methodBody);
                     }
                     else
                     {
                         condition = JelExplain.createVarIf(condition, names, types);
                         methodBody = "{\nif(" + condition + ")\n{\n";
                         methodBody += "\tcom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");;\n";
-                        methodBody += "\tObject result = _cache.get(($w)" + finalKey + ");\n";
-                        methodBody += "\tif(result!=null){return ($r)result;}\n";
-                        methodBody += "\telse\n\t{\n";
-                        methodBody += "\t\tresult = " + originMethod.getName() + "($$);\n";
+                        methodBody += "\tObject " + resultName + " = _cache.get(($w)" + finalKey + ");\n";
+                        methodBody += "\tif(" + resultName + "!=null){return (" + each.getReturnType().getName() + ")" + resultName + ";}}}\n";
+                        ctMethod.insertBefore(methodBody);
+                        methodBody = "{\nif(" + condition + ")\n{\n";
+                        methodBody += "\tcom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");;\n";
                         if (cacheGet.timeToLive() == -1)
                         {
-                            methodBody += "\t\t_cache.put(($w)" + finalKey + ",result);\n";
+                            methodBody += "\t\t_cache.put(($w)" + finalKey + ",$_);}}\n";
                         }
                         else
                         {
-                            methodBody += "\t\t_cache.put(($w)" + finalKey + ",result," + cacheGet.timeToLive() + ");\n";
+                            methodBody += "\t\t_cache.put(($w)" + finalKey + ",$_," + cacheGet.timeToLive() + ");}}\n";
                         }
-                        methodBody += "\t\treturn ($r)result;\n";
-                        methodBody += "\t}\n";
-                        methodBody += "}\nelse\n{\n";
-                        methodBody += "return ($r)" + originMethod.getName() + "($$);\n";
-                        methodBody += "}\n";
-                        methodBody += "}";
+                        ctMethod.insertAfter(methodBody);
                     }
-                    logger.trace("缓存方法{}的内容是\n{}\n", each.toString(), methodBody);
-                    newTargetMethod.setBody(methodBody);
                 }
                 if (AnnotationUtil.isPresent(CachePut.class, each))
                 {
                     if (each.getReturnType() == Void.class)
                     {
-                        throw new JelException(StringUtil.format("使用CacheGet注解的方法必须有返回值，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()));
+                        throw new JelException(StringUtil.format("使用CachePut注解的方法必须有返回值，请检查{}.{}", each.getDeclaringClass().getName(), each.getName()));
                     }
                     CachePut cachePut = AnnotationUtil.getAnnotation(CachePut.class, each);
                     String key = cachePut.value();
@@ -574,44 +573,34 @@ public class AopUtil
                     String condition = cachePut.condition();
                     if (condition.equals(""))
                     {
-                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
-                        methodBody += "Object result = " + originMethod.getName() + "($$);\n";
+                        methodBody = "com.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
                         if (cachePut.timeToLive() == -1)
                         {
-                            methodBody += "_cache.put(($w)" + finalKey + ",result);\n";
+                            methodBody += "_cache.put(($w)" + finalKey + ",$_);\n";
                         }
                         else
                         {
-                            methodBody += "_cache.put(($w)" + finalKey + ",result," + cachePut.timeToLive() + ");\n";
+                            methodBody += "_cache.put(($w)" + finalKey + ",$_," + cachePut.timeToLive() + ");\n";
                         }
-                        methodBody += "return ($r)result;\n}";
                     }
                     else
                     {
                         condition = JelExplain.createVarIf(condition, names, types);
-                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody = "com.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
                         methodBody += "if(" + condition + ")\n{\n";
-                        methodBody += "\tObject result = " + originMethod.getName() + "($$);\n";
                         if (cachePut.timeToLive() == -1)
                         {
-                            methodBody += "\t_cache.put(($w)" + finalKey + ",result);\n";
+                            methodBody += "\t_cache.put(($w)" + finalKey + ",$_);}\n";
                         }
                         else
                         {
-                            methodBody += "\t_cache.put(($w)" + finalKey + ",result," + cachePut.timeToLive() + ");\n";
+                            methodBody += "\t_cache.put(($w)" + finalKey + ",$_," + cachePut.timeToLive() + ");}\n";
                         }
-                        methodBody += "\treturn ($r)result;\n";
-                        methodBody += "}\nelse\n{\n";
-                        methodBody += "return ($r)" + originMethod.getName() + "($$);\n";
-                        methodBody += "}\n";
-                        methodBody += "}";
                     }
-                    logger.trace("缓存方法{}的内容是\n{}\n", each.toString(), methodBody);
-                    newTargetMethod.setBody(methodBody);
+                    ctMethod.insertAfter(methodBody);
                 }
                 if (AnnotationUtil.isPresent(CacheDelete.class, each))
                 {
-                    boolean hasReturn = (each.getReturnType() != void.class);
                     CacheDelete cacheDelete = AnnotationUtil.getAnnotation(CacheDelete.class, each);
                     String key = cacheDelete.value();
                     String finalKey = JelExplain.createValue(key, names, types);
@@ -619,50 +608,18 @@ public class AopUtil
                     String condition = cacheDelete.condition();
                     if (condition.equals(""))
                     {
-                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
-                        if (hasReturn)
-                        {
-                            methodBody += "Object result = " + originMethod.getName() + "($$);\n";
-                            methodBody += "_cache.remove(($w)" + finalKey + ");\n";
-                            methodBody += "return ($r)result;\n}";
-                        }
-                        else
-                        {
-                            methodBody += originMethod.getName() + "($$);\n";
-                            methodBody += "_cache.remove(($w)" + finalKey + ");\n";
-                            methodBody += "}";
-                        }
+                        methodBody = "\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody += "_cache.remove(($w)" + finalKey + ");\n";
                     }
                     else
                     {
                         condition = JelExplain.createVarIf(condition, names, types);
-                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody = "com.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
                         methodBody += "if(" + condition + ")\n{\n";
-                        if (hasReturn)
-                        {
-                            methodBody += "\tObject result =" + originMethod.getName() + "($$);\n";
-                            methodBody += "\t_cache.remove(($w)" + finalKey + ");\n";
-                            methodBody += "\treturn ($r)result;\n";
-                        }
-                        else
-                        {
-                            methodBody += originMethod.getName() + "($$);\n";
-                            methodBody += "\t_cache.remove(($w)" + finalKey + ");\n";
-                        }
-                        methodBody += "}\nelse\n{\n";
-                        if (hasReturn)
-                        {
-                            methodBody += "return ($r)" + originMethod.getName() + "($$);\n";
-                        }
-                        else
-                        {
-                            methodBody += originMethod.getName() + "($$);\n";
-                        }
-                        methodBody += "}\n";
+                        methodBody += "\t_cache.remove(($w)" + finalKey + ");\n";
                         methodBody += "}";
                     }
-                    logger.trace("缓存方法{}的内容是\n{}\n", each.toString(), methodBody);
-                    newTargetMethod.setBody(methodBody);
+                    ctMethod.insertAfter(methodBody);
                 }
                 
             }

@@ -71,7 +71,6 @@ public class AnnotationUtil
         return getAnnotation(annoType, field.getAnnotations());
     }
     
-    @SuppressWarnings("unchecked")
     private static <T extends Annotation> T getAnnotation(Class<T> annoType, Annotation[] annotations)
     {
         for (Annotation each : annotations)
