@@ -1,14 +1,12 @@
 package com.jfireframework.context.event.impl;
 
 import java.util.IdentityHashMap;
-import javax.annotation.Resource;
 import com.jfireframework.baseutil.disruptor.AbstractExclusiveEntryAction;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.context.event.ApplicationEvent;
 import com.jfireframework.context.event.EventHandler;
 
-@Resource
 public class EventAction extends AbstractExclusiveEntryAction
 {
     private final IdentityHashMap<Class<?>, Integer> map;
@@ -33,6 +31,7 @@ public class EventAction extends AbstractExclusiveEntryAction
             {
                 each.handle(event);
             }
+            event.signal();
         }
         catch (Exception e)
         {

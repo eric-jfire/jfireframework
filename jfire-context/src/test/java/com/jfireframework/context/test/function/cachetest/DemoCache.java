@@ -1,7 +1,8 @@
 package com.jfireframework.context.test.function.cachetest;
 
-import java.util.HashMap;
 import com.jfireframework.context.cache.Cache;
+
+import java.util.HashMap;
 
 public class DemoCache implements Cache
 {
@@ -38,7 +39,7 @@ public class DemoCache implements Cache
         // TODO Auto-generated method stub
         return null;
     }
-
+    
     @Override
     public void put(Object key, Object value, int timeToLive)
     {

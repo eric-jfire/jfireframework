@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.disruptor.Disruptor;
 import com.jfireframework.baseutil.disruptor.EntryAction;
 import com.jfireframework.baseutil.disruptor.waitstrategy.BlockWaitStrategy;
@@ -17,12 +18,14 @@ import com.jfireframework.context.event.EventPublisher;
 @Resource(name = "eventPublisher")
 public class EventPublisherImpl implements EventPublisher
 {
-    private Disruptor          disruptor;
+    private Disruptor                          disruptor;
     @Resource
-    private List<EventHandler> _handlers  = new LinkedList<EventHandler>();
-    private String             strategy   = "park";
-    private int                capacity   = 0;
-    private int                threadSize = Runtime.getRuntime().availableProcessors() * 2 + 1;
+    private List<EventHandler>                 _handlers  = new LinkedList<EventHandler>();
+    private String                             strategy   = "park";
+    private int                                capacity   = 0;
+    private int                                threadSize = Runtime.getRuntime().availableProcessors() * 2 + 1;
+    private IdentityHashMap<Class<?>, Integer> idMap;
+    private EventHandler[][][]                 handlers;
     
     @PostConstruct
     public void init()
@@ -31,8 +34,8 @@ public class EventPublisherImpl implements EventPublisher
         {
             return;
         }
-        IdentityHashMap<Class<?>, Integer> idMap = new IdentityHashMap<Class<?>, Integer>();
-        EventHandler[][][] handlers = transfer(idMap);
+        idMap = new IdentityHashMap<Class<?>, Integer>();
+        handlers = transfer(idMap);
         int tmp = 1;
         while (tmp < capacity)
         {
@@ -66,11 +69,11 @@ public class EventPublisherImpl implements EventPublisher
         int sequence = 0;
         for (EventHandler each : _handlers)
         {
-            if (map.containsKey(each.type().getClass()))
+            if (map.containsKey(each.type().getDeclaringClass()))
             {
                 continue;
             }
-            map.put(each.type().getClass(), sequence++);
+            map.put(each.type().getDeclaringClass(), sequence++);
         }
         int[][] count = new int[map.size()][];
         for (int i = 0; i < count.length; i++)
@@ -79,7 +82,7 @@ public class EventPublisherImpl implements EventPublisher
         }
         for (EventHandler each : _handlers)
         {
-            sequence = map.get(each.type().getClass());
+            sequence = map.get(each.type().getDeclaringClass());
             int index = each.type().ordinal();
             if (count[sequence].length <= index)
             {
@@ -100,7 +103,7 @@ public class EventPublisherImpl implements EventPublisher
         }
         for (EventHandler each : _handlers)
         {
-            sequence = map.get(each.type().getClass());
+            sequence = map.get(each.type().getDeclaringClass());
             int index = each.type().ordinal();
             EventHandler[] tmp = handlers[sequence][index];
             for (int j = 0; j < tmp.length; j++)
@@ -116,16 +119,21 @@ public class EventPublisherImpl implements EventPublisher
     }
     
     @Override
-    public void publish(Object data, Enum<?> type)
+    public ApplicationEvent publish(Object data, Enum<?> type)
     {
         if (disruptor == null)
         {
-            throw new NullPointerException("请正确初始化事件发布器");
+            throw new NullPointerException("请正确初始化事件发布器,请在配置文件中配置事件发布器的队列长度");
         }
-        ApplicationEvent applicationEvent = new ApplicationEvent();
-        applicationEvent.setData(data);
-        applicationEvent.setType(type);
+        int sequence = idMap.get(type.getDeclaringClass());
+        int index = type.ordinal();
+        if (handlers[sequence].length <= index)
+        {
+            throw new NullPointerException(StringUtil.format("不存在事件：{}.{}的处理器", type.getDeclaringClass().getName(), type.name()));
+        }
+        ApplicationEvent applicationEvent = new ApplicationEvent(data, type);
         disruptor.publish(applicationEvent);
+        return applicationEvent;
     }
     
 }
