@@ -9,7 +9,7 @@ import com.jfireframework.baseutil.StringUtil;
 
 public class AutumnId implements Uid
 {
-    private static final short         pid;
+    private static final int           pid;
     private static final byte[]        internal = new byte[5];
     private static final AtomicInteger count    = new AtomicInteger(0);
     private static volatile AutumnId   INSTANCE;
