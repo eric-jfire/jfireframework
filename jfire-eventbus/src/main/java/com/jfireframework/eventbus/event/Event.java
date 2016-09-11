@@ -2,19 +2,8 @@ package com.jfireframework.eventbus.event;
 
 public interface Event<T>
 {
-    /**
-     * 事件类型
-     * 
-     * @return
-     */
-    public Enum<?> type();
     
-    /**
-     * 事件是否串行处理
-     * 
-     * @return
-     */
-    public boolean serial();
+    public EventType type();
     
     /**
      * 事件示例

@@ -13,6 +13,6 @@ public interface EventHandler<T> extends Order
      */
     public void handle(ApplicationEvent event);
     
-    public Event<T> interest();
+    public Enum<? extends Event<T>> interest();
     
 }

@@ -5,7 +5,7 @@ import com.jfireframework.eventbus.event.Event;
 
 public interface EventHandlerContext<T>
 {
-    public Event<T> interest();
+    public Enum<? extends Event<T>> interest();
     
     public void addHandler(EventHandler<T> eventHandler);
     

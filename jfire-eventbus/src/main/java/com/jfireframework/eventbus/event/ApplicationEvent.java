@@ -3,19 +3,20 @@ package com.jfireframework.eventbus.event;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-public class ApplicationEvent
+public class ApplicationEvent implements RowId
 {
     private final Object     eventData;
     private final Event<?>   event;
-    
+    private final int        rowId;
     private volatile boolean finished = false;
     private Thread           owner;
     private volatile boolean await    = false;
     
-    public ApplicationEvent(Object eventData, Event<?> event)
+    public ApplicationEvent(Object eventData, Event<?> event, int rowId)
     {
         this.eventData = eventData;
         this.event = event;
+        this.rowId = rowId;
     }
     
     /**
@@ -86,4 +87,9 @@ public class ApplicationEvent
         return event;
     }
     
+    @Override
+    public int id()
+    {
+        return rowId;
+    }
 }
