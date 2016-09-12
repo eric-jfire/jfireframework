@@ -2,12 +2,16 @@ package com.jfireframework.context;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
+import java.util.Properties;
 import com.jfireframework.codejson.JsonObject;
 import com.jfireframework.context.bean.Bean;
 import com.jfireframework.context.bean.BeanConfig;
 
 public interface JfireContext
 {
+    
+    public void addProperties(Properties... properties);
+    
     /**
      * 读取配置文件中的信息，如果配置文件中配置了PackageNames，则向容器中增加包信息。
      * 如果配置了beans，则向容器增加bean信息

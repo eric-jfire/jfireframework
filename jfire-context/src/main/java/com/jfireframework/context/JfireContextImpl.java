@@ -12,6 +12,8 @@ import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
 import javax.annotation.Resource;
 import com.jfireframework.baseutil.PackageScan;
 import com.jfireframework.baseutil.StringUtil;
@@ -50,6 +52,7 @@ public class JfireContextImpl implements JfireContext
     private static Logger                   logger      = ConsoleLogFactory.getLogger();
     private ClassLoader                     classLoader = JfireContextImpl.class.getClassLoader();
     private BeanUtil                        beanUtil    = new BeanUtil();
+    private Map<String, String>             properties  = new HashMap<String, String>();
     
     public JfireContextImpl()
     {
@@ -201,6 +204,7 @@ public class JfireContextImpl implements JfireContext
         addSingletonEntity(JfireContext.class.getName(), this);
         addBean(EventPosterImpl.class);
         init = true;
+        replaceValueFromPropertiesToBeancfg();
         beanUtil.buildBean(classNames);
         for (Bean each : beanNameMap.values())
         {
@@ -259,6 +263,22 @@ public class JfireContextImpl implements JfireContext
             {
                 logger.error("执行方法{}.afterContextInit发生异常", each.getClass().getName(), e);
                 throw new JustThrowException(e);
+            }
+        }
+    }
+    
+    private void replaceValueFromPropertiesToBeancfg()
+    {
+        for (BeanConfig config : configMap.values())
+        {
+            for (Entry<String, String> entry : config.getParamMap().entrySet())
+            {
+                String value = entry.getValue();
+                if (value.startsWith("${") && value.endsWith("}"))
+                {
+                    String name = value.substring(2, value.length() - 1);
+                    entry.setValue(properties.get(name));
+                }
             }
         }
     }
@@ -481,6 +501,18 @@ public class JfireContextImpl implements JfireContext
                         bean.setParamFields(FieldFactory.buildParamField(bean, beanConfig, classLoader));
                     }
                 }
+            }
+        }
+    }
+    
+    @Override
+    public void addProperties(Properties... properties)
+    {
+        for (Properties each : properties)
+        {
+            for (Entry<Object, Object> entry : each.entrySet())
+            {
+                this.properties.put((String) entry.getKey(), (String) entry.getValue());
             }
         }
     }

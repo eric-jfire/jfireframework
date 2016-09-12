@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import java.io.File;
 import java.net.URISyntaxException;
+import java.util.Properties;
 import javax.annotation.Resource;
 import org.junit.Test;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -38,7 +39,7 @@ public class ContextTest
     
     private void baseTest(JfireContext jfireContext)
     {
-        assertEquals(4, jfireContext.getBeanByAnnotation(Resource.class).length);
+        assertEquals(3, jfireContext.getBeanByAnnotation(Resource.class).length);
         ImmutablePerson immutablePerson = jfireContext.getBean(ImmutablePerson.class);
         ImmutablePerson person2 = (ImmutablePerson) jfireContext.getBean(ImmutablePerson.class.getName());
         assertEquals(immutablePerson, person2);
@@ -123,6 +124,9 @@ public class ContextTest
     {
         JfireContext jfireContext = new JfireContextImpl();
         jfireContext.readConfig(new File(this.getClass().getClassLoader().getResource("config.json").toURI()));
+        Properties properties = new Properties();
+        properties.setProperty("age", "25");
+        jfireContext.addProperties(properties);
         baseTest(jfireContext);
         testParam(jfireContext);
     }

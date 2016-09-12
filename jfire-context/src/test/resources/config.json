@@ -5,7 +5,7 @@
     {"beanName":"com.jfireframework.context.test.function.base.data.ImmutablePerson",
     "params":{
     "name":"林斌",
-    "age":"25",
+    "age":"${age}",
     "boy":"true"
     }}
     ]
