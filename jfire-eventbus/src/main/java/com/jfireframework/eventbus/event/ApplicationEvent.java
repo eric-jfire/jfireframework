@@ -5,14 +5,14 @@ import java.util.concurrent.locks.LockSupport;
 
 public class ApplicationEvent implements RowId
 {
-    private final Object     eventData;
-    private final Event<?>   event;
-    private final int        rowId;
-    private volatile boolean finished = false;
-    private Thread           owner;
-    private volatile boolean await    = false;
+    private final Object                   eventData;
+    private final Enum<? extends Event<?>> event;
+    private final int                      rowId;
+    private volatile boolean               finished = false;
+    private Thread                         owner;
+    private volatile boolean               await    = false;
     
-    public ApplicationEvent(Object eventData, Event<?> event, int rowId)
+    public ApplicationEvent(Object eventData, Enum<? extends Event<?>> event, int rowId)
     {
         this.eventData = eventData;
         this.event = event;
@@ -82,7 +82,7 @@ public class ApplicationEvent implements RowId
         return eventData;
     }
     
-    public Event<?> getEvent()
+    public Enum<? extends Event<?>> getEvent()
     {
         return event;
     }

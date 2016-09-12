@@ -109,9 +109,9 @@ public class EventBus
         disruptor.publish(event);
     }
     
-    public void post(Object data, Event<?> event)
+    public void post(Object data, Enum<? extends Event<?>> event)
     {
-        if (event.type() == EventType.ROWID_SERIAL)
+        if (((Event<?>) event).type() == EventType.ROWID_SERIAL)
         {
             throw new IllegalArgumentException();
         }
