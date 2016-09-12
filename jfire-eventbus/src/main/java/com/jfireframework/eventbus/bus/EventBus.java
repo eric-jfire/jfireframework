@@ -104,12 +104,13 @@ public class EventBus
         disruptor.stop();
     }
     
-    public void post(ApplicationEvent event)
+    public ApplicationEvent post(ApplicationEvent event)
     {
         disruptor.publish(event);
+        return event;
     }
     
-    public void post(Object data, Enum<? extends Event<?>> event)
+    public ApplicationEvent post(Object data, Enum<? extends Event<?>> event)
     {
         if (((Event<?>) event).type() == EventType.ROWID_SERIAL)
         {
@@ -117,5 +118,6 @@ public class EventBus
         }
         ApplicationEvent applicationEvent = new ApplicationEvent(data, event, -1);
         post(applicationEvent);
+        return applicationEvent;
     }
 }
