@@ -41,30 +41,42 @@ public class PackageScan
         List<String> classNames = new LinkedList<String>();
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         String resourceName = packageName.replaceAll("\\.", "/");
-        URL url = loader.getResource(resourceName);
-        if (url != null)
+        try
         {
-            if (url.getProtocol().contains("file"))
+            Enumeration<URL> urls = loader.getResources(resourceName);
+            if (urls.hasMoreElements() == false)
             {
-                try
-                {
-                    File urlFile = new File(url.toURI());
-                    packageName = packageName.substring(0, packageName.lastIndexOf(".") + 1);
-                    findClassNamesByFile(packageName, urlFile, classNames);
-                }
-                catch (URISyntaxException e)
-                {
-                    throw new UnSupportException("路径：'" + url.toString() + "'不正确", e);
-                }
+                getClassNameByJars(((URLClassLoader) loader).getURLs(), packageName, classNames);
             }
-            else if (url.getProtocol().contains("jar"))
+            else
             {
-                getClassNamesByJar(url, resourceName, classNames);
+                while (urls.hasMoreElements())
+                {
+                    URL url = urls.nextElement();
+                    if (url.getProtocol().contains("file"))
+                    {
+                        try
+                        {
+                            File urlFile = new File(url.toURI());
+                            packageName = packageName.substring(0, packageName.lastIndexOf(".") + 1);
+                            findClassNamesByFile(packageName, urlFile, classNames);
+                        }
+                        catch (URISyntaxException e)
+                        {
+                            throw new UnSupportException("路径：'" + url.toString() + "'不正确", e);
+                        }
+                    }
+                    else if (url.getProtocol().contains("jar"))
+                    {
+                        getClassNamesByJar(url, resourceName, classNames);
+                    }
+                }
             }
         }
-        else
+        catch (IOException e1)
         {
-            getClassNameByJars(((URLClassLoader) loader).getURLs(), packageName, classNames);
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
         }
         doFilter(filterNames, classNames);
         return classNames.toArray(new String[classNames.size()]);
@@ -94,7 +106,7 @@ public class PackageScan
         Enumeration<JarEntry> entries = jarFile.entries();
         while (entries.hasMoreElements())
         {
-            JarEntry jarEntry = (JarEntry) entries.nextElement();
+            JarEntry jarEntry = entries.nextElement();
             String entryName = jarEntry.getName();
             // 将符合条件的class文件的全限定名加入到list中
             if (entryName.endsWith("class") && !entryName.contains("$") && entryName.startsWith(packageName))

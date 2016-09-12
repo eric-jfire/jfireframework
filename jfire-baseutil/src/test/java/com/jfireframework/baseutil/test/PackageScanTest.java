@@ -9,7 +9,7 @@ public class PackageScanTest
     @Test
     public void test()
     {
-        String[] classNames = PackageScan.scan("com.jfireframework:out~*collection");
+        String[] classNames = PackageScan.scan("com.jfireframework:out~*collection*");
         for (String each : classNames)
         {
             System.out.println(each);
