@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import java.io.File;
 import java.net.URISyntaxException;
-import java.util.Properties;
 import javax.annotation.Resource;
 import org.junit.Test;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
@@ -124,9 +123,9 @@ public class ContextTest
     {
         JfireContext jfireContext = new JfireContextImpl();
         jfireContext.readConfig(new File(this.getClass().getClassLoader().getResource("config.json").toURI()));
-        Properties properties = new Properties();
-        properties.setProperty("age", "25");
-        jfireContext.addProperties(properties);
+        // Properties properties = new Properties();
+        // properties.setProperty("age", "26");
+        // jfireContext.addProperties(properties);
         baseTest(jfireContext);
         testParam(jfireContext);
     }

@@ -274,10 +274,27 @@ public class JfireContextImpl implements JfireContext
             for (Entry<String, String> entry : config.getParamMap().entrySet())
             {
                 String value = entry.getValue();
-                if (value.startsWith("${") && value.endsWith("}"))
+                if (value.startsWith("${"))
                 {
-                    String name = value.substring(2, value.length() - 1);
-                    entry.setValue(properties.get(name));
+                    int end = value.indexOf("}||");
+                    if (end != -1)
+                    {
+                        String name = value.substring(2, end);
+                        if (properties.get(name) != null)
+                        {
+                            entry.setValue(properties.get(name));
+                        }
+                        else
+                        {
+                            String defaultValue = value.substring(end + 3);
+                            entry.setValue(defaultValue);
+                        }
+                    }
+                    else
+                    {
+                        String name = value.substring(2, value.length() - 1);
+                        entry.setValue(properties.get(name));
+                    }
                 }
             }
         }
