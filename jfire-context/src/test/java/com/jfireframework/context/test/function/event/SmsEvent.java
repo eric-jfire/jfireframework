@@ -16,10 +16,4 @@ public enum SmsEvent implements Event<SmsEvent>
         return EventType.PAEALLEL;
     }
     
-    @Override
-    public SmsEvent instance()
-    {
-        return this;
-    }
-    
 }

@@ -19,9 +19,4 @@ public enum Print implements Event<Print>
         return type;
     }
     
-    @Override
-    public Print instance()
-    {
-        return this;
-    }
 }

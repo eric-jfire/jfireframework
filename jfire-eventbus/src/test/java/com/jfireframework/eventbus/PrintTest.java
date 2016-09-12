@@ -11,7 +11,7 @@ public class PrintTest
         EventBus bus = new EventBus(128);
         bus.addHandler(new PrintHandler());
         bus.start();
-        bus.post(null, Print.one.instance());
+        bus.post(null, Print.one);
         Thread.sleep(1000);
     }
 }

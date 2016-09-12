@@ -19,6 +19,7 @@
 		<module>jfire-data-mongodb</module>
 		<module>wx</module>
 		<module>jfire-jnet2</module>
+		<module>jfire-eventbus</module>
 	</modules>
 	<dependencies>
 		<dependency>

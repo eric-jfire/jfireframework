@@ -40,7 +40,7 @@ public class HaftHandler implements EventHandler<SmsEvent>, ContextInitFinish
     @Override
     public Enum<? extends Event<SmsEvent>> interest()
     {
-        return SmsEvent.halt.instance();
+        return SmsEvent.halt;
     }
     
 }

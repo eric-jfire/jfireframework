@@ -22,7 +22,7 @@ public class PrintHandler implements EventHandler<Print>
     @Override
     public Enum<? extends Event<Print>> interest()
     {
-        return Print.one.instance();
+        return Print.one;
     }
     
 }
