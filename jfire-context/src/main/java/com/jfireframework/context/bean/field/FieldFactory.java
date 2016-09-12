@@ -216,7 +216,8 @@ public class FieldFactory
     
     private static DependencyField buildListFieldByAnno(Field field, Map<String, Bean> beanNameMap)
     {
-        Class<?> beanInterface = (Class<?>) ((java.lang.reflect.ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+        ParameterizedType type = (ParameterizedType) ((java.lang.reflect.ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+        Class<?> beanInterface = (Class<?>) type.getRawType();
         List<Bean> tmp = new LinkedList<Bean>();
         for (Bean each : beanNameMap.values())
         {

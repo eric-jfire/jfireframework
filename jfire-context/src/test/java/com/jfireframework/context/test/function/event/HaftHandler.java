@@ -2,26 +2,22 @@ package com.jfireframework.context.test.function.event;
 
 import javax.annotation.Resource;
 import com.jfireframework.context.ContextInitFinish;
-import com.jfireframework.context.event.ApplicationEvent;
-import com.jfireframework.context.event.EventHandler;
-import com.jfireframework.context.event.EventPublisher;
+import com.jfireframework.context.event.EventPoster;
+import com.jfireframework.eventbus.event.ApplicationEvent;
+import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.handler.EventHandler;
 
 @Resource
-public class HaftHandler implements EventHandler, ContextInitFinish
+public class HaftHandler implements EventHandler<SmsEvent>, ContextInitFinish
 {
     @Resource
-    private EventPublisher publisher;
-    
-    @Override
-    public Enum<?> type()
-    {
-        return SmsEvent.halt;
-    }
+    private EventPoster publisher;
     
     @Override
     public void handle(ApplicationEvent event)
     {
-        UserPhone myEvent = (UserPhone) event.getData();
+        System.out.println("asdasd");
+        UserPhone myEvent = (UserPhone) event.getEventData();
         System.out.println("用户:" + myEvent.getPhone() + "欠费");
     }
     
@@ -37,7 +33,14 @@ public class HaftHandler implements EventHandler, ContextInitFinish
     {
         UserPhone phone = new UserPhone();
         phone.setPhone("1775032");
-        publisher.publish(phone, SmsEvent.halt);
+        publisher.post(phone, SmsEvent.halt).await();
+        ;
+    }
+    
+    @Override
+    public Enum<? extends Event<SmsEvent>> interest()
+    {
+        return SmsEvent.halt.instance();
     }
     
 }

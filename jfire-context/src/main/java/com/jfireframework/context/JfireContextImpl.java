@@ -37,7 +37,7 @@ import com.jfireframework.context.bean.load.LoadBy;
 import com.jfireframework.context.config.BeanAttribute;
 import com.jfireframework.context.config.BeanInfo;
 import com.jfireframework.context.config.ContextConfig;
-import com.jfireframework.context.event.impl.EventPublisherImpl;
+import com.jfireframework.context.event.impl.EventPosterImpl;
 
 public class JfireContextImpl implements JfireContext
 {
@@ -199,7 +199,7 @@ public class JfireContextImpl implements JfireContext
     public void initContext()
     {
         addSingletonEntity(JfireContext.class.getName(), this);
-        addBean(EventPublisherImpl.class);
+        addBean(EventPosterImpl.class);
         init = true;
         beanUtil.buildBean(classNames);
         for (Bean each : beanNameMap.values())

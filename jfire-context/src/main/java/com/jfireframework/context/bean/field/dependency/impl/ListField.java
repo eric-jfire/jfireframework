@@ -16,7 +16,7 @@ public class ListField extends AbstractDependencyField
     {
         super(field);
         dependencyBeans = beans;
-        msg = StringUtil.format("属性{}.{}为空,无法进行lightSet注入", field.getDeclaringClass().getName(), field.getName());
+        msg = StringUtil.format("属性{}.{}为空,无法进行list注入", field.getDeclaringClass().getName(), field.getName());
     }
     
     @SuppressWarnings({ "unchecked", "rawtypes" })

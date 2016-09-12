@@ -39,5 +39,11 @@
 			<version>1.0.1</version>
 			<optional>true</optional>
 		</dependency>
+		<dependency>
+			<groupId>com.jfireframework</groupId>
+			<artifactId>jfire-eventbus</artifactId>
+			<version>1.0-SNAPSHOT</version>
+			<optional>true</optional>
+		</dependency>
 	</dependencies>
 </project>
