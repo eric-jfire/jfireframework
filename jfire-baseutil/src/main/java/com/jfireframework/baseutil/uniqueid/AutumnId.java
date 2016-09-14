@@ -38,7 +38,7 @@ public class AutumnId implements Uid
     static
     {
         String _pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
-        pid = Short.valueOf(_pid);
+        pid = Integer.valueOf(_pid);
         // 本机mac地址的hash 32个bit
         int _maxHash;
         try
