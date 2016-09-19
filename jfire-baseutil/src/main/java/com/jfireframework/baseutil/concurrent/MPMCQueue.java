@@ -3,17 +3,92 @@ package com.jfireframework.baseutil.concurrent;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import sun.misc.Unsafe;
 
+import java.util.concurrent.locks.LockSupport;
+
 public class MPMCQueue<E>
 {
     private volatile Node<E>    head;
     private volatile Node<E>    tail;
-    private static final Unsafe unsafe     = ReflectUtil.getUnsafe();
-    private static final long   tailOffset = ReflectUtil.getFieldOffset("tail", MPMCQueue.class);
-    private static final long   headOffset = ReflectUtil.getFieldOffset("head", MPMCQueue.class);
+    private static final Unsafe unsafe           = ReflectUtil.getUnsafe();
+    private static final long   tailOffset       = ReflectUtil.getFieldOffset("tail", MPMCQueue.class);
+    private static final long   headOffset       = ReflectUtil.getFieldOffset("head", MPMCQueue.class);
+    private volatile Waiter     headWaiter;
+    private volatile Waiter     tailWaiter;
+    private static final long   tailWaiterOffset = ReflectUtil.getFieldOffset("tailWaiter", MPMCQueue.class);
+    
+    class Waiter
+    {
+        private final Thread     thread;
+        // 通过HB关系来维持该属性的可见性
+        private volatile Waiter  next;
+        private volatile int     status;
+        private static final int WAITING  = 1;
+        private static final int CANCELED = 2;
+        
+        public Waiter(Thread thread)
+        {
+            this.thread = thread;
+            status = WAITING;
+        }
+    }
     
     public MPMCQueue()
     {
         head = tail = new Node<E>(null);
+        headWaiter = tailWaiter = new Waiter(null);
+    }
+    
+    private Waiter enqueue()
+    {
+        Waiter newTail = new Waiter(Thread.currentThread());
+        Waiter oldTail = tailWaiter;
+        if (unsafe.compareAndSwapObject(this, tailWaiterOffset, oldTail, newTail))
+        {
+            oldTail.next = newTail;
+            return newTail;
+        }
+        for (oldTail = tailWaiter;; oldTail = tailWaiter)
+        {
+            if (unsafe.compareAndSwapObject(this, tailWaiterOffset, oldTail, newTail))
+            {
+                oldTail.next = newTail;
+                return newTail;
+            }
+        }
+    }
+    
+    private void si()
+    {
+        Waiter head = headWaiter;
+        
+    }
+    
+    private void signalWaiter()
+    {
+        Waiter headNext = fetchNextWaiter();
+        if (headNext != null)
+        {
+            LockSupport.unpark(headNext.thread);
+        }
+        
+    }
+    
+    private Waiter fetchNextWaiter()
+    {
+        Waiter headNext;
+        Waiter h = headWaiter;
+        for (h = headWaiter; h != tailWaiter; h = headWaiter)
+        {
+            while ((headNext = h.next) == null && h == headWaiter)
+            {
+                ;
+            }
+            if (h == headWaiter)
+            {
+                return headNext;
+            }
+        }
+        return null;
     }
     
     private static class Node<E>
@@ -32,8 +107,12 @@ public class MPMCQueue<E>
         {
             E origin = value;
             unsafe.putObject(this, Node.valueOffset, null);
-            unsafe.putObject(this, Node.nextOffset, null);
             return origin;
+        }
+        
+        public void unlink()
+        {
+            unsafe.putObject(this, Node.nextOffset, null);
         }
     }
     
@@ -66,6 +145,12 @@ public class MPMCQueue<E>
         
     }
     
+    public void offerAndSignal(E o)
+    {
+        offer(o);
+        signalWaiter();
+    }
+    
     public E poll()
     {
         startFromHead: for (Node<E> h = head, next = h.next, t = tail; h != t || h != (t = tail); h = head, next = h.next)
@@ -84,7 +169,8 @@ public class MPMCQueue<E>
                     }
                     if (unsafe.compareAndSwapObject(this, headOffset, h, next))
                     {
-                        return h.clear();
+                        h.unlink();
+                        return next.clear();
                     }
                     else
                     {
@@ -96,7 +182,8 @@ public class MPMCQueue<E>
             {
                 if (unsafe.compareAndSwapObject(this, headOffset, h, next))
                 {
-                    return h.clear();
+                    h.unlink();
+                    return next.clear();
                 }
                 else
                 {
@@ -105,6 +192,49 @@ public class MPMCQueue<E>
             }
         }
         return null;
+    }
+    
+    /**
+     * 阻塞的获取一个元素。如果没有元素，则一直阻塞等待
+     * 
+     * @return
+     */
+    public E take()
+    {
+        E result = poll();
+        Waiter self;
+        if (result == null)
+        {
+            self = enqueue();
+            Waiter headNext;
+            do
+            {
+                headNext = headWaiter.next;
+                if (self == headNext)
+                {
+                    result = poll();
+                    if (result == null)
+                    {
+                        LockSupport.park();
+                    }
+                    else
+                    {
+                        headWaiter = self;
+                        headNext = fetchNextWaiter();
+                        if (headNext != null)
+                        {
+                            LockSupport.unpark(headNext.thread);
+                        }
+                        return result;
+                    }
+                }
+                else
+                {
+                    LockSupport.park();
+                }
+            } while (true);
+        }
+        return result;
     }
     
 }
