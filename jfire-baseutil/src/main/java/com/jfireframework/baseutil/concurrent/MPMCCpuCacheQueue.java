@@ -1,21 +1,17 @@
 package com.jfireframework.baseutil.concurrent;
 
-import java.util.Collection;
-import java.util.Iterator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import sun.misc.Unsafe;
 
-public class MPMCQueue2<E>
+public class MPMCCpuCacheQueue<E>
 {
-    private volatile Node<E>    head;
-    private volatile Node<E>    tail;
-    private static final Unsafe unsafe     = ReflectUtil.getUnsafe();
-    private static final long   tailOffset = ReflectUtil.getFieldOffset("tail", MPMCQueue2.class);
-    private static final long   headOffset = ReflectUtil.getFieldOffset("head", MPMCQueue2.class);
+    private final CpuCachePadingRefence<Node<E>> head;
+    private final CpuCachePadingRefence<Node<E>> tail;
+    private static final Unsafe                  unsafe = ReflectUtil.getUnsafe();
     
-    public MPMCQueue2()
+    public MPMCCpuCacheQueue()
     {
-        head = tail = new Node<E>(null);
+        head = tail = new CpuCachePadingRefence<MPMCCpuCacheQueue.Node<E>>(new Node<E>(null));
     }
     
     private static class Node<E>
@@ -34,13 +30,15 @@ public class MPMCQueue2<E>
         {
             E origin = value;
             unsafe.putObject(this, Node.valueOffset, null);
-            unsafe.putOrderedObject(this, Node.nextOffset, null);
             return origin;
         }
     }
     
     public void clear()
     {
+        Node<E> node = tail.get();
+        head.set(node);
+        node.clear();
     }
     
     public boolean offer(E o)
@@ -50,27 +48,14 @@ public class MPMCQueue2<E>
             throw new NullPointerException();
         }
         Node<E> insert_node = new Node<E>(o);
-        Node<E> old = tail;
-        if (unsafe.compareAndSwapObject(this, tailOffset, old, insert_node))
-        {
-            unsafe.putOrderedObject(old, Node.nextOffset, insert_node);
-            return true;
-        }
-        do
-        {
-            old = tail;
-            if (unsafe.compareAndSwapObject(this, tailOffset, old, insert_node))
-            {
-                unsafe.putOrderedObject(old, Node.nextOffset, insert_node);
-                return true;
-            }
-        } while (true);
-        
+        Node<E> origin = tail.setAndReturnOrigin(insert_node);
+        unsafe.putOrderedObject(origin, Node.nextOffset, insert_node);
+        return true;
     }
     
     public E poll()
     {
-        for (Node<E> h = head, next = h.next, t = tail;; h = head, next = h.next)
+        for (Node<E> h = head.get(), next = h.next, t = tail.get();; h = head.get(), next = h.next)
         {
             if (h != t)
             {
@@ -82,19 +67,19 @@ public class MPMCQueue2<E>
                         {
                             break;
                         }
-                    } while (h == head);
-                    if (h != head)
+                    } while (h == head.get());
+                    if (h != head.get())
                     {
                         continue;
                     }
                 }
-                if (unsafe.compareAndSwapObject(this, headOffset, h, next))
+                if (head.compareAndSwap(h, next))
                 {
-                    return h.clear();
+                    return next.clear();
                 }
                 continue;
             }
-            else if (h != (t = tail))
+            else if (h != (t = tail.get()))
             {
                 if (next == null)
                 {
@@ -104,15 +89,15 @@ public class MPMCQueue2<E>
                         {
                             break;
                         }
-                    } while (h == head);
-                    if (h != head)
+                    } while (h == head.get());
+                    if (h != head.get())
                     {
                         continue;
                     }
                 }
-                if (unsafe.compareAndSwapObject(this, headOffset, h, next))
+                if (head.compareAndSwap(h, next))
                 {
-                    return h.clear();
+                    return next.clear();
                 }
                 continue;
             }
@@ -122,5 +107,4 @@ public class MPMCQueue2<E>
             }
         }
     }
-    
 }

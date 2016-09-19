@@ -5,13 +5,15 @@ import sun.misc.Unsafe;
 
 public class MPMCQueue<E>
 {
-    private final CpuCachePadingRefence<Node<E>> head;
-    private final CpuCachePadingRefence<Node<E>> tail;
-    private static final Unsafe                  unsafe = ReflectUtil.getUnsafe();
+    private volatile Node<E>    head;
+    private volatile Node<E>    tail;
+    private static final Unsafe unsafe     = ReflectUtil.getUnsafe();
+    private static final long   tailOffset = ReflectUtil.getFieldOffset("tail", MPMCQueue.class);
+    private static final long   headOffset = ReflectUtil.getFieldOffset("head", MPMCQueue.class);
     
     public MPMCQueue()
     {
-        head = tail = new CpuCachePadingRefence<MPMCQueue.Node<E>>(new Node<E>(null));
+        head = tail = new Node<E>(null);
     }
     
     private static class Node<E>
@@ -30,15 +32,13 @@ public class MPMCQueue<E>
         {
             E origin = value;
             unsafe.putObject(this, Node.valueOffset, null);
+            unsafe.putObject(this, Node.nextOffset, null);
             return origin;
         }
     }
     
     public void clear()
     {
-        Node<E> node = tail.get();
-        head.set(node);
-        node.clear();
     }
     
     public boolean offer(E o)
@@ -48,65 +48,63 @@ public class MPMCQueue<E>
             throw new NullPointerException();
         }
         Node<E> insert_node = new Node<E>(o);
-        Node<E> origin = tail.setAndReturnOrigin(insert_node);
-        unsafe.putOrderedObject(origin, Node.nextOffset, insert_node);
-        return true;
+        Node<E> old = tail;
+        if (unsafe.compareAndSwapObject(this, tailOffset, old, insert_node))
+        {
+            unsafe.putOrderedObject(old, Node.nextOffset, insert_node);
+            return true;
+        }
+        do
+        {
+            old = tail;
+            if (unsafe.compareAndSwapObject(this, tailOffset, old, insert_node))
+            {
+                unsafe.putOrderedObject(old, Node.nextOffset, insert_node);
+                return true;
+            }
+        } while (true);
+        
     }
     
     public E poll()
     {
-        for (Node<E> h = head.get(), next, t = tail.get();; h = head.get(), next = h.next)
+        startFromHead: for (Node<E> h = head, next = h.next, t = tail; h != t || h != (t = tail); h = head, next = h.next)
         {
-            if (h != t)
+            if (next == null)
             {
-                next = h.next;
-                if (next == null)
+                for (next = h.next; h == head; next = h.next)
                 {
-                    do
-                    {
-                        if ((next = h.next) != null)
-                        {
-                            break;
-                        }
-                    } while (h == head.get());
-                    if (h != head.get())
+                    if (next == null && (next = h.next) == null)
                     {
                         continue;
                     }
-                }
-                if (head.compareAndSwap(h, next))
-                {
-                    return next.clear();
-                }
-                continue;
-            }
-            else if (h != (t = tail.get()) )
-            {
-                next = h.next;
-                if (next == null)
-                {
-                    do
+                    else
                     {
-                        if ((next = h.next) != null)
-                        {
-                            break;
-                        }
-                    } while (h == head.get());
-                    if (h != head.get())
+                        ;
+                    }
+                    if (unsafe.compareAndSwapObject(this, headOffset, h, next))
                     {
-                        continue;
+                        return h.clear();
+                    }
+                    else
+                    {
+                        continue startFromHead;
                     }
                 }
-                if (head.compareAndSwap(h, next))
-                {
-                    return next.clear();
-                }
-                continue;
             }
             else
             {
-                return null;
+                if (unsafe.compareAndSwapObject(this, headOffset, h, next))
+                {
+                    return h.clear();
+                }
+                else
+                {
+                    ;
+                }
             }
         }
+        return null;
     }
+    
 }

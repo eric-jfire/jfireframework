@@ -53,7 +53,11 @@ public class CpuCachePadingRefence<T>
     
     public T setAndReturnOrigin(T newValue)
     {
-        for (T t = refence;; t = refence)
+        T t =refence;
+        if(unsafe.compareAndSwapObject(this, refenceOffset, t, newValue)){
+            return t;
+        }
+        for (;; t = refence)
         {
             if (unsafe.compareAndSwapObject(this, refenceOffset, t, newValue))
             {

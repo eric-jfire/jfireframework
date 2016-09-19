@@ -1,23 +1,22 @@
 package com.jfireframework.baseutil.autonomydisruptor;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import org.junit.Test;
+import com.jfireframework.baseutil.concurrent.MPMCCpuCacheQueue;
 import com.jfireframework.baseutil.concurrent.MPMCQueue;
-import com.jfireframework.baseutil.concurrent.MPMCQueue2;
-import com.jfireframework.baseutil.concurrent.MPSCQueue;
 import com.jfireframework.baseutil.time.Timewatch;
+import org.junit.Test;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class QueueSpeedTest
 {
-    private int sendThread = 40;
-    
+    private int sendThread = 10;
+    private  int getThread =10;
     @Test
-    public void test() throws InterruptedException
+    public void test3() throws InterruptedException
     {
         final int count = 1000000;
         final ConcurrentLinkedQueue<Object> queue = new ConcurrentLinkedQueue<Object>();
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < getThread; i++)
         {
             new Thread(new Runnable() {
                 
@@ -76,8 +75,8 @@ public class QueueSpeedTest
     public void test1() throws InterruptedException
     {
         final int count = 1000000;
-        final MPMCQueue<Object> queue = new MPMCQueue<Object>();
-        for (int i = 0; i < 3; i++)
+        final MPMCCpuCacheQueue<Object> queue = new MPMCCpuCacheQueue<Object>();
+        for (int i = 0; i < getThread; i++)
         {
             new Thread(new Runnable() {
                 
@@ -136,8 +135,8 @@ public class QueueSpeedTest
     public void test2() throws InterruptedException
     {
         final int count = 1000000;
-        final MPMCQueue2<Object> queue = new MPMCQueue2<Object>();
-        for (int i = 0; i < 3; i++)
+        final MPMCQueue<Object> queue = new MPMCQueue<Object>();
+        for (int i = 0; i < getThread; i++)
         {
             new Thread(new Runnable() {
                 
