@@ -1,7 +1,7 @@
 package com.jfireframework.baseutil.disruptor.ringarray;
 
-import com.jfireframework.baseutil.disruptor.Sequence;
 import com.jfireframework.baseutil.disruptor.EntryAction;
+import com.jfireframework.baseutil.disruptor.Sequence;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
 
 public class SimpleMultRingArray extends AbstractMultRingArray

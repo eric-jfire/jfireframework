@@ -7,13 +7,13 @@ import java.lang.reflect.Array;
  * 不会自动增长，初始时便要设定容量。主要用于数据的简单存放。
  * 
  * @author 林斌（windfire@zailanghua.com）
- *         
+ * 
  */
 public class LightMap<K, V>
 {
     private int           count = 0;
     private Entry<K, V>[] entries;
-                          
+    
     /**
      * 指定简易map的初始容量
      * 

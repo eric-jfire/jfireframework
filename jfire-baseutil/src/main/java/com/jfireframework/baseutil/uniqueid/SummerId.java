@@ -1,6 +1,7 @@
 package com.jfireframework.baseutil.uniqueid;
 
 import java.util.concurrent.atomic.AtomicInteger;
+
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.UnSupportException;
 

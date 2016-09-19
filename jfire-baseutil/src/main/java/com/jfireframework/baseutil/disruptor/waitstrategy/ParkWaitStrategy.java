@@ -1,6 +1,7 @@
 package com.jfireframework.baseutil.disruptor.waitstrategy;
 
 import java.util.concurrent.locks.LockSupport;
+
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 

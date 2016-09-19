@@ -2,10 +2,11 @@ package com.jfireframework.baseutil;
 
 import java.util.HashSet;
 import java.util.Set;
+
 import org.junit.Test;
+
 import com.jfireframework.baseutil.uniqueid.AutumnId;
 import com.jfireframework.baseutil.uniqueid.Uid;
-import com.jfireframework.baseutil.uniqueid.WinterId;
 
 public class IdTest
 {

@@ -1,6 +1,7 @@
 package com.jfireframework.baseutil.concurrent;
 
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+
 import sun.misc.Unsafe;
 
 @SuppressWarnings("rawtypes")
@@ -53,8 +54,9 @@ public class CpuCachePadingRefence<T>
     
     public T setAndReturnOrigin(T newValue)
     {
-        T t =refence;
-        if(unsafe.compareAndSwapObject(this, refenceOffset, t, newValue)){
+        T t = refence;
+        if (unsafe.compareAndSwapObject(this, refenceOffset, t, newValue))
+        {
             return t;
         }
         for (;; t = refence)

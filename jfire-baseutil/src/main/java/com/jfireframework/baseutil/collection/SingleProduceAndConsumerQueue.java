@@ -1,6 +1,7 @@
 package com.jfireframework.baseutil.collection;
 
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+
 import sun.misc.Unsafe;
 
 /**

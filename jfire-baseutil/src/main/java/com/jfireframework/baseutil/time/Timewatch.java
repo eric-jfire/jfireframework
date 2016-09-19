@@ -4,13 +4,13 @@ package com.jfireframework.baseutil.time;
  * 时间观察类
  * 
  * @author 林斌（windfire@zailanghua.com）
- *         
+ * 
  */
 public class Timewatch
 {
     private long t0 = System.currentTimeMillis();
     private long t1 = System.currentTimeMillis();
-                    
+    
     /**
      * 开始计时
      */

@@ -7,14 +7,14 @@ import java.util.Collection;
  * 不存放相同对象（内存地址相同，同一对象的相同内容的不同实例被认为是不同对象）
  * 
  * @author linbin
- *         
+ * 
  */
 public class ObjectCollect
 {
     private Object[] array;
     private int      size;
     private int      count = 0;
-                           
+    
     /**
      * 以size大小初始化收集器
      * 

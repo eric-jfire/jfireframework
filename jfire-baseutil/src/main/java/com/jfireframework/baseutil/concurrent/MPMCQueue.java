@@ -57,12 +57,6 @@ public class MPMCQueue<E>
         }
     }
     
-    private void si()
-    {
-        Waiter head = headWaiter;
-        
-    }
-    
     private void signalWaiter()
     {
         Waiter headNext = fetchNextWaiter();
@@ -153,7 +147,10 @@ public class MPMCQueue<E>
     
     public E poll()
     {
-        startFromHead: for (Node<E> h = head, next = h.next, t = tail; h != t || h != (t = tail); h = head, next = h.next)
+        startFromHead: //
+        for (Node<E> h = head, next = h.next, t = tail; //
+                h != t || h != (t = tail); //
+                h = head, next = h.next)
         {
             if (next == null)
             {

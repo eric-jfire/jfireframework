@@ -1,9 +1,10 @@
 package com.jfireframework.baseutil;
 
-import com.jfireframework.baseutil.concurrent.MPMCQueue;
+import java.util.concurrent.CountDownLatch;
+
 import org.testng.annotations.Test;
 
-import java.util.concurrent.CountDownLatch;
+import com.jfireframework.baseutil.concurrent.MPMCQueue;
 
 /**
  * Created by linbin on 2016/9/19.

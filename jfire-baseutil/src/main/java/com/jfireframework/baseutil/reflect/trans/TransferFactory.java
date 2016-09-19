@@ -2,6 +2,7 @@ package com.jfireframework.baseutil.reflect.trans;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import com.jfireframework.baseutil.StringUtil;
 
 public class TransferFactory

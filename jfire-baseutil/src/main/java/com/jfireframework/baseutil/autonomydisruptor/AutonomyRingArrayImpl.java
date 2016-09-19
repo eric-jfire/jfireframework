@@ -1,7 +1,7 @@
 package com.jfireframework.baseutil.autonomydisruptor;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.LockSupport;
+
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.disruptor.Entry;
 import com.jfireframework.baseutil.disruptor.EntryAction;
@@ -10,8 +10,8 @@ import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategyStopException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
+
 import sun.misc.Unsafe;
-import sun.util.logging.resources.logging;
 
 public class AutonomyRingArrayImpl implements AutonomyRingArray
 {

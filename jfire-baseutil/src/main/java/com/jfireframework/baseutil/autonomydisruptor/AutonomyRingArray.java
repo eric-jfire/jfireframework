@@ -2,7 +2,6 @@ package com.jfireframework.baseutil.autonomydisruptor;
 
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
-import sun.util.logging.resources.logging;
 
 public interface AutonomyRingArray extends RingArray
 {

@@ -3,6 +3,7 @@ package com.jfireframework.baseutil.disruptor.waitstrategy;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 
 public class NewBlockWaitStrategy extends AbstractWaitStrategy

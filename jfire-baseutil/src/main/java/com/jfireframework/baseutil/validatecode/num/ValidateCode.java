@@ -1,20 +1,19 @@
 package com.jfireframework.baseutil.validatecode.num;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Random;
+
 import javax.imageio.ImageIO;
 
 /**
  * 验证码生成器
  * 
  * @author dsna
- *         
+ * 
  */
 public class ValidateCode
 {
@@ -31,7 +30,7 @@ public class ValidateCode
     // 验证码图片Buffer
     private BufferedImage buffImg      = null;
     private char[]        codeSequence = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-                                       
+    
     public ValidateCode()
     {
         this.createCode();

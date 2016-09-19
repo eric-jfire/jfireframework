@@ -7,12 +7,11 @@ import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategyStopException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.sun.org.apache.bcel.internal.generic.NEW;
 
 public abstract class AutonomyExclusiveEntryAction implements AutonomyEntryAction
 {
     // 当前准备处理的序号
-    private CpuCachePadingLong cursor = new CpuCachePadingLong(0);
+    private CpuCachePadingLong        cursor  = new CpuCachePadingLong(0);
     protected static final Logger     logger  = ConsoleLogFactory.getLogger();
     protected final AutonomyRingArray ringArray;
     protected final int               MAX_RETRY_SUM;
@@ -60,7 +59,7 @@ public abstract class AutonomyExclusiveEntryAction implements AutonomyEntryActio
                 int result = entry.takeReturnMore();
                 if (result == Entry.ignore)
                 {
-                    cursor.set(t_cursor+1);
+                    cursor.set(t_cursor + 1);
                     continue;
                 }
                 else if (result == Entry.takeFail)
@@ -70,7 +69,7 @@ public abstract class AutonomyExclusiveEntryAction implements AutonomyEntryActio
                     {
                         if (ringArray.removeAction(this))
                         {
-                            cursor.set(t_cursor+1);
+                            cursor.set(t_cursor + 1);
                             continue;
                         }
                         else
@@ -78,13 +77,13 @@ public abstract class AutonomyExclusiveEntryAction implements AutonomyEntryActio
                             retryCount = 0;
                         }
                     }
-                    cursor.set(t_cursor+1);
+                    cursor.set(t_cursor + 1);
                     continue;
                 }
                 retryCount = 0;
                 idleCount.decreaseAndGet();
                 Object data = entry.getData();
-                cursor.set(t_cursor+1);
+                cursor.set(t_cursor + 1);
                 doJob(data);
                 idleCount.increaseAndGet();
             }

@@ -5,6 +5,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 
 public class CopyUtilImpl<T, D> implements CopyUtil<T, D>
@@ -23,9 +24,11 @@ public class CopyUtilImpl<T, D> implements CopyUtil<T, D>
         List<CopyField> copyFields = new ArrayList<CopyField>();
         for (Field desField : desFields)
         {
-            if (Modifier.isStatic(desField.getModifiers()) //
-                    || Modifier.isFinal(desField.getModifiers()) //
-                    || desField.isAnnotationPresent(CopyIgnore.class))
+            if (
+                Modifier.isStatic(desField.getModifiers()) //
+                        || Modifier.isFinal(desField.getModifiers()) //
+                        || desField.isAnnotationPresent(CopyIgnore.class)
+            )
             {
                 continue;
             }

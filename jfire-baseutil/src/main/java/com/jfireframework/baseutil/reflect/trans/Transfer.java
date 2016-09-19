@@ -1,6 +1,7 @@
 package com.jfireframework.baseutil.reflect.trans;
 
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+
 import sun.misc.Unsafe;
 
 public interface Transfer

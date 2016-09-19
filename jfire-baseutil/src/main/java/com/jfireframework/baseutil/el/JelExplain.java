@@ -190,19 +190,21 @@ public class JelExplain
     {
         while (start < str.length())
         {
-            if (str.charAt(start) == '>' //
-                    || str.charAt(start) == '<' //
-                    || str.charAt(start) == '!' //
-                    || str.charAt(start) == '=' //
-                    || str.charAt(start) == ' ' //
-                    || str.charAt(start) == ',' //
-                    || str.charAt(start) == '#' //
-                    || str.charAt(start) == '+' //
-                    || str.charAt(start) == '-' //
-                    || str.charAt(start) == '(' //
-                    || str.charAt(start) == ')' //
-                    || str.charAt(start) == ']' //
-                    || str.charAt(start) == '[')
+            if (
+                str.charAt(start) == '>' //
+                        || str.charAt(start) == '<' //
+                        || str.charAt(start) == '!' //
+                        || str.charAt(start) == '=' //
+                        || str.charAt(start) == ' ' //
+                        || str.charAt(start) == ',' //
+                        || str.charAt(start) == '#' //
+                        || str.charAt(start) == '+' //
+                        || str.charAt(start) == '-' //
+                        || str.charAt(start) == '(' //
+                        || str.charAt(start) == ')' //
+                        || str.charAt(start) == ']' //
+                        || str.charAt(start) == '['
+            )
             {
                 break;
             }

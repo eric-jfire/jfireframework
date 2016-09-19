@@ -1,6 +1,7 @@
 package com.jfireframework.baseutil.simplelog;
 
 import java.util.Arrays;
+
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.code.CodeLocation;
 
@@ -10,7 +11,7 @@ public class LoggerImpl implements Logger
     private String            name;
     private static final long startedTime = System.currentTimeMillis();
     private boolean           location;
-                              
+    
     public LoggerImpl(String name, boolean location)
     {
         this.name = name;

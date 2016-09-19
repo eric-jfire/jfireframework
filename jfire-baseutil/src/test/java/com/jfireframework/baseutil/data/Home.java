@@ -6,7 +6,7 @@ public class Home
     private int      length;
     private Person[] liveins = new Person[2];
     private int      width;
-                     
+    
     public Person getHost()
     {
         return host;

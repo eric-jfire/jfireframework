@@ -1,6 +1,7 @@
 package com.jfireframework.baseutil.concurrent;
 
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+
 import sun.misc.Unsafe;
 
 public class MPMCCpuCacheQueue<E>

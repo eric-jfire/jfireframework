@@ -6,7 +6,7 @@ public class Person
     private int    age;
     private float  weight;
     private Home   home;
-                   
+    
     public Home getHome()
     {
         return home;

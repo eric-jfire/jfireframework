@@ -1,9 +1,10 @@
 package com.jfireframework.baseutil.autonomydisruptor.waitstrategy;
 
-import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategyStopException;
+
+import java.util.concurrent.locks.LockSupport;
 
 public class ArrayParkWaitStrategy extends AbstractAutonomyWaitStrategy
 {

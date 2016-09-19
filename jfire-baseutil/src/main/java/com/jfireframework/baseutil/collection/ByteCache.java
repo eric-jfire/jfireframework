@@ -13,7 +13,7 @@ import java.nio.charset.Charset;
  * 该类不是线程安全的，多线程环境下，容量自动增长会出现不可预知的问题
  * 
  * @author 林斌（windfire@zailanghua.com）
- *         
+ * 
  */
 public class ByteCache
 {
@@ -21,7 +21,7 @@ public class ByteCache
     private int    size;
     private int    writeIndex = 0;
     private int    readIndex  = 0;
-                              
+    
     /**
      * 使用一个byte数组初始化类，类的初始容量为数组容量
      * 

@@ -4,7 +4,7 @@ package com.jfireframework.baseutil.encrypt;
  * 加解密接口，注意，该接口的实现，都是非线程安全的，必须在每一个线程中都新建一个对象才可以使用
  * 
  * @author linbin
- *         
+ * 
  */
 public interface EnDecrpt
 {

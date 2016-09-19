@@ -1,16 +1,18 @@
 package com.jfireframework.baseutil.autonomydisruptor;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.junit.Test;
+
 import com.jfireframework.baseutil.concurrent.MPMCCpuCacheQueue;
 import com.jfireframework.baseutil.concurrent.MPMCQueue;
 import com.jfireframework.baseutil.time.Timewatch;
-import org.junit.Test;
-
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class QueueSpeedTest
 {
     private int sendThread = 10;
-    private  int getThread =10;
+    private int getThread  = 10;
+    
     @Test
     public void test3() throws InterruptedException
     {
@@ -18,48 +20,52 @@ public class QueueSpeedTest
         final ConcurrentLinkedQueue<Object> queue = new ConcurrentLinkedQueue<Object>();
         for (int i = 0; i < getThread; i++)
         {
-            new Thread(new Runnable() {
-                
-                @Override
-                public void run()
-                {
-                    int sum = 0;
-                    Timewatch timewatch = new Timewatch();
-                    while (true)
-                    {
-                        // if (queue.poll() != null)
-                        // {
-                        // sum += 1;
-                        // if (sum == count)
-                        // {
-                        // break;
-                        // }
-                        // }
-                        queue.poll();
-                        // sum += 1;
-                        // if (sum == count)
-                        // {
-                        // break;
-                        // }
+            new Thread(
+                    new Runnable() {
+                        
+                        @Override
+                        public void run()
+                        {
+                            int sum = 0;
+                            Timewatch timewatch = new Timewatch();
+                            while (true)
+                            {
+                                // if (queue.poll() != null)
+                                // {
+                                // sum += 1;
+                                // if (sum == count)
+                                // {
+                                // break;
+                                // }
+                                // }
+                                queue.poll();
+                                // sum += 1;
+                                // if (sum == count)
+                                // {
+                                // break;
+                                // }
+                            }
+                        }
                     }
-                }
-            }).start();
+            ).start();
         }
         Timewatch timewatch = new Timewatch();
         Thread[] threads = new Thread[sendThread];
         for (int index = 0; index < threads.length; index++)
         {
-            threads[index] = new Thread(new Runnable() {
-                
-                @Override
-                public void run()
-                {
-                    for (int i = 0; i < count; i++)
-                    {
-                        queue.offer("");
+            threads[index] = new Thread(
+                    new Runnable() {
+                        
+                        @Override
+                        public void run()
+                        {
+                            for (int i = 0; i < count; i++)
+                            {
+                                queue.offer("");
+                            }
+                        }
                     }
-                }
-            });
+            );
             threads[index].start();
             
         }
@@ -78,48 +84,52 @@ public class QueueSpeedTest
         final MPMCCpuCacheQueue<Object> queue = new MPMCCpuCacheQueue<Object>();
         for (int i = 0; i < getThread; i++)
         {
-            new Thread(new Runnable() {
-                
-                @Override
-                public void run()
-                {
-                    int sum = 0;
-                    Timewatch timewatch = new Timewatch();
-                    while (true)
-                    {
-                        // if (queue.poll() != null)
-                        // {
-                        // sum += 1;
-                        // if (sum == count)
-                        // {
-                        // break;
-                        // }
-                        // }
-                        queue.poll();
-                        // sum += 1;
-                        // if (sum == count)
-                        // {
-                        // break;
-                        // }
+            new Thread(
+                    new Runnable() {
+                        
+                        @Override
+                        public void run()
+                        {
+                            int sum = 0;
+                            Timewatch timewatch = new Timewatch();
+                            while (true)
+                            {
+                                // if (queue.poll() != null)
+                                // {
+                                // sum += 1;
+                                // if (sum == count)
+                                // {
+                                // break;
+                                // }
+                                // }
+                                queue.poll();
+                                // sum += 1;
+                                // if (sum == count)
+                                // {
+                                // break;
+                                // }
+                            }
+                        }
                     }
-                }
-            }).start();
+            ).start();
         }
         Timewatch timewatch = new Timewatch();
         Thread[] threads = new Thread[sendThread];
         for (int index = 0; index < threads.length; index++)
         {
-            threads[index] = new Thread(new Runnable() {
-                
-                @Override
-                public void run()
-                {
-                    for (int i = 0; i < count; i++)
-                    {
-                        queue.offer("");
+            threads[index] = new Thread(
+                    new Runnable() {
+                        
+                        @Override
+                        public void run()
+                        {
+                            for (int i = 0; i < count; i++)
+                            {
+                                queue.offer("");
+                            }
+                        }
                     }
-                }
-            });
+            );
             threads[index].start();
             
         }
@@ -138,48 +148,52 @@ public class QueueSpeedTest
         final MPMCQueue<Object> queue = new MPMCQueue<Object>();
         for (int i = 0; i < getThread; i++)
         {
-            new Thread(new Runnable() {
-                
-                @Override
-                public void run()
-                {
-                    int sum = 0;
-                    Timewatch timewatch = new Timewatch();
-                    while (true)
-                    {
-                        // if (queue.poll() != null)
-                        // {
-                        // sum += 1;
-                        // if (sum == count)
-                        // {
-                        // break;
-                        // }
-                        // }
-                        queue.poll();
-                        // sum += 1;
-                        // if (sum == count)
-                        // {
-                        // break;
-                        // }
+            new Thread(
+                    new Runnable() {
+                        
+                        @Override
+                        public void run()
+                        {
+                            int sum = 0;
+                            Timewatch timewatch = new Timewatch();
+                            while (true)
+                            {
+                                // if (queue.poll() != null)
+                                // {
+                                // sum += 1;
+                                // if (sum == count)
+                                // {
+                                // break;
+                                // }
+                                // }
+                                queue.poll();
+                                // sum += 1;
+                                // if (sum == count)
+                                // {
+                                // break;
+                                // }
+                            }
+                        }
                     }
-                }
-            }).start();
+            ).start();
         }
         Timewatch timewatch = new Timewatch();
         Thread[] threads = new Thread[sendThread];
         for (int index = 0; index < threads.length; index++)
         {
-            threads[index] = new Thread(new Runnable() {
-                
-                @Override
-                public void run()
-                {
-                    for (int i = 0; i < count; i++)
-                    {
-                        queue.offer("");
+            threads[index] = new Thread(
+                    new Runnable() {
+                        
+                        @Override
+                        public void run()
+                        {
+                            for (int i = 0; i < count; i++)
+                            {
+                                queue.offer("");
+                            }
+                        }
                     }
-                }
-            });
+            );
             threads[index].start();
             
         }
