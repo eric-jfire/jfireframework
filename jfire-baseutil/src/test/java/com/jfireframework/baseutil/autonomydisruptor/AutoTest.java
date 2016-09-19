@@ -28,6 +28,8 @@ public class AutoTest
         disruptor.publish("你好9");
         disruptor.publish("你好10");
         disruptor.publish("你好11");
+        disruptor.publish("你好12");
+        disruptor.publish("你好13");
         Thread.sleep(1000000);
     }
 }

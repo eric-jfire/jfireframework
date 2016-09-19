@@ -1,6 +1,7 @@
 package com.jfireframework.baseutil.autonomydisruptor;
 
 import com.jfireframework.baseutil.autonomydisruptor.waitstrategy.ParkWaitStrategy;
+import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.disruptor.Entry;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 
@@ -11,11 +12,9 @@ public class AutonomyDisruptor
     public AutonomyDisruptor(int size, EntryActionFactory factory)
     {
         ringArray = new AutonomyRingArrayImpl(size, new ParkWaitStrategy(), factory);
-        int coresize = Runtime.getRuntime().availableProcessors();
-        for (int i = 0; i < coresize; i++)
-        {
-            ringArray.addAction();
-        }
+        ringArray.addAction();
+        ringArray.addAction();
+        ringArray.addAction();
     }
     
     public AutonomyDisruptor(AutonomyRingArray ringArray)
@@ -58,4 +57,8 @@ public class AutonomyDisruptor
         return ringArray;
     }
     
+    public CpuCachePadingInt idleCount()
+    {
+        return ringArray.idleCount();
+    }
 }

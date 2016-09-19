@@ -17,7 +17,7 @@ public class PrintAction extends AutonomyExclusiveEntryAction
     {
         String mString = (String) data;
         logger.debug("{} 打印 {}", Thread.currentThread().getName(), mString);
-        logger.debug("{} 睡眠", Thread.currentThread().getName());
+//        logger.debug("{} 睡眠", Thread.currentThread().getName());
         try
         {
             Thread.sleep(100000000);

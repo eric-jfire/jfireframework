@@ -1,6 +1,7 @@
 package com.jfireframework.baseutil.autonomydisruptor;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.disruptor.Entry;
 import com.jfireframework.baseutil.disruptor.EntryAction;
@@ -10,25 +11,28 @@ import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategyStopExcept
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import sun.misc.Unsafe;
+import sun.util.logging.resources.logging;
 
 public class AutonomyRingArrayImpl implements AutonomyRingArray
 {
-    protected WaitStrategy           waitStrategy;
-    protected volatile EntryAction[] actions         = new EntryAction[0];
-    protected final Entry[]          entries;
+    protected WaitStrategy                   waitStrategy;
+    protected volatile AutonomyEntryAction[] actions         = new AutonomyEntryAction[0];
+    protected volatile int                   index           = 0;
+    protected final Entry[]                  entries;
     // size是2的几次方幂，右移该数字相当于除操作
-    protected final int              flagShift;
-    protected final int              size;
-    protected final int              sizeMask;
-    protected final Sequence         cachedWrapPoint = new Sequence(Sequence.INIT_VALUE);
+    protected final int                      flagShift;
+    protected final int                      size;
+    protected final int                      sizeMask;
+    protected final Sequence                 cachedWrapPoint = new Sequence(Sequence.INIT_VALUE);
     // 代表下一个可以增加的位置
-    protected final Sequence         cursor          = new Sequence(Sequence.INIT_VALUE);
-    protected static final Unsafe    unsafe          = ReflectUtil.getUnsafe();
-    protected static final int       shift;
+    protected final Sequence                 cursor          = new Sequence(Sequence.INIT_VALUE);
+    protected static final Unsafe            unsafe          = ReflectUtil.getUnsafe();
+    protected static final int               shift;
     // protected static final int BUFFER_PAD;
-    protected static final int       REF_ARRAY_BASE;
-    protected long                   p1, p2, p3, p4, p5, p6, p7;
-    protected AtomicInteger          threadNo        = new AtomicInteger(0);
+    protected static final int               REF_ARRAY_BASE;
+    protected long                           p1, p2, p3, p4, p5, p6, p7;
+    protected final AtomicInteger            threadNo        = new AtomicInteger(0);
+    protected final CpuCachePadingInt        idleCount       = new CpuCachePadingInt(0);
     static
     {
         REF_ARRAY_BASE = unsafe.arrayBaseOffset(Entry[].class);
@@ -112,8 +116,6 @@ public class AutonomyRingArrayImpl implements AutonomyRingArray
         this.entryActionFactory = factory;
     }
     
-    private static final int RETRY_SUM = 6;
-    
     @Override
     public long next()
     {
@@ -122,53 +124,90 @@ public class AutonomyRingArrayImpl implements AutonomyRingArray
         if (next >= wrapPoint)
         {
             wrapPoint = getMax() + size;
-            int retry_count = 0;
             while (next >= wrapPoint)
             {
                 wrapPoint = getMax() + size;
-                retry_count += 1;
-                if (retry_count == RETRY_SUM)
-                {
-                    retry_count = 0;
-                    addAction();
-                    wrapPoint = getMax() + size;
-                }
+                checkForAddAction();
             }
             cachedWrapPoint.set(wrapPoint);
+            checkForAddAction();
             return next;
         }
         else
         {
+            checkForAddAction();
             return next;
         }
     }
     
-    @Override
-    public synchronized void addAction()
+    private void checkForAddAction()
     {
-        EntryAction[] t_actions = new EntryAction[actions.length + 1];
-        System.arraycopy(actions, 0, t_actions, 0, actions.length);
-        AutonomyEntryAction entryAction = entryActionFactory.newEntryAction(this, getMax());
-        new Thread(entryAction, "autonomyDisruptor-action-thread-" + threadNo.incrementAndGet()).start();
-        t_actions[t_actions.length - 1] = entryAction;
-        actions = t_actions;
+        int retry = 0;
+        long t0 = System.nanoTime();
+        while (retry < 10000)
+        {
+            if (idleCount.value() == 0)
+            {
+                retry += 1;
+                continue;
+            }
+            else
+            {
+                return;
+            }
+        }
+        long result = System.nanoTime() - t0;
+        System.out.println("耗时：" + result);
+        addAction();
     }
     
     @Override
-    public synchronized void removeAction(AutonomyEntryAction action)
+    public synchronized boolean addAction()
     {
-        EntryAction[] t_actions = new EntryAction[actions.length - 1];
-        int index = 0;
-        for (EntryAction each : actions)
+        if (index < actions.length)
         {
-            if (each != action)
+            AutonomyEntryAction entryAction = entryActionFactory.newEntryAction(this, getMax());
+            idleCount.increaseAndGet();
+            new Thread(entryAction, "autonomyDisruptor-action-thread-" + threadNo.incrementAndGet()).start();
+            actions[index] = entryAction;
+            index += 1;
+            return true;
+        }
+        else
+        {
+            AutonomyEntryAction[] t_actions = new AutonomyEntryAction[actions.length + 1];
+            System.arraycopy(actions, 0, t_actions, 0, actions.length);
+            AutonomyEntryAction entryAction = entryActionFactory.newEntryAction(this, getMax());
+            idleCount.increaseAndGet();
+            new Thread(entryAction, "autonomyDisruptor-action-thread-" + threadNo.incrementAndGet()).start();
+            t_actions[t_actions.length - 1] = entryAction;
+            actions = t_actions;
+            index = actions.length;
+            System.out.println("增加");
+            return true;
+        }
+    }
+    
+    @Override
+    public boolean removeAction(AutonomyEntryAction action)
+    {
+        if (idleCount.decreaseAndGet() > 0)
+        {
+            synchronized (this)
             {
-                t_actions[index] = each;
-                index += 1;
+                int lastIndex = index - 1;
+                index = lastIndex;
+                actions[lastIndex].stop();
+                actions[lastIndex] = null;
+                System.out.println("删除");
+                return true;
             }
         }
-        actions = t_actions;
-        Thread.currentThread().interrupt();
+        else
+        {
+            idleCount.increaseAndGet();
+            return false;
+        }
     }
     
     /**
@@ -177,14 +216,19 @@ public class AutonomyRingArrayImpl implements AutonomyRingArray
      * 
      * @return
      */
-    private long getMax()
+    public long getMax()
     {
         long max = 0;
-        for (EntryAction each : actions)
+        int lastIndex = index;
+        for (int i = 0; i < lastIndex; i++)
         {
-            if (max < each.cursor())
+            EntryAction action = actions[i];
+            if (action != null)
             {
-                max = each.cursor();
+                if (max < action.cursor())
+                {
+                    max = action.cursor();
+                }
             }
         }
         return max;
@@ -283,6 +327,12 @@ public class AutonomyRingArrayImpl implements AutonomyRingArray
         {
             return false;
         }
+    }
+    
+    @Override
+    public CpuCachePadingInt idleCount()
+    {
+        return idleCount;
     }
     
 }

@@ -1,23 +1,31 @@
 package com.jfireframework.baseutil.autonomydisruptor;
 
+import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
+import com.jfireframework.baseutil.concurrent.CpuCachePadingLong;
 import com.jfireframework.baseutil.disruptor.Entry;
 import com.jfireframework.baseutil.disruptor.ringarray.RingArray;
 import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategyStopException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
+import com.sun.org.apache.bcel.internal.generic.NEW;
 
 public abstract class AutonomyExclusiveEntryAction implements AutonomyEntryAction
 {
     // 当前准备处理的序号
-    private volatile long             cursor = 0;
-    protected static final Logger     logger = ConsoleLogFactory.getLogger();
+    private CpuCachePadingLong cursor = new CpuCachePadingLong(0);
+    protected static final Logger     logger  = ConsoleLogFactory.getLogger();
     protected final AutonomyRingArray ringArray;
     protected final int               MAX_RETRY_SUM;
+    protected final CpuCachePadingInt idleCount;
+    protected static final int        running = 1;
+    protected static final int        exit    = 0;
+    protected volatile int            flag    = running;
     
     public AutonomyExclusiveEntryAction(AutonomyRingArray ringArray, long cursor, int maxRetrySum)
     {
+        idleCount = ringArray.idleCount();
         this.ringArray = ringArray;
-        this.cursor = cursor;
+        this.cursor.set(cursor);
         MAX_RETRY_SUM = maxRetrySum;
     }
     
@@ -25,45 +33,67 @@ public abstract class AutonomyExclusiveEntryAction implements AutonomyEntryActio
     public void run()
     {
         int retryCount = 0;
-        while (true)
+        try
         {
-            if (ringArray.isAvailable(cursor) == false)
+            while (true)
             {
-                try
+                if (flag == exit)
                 {
-                    logger.debug("等待序号:{}", cursor);
-                    ringArray.waitFor(cursor);
+                    System.out.println("退出");
+                    return;
                 }
-                catch (WaitStrategyStopException e)
+                long t_cursor = cursor.value();
+                if (ringArray.isAvailable(t_cursor) == false)
                 {
-                    logger.error("停止");
-                    break;
+                    try
+                    {
+                        logger.debug("等待序号:{}", cursor);
+                        ringArray.waitFor(t_cursor);
+                    }
+                    catch (WaitStrategyStopException e)
+                    {
+                        logger.error("停止");
+                        break;
+                    }
                 }
-            }
-            Entry entry = ringArray.entryAt(cursor);
-            if (entry.take() == false)
-            {
-                cursor += 1;
-                retryCount += 1;
-                if (retryCount == MAX_RETRY_SUM)
+                Entry entry = ringArray.entryAt(t_cursor);
+                int result = entry.takeReturnMore();
+                if (result == Entry.ignore)
                 {
-                    ringArray.removeAction(this);
-                    break;
+                    cursor.set(t_cursor+1);
+                    continue;
                 }
-                continue;
-            }
-            try
-            {
+                else if (result == Entry.takeFail)
+                {
+                    retryCount += 1;
+                    if (retryCount == MAX_RETRY_SUM)
+                    {
+                        if (ringArray.removeAction(this))
+                        {
+                            cursor.set(t_cursor+1);
+                            continue;
+                        }
+                        else
+                        {
+                            retryCount = 0;
+                        }
+                    }
+                    cursor.set(t_cursor+1);
+                    continue;
+                }
+                retryCount = 0;
+                idleCount.decreaseAndGet();
                 Object data = entry.getData();
-                cursor += 1;
+                cursor.set(t_cursor+1);
                 doJob(data);
+                idleCount.increaseAndGet();
             }
-            catch (Exception e)
-            {
-                logger.error("出现异常", e);
-                ringArray.stop();
-                break;
-            }
+        }
+        catch (Exception e)
+        {
+            logger.error("出现异常", e);
+            ringArray.stop();
+            idleCount.increaseAndGet();
         }
     }
     
@@ -78,7 +108,7 @@ public abstract class AutonomyExclusiveEntryAction implements AutonomyEntryActio
     @Override
     public long cursor()
     {
-        return cursor;
+        return cursor.value();
     }
     
     @Override
@@ -87,4 +117,8 @@ public abstract class AutonomyExclusiveEntryAction implements AutonomyEntryActio
         ringArray.publish(data);
     }
     
+    public void stop()
+    {
+        flag = exit;
+    }
 }

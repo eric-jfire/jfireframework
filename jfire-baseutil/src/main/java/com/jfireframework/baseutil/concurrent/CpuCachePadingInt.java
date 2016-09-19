@@ -43,6 +43,32 @@ public class CpuCachePadingInt
         return unsafe.compareAndSwapInt(this, offset, expectedValue, newValue);
     }
     
+    public int increaseAndGet()
+    {
+        do
+        {
+            int current = value;
+            int newValue = current + 1;
+            if (unsafe.compareAndSwapInt(this, offset, current, newValue))
+            {
+                return newValue;
+            }
+        } while (true);
+    }
+    
+    public int decreaseAndGet()
+    {
+        do
+        {
+            int current = value;
+            int newValue = current - 1;
+            if (unsafe.compareAndSwapInt(this, offset, current, newValue))
+            {
+                return newValue;
+            }
+        } while (true);
+    }
+    
     public int getAndSet(int newValue)
     {
         while (true)

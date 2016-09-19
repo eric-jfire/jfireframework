@@ -1,6 +1,5 @@
 package com.jfireframework.baseutil.disruptor.ringarray;
 
-import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.disruptor.Entry;
 import com.jfireframework.baseutil.disruptor.EntryAction;
 import com.jfireframework.baseutil.disruptor.Sequence;
@@ -80,7 +79,6 @@ public abstract class AbstractMultRingArray implements RingArray
             wrapPoint = getMin() + size;
             while (next >= wrapPoint)
             {
-                LockSupport.parkNanos(1);
                 wrapPoint = getMin() + size;
             }
             cachedWrapPoint.set(wrapPoint);
