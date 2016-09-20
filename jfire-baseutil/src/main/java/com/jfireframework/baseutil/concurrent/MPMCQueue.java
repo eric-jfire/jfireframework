@@ -1,9 +1,8 @@
 package com.jfireframework.baseutil.concurrent;
 
+import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import sun.misc.Unsafe;
-
-import java.util.concurrent.locks.LockSupport;
 
 public class MPMCQueue<E>
 {
@@ -16,19 +15,26 @@ public class MPMCQueue<E>
     private volatile Waiter     tailWaiter;
     private static final long   tailWaiterOffset = ReflectUtil.getFieldOffset("tailWaiter", MPMCQueue.class);
     
-    class Waiter
+    static class Waiter
     {
-        private final Thread     thread;
+        private final Thread      thread;
         // 通过HB关系来维持该属性的可见性
-        private volatile Waiter  next;
-        private volatile int     status;
-        private static final int WAITING  = 1;
-        private static final int CANCELED = 2;
+        private volatile Waiter   next;
+        private volatile Waiter   pre;
+        private volatile int      status;
+        private static final int  WAITING   = 1;
+        private static final int  CANCELED  = 2;
+        private static final long preOffset = ReflectUtil.getFieldOffset("pre", Waiter.class);
         
         public Waiter(Thread thread)
         {
             this.thread = thread;
             status = WAITING;
+        }
+        
+        public void setPre(Waiter pre)
+        {
+            unsafe.putObject(this, preOffset, pre);
         }
     }
     
@@ -42,13 +48,16 @@ public class MPMCQueue<E>
     {
         Waiter newTail = new Waiter(Thread.currentThread());
         Waiter oldTail = tailWaiter;
+        newTail.setPre(oldTail);
         if (unsafe.compareAndSwapObject(this, tailWaiterOffset, oldTail, newTail))
         {
             oldTail.next = newTail;
             return newTail;
         }
-        for (oldTail = tailWaiter;; oldTail = tailWaiter)
+        for (;;)
         {
+            oldTail = tailWaiter;
+            newTail.setPre(oldTail);
             if (unsafe.compareAndSwapObject(this, tailWaiterOffset, oldTail, newTail))
             {
                 oldTail.next = newTail;
@@ -213,6 +222,11 @@ public class MPMCQueue<E>
                     if (result == null)
                     {
                         LockSupport.park();
+                        if (Thread.currentThread().isInterrupted())
+                        {
+                            self.status = Waiter.CANCELED;
+                            return null;
+                        }
                     }
                     else
                     {
