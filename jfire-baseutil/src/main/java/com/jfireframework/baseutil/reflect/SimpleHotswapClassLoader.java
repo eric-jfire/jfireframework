@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.ConcurrentHashMap;
-
 import com.jfireframework.baseutil.concurrent.ParalLock;
 import com.jfireframework.baseutil.exception.JustThrowException;
 
@@ -40,6 +39,7 @@ public class SimpleHotswapClassLoader extends ClassLoader
         this.excludePackages = excludePackages;
     }
     
+    @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException
     {
         if (classMap.containsKey(name))
@@ -103,6 +103,7 @@ public class SimpleHotswapClassLoader extends ClassLoader
         }
     }
     
+    @Override
     public URL getResource(String name)
     {
         for (String reloadPackageForClass : reloadPackageForClassFiless)

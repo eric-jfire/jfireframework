@@ -12,7 +12,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
 import com.jfireframework.baseutil.exception.UnSupportException;
 
 /**
@@ -47,6 +46,10 @@ public class PackageScan
             Enumeration<URL> urls = loader.getResources(resourceName);
             if (urls.hasMoreElements() == false)
             {
+                while (loader instanceof URLClassLoader == false)
+                {
+                    loader = loader.getParent();
+                }
                 getClassNameByJars(((URLClassLoader) loader).getURLs(), packageName, classNames);
             }
             else
