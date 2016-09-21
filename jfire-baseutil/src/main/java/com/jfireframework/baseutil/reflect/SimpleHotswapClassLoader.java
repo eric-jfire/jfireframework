@@ -2,13 +2,16 @@ package com.jfireframework.baseutil.reflect;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.Enumeration;
 import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.concurrent.ParalLock;
 import com.jfireframework.baseutil.exception.JustThrowException;
 
-public class SimpleHotswapClassLoader extends ClassLoader
+public class SimpleHotswapClassLoader extends URLClassLoader
 {
     private ClassLoader                         parent;
     private ConcurrentHashMap<String, Class<?>> classMap                    = new ConcurrentHashMap<String, Class<?>>();
@@ -20,7 +23,8 @@ public class SimpleHotswapClassLoader extends ClassLoader
     
     public SimpleHotswapClassLoader(String reloadPath)
     {
-        parent = Thread.currentThread().getContextClassLoader();
+        super(new URL[0]);
+        parent = this.getClass().getClassLoader();
         reloadPathFile = new File(reloadPath);
     }
     
@@ -101,6 +105,16 @@ public class SimpleHotswapClassLoader extends ClassLoader
             classMap.put(name, c);
             return c;
         }
+    }
+    
+    public URL[] getURLs()
+    {
+        return ((URLClassLoader) parent).getURLs();
+    }
+    
+    public Enumeration<URL> getResources(String name) throws IOException
+    {
+        return parent.getResources(name);
     }
     
     @Override

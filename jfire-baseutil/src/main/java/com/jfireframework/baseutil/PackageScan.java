@@ -46,10 +46,6 @@ public class PackageScan
             Enumeration<URL> urls = loader.getResources(resourceName);
             if (urls.hasMoreElements() == false)
             {
-                while (loader instanceof URLClassLoader == false)
-                {
-                    loader = loader.getParent();
-                }
                 getClassNameByJars(((URLClassLoader) loader).getURLs(), packageName, classNames);
             }
             else
@@ -175,7 +171,7 @@ public class PackageScan
                 }
                 catch (Exception e)
                 {
-                    throw new UnSupportException("url地址：'" + jarPath + "'不正确", e);
+//                    throw new UnSupportException("url地址：'" + jarPath + "'不正确", e);
                 }
             }
         }
