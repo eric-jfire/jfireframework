@@ -1,5 +1,6 @@
 package com.jfireframework.baseutil.concurrent;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import sun.misc.Unsafe;
@@ -218,15 +219,21 @@ public class MPMCQueue<E>
         return null;
     }
     
-    private E fairTake()
+    private E fairTake(long time, TimeUnit unit)
     {
         if (headWaiter == tailWaiter)
         {
-            // System.out.println(Thread.currentThread().getName() + "触发公平");
             E result = poll();
             if (result == null)
             {
-                return enqueueAndWait();
+                if (time == -1)
+                {
+                    return enqueueAndWait();
+                }
+                else
+                {
+                    return enqueueAndWait(time, unit);
+                }
             }
             else
             {
@@ -235,8 +242,98 @@ public class MPMCQueue<E>
         }
         else
         {
-            return enqueueAndWait();
+            if (time == -1)
+            {
+                return enqueueAndWait();
+            }
+            else
+            {
+                return enqueueAndWait(time, unit);
+            }
         }
+    }
+    
+    private E enqueueAndWait(long time, TimeUnit unit)
+    {
+        E result;
+        Waiter self = enqueue();
+        Waiter headNext;
+        long nanos = unit.toNanos(time);
+        long t0 = System.nanoTime();
+        do
+        {
+            // head之后的next是本线程设置的，所以这里直接获取。可以读取到就意味着确实是head节点的后继节点
+            Waiter h = headWaiter;
+            headNext = h.next;
+            if (self == headNext)
+            {
+                result = poll();
+                if (result == null)
+                {
+                    if (nanos < 1000)
+                    {
+                        for (int i = 0; i < 1000; i++)
+                        {
+                            ;
+                        }
+                    }
+                    else
+                    {
+                        LockSupport.parkNanos(nanos);
+                    }
+                    nanos -= System.nanoTime() - t0;
+                    if (nanos < 0)
+                    {
+                        return null;
+                    }
+                    t0 = System.nanoTime();
+                }
+                else
+                {
+                    /**
+                     * 此时不能把h.next设置为null。否则如果其他线程正在执行findNextWaiter方法。
+                     * 由于始终next都是null，就会成为死循环。
+                     */
+                    
+                    unparkNext(h);
+                    return result;
+                }
+            }
+            else
+            {
+                if (nanos < 1000)
+                {
+                    for (int i = 0; i < 1000; i++)
+                    {
+                        ;
+                    }
+                }
+                else
+                {
+                    LockSupport.parkNanos(nanos);
+                }
+                nanos -= System.nanoTime() - t0;
+                if (nanos < 0)
+                {
+                    return null;
+                }
+                t0 = System.nanoTime();
+            }
+            if (Thread.currentThread().isInterrupted())
+            {
+                self.status = Waiter.CANCELED;
+                headNext = headWaiter.next;
+                if (headNext == self)
+                {
+                    unparkNext(h);
+                    return null;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        } while (true);
     }
     
     private E enqueueAndWait()
@@ -288,12 +385,19 @@ public class MPMCQueue<E>
         } while (true);
     }
     
-    private E unfairTake()
+    private E unfairTake(long time, TimeUnit unit)
     {
         E result = poll();
         if (result == null)
         {
-            return enqueueAndWait();
+            if (time == -1)
+            {
+                return enqueueAndWait();
+            }
+            else
+            {
+                return enqueueAndWait(time, unit);
+            }
         }
         else
         {
@@ -310,11 +414,23 @@ public class MPMCQueue<E>
     {
         if (fair)
         {
-            return fairTake();
+            return fairTake(-1, null);
         }
         else
         {
-            return unfairTake();
+            return unfairTake(-1, null);
+        }
+    }
+    
+    public E take(long time, TimeUnit unit)
+    {
+        if (fair)
+        {
+            return fairTake(time, unit);
+        }
+        else
+        {
+            return unfairTake(time, unit);
         }
     }
     
