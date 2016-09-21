@@ -6,28 +6,29 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import com.jfireframework.context.event.EventPoster;
 import com.jfireframework.eventbus.bus.EventBus;
+import com.jfireframework.eventbus.bus.impl.FlexibleQueueEventBusImpl;
 import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.eventthread.AtomicIntergerIdleCount;
+import com.jfireframework.eventbus.eventthread.IdleCount;
 import com.jfireframework.eventbus.handler.EventHandler;
 
 public class EventPosterImpl implements EventPoster
 {
     @Resource
-    private List<EventHandler<?>> handlers = new LinkedList<EventHandler<?>>();
+    private List<EventHandler<?>> handlers           = new LinkedList<EventHandler<?>>();
+    private IdleCount             idleCount          = new AtomicIntergerIdleCount();
+    private int                   coreEventThreadNum = Runtime.getRuntime().availableProcessors();
+    private long                  waitTime           = 60 * 1000;;
     private EventBus              eventBus;
-    private int                   capacity;
     
     @PostConstruct
     public void init()
     {
-        if (capacity <= 0)
+        eventBus = new FlexibleQueueEventBusImpl(idleCount, waitTime, coreEventThreadNum);
+        for (EventHandler<?> handler : handlers)
         {
-            throw new IllegalArgumentException();
-        }
-        eventBus = new EventBus(capacity);
-        for (EventHandler<?> each : handlers)
-        {
-            eventBus.addHandler(each);
+            eventBus.addHandler(handler);
         }
         eventBus.start();
     }
