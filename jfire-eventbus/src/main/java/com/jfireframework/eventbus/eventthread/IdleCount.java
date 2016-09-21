@@ -2,9 +2,9 @@ package com.jfireframework.eventbus.eventthread;
 
 public interface IdleCount
 {
-    public void add();
+    public int add();
     
-    public void reduce();
+    public int reduce();
     
     public int nowIdleCount();
 }

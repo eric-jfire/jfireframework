@@ -2,6 +2,7 @@ package com.jfireframework.eventbus.handler;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.concurrent.MPSCLinkedQueue;
+import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
 
@@ -18,14 +19,14 @@ public class SerialHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
     }
     
     @Override
-    public void handle(ApplicationEvent applicationEvent)
+    public void handle(ApplicationEvent applicationEvent, EventBus eventBus)
     {
         int current = state.get();
         if (current == idle && state.compareAndSet(current, busy))
         {
             for (EventHandler<T> each : handlers)
             {
-                each.handle(applicationEvent);
+                each.handle(applicationEvent, eventBus);
             }
             applicationEvent.signal();
             do
@@ -34,7 +35,7 @@ public class SerialHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
                 {
                     for (EventHandler<T> each : handlers)
                     {
-                        each.handle(applicationEvent);
+                        each.handle(applicationEvent, eventBus);
                     }
                     applicationEvent.signal();
                 }
@@ -69,7 +70,7 @@ public class SerialHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
                     {
                         for (EventHandler<T> each : handlers)
                         {
-                            each.handle(applicationEvent);
+                            each.handle(applicationEvent, eventBus);
                         }
                         applicationEvent.signal();
                     }

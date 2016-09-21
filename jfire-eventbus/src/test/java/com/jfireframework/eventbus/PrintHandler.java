@@ -1,5 +1,6 @@
 package com.jfireframework.eventbus;
 
+import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
 import com.jfireframework.eventbus.handler.EventHandler;
@@ -14,18 +15,9 @@ public class PrintHandler implements EventHandler<Print>
     }
     
     @Override
-    public void handle(ApplicationEvent event)
+    public void handle(ApplicationEvent event, EventBus eventBus)
     {
         System.out.println("打印:" + event.getEventData());
-        try
-        {
-            Thread.sleep(3000);
-        }
-        catch (InterruptedException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
     }
     
     @Override

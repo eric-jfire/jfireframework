@@ -7,15 +7,15 @@ public class AtomicIntergerIdleCount implements IdleCount
     private final AtomicInteger count = new AtomicInteger();
     
     @Override
-    public void add()
+    public int add()
     {
-        count.incrementAndGet();
+        return count.incrementAndGet();
     }
     
     @Override
-    public void reduce()
+    public int reduce()
     {
-        count.decrementAndGet();
+        return count.decrementAndGet();
     }
     
     @Override

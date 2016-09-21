@@ -7,20 +7,20 @@ import java.util.concurrent.ThreadFactory;
 import com.jfireframework.baseutil.concurrent.MPMCQueue;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.eventbus.bus.EventBus;
+import com.jfireframework.eventbus.bus.FlexibleQueueEventBus;
 import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
 import com.jfireframework.eventbus.event.EventType;
 import com.jfireframework.eventbus.eventthread.EventThread;
-import com.jfireframework.eventbus.eventthread.FlexibleEventThreadImpl;
 import com.jfireframework.eventbus.eventthread.IdleCount;
+import com.jfireframework.eventbus.eventthread.impl.FlexibleEventThreadImpl;
 import com.jfireframework.eventbus.handler.EventHandler;
 import com.jfireframework.eventbus.handler.EventHandlerContext;
 import com.jfireframework.eventbus.handler.ParallelHandlerContextImpl;
 import com.jfireframework.eventbus.handler.RowidSerialHandlerContextImpl;
 import com.jfireframework.eventbus.handler.SerialHandlerContextImpl;
 
-public class FlexibleQueueEventBus implements EventBus
+public class FlexibleQueueEventBusImpl implements FlexibleQueueEventBus
 {
     private final MPMCQueue<ApplicationEvent>                       eventQueue = new MPMCQueue<ApplicationEvent>();
     private final IdentityHashMap<Event<?>, EventHandlerContext<?>> contextMap = new IdentityHashMap<Event<?>, EventHandlerContext<?>>();
@@ -40,11 +40,19 @@ public class FlexibleQueueEventBus implements EventBus
     );
     private static final Logger                                     LOGGER     = ConsoleLogFactory.getLogger();
     
-    public FlexibleQueueEventBus(IdleCount idleCount, long waitTime, int coreEventThreadNum)
+    public FlexibleQueueEventBusImpl(IdleCount idleCount, long waitTime, int coreEventThreadNum)
     {
         this.idleCount = idleCount;
         this.waitTime = waitTime;
+        if (coreEventThreadNum < 1)
+        {
+            throw new IllegalArgumentException();
+        }
         this.coreEventThreadNum = coreEventThreadNum;
+        for (int i = 0; i < coreEventThreadNum; i++)
+        {
+            addEventThread();
+        }
     }
     
     @SuppressWarnings("unchecked")
@@ -94,16 +102,13 @@ public class FlexibleQueueEventBus implements EventBus
     public ApplicationEvent post(ApplicationEvent event)
     {
         eventQueue.offerAndSignal(event);
-        if (idleCount.nowIdleCount() == 0)
-        {
-            addEventThread();
-        }
         return event;
     }
     
-    private void addEventThread()
+    @Override
+    public void addEventThread()
     {
-        EventThread eventThread = new FlexibleEventThreadImpl(eventQueue, contextMap, idleCount, coreEventThreadNum, waitTime);
+        EventThread eventThread = new FlexibleEventThreadImpl(this, eventQueue, contextMap, idleCount, coreEventThreadNum, waitTime);
         pool.submit(eventThread);
         LOGGER.debug("增加新的事件线程");
     }

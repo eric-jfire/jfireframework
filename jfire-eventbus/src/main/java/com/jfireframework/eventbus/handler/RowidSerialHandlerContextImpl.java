@@ -2,6 +2,7 @@ package com.jfireframework.eventbus.handler;
 
 import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.concurrent.MPSCQueue;
+import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
 
@@ -18,7 +19,7 @@ public class RowidSerialHandlerContextImpl<T> extends AbstractEventHandlerContex
     private ConcurrentHashMap<Integer, MPSCQueue<ApplicationEvent>> map = new ConcurrentHashMap<Integer, MPSCQueue<ApplicationEvent>>(128);
     
     @Override
-    public void handle(ApplicationEvent applicationEvent)
+    public void handle(ApplicationEvent applicationEvent, EventBus eventBus)
     {
         do
         {
@@ -30,7 +31,7 @@ public class RowidSerialHandlerContextImpl<T> extends AbstractEventHandlerContex
             {
                 while ((applicationEvent = queue.poll()) != null)
                 {
-                    _handle(applicationEvent);
+                    _handle(applicationEvent, eventBus);
                 }
                 map.remove(id);
                 break;
@@ -60,11 +61,11 @@ public class RowidSerialHandlerContextImpl<T> extends AbstractEventHandlerContex
         } while (true);
     }
     
-    private void _handle(ApplicationEvent applicationEvent)
+    private void _handle(ApplicationEvent applicationEvent, EventBus eventBus)
     {
         for (EventHandler<T> each : handlers)
         {
-            each.handle(applicationEvent);
+            each.handle(applicationEvent, eventBus);
         }
         applicationEvent.signal();
     }

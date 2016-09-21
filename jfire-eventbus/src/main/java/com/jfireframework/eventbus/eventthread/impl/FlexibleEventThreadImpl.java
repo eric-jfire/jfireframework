@@ -1,12 +1,15 @@
-package com.jfireframework.eventbus.eventthread;
+package com.jfireframework.eventbus.eventthread.impl;
 
 import java.util.IdentityHashMap;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.concurrent.MPMCQueue;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
+import com.jfireframework.eventbus.bus.FlexibleQueueEventBus;
 import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.eventthread.EventThread;
+import com.jfireframework.eventbus.eventthread.IdleCount;
 import com.jfireframework.eventbus.handler.EventHandlerContext;
 
 /**
@@ -14,6 +17,7 @@ import com.jfireframework.eventbus.handler.EventHandlerContext;
  */
 public class FlexibleEventThreadImpl implements EventThread
 {
+    private final FlexibleQueueEventBus                             eventBus;
     private final MPMCQueue<ApplicationEvent>                       eventQueue;
     private volatile Thread                                         ownerThread;
     private final IdentityHashMap<Event<?>, EventHandlerContext<?>> contextMap;
@@ -23,6 +27,7 @@ public class FlexibleEventThreadImpl implements EventThread
     private static final Logger                                     LOGGER = ConsoleLogFactory.getLogger();
     
     public FlexibleEventThreadImpl(
+            FlexibleQueueEventBus eventBus, //
             MPMCQueue<ApplicationEvent> eventQueue, //
             IdentityHashMap<Event<?>, EventHandlerContext<?>> contextMap, //
             IdleCount idleCount, //
@@ -30,6 +35,7 @@ public class FlexibleEventThreadImpl implements EventThread
             long waitTime
     )
     {
+        this.eventBus = eventBus;
         this.waitTime = waitTime;
         this.eventQueue = eventQueue;
         this.contextMap = contextMap;
@@ -47,22 +53,25 @@ public class FlexibleEventThreadImpl implements EventThread
             ApplicationEvent event = eventQueue.take(waitTime, TimeUnit.MILLISECONDS);
             if (event == null)
             {
-                if (idleCount.nowIdleCount() > coreEventThreadNum)
+                if (idleCount.reduce() > coreEventThreadNum)
                 {
-                    idleCount.reduce();
                     LOGGER.debug("事件线程:{}退出对事件的获取", Thread.currentThread().getName());
                     break;
                 }
                 else
                 {
+                    idleCount.add();
                     continue;
                 }
             }
-            idleCount.reduce();
+            if (idleCount.reduce() == 0)
+            {
+                eventBus.addEventThread();
+            }
             EventHandlerContext<?> context = contextMap.get(event.getEvent());
             if (context != null)
             {
-                context.handle(event);
+                context.handle(event, eventBus);
             }
             idleCount.add();
         }

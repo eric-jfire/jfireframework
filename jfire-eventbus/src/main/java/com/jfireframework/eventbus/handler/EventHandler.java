@@ -1,6 +1,7 @@
 package com.jfireframework.eventbus.handler;
 
 import com.jfireframework.baseutil.order.Order;
+import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
 
@@ -11,7 +12,7 @@ public interface EventHandler<T> extends Order
      * 
      * @param event
      */
-    public void handle(ApplicationEvent event);
+    public void handle(ApplicationEvent event, EventBus eventBus);
     
     public Enum<? extends Event<T>> interest();
     
