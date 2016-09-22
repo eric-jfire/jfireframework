@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import com.jfireframework.baseutil.order.AescComparator;
+import com.jfireframework.eventbus.bus.EventBus;
+import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
 
 public abstract class AbstractEventHandlerContext<T> implements EventHandlerContext<T>
@@ -37,5 +39,23 @@ public abstract class AbstractEventHandlerContext<T> implements EventHandlerCont
         handlers = list.toArray(new EventHandler[list.size()]);
         Arrays.sort(handlers, COMPARATOR);
     }
+    
+    @Override
+    public void handle(ApplicationEvent applicationEvent, EventBus eventBus)
+    {
+        try
+        {
+            _handler(applicationEvent, eventBus);
+        }
+        catch (Exception e)
+        {
+        }
+        finally
+        {
+            applicationEvent.signal();
+        }
+    }
+    
+    protected abstract void _handler(ApplicationEvent applicationEvent, EventBus eventBus);
     
 }

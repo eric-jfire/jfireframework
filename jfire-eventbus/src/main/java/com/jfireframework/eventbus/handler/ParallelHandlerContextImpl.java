@@ -13,7 +13,7 @@ public class ParallelHandlerContextImpl<T> extends AbstractEventHandlerContext<T
     }
     
     @Override
-    public void handle(ApplicationEvent applicationEvent, EventBus eventBus)
+    protected void _handler(ApplicationEvent applicationEvent, EventBus eventBus)
     {
         for (EventHandler<T> each : handlers)
         {

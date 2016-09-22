@@ -19,7 +19,7 @@ public class RowidSerialHandlerContextImpl<T> extends AbstractEventHandlerContex
     private ConcurrentHashMap<Integer, MPSCQueue<ApplicationEvent>> map = new ConcurrentHashMap<Integer, MPSCQueue<ApplicationEvent>>(128);
     
     @Override
-    public void handle(ApplicationEvent applicationEvent, EventBus eventBus)
+    protected void _handler(ApplicationEvent applicationEvent, EventBus eventBus)
     {
         do
         {
