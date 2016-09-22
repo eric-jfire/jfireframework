@@ -11,6 +11,7 @@ public class ApplicationEvent implements RowId
     private volatile boolean               finished = false;
     private Thread                         owner;
     private volatile boolean               await    = false;
+    private Throwable                      e;
     
     public ApplicationEvent(Object eventData, Enum<? extends Event<?>> event, int rowId)
     {
@@ -24,22 +25,26 @@ public class ApplicationEvent implements RowId
      */
     public void await()
     {
+        owner = Thread.currentThread();
+        await = true;
         while (finished == false)
         {
-            owner = Thread.currentThread();
-            await = true;
-            if (finished == false)
-            {
-                LockSupport.park();
-            }
-            else
-            {
-                break;
-            }
+            LockSupport.park();
         }
     }
     
+    public void setThrowable(Throwable e)
+    {
+        this.e = e;
+    }
+    
+    public Throwable getThrowable()
+    {
+        return e;
+    }
+    
     /**
+     * }
      * 完成该事件，唤醒等待该事件的线程
      */
     public void signal()
@@ -53,28 +58,26 @@ public class ApplicationEvent implements RowId
     
     public void await(long mills)
     {
+        owner = Thread.currentThread();
+        await = true;
         long left = TimeUnit.MILLISECONDS.toNanos(mills);
         while (finished == false)
         {
-            owner = Thread.currentThread();
-            await = true;
-            if (finished == false)
-            {
-                long t0 = System.nanoTime();
-                LockSupport.parkNanos(left);
-                long t1 = System.nanoTime();
-                left -= t1 - t0;
-                // 1000纳秒其实非常短，就不要再等待了
-                if (left < 1000)
-                {
-                    break;
-                }
-            }
-            else
+            long t0 = System.nanoTime();
+            LockSupport.parkNanos(left);
+            long t1 = System.nanoTime();
+            left -= t1 - t0;
+            // 1000纳秒其实非常短，就不要再等待了
+            if (left < 1000)
             {
                 break;
             }
         }
+    }
+    
+    public boolean isFinished()
+    {
+        return finished;
     }
     
     public Object getEventData()

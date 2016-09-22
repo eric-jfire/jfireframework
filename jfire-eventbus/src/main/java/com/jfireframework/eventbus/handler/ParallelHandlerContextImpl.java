@@ -13,13 +13,23 @@ public class ParallelHandlerContextImpl<T> extends AbstractEventHandlerContext<T
     }
     
     @Override
-    protected void _handler(ApplicationEvent applicationEvent, EventBus eventBus)
+    public void handle(ApplicationEvent applicationEvent, EventBus eventBus)
     {
-        for (EventHandler<T> each : handlers)
+        try
         {
-            each.handle(applicationEvent, eventBus);
+            for (EventHandler<T> each : handlers)
+            {
+                each.handle(applicationEvent, eventBus);
+            }
         }
-        applicationEvent.signal();
+        catch (Throwable e)
+        {
+            applicationEvent.setThrowable(e);
+        }
+        finally
+        {
+            applicationEvent.signal();
+        }
     }
     
 }

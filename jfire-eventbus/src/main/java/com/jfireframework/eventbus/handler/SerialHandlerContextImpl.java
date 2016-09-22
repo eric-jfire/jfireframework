@@ -1,17 +1,17 @@
 package com.jfireframework.eventbus.handler;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import com.jfireframework.baseutil.concurrent.MPSCLinkedQueue;
+import com.jfireframework.baseutil.concurrent.MPSCQueue;
 import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
 
 public class SerialHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
 {
-    private static final int                        idle      = 0;
-    private static final int                        busy      = 1;
-    private AtomicInteger                           state     = new AtomicInteger(idle);
-    private final MPSCLinkedQueue<ApplicationEvent> taskQueue = new MPSCLinkedQueue<ApplicationEvent>();
+    private static final int                  idle   = 0;
+    private static final int                  busy   = 1;
+    private AtomicInteger                     state  = new AtomicInteger(idle);
+    private final MPSCQueue<ApplicationEvent> events = new MPSCQueue<ApplicationEvent>();
     
     public SerialHandlerContextImpl(Enum<? extends Event<T>> event)
     {
@@ -19,77 +19,42 @@ public class SerialHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
     }
     
     @Override
-    protected void _handler(ApplicationEvent applicationEvent, EventBus eventBus)
+    public void handle(ApplicationEvent applicationEvent, EventBus eventBus)
     {
-        int current = state.get();
-        if (current == idle && state.compareAndSet(current, busy))
+        events.offer(applicationEvent);
+        do
         {
-            for (EventHandler<T> each : handlers)
+            int current = state.get();
+            if (current == idle && state.compareAndSet(current, busy))
             {
-                each.handle(applicationEvent, eventBus);
-            }
-            applicationEvent.signal();
-            do
-            {
-                while ((applicationEvent = taskQueue.poll()) != null)
+                while ((applicationEvent = events.poll()) != null)
                 {
-                    for (EventHandler<T> each : handlers)
-                    {
-                        each.handle(applicationEvent, eventBus);
-                    }
-                    applicationEvent.signal();
-                }
-                state.set(idle);
-                if (taskQueue.isEmpty())
-                {
-                    break;
-                }
-                else
-                {
-                    current = state.get();
-                    if (current == idle && state.compareAndSet(current, busy))
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-            } while (true);
-        }
-        else
-        {
-            taskQueue.add(applicationEvent);
-            do
-            {
-                current = state.get();
-                if (current == idle && state.compareAndSet(current, busy))
-                {
-                    while ((applicationEvent = taskQueue.poll()) != null)
+                    try
                     {
                         for (EventHandler<T> each : handlers)
                         {
                             each.handle(applicationEvent, eventBus);
                         }
+                    }
+                    catch (Throwable e)
+                    {
+                        applicationEvent.setThrowable(e);
+                    }
+                    finally
+                    {
                         applicationEvent.signal();
                     }
-                    state.set(idle);
-                    if (taskQueue.isEmpty())
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        continue;
-                    }
                 }
-                else
+                state.set(idle);
+                if (events.isEmpty())
                 {
                     break;
                 }
-            } while (true);
-        }
+                else
+                {
+                    continue;
+                }
+            }
+        } while (true);
     }
-    
 }

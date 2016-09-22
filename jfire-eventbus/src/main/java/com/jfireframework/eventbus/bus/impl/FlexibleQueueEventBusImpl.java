@@ -10,14 +10,12 @@ import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.eventbus.bus.FlexibleQueueEventBus;
 import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.event.EventType;
 import com.jfireframework.eventbus.eventthread.EventThread;
 import com.jfireframework.eventbus.eventthread.IdleCount;
 import com.jfireframework.eventbus.eventthread.impl.FlexibleEventThreadImpl;
 import com.jfireframework.eventbus.handler.EventHandler;
 import com.jfireframework.eventbus.handler.EventHandlerContext;
 import com.jfireframework.eventbus.handler.ParallelHandlerContextImpl;
-import com.jfireframework.eventbus.handler.RowidSerialHandlerContextImpl;
 import com.jfireframework.eventbus.handler.SerialHandlerContextImpl;
 
 public class FlexibleQueueEventBusImpl implements FlexibleQueueEventBus
@@ -71,9 +69,6 @@ public class FlexibleQueueEventBusImpl implements FlexibleQueueEventBus
                 case SERIAL:
                     context = new SerialHandlerContextImpl<T>(event);
                     break;
-                case ROWID_SERIAL:
-                    context = new RowidSerialHandlerContextImpl<T>(event);
-                    break;
             }
             contextMap.put((Event<?>) event, context);
         }
@@ -116,10 +111,6 @@ public class FlexibleQueueEventBusImpl implements FlexibleQueueEventBus
     @Override
     public ApplicationEvent post(Object data, Enum<? extends Event<?>> event)
     {
-        if (((Event<?>) event).type() == EventType.ROWID_SERIAL)
-        {
-            throw new IllegalArgumentException();
-        }
         ApplicationEvent applicationEvent = new ApplicationEvent(data, event, -1);
         post(applicationEvent);
         return applicationEvent;
