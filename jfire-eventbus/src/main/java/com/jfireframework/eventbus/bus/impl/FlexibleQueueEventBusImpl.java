@@ -8,19 +8,23 @@ import com.jfireframework.baseutil.concurrent.MPMCQueue;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.eventbus.bus.FlexibleQueueEventBus;
-import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventContext;
+import com.jfireframework.eventbus.event.ParallelLevel;
+import com.jfireframework.eventbus.event.impl.NormalEventContext;
+import com.jfireframework.eventbus.event.impl.RowEventContextImpl;
 import com.jfireframework.eventbus.eventthread.EventThread;
 import com.jfireframework.eventbus.eventthread.IdleCount;
 import com.jfireframework.eventbus.eventthread.impl.FlexibleEventThreadImpl;
 import com.jfireframework.eventbus.handler.EventHandler;
 import com.jfireframework.eventbus.handler.EventHandlerContext;
 import com.jfireframework.eventbus.handler.ParallelHandlerContextImpl;
+import com.jfireframework.eventbus.handler.RowKeyHandlerContextImpl;
 import com.jfireframework.eventbus.handler.SerialHandlerContextImpl;
 
 public class FlexibleQueueEventBusImpl implements FlexibleQueueEventBus
 {
-    private final MPMCQueue<ApplicationEvent>                       eventQueue = new MPMCQueue<ApplicationEvent>();
+    private final MPMCQueue<EventContext>                           eventQueue = new MPMCQueue<EventContext>();
     private final IdentityHashMap<Event<?>, EventHandlerContext<?>> contextMap = new IdentityHashMap<Event<?>, EventHandlerContext<?>>();
     private final IdleCount                                         idleCount;
     private final int                                               coreEventThreadNum;
@@ -61,13 +65,16 @@ public class FlexibleQueueEventBusImpl implements FlexibleQueueEventBus
         EventHandlerContext<T> context = (EventHandlerContext<T>) contextMap.get(event);
         if (context == null)
         {
-            switch (((Event<?>) event).type())
+            switch (((Event<?>) event).parallelLevel())
             {
                 case PAEALLEL:
                     context = new ParallelHandlerContextImpl<T>(event);
                     break;
                 case SERIAL:
                     context = new SerialHandlerContextImpl<T>(event);
+                    break;
+                case ROWKEY_SERIAL:
+                    context = new RowKeyHandlerContextImpl<T>(event);
                     break;
             }
             contextMap.put((Event<?>) event, context);
@@ -94,7 +101,7 @@ public class FlexibleQueueEventBusImpl implements FlexibleQueueEventBus
     }
     
     @Override
-    public ApplicationEvent post(ApplicationEvent event)
+    public EventContext post(EventContext event)
     {
         eventQueue.offerAndSignal(event);
         return event;
@@ -109,10 +116,26 @@ public class FlexibleQueueEventBusImpl implements FlexibleQueueEventBus
     }
     
     @Override
-    public ApplicationEvent post(Object data, Enum<? extends Event<?>> event)
+    public EventContext post(Object data, Enum<? extends Event<?>> event)
     {
-        ApplicationEvent applicationEvent = new ApplicationEvent(data, event, -1);
+        if (((Event<?>) event).parallelLevel() == ParallelLevel.ROWKEY_SERIAL)
+        {
+            throw new IllegalArgumentException("该方法不能接受并行度为：ROWKEY_SERIAL的事件");
+        }
+        EventContext applicationEvent = new NormalEventContext(data, event);
         post(applicationEvent);
         return applicationEvent;
+    }
+    
+    @Override
+    public EventContext post(Object data, Enum<? extends Event<?>> event, Object rowkey)
+    {
+        if (((Event<?>) event).parallelLevel() != ParallelLevel.ROWKEY_SERIAL)
+        {
+            throw new IllegalArgumentException("该方法只能接受并行度为：ROWKEY_SERIAL的事件");
+        }
+        EventContext eventContext = new RowEventContextImpl(data, event, rowkey);
+        post(eventContext);
+        return eventContext;
     }
 }

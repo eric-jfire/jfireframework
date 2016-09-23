@@ -1,28 +1,27 @@
-package com.jfireframework.eventbus.event;
+package com.jfireframework.eventbus.event.impl;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventContext;
 
-public class ApplicationEvent implements RowId
+public class NormalEventContext implements EventContext
 {
-    private final Object                   eventData;
-    private final Enum<? extends Event<?>> event;
-    private final int                      rowId;
-    private volatile boolean               finished = false;
-    private Thread                         owner;
-    private volatile boolean               await    = false;
-    private Throwable                      e;
+    protected final Object                   eventData;
+    protected final Enum<? extends Event<?>> event;
+    protected volatile boolean               finished = false;
+    protected Thread                         owner;
+    protected volatile boolean               await    = false;
+    protected Throwable                      e;
+    protected Object                         result;
     
-    public ApplicationEvent(Object eventData, Enum<? extends Event<?>> event, int rowId)
+    public NormalEventContext(Object eventData, Enum<? extends Event<?>> event)
     {
         this.eventData = eventData;
         this.event = event;
-        this.rowId = rowId;
     }
     
-    /**
-     * 等待直到该事件被处理完成
-     */
+    @Override
     public void await()
     {
         owner = Thread.currentThread();
@@ -33,20 +32,19 @@ public class ApplicationEvent implements RowId
         }
     }
     
+    @Override
     public void setThrowable(Throwable e)
     {
         this.e = e;
     }
     
+    @Override
     public Throwable getThrowable()
     {
         return e;
     }
     
-    /**
-     * }
-     * 完成该事件，唤醒等待该事件的线程
-     */
+    @Override
     public void signal()
     {
         finished = true;
@@ -56,6 +54,7 @@ public class ApplicationEvent implements RowId
         }
     }
     
+    @Override
     public void await(long mills)
     {
         owner = Thread.currentThread();
@@ -67,32 +66,45 @@ public class ApplicationEvent implements RowId
             LockSupport.parkNanos(left);
             long t1 = System.nanoTime();
             left -= t1 - t0;
-            // 1000纳秒其实非常短，就不要再等待了
             if (left < 1000)
             {
+                // 1000纳秒其实非常短，使用循环等待就好了
+                for (int i = 0; i < 10000; i++)
+                {
+                    ;
+                }
                 break;
             }
         }
     }
     
+    @Override
     public boolean isFinished()
     {
         return finished;
     }
     
+    @Override
     public Object getEventData()
     {
         return eventData;
     }
     
+    @Override
     public Enum<? extends Event<?>> getEvent()
     {
         return event;
     }
     
     @Override
-    public int id()
+    public void setResult(Object result)
     {
-        return rowId;
+        this.result = result;
+    }
+    
+    @Override
+    public Object getResult()
+    {
+        return result;
     }
 }

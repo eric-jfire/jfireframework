@@ -3,15 +3,15 @@ package com.jfireframework.eventbus.handler;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.concurrent.MPSCQueue;
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventContext;
 
 public class SerialHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
 {
-    private static final int                  idle   = 0;
-    private static final int                  busy   = 1;
-    private AtomicInteger                     state  = new AtomicInteger(idle);
-    private final MPSCQueue<ApplicationEvent> events = new MPSCQueue<ApplicationEvent>();
+    private static final int              idle   = 0;
+    private static final int              busy   = 1;
+    private AtomicInteger                 state  = new AtomicInteger(idle);
+    private final MPSCQueue<EventContext> events = new MPSCQueue<EventContext>();
     
     public SerialHandlerContextImpl(Enum<? extends Event<T>> event)
     {
@@ -19,30 +19,30 @@ public class SerialHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
     }
     
     @Override
-    public void handle(ApplicationEvent applicationEvent, EventBus eventBus)
+    public void handle(EventContext eventContext, EventBus eventBus)
     {
-        events.offer(applicationEvent);
+        events.offer(eventContext);
         do
         {
             int current = state.get();
             if (current == idle && state.compareAndSet(current, busy))
             {
-                while ((applicationEvent = events.poll()) != null)
+                while ((eventContext = events.poll()) != null)
                 {
                     try
                     {
                         for (EventHandler<T> each : handlers)
                         {
-                            each.handle(applicationEvent, eventBus);
+                            each.handle(eventContext, eventBus);
                         }
                     }
                     catch (Throwable e)
                     {
-                        applicationEvent.setThrowable(e);
+                        eventContext.setThrowable(e);
                     }
                     finally
                     {
-                        applicationEvent.signal();
+                        eventContext.signal();
                     }
                 }
                 state.set(idle);

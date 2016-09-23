@@ -6,8 +6,8 @@ import com.jfireframework.baseutil.concurrent.MPMCQueue;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.eventbus.bus.FlexibleQueueEventBus;
-import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventContext;
 import com.jfireframework.eventbus.eventthread.EventThread;
 import com.jfireframework.eventbus.eventthread.IdleCount;
 import com.jfireframework.eventbus.handler.EventHandlerContext;
@@ -18,7 +18,7 @@ import com.jfireframework.eventbus.handler.EventHandlerContext;
 public class FlexibleEventThreadImpl implements EventThread
 {
     private final FlexibleQueueEventBus                             eventBus;
-    private final MPMCQueue<ApplicationEvent>                       eventQueue;
+    private final MPMCQueue<EventContext>                           eventQueue;
     private volatile Thread                                         ownerThread;
     private final IdentityHashMap<Event<?>, EventHandlerContext<?>> contextMap;
     private final IdleCount                                         idleCount;
@@ -28,7 +28,7 @@ public class FlexibleEventThreadImpl implements EventThread
     
     public FlexibleEventThreadImpl(
             FlexibleQueueEventBus eventBus, //
-            MPMCQueue<ApplicationEvent> eventQueue, //
+            MPMCQueue<EventContext> eventQueue, //
             IdentityHashMap<Event<?>, EventHandlerContext<?>> contextMap, //
             IdleCount idleCount, //
             int coreEventThreadNum, //
@@ -50,7 +50,7 @@ public class FlexibleEventThreadImpl implements EventThread
         ownerThread = Thread.currentThread();
         while (true)
         {
-            ApplicationEvent event = eventQueue.take(waitTime, TimeUnit.MILLISECONDS);
+            EventContext event = eventQueue.take(waitTime, TimeUnit.MILLISECONDS);
             if (event == null)
             {
                 if (idleCount.reduce() > coreEventThreadNum)

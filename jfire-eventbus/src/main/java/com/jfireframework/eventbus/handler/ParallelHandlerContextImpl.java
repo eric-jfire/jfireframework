@@ -1,8 +1,8 @@
 package com.jfireframework.eventbus.handler;
 
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventContext;
 
 public class ParallelHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
 {
@@ -13,22 +13,22 @@ public class ParallelHandlerContextImpl<T> extends AbstractEventHandlerContext<T
     }
     
     @Override
-    public void handle(ApplicationEvent applicationEvent, EventBus eventBus)
+    public void handle(EventContext eventContext, EventBus eventBus)
     {
         try
         {
             for (EventHandler<T> each : handlers)
             {
-                each.handle(applicationEvent, eventBus);
+                each.handle(eventContext, eventBus);
             }
         }
         catch (Throwable e)
         {
-            applicationEvent.setThrowable(e);
+            eventContext.setThrowable(e);
         }
         finally
         {
-            applicationEvent.signal();
+            eventContext.signal();
         }
     }
     

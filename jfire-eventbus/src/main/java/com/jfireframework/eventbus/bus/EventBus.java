@@ -1,7 +1,7 @@
 package com.jfireframework.eventbus.bus;
 
-import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventContext;
 import com.jfireframework.eventbus.handler.EventHandler;
 
 public interface EventBus
@@ -12,7 +12,9 @@ public interface EventBus
     
     public void stop();
     
-    public ApplicationEvent post(ApplicationEvent event);
+    public EventContext post(EventContext event);
     
-    public ApplicationEvent post(Object data, Enum<? extends Event<?>> event);
+    public EventContext post(Object data, Enum<? extends Event<?>> event, Object rowkey);
+    
+    public EventContext post(Object data, Enum<? extends Event<?>> event);
 }
