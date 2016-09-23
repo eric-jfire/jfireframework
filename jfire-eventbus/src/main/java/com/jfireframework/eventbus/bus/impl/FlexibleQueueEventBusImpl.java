@@ -62,6 +62,10 @@ public class FlexibleQueueEventBusImpl implements FlexibleQueueEventBus
     public <T> void addHandler(EventHandler<T> eventHandler)
     {
         Enum<? extends Event<T>> event = eventHandler.interest();
+        if (((Event<?>) event).parallelLevel() == null)
+        {
+            throw new IllegalArgumentException("事件：" + event.getClass() + "的parallelLevel()方法缺少返回值");
+        }
         EventHandlerContext<T> context = (EventHandlerContext<T>) contextMap.get(event);
         if (context == null)
         {
