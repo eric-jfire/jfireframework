@@ -1,7 +1,7 @@
 package com.jfireframework.context.test.function.event;
 
 import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.event.EventType;
+import com.jfireframework.eventbus.event.ParallelLevel;
 
 public enum SmsEvent implements Event<SmsEvent>
 {
@@ -11,9 +11,9 @@ public enum SmsEvent implements Event<SmsEvent>
     halt;
     
     @Override
-    public EventType type()
+    public ParallelLevel parallelLevel()
     {
-        return EventType.PAEALLEL;
+        return ParallelLevel.PAEALLEL;
     }
     
 }

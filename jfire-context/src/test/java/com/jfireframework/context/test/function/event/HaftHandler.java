@@ -4,8 +4,8 @@ import javax.annotation.Resource;
 import com.jfireframework.context.ContextInitFinish;
 import com.jfireframework.context.event.EventPoster;
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.event.ApplicationEvent;
 import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventContext;
 import com.jfireframework.eventbus.handler.EventHandler;
 
 @Resource
@@ -15,7 +15,7 @@ public class HaftHandler implements EventHandler<SmsEvent>, ContextInitFinish
     private EventPoster publisher;
     
     @Override
-    public void handle(ApplicationEvent event, EventBus eventBus)
+    public void handle(EventContext event, EventBus eventBus)
     {
         System.out.println("asdasd");
         UserPhone myEvent = (UserPhone) event.getEventData();
