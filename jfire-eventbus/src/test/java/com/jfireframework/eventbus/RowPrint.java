@@ -2,7 +2,7 @@ package com.jfireframework.eventbus;
 
 import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.event.EventContext;
+import com.jfireframework.eventbus.eventcontext.EventContext;
 import com.jfireframework.eventbus.handler.EventHandler;
 
 public class RowPrint implements EventHandler<Print>

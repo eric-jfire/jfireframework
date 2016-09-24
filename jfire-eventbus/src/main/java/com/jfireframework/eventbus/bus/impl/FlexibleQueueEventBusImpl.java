@@ -4,43 +4,30 @@ import java.util.IdentityHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import com.jfireframework.baseutil.concurrent.MPMCQueue;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.eventbus.bus.FlexibleQueueEventBus;
 import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.event.EventContext;
-import com.jfireframework.eventbus.event.ParallelLevel;
-import com.jfireframework.eventbus.event.impl.NormalEventContext;
-import com.jfireframework.eventbus.event.impl.RowEventContextImpl;
-import com.jfireframework.eventbus.eventthread.EventThread;
-import com.jfireframework.eventbus.eventthread.IdleCount;
-import com.jfireframework.eventbus.eventthread.impl.FlexibleEventThreadImpl;
-import com.jfireframework.eventbus.handler.EventHandler;
+import com.jfireframework.eventbus.eventworker.EventWorker;
+import com.jfireframework.eventbus.eventworker.impl.FlexibleEventWorker;
 import com.jfireframework.eventbus.handler.EventHandlerContext;
-import com.jfireframework.eventbus.handler.ParallelHandlerContextImpl;
-import com.jfireframework.eventbus.handler.RowKeyHandlerContextImpl;
-import com.jfireframework.eventbus.handler.SerialHandlerContextImpl;
+import com.jfireframework.eventbus.util.IdleCount;
 
-public class FlexibleQueueEventBusImpl implements FlexibleQueueEventBus
+public class FlexibleQueueEventBusImpl extends AbstractEventBus implements FlexibleQueueEventBus
 {
-    private final MPMCQueue<EventContext>                           eventQueue = new MPMCQueue<EventContext>();
-    private final IdentityHashMap<Event<?>, EventHandlerContext<?>> contextMap = new IdentityHashMap<Event<?>, EventHandlerContext<?>>();
-    private final IdleCount                                         idleCount;
-    private final int                                               coreEventThreadNum;
-    private final long                                              waitTime;
-    private final ExecutorService                                   pool       = Executors.newCachedThreadPool(
-            new ThreadFactory() {
-                                                                                           private int count = 1;
-                                                                                           
-                                                                                           @Override
-                                                                                           public Thread newThread(Runnable r)
-                                                                                           {
-                                                                                               return new Thread(r, "FlexibleQueueEventBus-eventThread-" + (count++));
-                                                                                           }
-                                                                                       }
-    );
-    private static final Logger                                     LOGGER     = ConsoleLogFactory.getLogger();
+    private final IdleCount       idleCount;
+    private final int             coreEventThreadNum;
+    private final long            waitTime;
+    private final ExecutorService pool   = Executors.newCachedThreadPool(new ThreadFactory() {
+                                             private int count = 1;
+                                             
+                                             @Override
+                                             public Thread newThread(Runnable r)
+                                             {
+                                                 return new Thread(r, "FlexibleQueueEventBus-eventWorker-" + (count++));
+                                             }
+                                         });
+    private static final Logger   LOGGER = ConsoleLogFactory.getLogger();
     
     public FlexibleQueueEventBusImpl(IdleCount idleCount, long waitTime, int coreEventThreadNum)
     {
@@ -55,35 +42,6 @@ public class FlexibleQueueEventBusImpl implements FlexibleQueueEventBus
         {
             addEventThread();
         }
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> void addHandler(EventHandler<T> eventHandler)
-    {
-        Enum<? extends Event<T>> event = eventHandler.interest();
-        if (((Event<?>) event).parallelLevel() == null)
-        {
-            throw new IllegalArgumentException("事件：" + event.getClass() + "的parallelLevel()方法缺少返回值");
-        }
-        EventHandlerContext<T> context = (EventHandlerContext<T>) contextMap.get(event);
-        if (context == null)
-        {
-            switch (((Event<?>) event).parallelLevel())
-            {
-                case PAEALLEL:
-                    context = new ParallelHandlerContextImpl<T>(event);
-                    break;
-                case SERIAL:
-                    context = new SerialHandlerContextImpl<T>(event);
-                    break;
-                case ROWKEY_SERIAL:
-                    context = new RowKeyHandlerContextImpl<T>(event);
-                    break;
-            }
-            contextMap.put((Event<?>) event, context);
-        }
-        context.addHandler(eventHandler);
     }
     
     @Override
@@ -101,45 +59,15 @@ public class FlexibleQueueEventBusImpl implements FlexibleQueueEventBus
     @Override
     public void stop()
     {
-        pool.shutdown();
-    }
-    
-    @Override
-    public EventContext post(EventContext event)
-    {
-        eventQueue.offerAndSignal(event);
-        return event;
+        pool.shutdownNow();
     }
     
     @Override
     public void addEventThread()
     {
-        EventThread eventThread = new FlexibleEventThreadImpl(this, eventQueue, contextMap, idleCount, coreEventThreadNum, waitTime);
+        EventWorker eventThread = new FlexibleEventWorker(this, eventQueue, contextMap, idleCount, coreEventThreadNum, waitTime);
         pool.submit(eventThread);
         LOGGER.debug("增加新的事件线程");
     }
     
-    @Override
-    public EventContext post(Object data, Enum<? extends Event<?>> event)
-    {
-        if (((Event<?>) event).parallelLevel() == ParallelLevel.ROWKEY_SERIAL)
-        {
-            throw new IllegalArgumentException("该方法不能接受并行度为：ROWKEY_SERIAL的事件");
-        }
-        EventContext applicationEvent = new NormalEventContext(data, event);
-        post(applicationEvent);
-        return applicationEvent;
-    }
-    
-    @Override
-    public EventContext post(Object data, Enum<? extends Event<?>> event, Object rowkey)
-    {
-        if (((Event<?>) event).parallelLevel() != ParallelLevel.ROWKEY_SERIAL)
-        {
-            throw new IllegalArgumentException("该方法只能接受并行度为：ROWKEY_SERIAL的事件");
-        }
-        EventContext eventContext = new RowEventContextImpl(data, event, rowkey);
-        post(eventContext);
-        return eventContext;
-    }
 }

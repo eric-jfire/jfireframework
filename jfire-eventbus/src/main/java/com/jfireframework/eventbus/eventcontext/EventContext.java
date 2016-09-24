@@ -1,4 +1,6 @@
-package com.jfireframework.eventbus.event;
+package com.jfireframework.eventbus.eventcontext;
+
+import com.jfireframework.eventbus.event.Event;
 
 public interface EventContext
 {

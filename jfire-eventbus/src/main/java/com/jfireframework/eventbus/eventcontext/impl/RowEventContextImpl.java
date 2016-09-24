@@ -1,7 +1,7 @@
-package com.jfireframework.eventbus.event.impl;
+package com.jfireframework.eventbus.eventcontext.impl;
 
 import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.event.RowEventContext;
+import com.jfireframework.eventbus.eventcontext.RowEventContext;
 
 public class RowEventContextImpl extends NormalEventContext implements RowEventContext
 {

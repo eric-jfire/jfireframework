@@ -1,9 +1,9 @@
-package com.jfireframework.eventbus.event.impl;
+package com.jfireframework.eventbus.eventcontext.impl;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.event.EventContext;
+import com.jfireframework.eventbus.eventcontext.EventContext;
 
 public class NormalEventContext implements EventContext
 {

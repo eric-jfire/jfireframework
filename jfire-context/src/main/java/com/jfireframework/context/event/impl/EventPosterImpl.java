@@ -8,10 +8,10 @@ import com.jfireframework.context.event.EventPoster;
 import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.bus.impl.FlexibleQueueEventBusImpl;
 import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.event.EventContext;
-import com.jfireframework.eventbus.eventthread.AtomicIntergerIdleCount;
-import com.jfireframework.eventbus.eventthread.IdleCount;
+import com.jfireframework.eventbus.eventcontext.EventContext;
 import com.jfireframework.eventbus.handler.EventHandler;
+import com.jfireframework.eventbus.util.AtomicIntergerIdleCount;
+import com.jfireframework.eventbus.util.IdleCount;
 
 public class EventPosterImpl implements EventPoster
 {
