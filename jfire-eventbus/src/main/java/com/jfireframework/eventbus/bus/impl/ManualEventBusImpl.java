@@ -28,7 +28,7 @@ public class ManualEventBusImpl extends AbstractEventBus implements ManualEventB
     }
     
     @Override
-    public void createResource()
+    public void createWorker()
     {
         EventWorker worker = new ManualEventWorker(this, eventQueue, contextMap);
         pool.submit(worker);
@@ -36,7 +36,7 @@ public class ManualEventBusImpl extends AbstractEventBus implements ManualEventB
     }
     
     @Override
-    public void recycleResource()
+    public void recycleWorker()
     {
         EventWorker worker = workers.poll();
         if (worker != null)

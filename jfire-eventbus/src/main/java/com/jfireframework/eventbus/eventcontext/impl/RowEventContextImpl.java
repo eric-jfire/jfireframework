@@ -11,6 +11,10 @@ public class RowEventContextImpl extends NormalEventContext implements RowEventC
     {
         super(eventData, event);
         this.rowkey = rowkey;
+        if (rowkey == null)
+        {
+            throw new IllegalArgumentException("rowkey不能为null");
+        }
     }
     
     @Override
