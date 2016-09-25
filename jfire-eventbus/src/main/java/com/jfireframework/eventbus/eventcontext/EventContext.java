@@ -44,6 +44,11 @@ public interface EventContext
     public void signal();
     
     /**
+     * 等待该任务的完成。并且在等待的过程中。尝试去完成总线上的别的任务。尽量避免让线程陷入无谓等待
+     */
+    public void join();
+    
+    /**
      * 等待该事件的完成，最多等待指定的毫秒数
      * 
      * @param mills

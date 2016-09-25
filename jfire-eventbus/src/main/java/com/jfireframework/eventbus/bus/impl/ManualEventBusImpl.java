@@ -21,6 +21,20 @@ public class ManualEventBusImpl extends AbstractEventBus implements ManualEventB
                                                  });
     private final MPMCQueue<EventWorker> workers = new MPMCQueue<EventWorker>();
     
+    public ManualEventBusImpl()
+    {
+        this(Runtime.getRuntime().availableProcessors());
+    }
+    
+    public ManualEventBusImpl(int coreThreadNum)
+    {
+        for (int i = 0; i < coreThreadNum; i++)
+        {
+            EventWorker worker = new ManualEventWorker(this, eventQueue);
+            pool.submit(worker);
+        }
+    }
+    
     @Override
     public void stop()
     {
@@ -30,7 +44,7 @@ public class ManualEventBusImpl extends AbstractEventBus implements ManualEventB
     @Override
     public void createWorker()
     {
-        EventWorker worker = new ManualEventWorker(this, eventQueue, contextMap);
+        EventWorker worker = new ManualEventWorker(this, eventQueue);
         pool.submit(worker);
         workers.offer(worker);
     }

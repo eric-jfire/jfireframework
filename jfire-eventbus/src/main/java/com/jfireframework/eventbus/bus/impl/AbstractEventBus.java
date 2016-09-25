@@ -1,6 +1,7 @@
 package com.jfireframework.eventbus.bus.impl;
 
 import java.util.IdentityHashMap;
+import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.concurrent.MPMCQueue;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
@@ -8,6 +9,7 @@ import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.event.Event;
 import com.jfireframework.eventbus.event.ParallelLevel;
 import com.jfireframework.eventbus.eventcontext.EventContext;
+import com.jfireframework.eventbus.eventcontext.MoreContextInfo;
 import com.jfireframework.eventbus.eventcontext.impl.NormalEventContext;
 import com.jfireframework.eventbus.eventcontext.impl.RowEventContextImpl;
 import com.jfireframework.eventbus.handler.EventHandler;
@@ -64,10 +66,16 @@ public abstract class AbstractEventBus implements EventBus
     }
     
     @Override
-    public EventContext post(EventContext event)
+    public EventContext post(EventContext eventContext)
     {
-        eventQueue.offerAndSignal(event);
-        return event;
+        EventHandlerContext<?> eventHandlerContext = contextMap.get(eventContext.getEvent());
+        if (eventHandlerContext == null)
+        {
+            throw new IllegalArgumentException(StringUtil.format("不存在事件:{}的处理器", eventContext.getEvent()));
+        }
+        ((MoreContextInfo) eventContext).setMoreInfo(eventHandlerContext, this, eventQueue);
+        eventQueue.offerAndSignal(eventContext);
+        return eventContext;
     }
     
     @Override

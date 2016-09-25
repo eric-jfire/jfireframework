@@ -65,7 +65,7 @@ public class FlexibleQueueEventBusImpl extends AbstractEventBus implements Flexi
     @Override
     public void addEventThread()
     {
-        EventWorker eventThread = new FlexibleEventWorker(this, eventQueue, contextMap, idleCount, coreEventThreadNum, waitTime);
+        EventWorker eventThread = new FlexibleEventWorker(this, eventQueue, idleCount, coreEventThreadNum, waitTime);
         pool.submit(eventThread);
         LOGGER.debug("增加新的事件线程");
     }
