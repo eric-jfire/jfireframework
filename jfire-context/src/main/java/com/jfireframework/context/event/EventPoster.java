@@ -1,7 +1,7 @@
 package com.jfireframework.context.event;
 
 import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.event.EventContext;
+import com.jfireframework.eventbus.eventcontext.EventContext;
 
 public interface EventPoster
 {

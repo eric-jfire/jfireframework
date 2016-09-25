@@ -1,7 +1,7 @@
 package com.jfireframework.eventbus.bus;
 
 import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.event.EventContext;
+import com.jfireframework.eventbus.eventcontext.EventContext;
 import com.jfireframework.eventbus.handler.EventHandler;
 
 public interface EventBus

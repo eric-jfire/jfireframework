@@ -1,4 +1,6 @@
-package com.jfireframework.eventbus.event;
+package com.jfireframework.eventbus.eventcontext;
+
+import com.jfireframework.eventbus.event.Event;
 
 public interface EventContext
 {
@@ -40,6 +42,11 @@ public interface EventContext
      * 完成该事件，并且（如果有）唤醒等待该事件完成的线程
      */
     public void signal();
+    
+    /**
+     * 等待该任务的完成。并且在等待的过程中。尝试去完成总线上的别的任务。尽量避免让线程陷入无谓等待
+     */
+    public void join();
     
     /**
      * 等待该事件的完成，最多等待指定的毫秒数

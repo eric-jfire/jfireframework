@@ -2,7 +2,7 @@ package com.jfireframework.eventbus.handler;
 
 import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.event.EventContext;
+import com.jfireframework.eventbus.eventcontext.EventContext;
 
 public class ParallelHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
 {

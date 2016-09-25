@@ -1,4 +1,4 @@
-package com.jfireframework.eventbus.event;
+package com.jfireframework.eventbus.eventcontext;
 
 public interface RowEventContext extends EventContext
 {

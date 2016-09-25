@@ -1,4 +1,4 @@
-package com.jfireframework.eventbus.eventthread;
+package com.jfireframework.eventbus.util;
 
 public interface IdleCount
 {

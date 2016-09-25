@@ -3,7 +3,7 @@ package com.jfireframework.eventbus.handler;
 import com.jfireframework.baseutil.order.Order;
 import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.event.EventContext;
+import com.jfireframework.eventbus.eventcontext.EventContext;
 
 public interface EventHandler<T> extends Order
 {

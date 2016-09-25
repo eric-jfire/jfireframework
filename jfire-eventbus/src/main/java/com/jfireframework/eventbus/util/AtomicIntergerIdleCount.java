@@ -1,4 +1,4 @@
-package com.jfireframework.eventbus.eventthread;
+package com.jfireframework.eventbus.util;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

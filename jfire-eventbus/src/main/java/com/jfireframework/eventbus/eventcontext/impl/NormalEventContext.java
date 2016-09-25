@@ -1,12 +1,19 @@
-package com.jfireframework.eventbus.event.impl;
+package com.jfireframework.eventbus.eventcontext.impl;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import com.jfireframework.baseutil.concurrent.MPMCQueue;
+import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.event.EventContext;
+import com.jfireframework.eventbus.eventcontext.EventContext;
+import com.jfireframework.eventbus.eventcontext.MoreContextInfo;
+import com.jfireframework.eventbus.handler.EventHandlerContext;
 
-public class NormalEventContext implements EventContext
+public class NormalEventContext implements EventContext, MoreContextInfo
 {
+    protected EventBus                       eventBus;
+    protected MPMCQueue<EventContext>        eventQueue;
+    protected EventHandlerContext<?>         handlerContext;
     protected final Object                   eventData;
     protected final Enum<? extends Event<?>> event;
     protected volatile boolean               finished = false;
@@ -19,6 +26,26 @@ public class NormalEventContext implements EventContext
     {
         this.eventData = eventData;
         this.event = event;
+    }
+    
+    @Override
+    public void join()
+    {
+        owner = Thread.currentThread();
+        await = true;
+        while (finished == false)
+        {
+            EventContext another = eventQueue.poll();
+            if (another != null)
+            {
+                EventHandlerContext<?> handlerContext = ((MoreContextInfo) another).getEventHandlerContext();
+                handlerContext.handle(another, eventBus);
+            }
+            else
+            {
+                LockSupport.park();
+            }
+        }
     }
     
     @Override
@@ -106,5 +133,31 @@ public class NormalEventContext implements EventContext
     public Object getResult()
     {
         return result;
+    }
+    
+    @Override
+    public EventHandlerContext<?> getEventHandlerContext()
+    {
+        return handlerContext;
+    }
+    
+    @Override
+    public MPMCQueue<EventContext> getEventQueue()
+    {
+        return eventQueue;
+    }
+    
+    @Override
+    public void setMoreInfo(EventHandlerContext<?> eventHandlerContext, EventBus eventBus, MPMCQueue<EventContext> eventQueue)
+    {
+        this.eventBus = eventBus;
+        this.eventQueue = eventQueue;
+        handlerContext = eventHandlerContext;
+    }
+    
+    @Override
+    public EventBus getEventBus()
+    {
+        return eventBus;
     }
 }
