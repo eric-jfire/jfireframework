@@ -6,7 +6,7 @@ import java.util.concurrent.ThreadFactory;
 import com.jfireframework.baseutil.concurrent.MPMCQueue;
 import com.jfireframework.eventbus.bus.ManualEventBus;
 import com.jfireframework.eventbus.eventworker.EventWorker;
-import com.jfireframework.eventbus.eventworker.impl.ManualEventWorker;
+import com.jfireframework.eventbus.eventworker.impl.CoreWorker;
 
 public class ManualEventBusImpl extends AbstractEventBus implements ManualEventBus
 {
@@ -30,7 +30,7 @@ public class ManualEventBusImpl extends AbstractEventBus implements ManualEventB
     {
         for (int i = 0; i < coreThreadNum; i++)
         {
-            EventWorker worker = new ManualEventWorker(this, eventQueue);
+            EventWorker worker = new CoreWorker(this, eventQueue);
             pool.submit(worker);
         }
     }
@@ -44,7 +44,7 @@ public class ManualEventBusImpl extends AbstractEventBus implements ManualEventB
     @Override
     public void createWorker()
     {
-        EventWorker worker = new ManualEventWorker(this, eventQueue);
+        EventWorker worker = new CoreWorker(this, eventQueue);
         pool.submit(worker);
         workers.offer(worker);
     }

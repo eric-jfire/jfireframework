@@ -5,16 +5,15 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.Test;
 import com.jfireframework.eventbus.Print;
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.bus.impl.FlexibleQueueEventBusImpl;
-import com.jfireframework.eventbus.util.AtomicIntergerIdleCount;
+import com.jfireframework.eventbus.bus.impl.ManualEventBusImpl;
 
 public class ForkTest
 {
     @Test
     public void test()
     {
-        // EventBus bus = new ManualEventBusImpl();
-        EventBus bus = new FlexibleQueueEventBusImpl(new AtomicIntergerIdleCount(), 200, 3);
+         EventBus bus = new ManualEventBusImpl();
+//        EventBus bus = new FlexibleQueueEventBusImpl(new AtomicIntergerIdleCount(), 200, 3);
         bus.addHandler(new PrintForkHandler(true));
         bus.start();
         Queue<String> queue = new LinkedBlockingQueue<String>();

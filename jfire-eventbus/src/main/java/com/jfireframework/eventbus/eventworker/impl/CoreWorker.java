@@ -9,16 +9,20 @@ import com.jfireframework.eventbus.eventcontext.MoreContextInfo;
 import com.jfireframework.eventbus.eventworker.EventWorker;
 import com.jfireframework.eventbus.handler.EventHandlerContext;
 
-public class ManualEventWorker implements EventWorker
+/**
+ * 不包含线程资源判断逻辑的worker。启动和停止都依靠外部
+ * 
+ * @author 林斌
+ *
+ */
+public class CoreWorker implements EventWorker
 {
-    
     private final EventBus                eventBus;
     private final MPMCQueue<EventContext> eventQueue;
     private volatile Thread               ownerThread;
     private static final Logger           LOGGER = ConsoleLogFactory.getLogger();
     
-    public ManualEventWorker(EventBus eventBus, //
-            MPMCQueue<EventContext> eventQueue)
+    public CoreWorker(EventBus eventBus, MPMCQueue<EventContext> eventQueue)
     {
         this.eventBus = eventBus;
         this.eventQueue = eventQueue;
@@ -33,7 +37,7 @@ public class ManualEventWorker implements EventWorker
             EventContext eventContext = eventQueue.take();
             if (eventContext == null)
             {
-                LOGGER.debug("事件线程:{}退出对事件的获取", Thread.currentThread().getName());
+                LOGGER.debug("事件线程:{}退出对事件的获取", ownerThread);
                 break;
             }
             EventHandlerContext<?> context = ((MoreContextInfo) eventContext).getEventHandlerContext();
