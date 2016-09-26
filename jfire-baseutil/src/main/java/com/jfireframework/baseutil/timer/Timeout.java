@@ -1,4 +1,4 @@
-package com.jfireframework.baseutil.concurrent.time;
+package com.jfireframework.baseutil.timer;
 
 public interface Timeout
 {
