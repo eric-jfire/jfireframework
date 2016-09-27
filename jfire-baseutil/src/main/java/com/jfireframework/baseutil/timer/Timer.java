@@ -20,4 +20,11 @@ public interface Timer extends Runnable
     public void stop();
     
     public void start();
+    
+    /**
+     * 返回当前时间。该时间是当前时间减去类初始化的一个间隔时间。以纳秒表示。
+     * 
+     * @return
+     */
+    public long currentTime();
 }
