@@ -14,8 +14,8 @@ public class MPMCQueue<E>
     private static final long   headOffset       = ReflectUtil.getFieldOffset("head", MPMCQueue.class);
     private volatile Waiter     headWaiter;
     private volatile Waiter     tailWaiter;
-    private static final long   tailWaiterOffset = ReflectUtil.getFieldOffset("tailWaiter", MPMCQueue.class);
     private static final long   headWaiterOffset = ReflectUtil.getFieldOffset("headWaiter", MPMCQueue.class);
+    private static final long   tailWaiterOffset = ReflectUtil.getFieldOffset("tailWaiter", MPMCQueue.class);
     private final boolean       fair;
     
     static class Waiter
@@ -67,16 +67,6 @@ public class MPMCQueue<E>
         }
     }
     
-    private void signalWaiter()
-    {
-        Waiter headNext = findHeadNext();
-        if (headNext != null)
-        {
-            LockSupport.unpark(headNext.thread);
-        }
-        
-    }
-    
     private Waiter findNextWaiter(Waiter waiter)
     {
         if (waiter == tailWaiter)
@@ -93,24 +83,6 @@ public class MPMCQueue<E>
             ;
         }
         return next;
-    }
-    
-    private Waiter findHeadNext()
-    {
-        Waiter headNext;
-        Waiter h = headWaiter;
-        for (h = headWaiter; h != tailWaiter; h = headWaiter)
-        {
-            while ((headNext = h.next) == null && h == headWaiter)
-            {
-                ;
-            }
-            if (h == headWaiter)
-            {
-                return headNext;
-            }
-        }
-        return null;
     }
     
     private static class Node<E>
@@ -170,7 +142,12 @@ public class MPMCQueue<E>
     public void offerAndSignal(E o)
     {
         offer(o);
-        signalWaiter();
+        Waiter h = headWaiter;
+        Waiter next = findNextWaiter(h);
+        if (next != null)
+        {
+            LockSupport.unpark(next.thread);
+        }
     }
     
     public E poll()
@@ -257,15 +234,12 @@ public class MPMCQueue<E>
     {
         E result;
         Waiter self = enqueue();
-        Waiter headNext;
         long nanos = unit.toNanos(time);
         long t0 = System.nanoTime();
         do
         {
             // head之后的next是本线程设置的，所以这里直接获取。可以读取到就意味着确实是head节点的后继节点
-            Waiter h = headWaiter;
-            headNext = h.next;
-            if (self == headNext)
+            if (self == headWaiter.next)
             {
                 result = poll();
                 if (result == null)
@@ -284,18 +258,15 @@ public class MPMCQueue<E>
                     nanos -= System.nanoTime() - t0;
                     if (nanos < 0)
                     {
+                        cancelWaiter(self);
                         return null;
                     }
                     t0 = System.nanoTime();
                 }
                 else
                 {
-                    /**
-                     * 此时不能把h.next设置为null。否则如果其他线程正在执行findNextWaiter方法。
-                     * 由于始终next都是null，就会成为死循环。
-                     */
-                    
-                    unparkNext(h);
+                    headWaiter = self;
+                    unparkNext(self);
                     return result;
                 }
             }
@@ -315,23 +286,15 @@ public class MPMCQueue<E>
                 nanos -= System.nanoTime() - t0;
                 if (nanos < 0)
                 {
+                    cancelWaiter(self);
                     return null;
                 }
                 t0 = System.nanoTime();
             }
             if (Thread.currentThread().isInterrupted())
             {
-                self.status = Waiter.CANCELED;
-                headNext = headWaiter.next;
-                if (headNext == self)
-                {
-                    unparkNext(h);
-                    return null;
-                }
-                else
-                {
-                    return null;
-                }
+                cancelWaiter(self);
+                return null;
             }
         } while (true);
     }
@@ -340,13 +303,9 @@ public class MPMCQueue<E>
     {
         E result;
         Waiter self = enqueue();
-        Waiter headNext;
         do
         {
-            // head之后的next是本线程设置的，所以这里直接获取。可以读取到就意味着确实是head节点的后继节点
-            Waiter h = headWaiter;
-            headNext = h.next;
-            if (self == headNext)
+            if (self == headWaiter.next)
             {
                 result = poll();
                 if (result == null)
@@ -355,12 +314,8 @@ public class MPMCQueue<E>
                 }
                 else
                 {
-                    /**
-                     * 此时不能把h.next设置为null。否则如果其他线程正在执行findNextWaiter方法。
-                     * 由于始终next都是null，就会成为死循环。
-                     */
-                    
-                    unparkNext(h);
+                    headWaiter = self;
+                    unparkNext(self);
                     return result;
                 }
             }
@@ -370,19 +325,20 @@ public class MPMCQueue<E>
             }
             if (Thread.currentThread().isInterrupted())
             {
-                self.status = Waiter.CANCELED;
-                headNext = headWaiter.next;
-                if (headNext == self)
-                {
-                    unparkNext(h);
-                    return null;
-                }
-                else
-                {
-                    return null;
-                }
+                cancelWaiter(self);
+                return null;
             }
         } while (true);
+    }
+    
+    private void cancelWaiter(Waiter waiter)
+    {
+        waiter.status = Waiter.CANCELED;
+        Waiter h = headWaiter;
+        if (h.next == waiter && casHead(h, waiter))
+        {
+            unparkNext(waiter);
+        }
     }
     
     private E unfairTake(long time, TimeUnit unit)
@@ -434,77 +390,71 @@ public class MPMCQueue<E>
         }
     }
     
+    /**
+     * 唤醒后续节点。注意，这里的入口head节点就是当前的headWaiter
+     * 
+     * @param head
+     */
     private void unparkNext(Waiter head)
     {
-        Waiter self = head.next;
-        do
+        Waiter next = findNextWaiter(head);
+        if (next == null)
         {
-            Waiter next;
-            for (next = findNextWaiter(self); next != null; next = findNextWaiter(self))
+            return;
+        }
+        // 如果后续节点状态此时是等待，则直接唤醒
+        else if (next.status == Waiter.WAITING)
+        {
+            LockSupport.unpark(next.thread);
+            return;
+        }
+        else
+        {
+            do
             {
-                if (next.status == Waiter.CANCELED)
+                Waiter pred;
+                do
                 {
-                    self = next;
-                }
-                else
-                {
-                    break;
-                }
-            }
-            /**
-             * 1.上下代码之间，next节点可能就进入了cancel状态
-             * 2.或者循环退出是因为next为null，但是上下代码之间，又有新节点加入
-             */
-            /**
-             * cas的原因是因为unparknext方法可能会被多个线程进入。假设线程1是head之后的节点，在完成cas后失去cpu。
-             * 此时第二个线程获得cpu，因为head节点变化了，故而也进入了unparknext。或者自己进入了canceled状态。
-             * 因此会有多个线程进入unparkNext。
-             * 
-             */
-            if (casHeadWaiter(head, self))
-            {
+                    pred = next;
+                    next = findNextWaiter(pred);
+                } while (next != null && next.status == Waiter.CANCELED && head == headWaiter);
                 /**
-                 * 在头结点重新确定之后，可能存在情况有：
-                 * 1 原有的next节点在cas之前就进入cancel状态
-                 * 2 原有的next节点在cas之后进入cancel状态.此时该next节点可能也会进入unparkNext这个方法内
-                 * 3.1 原本没有next节点，现在有了next节点，且next节点状态正常
-                 * 3.2 原本没有next节点，现在有了next节点，但next节点进入cancel状态
-                 * 4 原本的next节点状态正常
-                 * 5 原本的next节点被因为其他线程放入数据而被唤醒。此时该next节点也会进入unparkNext方法内
-                 * 针对情况1，再次循环流程
-                 * 针对情况2，重新发起循环流程，
-                 * 针对情况3.1， 唤醒next节点的线程并且退出循环
-                 * 针对情况3.2，再次循环流程
-                 * 针对情况4，唤醒next节点线程 并且退出循环
-                 * 针对情况5，再次循环
-                 * 
+                 * 在头结点未变化的情况下，找到距离头节点最近的一个非cancel状态节点。
                  */
-                if (next != null || (next = findNextWaiter(self)) != null)
+                /**
+                 * 如果头节点发生了变化，意味着其他线程取得了控制权，则后续行为由其他线程完成。本线程可以退出了
+                 */
+                if (head == headWaiter && casHead(head, pred))
                 {
-                    if (next.status == Waiter.CANCELED)
+                    /**
+                     * 如果成功的设置了新的头结点。则尝试唤醒头结点的后继节点
+                     */
+                    head = pred;
+                    next = findNextWaiter(pred);
+                    if (next == null)
                     {
-                        continue;
+                        return;
+                    }
+                    else if (next.status == Waiter.WAITING)
+                    {
+                        LockSupport.unpark(next.thread);
                     }
                     else
                     {
-                        LockSupport.unpark(next.thread);
-                        break;
+                        continue;
                     }
                 }
                 else
                 {
-                    break;
+                    return;
                 }
-            }
-            else
-            {
-                break;
-            }
-        } while (true);
+            } while (true);
+        }
     }
     
-    private boolean casHeadWaiter(Waiter head, Waiter newHead)
+    private boolean casHead(Waiter origin, Waiter newHead)
     {
-        return unsafe.compareAndSwapObject(this, headWaiterOffset, head, newHead);
+        return unsafe.compareAndSwapObject(this, headWaiterOffset, origin, newHead);
     }
+    
 }
