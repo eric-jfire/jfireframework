@@ -13,7 +13,7 @@ public interface Trigger
     public Timetask timetask();
     
     /**
-     * 下一次触发的时间
+     * 类似与System.currentTimeMillis()的定义。表示下一次触发的时间
      * 
      * @return
      */

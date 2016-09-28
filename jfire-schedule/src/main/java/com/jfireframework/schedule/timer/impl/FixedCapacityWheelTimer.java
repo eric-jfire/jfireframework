@@ -9,7 +9,7 @@ import com.jfireframework.schedule.trigger.Trigger;
 public class FixedCapacityWheelTimer extends BaseTimer
 {
     private final int      tickCount;
-    private volatile long  tickNow = 0;
+    private long           tickNow = 0;
     private final Bucket[] buckets;
     private final int      mask;
     
@@ -22,10 +22,10 @@ public class FixedCapacityWheelTimer extends BaseTimer
             triggers.offer(trigger);
         }
         
-        public void expire(long currentTime)
+        public void expire()
         {
+            long currentTime = System.currentTimeMillis();
             Trigger trigger;
-            long t_tickNow = tickNow;
             while ((trigger = triggers.poll()) != null)
             {
                 long left = trigger.deadline() - currentTime;
@@ -35,10 +35,7 @@ public class FixedCapacityWheelTimer extends BaseTimer
                 }
                 else
                 {
-                    long posi = left / tickDuration;
-                    posi = posi == 0 ? 1 : posi;
-                    int index = (int) ((t_tickNow + posi) & mask);
-                    buckets[index].add(trigger);
+                   
                 }
             }
         }
@@ -69,38 +66,35 @@ public class FixedCapacityWheelTimer extends BaseTimer
         {
             waitToNextTick(tickNow);
             Bucket bucket = buckets[(int) (tickNow & mask)];
-            long currentTime = currentTime();
-            bucket.expire(currentTime);
-            long t_ticketNow = tickNow;
-            for (Trigger trigger = waitForAddTriggers.poll(); trigger != null; trigger = waitForAddTriggers.poll())
-            {
-                long left = trigger.deadline() - currentTime;
-                long posi = left / tickDuration;
-                posi = posi <= 0 ? 1 : posi;
-                int index = (int) ((t_ticketNow + posi) & mask);
-                buckets[index].add(trigger);
-            }
-            tickNow = t_ticketNow + 1;
+            bucket.expire();
+            tickNow += 1;
         }
         
     }
     
     @Override
-    public void start()
+    protected void startTimerThread()
     {
         if (state_updater.compareAndSwap(this, BaseTimer.NOT_START, BaseTimer.STARTED))
         {
-            new Thread(
-                    new Runnable() {
-                        
-                        @Override
-                        public void run()
-                        {
-                            FixedCapacityWheelTimer.this.run();
-                        }
-                    }, "FixedCapacityWheelTimer-ticket-thread"
-            );
+            new Thread(new Runnable() {
+                
+                @Override
+                public void run()
+                {
+                    FixedCapacityWheelTimer.this.run();
+                }
+            }, "FixedCapacityWheelTimer-ticket-thread");
         }
     }
     
+    @Override
+    public void add(Trigger trigger)
+    {
+        long left = trigger.deadline() - baseTime;
+        long posi = left / tickDuration_mills;
+        posi = posi <= 0 ? 0 : posi;
+        int index = (int) (posi & mask);
+        buckets[index].add(trigger);
+    }
 }

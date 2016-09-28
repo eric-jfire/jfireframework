@@ -18,5 +18,4 @@ public interface Timer extends Runnable
      */
     public void stop();
     
-    public void start();
 }
