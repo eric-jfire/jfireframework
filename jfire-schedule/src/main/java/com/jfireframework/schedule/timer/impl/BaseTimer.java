@@ -3,36 +3,29 @@ package com.jfireframework.schedule.timer.impl;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.concurrent.MPSCQueue;
-import com.jfireframework.baseutil.concurrent.UnsafeIntFieldUpdater;
 import com.jfireframework.schedule.timer.ExpireHandler;
 import com.jfireframework.schedule.timer.Timer;
 import com.jfireframework.schedule.trigger.Trigger;
 
 public abstract class BaseTimer implements Timer
 {
-    protected final MPSCQueue<Trigger>                      waitForAddTriggers = new MPSCQueue<Trigger>();
+    protected final MPSCQueue<Trigger> waitForAddTriggers = new MPSCQueue<Trigger>();
     // 纳秒表示的tick间隔
-    protected final long                                    tickDuration;
-    protected final long                                    tickDuration_mills;
-    protected volatile int                                  state              = NOT_START;
-    public static final int                                 NOT_START          = 0;
-    public static final int                                 STARTED            = 1;
-    public static final int                                 termination        = -1;
-    protected static final UnsafeIntFieldUpdater<BaseTimer> state_updater      = new UnsafeIntFieldUpdater<BaseTimer>(BaseTimer.class, "state");
-    private final long                                      startTime          = System.nanoTime();
-    protected final long                                    baseTime;
-    protected final ExpireHandler                           expireHandler;
+    protected final long               tickDuration;
     
-    public BaseTimer(long tickDuration, TimeUnit unit, ExpireHandler expireHandler)
+    protected volatile int             state              = STARTED;
+    public static final int            STARTED            = 1;
+    public static final int            termination        = -1;
+    private final long                 startTime          = System.nanoTime();
+    protected final long               baseTime;
+    protected final ExpireHandler      expireHandler;
+    
+    public BaseTimer(ExpireHandler expireHandler, long tickDuration, TimeUnit unit)
     {
         this.tickDuration = unit.toNanos(tickDuration);
-        tickDuration_mills = unit.toMillis(tickDuration);
         this.expireHandler = expireHandler;
         baseTime = System.currentTimeMillis();
-        startTimerThread();
     }
-    
-    protected abstract void startTimerThread();
     
     /**
      * 要使用这种方式等待的原因很简单。因为系统的等待并不是完美的按照约定的时间进行，有可能会比我们的参数时间要多一些。

@@ -1,49 +1,28 @@
 package com.jfireframework.schedule.timer.impl;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import com.jfireframework.baseutil.concurrent.MPSCQueue;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.schedule.timer.ExpireHandler;
+import com.jfireframework.schedule.timer.bucket.Bucket;
+import com.jfireframework.schedule.timer.bucket.impl.FixCapacityBucket;
 import com.jfireframework.schedule.trigger.Trigger;
 
 public class FixedCapacityWheelTimer extends BaseTimer
 {
-    private final int      tickCount;
-    private long           tickNow = 0;
-    private final Bucket[] buckets;
-    private final int      mask;
+    private final int             tickCount;
+    private long                  tickNow = 0;
+    private final Bucket[]        buckets;
+    private final int             mask;
+    private final ExecutorService pool;
+    protected final long          tickDuration_mills;
     
-    class Bucket
+    public FixedCapacityWheelTimer(int tickCount, ExpireHandler expireHandler, ExecutorService pool, long tickDuration, TimeUnit unit)
     {
-        private final MPSCQueue<Trigger> triggers = new MPSCQueue<Trigger>();
-        
-        public void add(Trigger trigger)
-        {
-            triggers.offer(trigger);
-        }
-        
-        public void expire()
-        {
-            long currentTime = System.currentTimeMillis();
-            Trigger trigger;
-            while ((trigger = triggers.poll()) != null)
-            {
-                long left = trigger.deadline() - currentTime;
-                if (left < 0)
-                {
-                    expireHandler.expire(trigger);
-                }
-                else
-                {
-                   
-                }
-            }
-        }
-    }
-    
-    public FixedCapacityWheelTimer(int tickCount, ExpireHandler expireHandler, long tickDuration, TimeUnit unit)
-    {
-        super(tickDuration, unit, expireHandler);
+        super(expireHandler, tickDuration, unit);
+        tickDuration_mills = unit.toMillis(tickDuration);
+        this.pool = pool;
         int tmp = 1;
         while (tmp < tickCount && tmp > 0)
         {
@@ -55,8 +34,13 @@ public class FixedCapacityWheelTimer extends BaseTimer
         buckets = new Bucket[this.tickCount];
         for (int i = 0; i < buckets.length; i++)
         {
-            buckets[i] = new Bucket();
+            buckets[i] = new FixCapacityBucket(expireHandler, this);
         }
+    }
+    
+    public FixedCapacityWheelTimer(int tickCount, ExpireHandler expireHandler, long tickDuration, TimeUnit unit)
+    {
+        this(tickCount, expireHandler, Executors.newCachedThreadPool(), tickDuration, unit);
     }
     
     @Override
@@ -65,27 +49,19 @@ public class FixedCapacityWheelTimer extends BaseTimer
         while (state == STARTED)
         {
             waitToNextTick(tickNow);
-            Bucket bucket = buckets[(int) (tickNow & mask)];
-            bucket.expire();
+            final Bucket bucket = buckets[(int) (tickNow & mask)];
+            pool.execute(
+                    new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            bucket.expire();
+                        }
+                    }
+            );
             tickNow += 1;
         }
         
-    }
-    
-    @Override
-    protected void startTimerThread()
-    {
-        if (state_updater.compareAndSwap(this, BaseTimer.NOT_START, BaseTimer.STARTED))
-        {
-            new Thread(new Runnable() {
-                
-                @Override
-                public void run()
-                {
-                    FixedCapacityWheelTimer.this.run();
-                }
-            }, "FixedCapacityWheelTimer-ticket-thread");
-        }
     }
     
     @Override
@@ -97,4 +73,5 @@ public class FixedCapacityWheelTimer extends BaseTimer
         int index = (int) (posi & mask);
         buckets[index].add(trigger);
     }
+    
 }

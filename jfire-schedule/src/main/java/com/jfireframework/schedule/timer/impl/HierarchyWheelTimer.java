@@ -1,32 +1,29 @@
 package com.jfireframework.schedule.timer.impl;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import com.jfireframework.baseutil.exception.UnSupportException;
-import com.jfireframework.baseutil.timer.DefaultTimeout;
-import com.jfireframework.baseutil.timer.TimeTask;
-import com.jfireframework.baseutil.timer.Timeout;
-import com.jfireframework.baseutil.timer.TimeoutBucket;
 import com.jfireframework.schedule.timer.ExpireHandler;
+import com.jfireframework.schedule.timer.bucket.Bucket;
 
 public class HierarchyWheelTimer extends BaseTimer
 {
-    private final TimeoutBucket[][] buckets;
-    private final int               hierarchy;
-    private final int[]             masks;
-    private final long[]            tickNows;
-    private final long[]            durations;
-    private final long[]            capacity;
+    private final Bucket[][]      buckets;
+    private final int             level;
+    private final int[]           masks;
+    private final long[]          tickNows;
+    private final long[]          durations;
+    private final ExecutorService pool;
     
-    public HierarchyWheelTimer(int[] hierarchies, long tickDuration, TimeUnit unit, ExpireHandler expireHandler)
+    public HierarchyWheelTimer(int[] hierarchies, ExpireHandler expireHandler, ExecutorService pool, long tickDuration, TimeUnit unit)
     {
-        super(tickDuration, unit, expireHandler);
-        hierarchy = hierarchies.length;
-        durations = new long[hierarchy];
-        capacity = new long[hierarchy];
-        masks = new int[hierarchy];
-        tickNows = new long[hierarchy];
-        buckets = new TimeoutBucket[hierarchies.length][];
-        for (int i = 0; i < hierarchies.length; i++)
+        super(expireHandler, tickDuration, unit);
+        this.pool = pool;
+        level = hierarchies.length;
+        durations = new long[level];
+        masks = new int[level];
+        tickNows = new long[level];
+        buckets = new Bucket[level][];
+        for (int i = 0; i < level; i++)
         {
             int tmp = 1;
             while (tmp < hierarchies[i] && tmp > 0)
@@ -38,62 +35,57 @@ public class HierarchyWheelTimer extends BaseTimer
                 throw new IllegalArgumentException();
             }
             masks[i] = tmp - 1;
-            buckets[i] = new TimeoutBucket[tmp];
+            buckets[i] = new Bucket[tmp];
             for (int j = 0; j < buckets[i].length; j++)
             {
-                buckets[i][j] = new TimeoutBucket();
+                buckets[i][j] = new HierarchyBucket(expireHandler, this);
             }
         }
-        durations[0] = this.tickDuration;
-        capacity[0] = durations[0] * buckets[0].length;
-        for (int i = 1; i < hierarchy; i++)
+        durations[0] = unit.toMillis(tickDuration);
+        for (int i = 1; i < level; i++)
         {
             durations[i] = durations[i - 1] * buckets[i - 1].length;
-            capacity[i] = durations[i] * (buckets[i].length + 1);
         }
         
     }
     
     @Override
-    public Timeout addTask(TimeTask task, long delay, TimeUnit unit)
-    {
-        start();
-        Timeout timeout = new DefaultTimeout(this, task, unit.toNanos(delay) + currentTime());
-        if (unit.toNanos(delay) > capacity[hierarchy - 1])
-        {
-            throw new UnSupportException("超时范围超出了timer的范围");
-        }
-        timeouts.add(timeout);
-        return timeout;
-    }
-    
-    @Override
-    public void stop()
-    {
-        stop = true;
-    }
-    
-    @Override
     public void run()
     {
-        while (stop == false)
+        while (state == termination)
         {
             waitToNextTick(tickNows[0]);
-            int index = (int) (tickNows[0] & masks[0]);
-            TimeoutBucket bucket = buckets[0][index];
-            bucket.expire(handler);
-            if (index == masks[0])
+            final int index = (int) (tickNows[0] & masks[0]);
+            final Bucket bucket = buckets[0][index];
+            pool.execute(
+                    new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            bucket.expire();
+                        }
+                    }
+            );
+            tickNows[0] = index + 1;
+            if (index == 0 && tickNows[0] != 0)
             {
-                int nowHier = 0;
-                while (true)
+                for (int i = 1; i < level; i++)
                 {
-                    if (nowHier + 1 < hierarchy && index == masks[nowHier])
+                    final long highLevelIndex = tickNows[i];
+                    final Bucket highLevelBucket = buckets[i][(int) (highLevelIndex & masks[i])];
+                    pool.execute(
+                            new Runnable() {
+                                @Override
+                                public void run()
+                                {
+                                    highLevelBucket.expire();
+                                }
+                            }
+                    );
+                    tickNows[i] = highLevelIndex + 1;
+                    if (highLevelIndex == 0 && tickNows[i] != 0)
                     {
-                        nowHier += 1;
-                        index = (int) (tickNows[nowHier] & masks[nowHier]);
-                        bucket = buckets[nowHier][index];
-                        bucket.out(timeouts);
-                        tickNows[nowHier] += 1;
+                        ;
                     }
                     else
                     {
@@ -101,30 +93,6 @@ public class HierarchyWheelTimer extends BaseTimer
                     }
                 }
             }
-            while (timeouts.isEmpty() == false)
-            {
-                Timeout timeout = timeouts.poll();
-                long left = timeout.deadline() - currentTime();
-                if (left < 0)
-                {
-                    handler.handle(timeout);
-                    continue;
-                }
-                int flag = 0;
-                while (capacity[flag] < left)
-                {
-                    left -= capacity[flag];
-                    flag += 1;
-                }
-                int posi = (int) (left / durations[flag]);
-                if (posi == 0 && flag == 0)
-                {
-                    posi = 1;
-                }
-                int point = (int) ((tickNows[flag] + posi) & masks[flag]);
-                buckets[flag][point].addTimeout(timeout);
-            }
-            tickNows[0] += 1;
         }
     }
     
