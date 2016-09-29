@@ -438,6 +438,7 @@ public class MPMCQueue<E>
                     else if (next.status == Waiter.WAITING)
                     {
                         LockSupport.unpark(next.thread);
+                        return;
                     }
                     else
                     {
