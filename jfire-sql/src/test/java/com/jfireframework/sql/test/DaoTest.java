@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import org.junit.Test;
-import com.jfireframework.baseutil.time.ThreadTimewatch;
 import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.sql.function.LockMode;
 import com.jfireframework.sql.test.entity.User;
@@ -26,20 +25,21 @@ public class DaoTest extends BaseTestSupport
     @Test
     public void saveTest()
     {
+        Timewatch timewatch = new Timewatch();
         User user = new User();
         user.setName("新的林斌");
         user.setPassword("weadasda");
         user.setAge(15);
         user.setBirthday("2015-5-6 12:12:12");
-        ThreadTimewatch.start();
+        timewatch.start();
         for (int i = 0; i < 1000; i++)
         {
             session.save(user);
             user.setId(null);
         }
-        ThreadTimewatch.end();
-        logger.debug("在没有事务的情况下插入1000条数据耗时：{}", ThreadTimewatch.getTotalTime());
-        ThreadTimewatch.start();
+        timewatch.end();
+        logger.debug("在没有事务的情况下插入1000条数据耗时：{}", timewatch.getTotal());
+        timewatch.start();
         session.beginTransAction(0);
         for (int i = 0; i < 1000; i++)
         {
@@ -47,8 +47,8 @@ public class DaoTest extends BaseTestSupport
             user.setId(null);
         }
         session.commit();
-        ThreadTimewatch.end();
-        logger.debug("在开启事务的情况下插入1000条数据耗时：{}", ThreadTimewatch.getTotalTime());
+        timewatch.end();
+        logger.debug("在开启事务的情况下插入1000条数据耗时：{}", timewatch.getTotal());
         List<User> users = new LinkedList<User>();
         for (int i = 0; i < 30000; i++)
         {
@@ -59,16 +59,16 @@ public class DaoTest extends BaseTestSupport
             user.setBirthday("2015-5-6 12:12:12");
             users.add(user);
         }
-        ThreadTimewatch.start();
+        timewatch.start();
         session.batchInsert(users);
-        ThreadTimewatch.end();
-        logger.debug("在没有开启事务的情况下批量插入30000条数据耗时：{}", ThreadTimewatch.getTotalTime());
-        ThreadTimewatch.start();
+        timewatch.end();
+        logger.debug("在没有开启事务的情况下批量插入30000条数据耗时：{}", timewatch.getTotal());
+        timewatch.start();
         session.beginTransAction(0);
         session.batchInsert(users);
         session.commit();
-        ThreadTimewatch.end();
-        logger.debug("在开启事务的情况下批量插入30000条数据耗时：{}", ThreadTimewatch.getTotalTime());
+        timewatch.end();
+        logger.debug("在开启事务的情况下批量插入30000条数据耗时：{}", timewatch.getTotal());
         
         try
         {

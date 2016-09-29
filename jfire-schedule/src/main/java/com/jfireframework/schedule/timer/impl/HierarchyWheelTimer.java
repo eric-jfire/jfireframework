@@ -88,7 +88,7 @@ public class HierarchyWheelTimer extends BaseTimer
                     }
             );
             waitToNextTick(tickNows[0]);
-            tickNows[0] = index + 1;
+            tickNows[0] += 1;
             if (index == masks[0])
             {
                 for (int i = 1; i < level; i++)
@@ -104,7 +104,7 @@ public class HierarchyWheelTimer extends BaseTimer
                                 }
                             }
                     );
-                    tickNows[i] = highLevelIndex + 1;
+                    tickNows[i] += 1;
                     if (highLevelIndex == masks[i])
                     {
                         ;
@@ -114,7 +114,7 @@ public class HierarchyWheelTimer extends BaseTimer
                         break;
                     }
                 }
-                if (tickNows[level - 1] == masks[level - 1] + 1)
+                if ((tickNows[level - 1] & masks[level - 1]) == 1)
                 {
                     pool.execute(
                             new Runnable() {
@@ -125,7 +125,7 @@ public class HierarchyWheelTimer extends BaseTimer
                                     long threshold = thresholds[level - 1];
                                     for (Trigger trigger = tooBigTriggers.poll(); trigger != null; trigger = tooBigTriggers.poll())
                                     {
-                                        if (trigger.deadline() - baseTime < threshold)
+                                        if (trigger.deadline() - System.currentTimeMillis() < threshold)
                                         {
                                             add(trigger);
                                         }
@@ -154,29 +154,26 @@ public class HierarchyWheelTimer extends BaseTimer
         {
             return;
         }
-        long left = trigger.deadline() - baseTime;
-        boolean findSlot = false;
-        for (int i = 0; i < level; i++)
-        {
-            if (left > thresholds[level - 1])
-            {
-                break;
-            }
-            if (left > thresholds[i])
-            {
-                continue;
-            }
-            else
-            {
-                int posi = (int) (left / durations[i]);
-                findSlot = true;
-                buckets[i][posi].add(trigger);
-                break;
-            }
-        }
-        if (findSlot == false)
+        long left = trigger.deadline() - System.currentTimeMillis();
+        if (left > thresholds[level - 1])
         {
             tooBigTriggers.offer(trigger);
+        }
+        else
+        {
+            for (int i = 0; i < level; i++)
+            {
+                if (left > thresholds[i])
+                {
+                    continue;
+                }
+                else
+                {
+                    int posi = (int) (left / durations[i]);
+                    buckets[i][posi].add(trigger);
+                    break;
+                }
+            }
         }
     }
     

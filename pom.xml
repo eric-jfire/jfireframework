@@ -16,10 +16,9 @@
 		<module>jfire-job</module>
 		<module>jfire-test</module>
 		<module>jfire-litl</module>
-		<module>jfire-data-mongodb</module>
-		<module>wx</module>
 		<module>jfire-jnet2</module>
 		<module>jfire-eventbus</module>
+		<module>jfire-schedule</module>
 	</modules>
 	<dependencies>
 		<dependency>
