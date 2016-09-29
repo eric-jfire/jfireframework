@@ -4,7 +4,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.verify.Verify;
-import com.jfireframework.schedule.timer.ExpireHandler;
+import com.jfireframework.schedule.handler.ExpireHandler;
 import com.jfireframework.schedule.timer.bucket.Bucket;
 import com.jfireframework.schedule.timer.bucket.impl.FixCapacityBucket;
 import com.jfireframework.schedule.trigger.Trigger;
@@ -34,8 +34,9 @@ public class FixedCapacityWheelTimer extends BaseTimer
         buckets = new Bucket[this.tickCount];
         for (int i = 0; i < buckets.length; i++)
         {
-            buckets[i] = new FixCapacityBucket(expireHandler, this);
+            buckets[i] = new FixCapacityBucket(expireHandler, this, tickDuration_mills);
         }
+        new Thread(this, "FixedCapacityWheelTimer").start();
     }
     
     public FixedCapacityWheelTimer(int tickCount, ExpireHandler expireHandler, long tickDuration, TimeUnit unit)
@@ -48,7 +49,6 @@ public class FixedCapacityWheelTimer extends BaseTimer
     {
         while (state == STARTED)
         {
-            waitToNextTick(tickNow);
             final Bucket bucket = buckets[(int) (tickNow & mask)];
             pool.execute(
                     new Runnable() {
@@ -59,6 +59,7 @@ public class FixedCapacityWheelTimer extends BaseTimer
                         }
                     }
             );
+            waitToNextTick(tickNow);
             tickNow += 1;
         }
         
@@ -67,6 +68,10 @@ public class FixedCapacityWheelTimer extends BaseTimer
     @Override
     public void add(Trigger trigger)
     {
+        if (trigger.isCanceled())
+        {
+            return;
+        }
         long left = trigger.deadline() - baseTime;
         long posi = left / tickDuration_mills;
         posi = posi <= 0 ? 0 : posi;

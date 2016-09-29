@@ -1,4 +1,4 @@
-package com.jfireframework.schedule.timer;
+package com.jfireframework.schedule.handler;
 
 import com.jfireframework.schedule.trigger.Trigger;
 

@@ -3,7 +3,7 @@ package com.jfireframework.schedule.timer.impl;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.concurrent.MPSCQueue;
-import com.jfireframework.schedule.timer.ExpireHandler;
+import com.jfireframework.schedule.handler.ExpireHandler;
 import com.jfireframework.schedule.timer.Timer;
 import com.jfireframework.schedule.trigger.Trigger;
 

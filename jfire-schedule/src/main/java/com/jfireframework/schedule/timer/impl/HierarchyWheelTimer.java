@@ -1,18 +1,34 @@
 package com.jfireframework.schedule.timer.impl;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import com.jfireframework.schedule.timer.ExpireHandler;
+import com.jfireframework.baseutil.concurrent.MPSCQueue;
+import com.jfireframework.schedule.handler.ExpireHandler;
 import com.jfireframework.schedule.timer.bucket.Bucket;
+import com.jfireframework.schedule.timer.bucket.impl.HierarchyBucket;
+import com.jfireframework.schedule.trigger.Trigger;
 
 public class HierarchyWheelTimer extends BaseTimer
 {
-    private final Bucket[][]      buckets;
-    private final int             level;
-    private final int[]           masks;
-    private final long[]          tickNows;
-    private final long[]          durations;
-    private final ExecutorService pool;
+    private final Bucket[][]         buckets;
+    private final int                level;
+    private final int[]              masks;
+    private final long[]             tickNows;
+    /**
+     * 每个层级的时间间隔
+     */
+    private final long[]             durations;
+    private final long[]             thresholds;
+    private final ExecutorService    pool;
+    private final MPSCQueue<Trigger> tooBigTriggers = new MPSCQueue<Trigger>();
+    
+    public HierarchyWheelTimer(int[] hierarchies, ExpireHandler expireHandler, long tickDuration, TimeUnit unit)
+    {
+        this(hierarchies, expireHandler, Executors.newCachedThreadPool(), tickDuration, unit);
+    }
     
     public HierarchyWheelTimer(int[] hierarchies, ExpireHandler expireHandler, ExecutorService pool, long tickDuration, TimeUnit unit)
     {
@@ -36,9 +52,10 @@ public class HierarchyWheelTimer extends BaseTimer
             }
             masks[i] = tmp - 1;
             buckets[i] = new Bucket[tmp];
+            long tickDuration_mills = unit.toMillis(tickDuration);
             for (int j = 0; j < buckets[i].length; j++)
             {
-                buckets[i][j] = new HierarchyBucket(expireHandler, this);
+                buckets[i][j] = new HierarchyBucket(expireHandler, this, tickDuration_mills);
             }
         }
         durations[0] = unit.toMillis(tickDuration);
@@ -46,7 +63,12 @@ public class HierarchyWheelTimer extends BaseTimer
         {
             durations[i] = durations[i - 1] * buckets[i - 1].length;
         }
-        
+        thresholds = new long[level];
+        for (int i = 0; i < level; i++)
+        {
+            thresholds[i] = durations[i] * buckets[i].length;
+        }
+        new Thread(this, "HierarchyWheelTimer").start();
     }
     
     @Override
@@ -54,7 +76,6 @@ public class HierarchyWheelTimer extends BaseTimer
     {
         while (state == termination)
         {
-            waitToNextTick(tickNows[0]);
             final int index = (int) (tickNows[0] & masks[0]);
             final Bucket bucket = buckets[0][index];
             pool.execute(
@@ -66,13 +87,14 @@ public class HierarchyWheelTimer extends BaseTimer
                         }
                     }
             );
+            waitToNextTick(tickNows[0]);
             tickNows[0] = index + 1;
-            if (index == 0 && tickNows[0] != 0)
+            if (index == masks[0])
             {
                 for (int i = 1; i < level; i++)
                 {
-                    final long highLevelIndex = tickNows[i];
-                    final Bucket highLevelBucket = buckets[i][(int) (highLevelIndex & masks[i])];
+                    final int highLevelIndex = (int) (tickNows[i] & masks[i]);
+                    final Bucket highLevelBucket = buckets[i][highLevelIndex];
                     pool.execute(
                             new Runnable() {
                                 @Override
@@ -83,7 +105,7 @@ public class HierarchyWheelTimer extends BaseTimer
                             }
                     );
                     tickNows[i] = highLevelIndex + 1;
-                    if (highLevelIndex == 0 && tickNows[i] != 0)
+                    if (highLevelIndex == masks[i])
                     {
                         ;
                     }
@@ -92,7 +114,69 @@ public class HierarchyWheelTimer extends BaseTimer
                         break;
                     }
                 }
+                if (tickNows[level - 1] == masks[level - 1] + 1)
+                {
+                    pool.execute(
+                            new Runnable() {
+                                @Override
+                                public void run()
+                                {
+                                    List<Trigger> tmp = new LinkedList<Trigger>();
+                                    long threshold = thresholds[level - 1];
+                                    for (Trigger trigger = tooBigTriggers.poll(); trigger != null; trigger = tooBigTriggers.poll())
+                                    {
+                                        if (trigger.deadline() - baseTime < threshold)
+                                        {
+                                            add(trigger);
+                                        }
+                                        else
+                                        {
+                                            tmp.add(trigger);
+                                        }
+                                    }
+                                    for (Trigger each : tmp)
+                                    {
+                                        tooBigTriggers.offer(each);
+                                    }
+                                }
+                                
+                            }
+                    );
+                }
             }
+        }
+    }
+    
+    @Override
+    public void add(Trigger trigger)
+    {
+        if (trigger.isCanceled())
+        {
+            return;
+        }
+        long left = trigger.deadline() - baseTime;
+        boolean findSlot = false;
+        for (int i = 0; i < level; i++)
+        {
+            if (left > thresholds[level - 1])
+            {
+                break;
+            }
+            if (left > thresholds[i])
+            {
+                continue;
+            }
+            else
+            {
+                int posi = (int) (left / durations[i]);
+                findSlot = true;
+                buckets[i][posi].add(trigger);
+                break;
+            }
+        }
+        if (findSlot == false)
+        {
+            tooBigTriggers.offer(trigger);
         }
     }
     

@@ -1,7 +1,7 @@
 package com.jfireframework.schedule.timer.bucket.impl;
 
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.schedule.timer.ExpireHandler;
+import com.jfireframework.schedule.handler.ExpireHandler;
 import com.jfireframework.schedule.timer.Timer;
 import com.jfireframework.schedule.timer.bucket.Bucket;
 import com.jfireframework.schedule.trigger.Trigger;
@@ -26,30 +26,54 @@ public abstract class AbstractBucket implements Bucket
     protected static final long   off    = ReflectUtil.getFieldOffset("head", AbstractBucket.class);
     protected final ExpireHandler expireHandler;
     protected final Timer         timer;
+    protected final long          tickDuration_mills;
     
-    public AbstractBucket(ExpireHandler expireHandler, Timer timer)
+    public AbstractBucket(ExpireHandler expireHandler, Timer timer, long tickDuration_mills)
     {
         this.expireHandler = expireHandler;
         this.timer = timer;
+        this.tickDuration_mills = tickDuration_mills;
     }
     
     @Override
     public void add(Trigger trigger)
     {
+        if (trigger.isCanceled())
+        {
+            return;
+        }
         Node node = new Node(trigger);
-        node.next = head;
-        if (unsafe.compareAndSwapObject(this, off, head, node))
+        Node h = head;
+        node.next = h;
+        if (unsafe.compareAndSwapObject(this, off, h, node))
         {
             return;
         }
         do
         {
-            node.next = head;
-            if (unsafe.compareAndSwapObject(this, off, head, node))
+            h = head;
+            node.next = h;
+            if (unsafe.compareAndSwapObject(this, off, h, node))
             {
                 return;
             }
         } while (true);
     }
     
+    protected Node takeHead()
+    {
+        Node h = head;
+        if (unsafe.compareAndSwapObject(this, off, h, null))
+        {
+            return h;
+        }
+        do
+        {
+            h = head;
+            if (unsafe.compareAndSwapObject(this, off, h, null))
+            {
+                return h;
+            }
+        } while (true);
+    }
 }
