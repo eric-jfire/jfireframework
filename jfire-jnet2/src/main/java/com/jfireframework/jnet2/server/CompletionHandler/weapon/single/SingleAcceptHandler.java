@@ -3,18 +3,16 @@ package com.jfireframework.jnet2.server.CompletionHandler.weapon.single;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
-import com.jfireframework.baseutil.disruptor.Disruptor;
-import com.jfireframework.baseutil.disruptor.EntryAction;
-import com.jfireframework.baseutil.disruptor.waitstrategy.ParkWaitStrategy;
-import com.jfireframework.baseutil.disruptor.waitstrategy.WaitStrategy;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.eventbus.bus.EventBus;
+import com.jfireframework.eventbus.bus.impl.ManualEventBusImpl;
 import com.jfireframework.jnet2.common.channel.ChannelInitListener;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.server.AioServer;
 import com.jfireframework.jnet2.server.CompletionHandler.AcceptHandler;
-import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async.SingleAsyncAction;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async.event.ReciveHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async.push.AsyncSingleReadWithPushHandlerImpl;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async.withoutpush.AsyncSingleReadHandlerImpl;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.sync.push.SyncSingleReadAndPushHandlerImpl;
@@ -30,7 +28,7 @@ public class SingleAcceptHandler implements AcceptHandler
     private ChannelInitListener initListener;
     private final PushMode      pushMode;
     private final WorkMode      workMode;
-    private final Disruptor     disruptor;
+    private final EventBus      eventBus;
     
     public SingleAcceptHandler(AioServer aioServer, ServerConfig serverConfig)
     {
@@ -42,22 +40,13 @@ public class SingleAcceptHandler implements AcceptHandler
         initListener = serverConfig.getInitListener();
         if (workMode == WorkMode.ASYNC)
         {
-            EntryAction[] actions = new EntryAction[serverConfig.getAsyncThreadNum()];
-            for (int i = 0; i < actions.length; i++)
-            {
-                actions[i] = new SingleAsyncAction();
-            }
-            Thread[] threads = new Thread[actions.length];
-            for (int i = 0; i < threads.length; i++)
-            {
-                threads[i] = new Thread(actions[i], "disruptor-" + i);
-            }
-            WaitStrategy waitStrategy = new ParkWaitStrategy(threads);
-            disruptor = new Disruptor(serverConfig.getAsyncCapacity(), actions, threads, waitStrategy);
+            eventBus = new ManualEventBusImpl();
+            eventBus.addHandler(new ReciveHandler());
+            eventBus.start();
         }
         else
         {
-            disruptor = null;
+            eventBus = null;
         }
     }
     
@@ -85,11 +74,11 @@ public class SingleAcceptHandler implements AcceptHandler
                 
                 if (pushMode == PushMode.OFF)
                 {
-                    readHandler = new AsyncSingleReadHandlerImpl(channelInfo, disruptor);
+                    readHandler = new AsyncSingleReadHandlerImpl(channelInfo, eventBus);
                 }
                 else
                 {
-                    readHandler = new AsyncSingleReadWithPushHandlerImpl(channelInfo, disruptor);
+                    readHandler = new AsyncSingleReadWithPushHandlerImpl(channelInfo, eventBus);
                 }
                 
             }
@@ -123,9 +112,9 @@ public class SingleAcceptHandler implements AcceptHandler
     @Override
     public void stop()
     {
-        if (disruptor != null)
+        if (eventBus != null)
         {
-            disruptor.stop();
+            eventBus.stop();
         }
     }
 }

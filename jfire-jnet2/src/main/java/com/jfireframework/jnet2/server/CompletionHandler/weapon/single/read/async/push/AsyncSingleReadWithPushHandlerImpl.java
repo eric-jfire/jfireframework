@@ -2,7 +2,7 @@ package com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.asy
 
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
-import com.jfireframework.baseutil.disruptor.Disruptor;
+import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async.AbstractAsyncSingleReadHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.write.push.SyncSingleWriteAndPushHandlerImpl;
@@ -14,9 +14,9 @@ public class AsyncSingleReadWithPushHandlerImpl extends AbstractAsyncSingleReadH
     private final static int        WORK      = 2;
     private final CpuCachePadingInt readState = new CpuCachePadingInt(0);
     
-    public AsyncSingleReadWithPushHandlerImpl(ServerChannel serverChannel, Disruptor disruptor)
+    public AsyncSingleReadWithPushHandlerImpl(ServerChannel serverChannel, EventBus eventBus)
     {
-        super(serverChannel, disruptor);
+        super(serverChannel, eventBus);
         writeHandler = new SyncSingleWriteAndPushHandlerImpl(serverChannel, this);
     }
     
@@ -48,8 +48,7 @@ public class AsyncSingleReadWithPushHandlerImpl extends AbstractAsyncSingleReadH
         }
     }
     
-   
-    
+    @Override
     protected void doWrite(ByteBuf<?> buf)
     {
         readState.set(PENDING);

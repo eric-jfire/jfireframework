@@ -2,21 +2,22 @@ package com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.asy
 
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.collection.buffer.DirectByteBuf;
-import com.jfireframework.baseutil.disruptor.Disruptor;
+import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.common.decodec.DecodeResult;
 import com.jfireframework.jnet2.common.exception.NotFitProtocolException;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.AbstractSingleReadHandler;
+import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async.event.Message;
 
 public abstract class AbstractAsyncSingleReadHandler extends AbstractSingleReadHandler implements AsyncReadHandler
 {
-    protected final Disruptor  disruptor;
+    protected final EventBus   eventBus;
     protected final ByteBuf<?> emptyBuf = DirectByteBuf.allocate(1);
     
-    public AbstractAsyncSingleReadHandler(ServerChannel serverChannel, Disruptor disruptor)
+    public AbstractAsyncSingleReadHandler(ServerChannel serverChannel, EventBus eventBus)
     {
         super(serverChannel);
-        this.disruptor = disruptor;
+        this.eventBus = eventBus;
     }
     
     @Override
@@ -41,7 +42,7 @@ public abstract class AbstractAsyncSingleReadHandler extends AbstractSingleReadH
                 internalResult.setChannelInfo(serverChannel);
                 internalResult.setData(intermediateResult);
                 internalResult.setIndex(0);
-                disruptor.publish(this);
+                eventBus.post(this, Message.recive);
                 break;
         }
     }
