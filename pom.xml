@@ -28,11 +28,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	<dependencyManagement>
-		<dependencies>
-
-		</dependencies>
-	</dependencyManagement>
 	<reporting>
 		<plugins>
 			<plugin>
@@ -71,12 +66,12 @@
 	</build>
 	<distributionManagement>
 		<repository>
-			<id>user-releases</id>
+			<id>releases</id>
 			<name>Nexus Releases Repository</name>
 			<url>${releasesurl}</url>
 		</repository>
 		<snapshotRepository>
-			<id>user-snapshot</id>
+			<id>snapshots</id>
 			<name>Nexus Snapshots Repository</name>
 			<url>${snapshoturl}</url>
 		</snapshotRepository>
