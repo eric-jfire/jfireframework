@@ -21,15 +21,17 @@ public class FlexibleQueueEventBusImpl extends AbstractEventBus implements Flexi
     private final int             coreEventWorkerNum;
     private final int             maxEventWorkerNum;
     private final long            waitTime;
-    private final ExecutorService pool        = Executors.newCachedThreadPool(new ThreadFactory() {
-                                                  private int count = 1;
-                                                  
-                                                  @Override
-                                                  public Thread newThread(Runnable r)
-                                                  {
-                                                      return new Thread(r, "FlexibleQueueEventBus-eventWorker-" + (count++));
-                                                  }
-                                              });
+    private final ExecutorService pool        = Executors.newCachedThreadPool(
+            new ThreadFactory() {
+                                                          private int count = 1;
+                                                          
+                                                          @Override
+                                                          public Thread newThread(Runnable r)
+                                                          {
+                                                              return new Thread(r, "FlexibleQueueEventBus-eventWorker-" + (count++));
+                                                          }
+                                                      }
+    );
     private static final Logger   LOGGER      = ConsoleLogFactory.getLogger();
     private AtomicInteger         workerCount = new AtomicInteger();
     

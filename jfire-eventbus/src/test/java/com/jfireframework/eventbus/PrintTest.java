@@ -13,7 +13,7 @@ public class PrintTest
     @Test
     public void test() throws InterruptedException
     {
-        EventBus bus = new FlexibleQueueEventBusImpl(new AtomicIntergerIdleCount(), 200, 1);
+        EventBus bus = new FlexibleQueueEventBusImpl(new AtomicIntergerIdleCount(), 200, 8);
         bus.addHandler(new PrintHandler());
         bus.addHandler(new RowPrint());
         bus.start();

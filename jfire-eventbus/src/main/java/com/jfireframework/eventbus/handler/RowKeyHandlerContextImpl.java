@@ -20,42 +20,35 @@ public class RowKeyHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
     public void handle(EventContext eventContext, EventBus eventBus)
     {
         RowEventContext rowEventContext = (RowEventContext) eventContext;
-        do
+        Object rowKey = rowEventContext.rowkey();
+        MPSCQueue<RowEventContext> pre = map.get(rowKey);
+        if (pre == null)
         {
-            Object rowKey = rowEventContext.rowkey();
-            MPSCQueue<RowEventContext> pre = map.get(rowKey);
+            MPSCQueue<RowEventContext> inwork = new MPSCQueue<RowEventContext>();
+            pre = map.putIfAbsent(rowKey, inwork);
             if (pre == null)
             {
-                MPSCQueue<RowEventContext> inwork = new MPSCQueue<RowEventContext>();
-                pre = map.putIfAbsent(rowKey, inwork);
-                if (pre == null)
+                inwork.offer(rowEventContext);
+                while ((rowEventContext = inwork.poll()) != null)
                 {
-                    inwork.offer(rowEventContext);
-                    while ((rowEventContext = inwork.poll()) != null)
-                    {
-                        _handle(rowEventContext, eventBus);
-                    }
-                    map.remove(rowKey);
-                    break;
+                    _handle(rowEventContext, eventBus);
                 }
-            }
-            pre.offer(rowEventContext);
-            if (pre == map.get(rowKey))
-            {
-                break;
+                map.remove(rowKey);
+                while ((rowEventContext = inwork.poll()) != null)
+                {
+                    eventBus.post(rowEventContext);
+                }
             }
             else
             {
-                if (rowEventContext.isFinished())
-                {
-                    break;
-                }
-                else
-                {
-                    continue;
-                }
+                pre.offer(rowEventContext);
             }
-        } while (true);
+        }
+        else
+        {
+            pre.offer(rowEventContext);
+        }
+        
     }
     
     private void _handle(EventContext eventContext, EventBus eventBus)
