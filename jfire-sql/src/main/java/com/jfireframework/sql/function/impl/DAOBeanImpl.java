@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
@@ -20,7 +19,6 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.uniqueid.AutumnId;
-import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.IdStrategy;
@@ -38,76 +36,86 @@ import sun.misc.Unsafe;
 @SuppressWarnings("restriction")
 public class DAOBeanImpl<T> implements Dao<T>
 {
-    private static Logger             logger          = ConsoleLogFactory.getLogger();
-    private Class<?>                  entityClass;
+    private final static Logger         logger   = ConsoleLogFactory.getLogger();
+    private final Class<?>              entityClass;
     // 存储类的属性名和其对应的Mapfield映射关系
-    private Map<String, MapField>     fieldMap        = new HashMap<String, MapField>();
+    private final Map<String, MapField> fieldMap = new HashMap<String, MapField>();
     // 代表数据库主键id的field
-    private MapField                  idField;
-    private long                      idOffset;
-    private static Unsafe             unsafe          = ReflectUtil.getUnsafe();
-    private String                    tableName;
-    private IdStrategy                idStrategy;
-    private SqlAndFields              deleteInfo;
-    private SqlAndFields              batchDeleteInfo;
-    private SqlAndFields              getInfo;
-    private SqlAndFields              getInShareInfo;
-    private SqlAndFields              getForUpdateInfo;
-    private SqlAndFields              insertInfo;
-    private SqlAndFields              updateInfo;
-    private Map<String, SqlAndFields> selectUpdateMap = new ConcurrentHashMap<String, SqlAndFields>();
-    private Map<String, SqlAndFields> selectGetMap    = new ConcurrentHashMap<String, SqlAndFields>();
+    private final MapField              idField;
+    private final long                  idOffset;
+    private final IdType                idType;
+    private final static Unsafe         unsafe   = ReflectUtil.getUnsafe();
+    private final String                tableName;
+    private final IdStrategy            idStrategy;
+    private final SqlAndFields          getInfo;
+    private final SqlAndFields          getInShareInfo;
+    private final SqlAndFields          getForUpdateInfo;
+    private final SqlAndFields          insertInfo;
+    private final SqlAndFields          updateInfo;
+    private final String                deleteSql;
+    
+    enum IdType
+    {
+        INT, LONG, STRING
+    }
     
     public DAOBeanImpl(Class<T> entityClass)
     {
         this.entityClass = entityClass;
+        tableName = entityClass.getAnnotation(TableEntity.class).name();
         Field[] fields = ReflectUtil.getAllFields(entityClass);
-        List<MapField> list = new LinkedList<MapField>();
+        MapField[] allMapFields = buildMapfields(fields);
+        Field t_idField = findIdField(fields);
+        idType = getIdType(t_idField);
+        idField = MapFieldBuilder.buildMapField(t_idField);
+        idOffset = unsafe.objectFieldOffset(t_idField);
+        idStrategy = getIdStrategy(t_idField);
+        MapField[] insertOrUpdateFields = buildInsertOrUpdateFields(allMapFields);
+        for (MapField each : insertOrUpdateFields)
+        {
+            fieldMap.put(each.getFieldName(), each);
+        }
+        insertInfo = buildInsertSql(insertOrUpdateFields);
+        updateInfo = buildUpdateSql(insertOrUpdateFields);
+        getInfo = buildGetInfo(allMapFields);
+        getInShareInfo = buildGetInShareInfo(allMapFields);
+        getForUpdateInfo = buildGetForUpdateInfo(allMapFields);
+        deleteSql = "delete from " + tableName + " where " + idField.getColName() + "=?";
+    }
+    
+    private IdType getIdType(Field field)
+    {
+        Class<?> type = field.getType();
+        if (type == String.class)
+        {
+            return IdType.STRING;
+        }
+        else if (type == Integer.class)
+        {
+            return IdType.INT;
+        }
+        else
+        {
+            return IdType.LONG;
+        }
+    }
+    
+    private Field findIdField(Field[] fields)
+    {
         for (Field each : fields)
         {
-            if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || each.getType().isArray() || Modifier.isStatic(each.getModifiers()))
-            {
-                continue;
-            }
-            if (each.isAnnotationPresent(Column.class))
-            {
-                if (each.getAnnotation(Column.class).daoIgnore())
-                {
-                    continue;
-                }
-            }
-            list.add(MapFieldBuilder.buildMapField(each));
             if (each.isAnnotationPresent(Id.class))
             {
-                idField = MapFieldBuilder.buildMapField(each);
-                idOffset = unsafe.objectFieldOffset(each);
-                idStrategy = each.getAnnotation(Id.class).idStrategy();
-                if (idStrategy == IdStrategy.autoDecision)
-                {
-                    Class<?> type = each.getType();
-                    if (
-                        type == Integer.class //
-                                || type == int.class //
-                                || type == long.class //
-                                || type == Long.class
-                    )
-                    {
-                        idStrategy = IdStrategy.autoIncrement;
-                    }
-                    else if (type == String.class)
-                    {
-                        idStrategy = IdStrategy.stringUid;
-                    }
-                    else
-                    {
-                        idStrategy = IdStrategy.nativeDb;
-                    }
-                }
+                return each;
             }
         }
-        Verify.notNull(idField, "使用TableEntity映射的表必须由id字段，请检查{}", entityClass.getName());
+        throw new NullPointerException();
+    }
+    
+    private MapField[] buildInsertOrUpdateFields(MapField[] mapFields)
+    {
         List<MapField> tmp = new LinkedList<MapField>();
-        for (MapField each : list)
+        for (MapField each : mapFields)
         {
             if (each.saveIgnore())
             {
@@ -115,19 +123,77 @@ public class DAOBeanImpl<T> implements Dao<T>
             }
             tmp.add(each);
         }
-        MapField[] insertOrUpdateFields = tmp.toArray(new MapField[tmp.size()]);
-        for (MapField each : insertOrUpdateFields)
-        {
-            fieldMap.put(each.getFieldName(), each);
-        }
-        MapField[] getFields = list.toArray(new MapField[list.size()]);
-        buildSql(insertOrUpdateFields, getFields);
+        return tmp.toArray(new MapField[tmp.size()]);
+        
     }
     
-    private void buildSql(MapField[] insertOrUpdateFields, MapField[] getFields)
+    private MapField[] buildMapfields(Field[] fields)
     {
-        TableEntity tableEntity = entityClass.getAnnotation(TableEntity.class);
-        tableName = tableEntity.name();
+        List<MapField> list = new ArrayList<MapField>(fields.length);
+        for (Field each : fields)
+        {
+            if (NotMapField(each))
+            {
+                continue;
+            }
+            list.add(MapFieldBuilder.buildMapField(each));
+            if (each.isAnnotationPresent(Id.class))
+            {
+                if (each.getType().isPrimitive())
+                {
+                    throw new IllegalArgumentException("作为主键的属性不可以使用基本类型，必须使用包装类。请检查" + each.getDeclaringClass().getName() + "." + each.getName());
+                }
+            }
+        }
+        return list.toArray(new MapField[list.size()]);
+    }
+    
+    private boolean NotMapField(Field field)
+    {
+        if (field.isAnnotationPresent(SqlIgnore.class) //
+                || Map.class.isAssignableFrom(field.getType())//
+                || List.class.isAssignableFrom(field.getType())//
+                || field.getType().isInterface()//
+                || field.getType().isArray()//
+                || Modifier.isStatic(field.getModifiers())//
+                || (field.isAnnotationPresent(Column.class) && field.getAnnotation(Column.class).daoIgnore()))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    private IdStrategy getIdStrategy(Field idField)
+    {
+        IdStrategy idStrategy = idField.getAnnotation(Id.class).idStrategy();
+        if (idStrategy == IdStrategy.autoDecision)
+        {
+            Class<?> type = idField.getType();
+            if (type == Integer.class //
+                    || type == Long.class)
+            {
+                return IdStrategy.nativeDb;
+            }
+            else if (type == String.class)
+            {
+                return IdStrategy.stringUid;
+            }
+            else
+            {
+                throw new IllegalArgumentException();
+            }
+        }
+        else
+        {
+            return idStrategy;
+        }
+    }
+    
+    private SqlAndFields buildInsertSql(MapField[] insertOrUpdateFields)
+    {
         StringCache cache = new StringCache();
         /******** 生成insertSql *******/
         cache.append("insert into ").append(tableName).append(" ( ");
@@ -138,12 +204,12 @@ public class DAOBeanImpl<T> implements Dao<T>
         cache.deleteLast().append(") values (");
         cache.appendStrsByComma("?", insertOrUpdateFields.length);
         cache.append(')');
-        insertInfo = new SqlAndFields();
-        insertInfo.setSql(cache.toString());
-        insertInfo.setFields(insertOrUpdateFields);
-        /******** 生成insertSql *******/
-        /******** 生成updatesql *******/
-        cache.clear();
+        return new SqlAndFields(cache.toString(), insertOrUpdateFields);
+    }
+    
+    private SqlAndFields buildUpdateSql(MapField[] insertOrUpdateFields)
+    {
+        StringCache cache = new StringCache();
         cache.append("update ").append(tableName).append(" set ");
         List<MapField> tmps = new LinkedList<MapField>();
         for (MapField each : insertOrUpdateFields)
@@ -157,18 +223,12 @@ public class DAOBeanImpl<T> implements Dao<T>
         }
         cache.deleteLast().append(" where ").append(idField.getColName()).append("=?");
         tmps.add(idField);
-        updateInfo = new SqlAndFields();
-        updateInfo.setSql(cache.toString());
-        updateInfo.setFields(tmps.toArray(new MapField[tmps.size()]));
-        /******** 生成updatesql *******/
-        /******** 生成deletesql *****/
-        cache.clear();
-        cache.append("delete from ").append(tableName).append("  where ").append(idField.getColName()).append("=?");
-        deleteInfo = new SqlAndFields();
-        deleteInfo.setSql(cache.toString());
-        batchDeleteInfo = new SqlAndFields();
-        batchDeleteInfo.setSql("delete from " + tableName + " where " + idField.getColName() + " in (");
-        /******** 生成deletesql *****/
+        return new SqlAndFields(cache.toString(), tmps.toArray(new MapField[tmps.size()]));
+    }
+    
+    private SqlAndFields buildGetInfo(MapField[] getFields)
+    {
+        StringCache cache = new StringCache();
         /******** 生成getSql ******/
         cache.clear();
         cache.append("select ");
@@ -177,29 +237,57 @@ public class DAOBeanImpl<T> implements Dao<T>
             cache.append(each.getColName()).append(",");
         }
         cache.deleteLast().append(" from ").append(tableName).append(" where ").append(idField.getColName()).append("=?");
-        getInfo = new SqlAndFields();
-        getInfo.setSql(cache.toString());
-        getInfo.setFields(getFields);
-        getInShareInfo = new SqlAndFields();
-        getInShareInfo.setSql(cache.toString() + " LOCK IN SHARE MODE");
-        getInShareInfo.setFields(getFields);
-        getForUpdateInfo = new SqlAndFields();
-        getForUpdateInfo.setSql(cache.toString() + " FOR UPDATE");
-        getForUpdateInfo.setFields(getFields);
+        return new SqlAndFields(cache.toString(), getFields);
+    }
+    
+    private SqlAndFields buildGetInShareInfo(MapField[] getFields)
+    {
+        StringCache cache = new StringCache();
         /******** 生成getSql ******/
-        logger.debug("为类：{}生成的\rsave  语句是: {},\rdelete语句是: {},\rupdate语句是: {},\rget   语句是: {}\r", entityClass.getName(), insertInfo.getSql(), deleteInfo.getSql(), updateInfo.getSql(), getInfo.getSql());
+        cache.clear();
+        cache.append("select ");
+        for (MapField each : getFields)
+        {
+            cache.append(each.getColName()).append(",");
+        }
+        cache.deleteLast().append(" from ").append(tableName).append(" where ").append(idField.getColName()).append("=? lock in share mode");
+        return new SqlAndFields(cache.toString(), getFields);
+    }
+    
+    private SqlAndFields buildGetForUpdateInfo(MapField[] allFields)
+    {
+        StringCache cache = new StringCache();
+        /******** 生成getSql ******/
+        cache.clear();
+        cache.append("select ");
+        for (MapField each : allFields)
+        {
+            cache.append(each.getColName()).append(",");
+        }
+        cache.deleteLast().append(" from ").append(tableName).append(" where ").append(idField.getColName()).append("=? for update");
+        return new SqlAndFields(cache.toString(), allFields);
     }
     
     @Override
-    public boolean delete(Object entity, Connection connection)
+    public int delete(Object entity, Connection connection)
     {
         PreparedStatement pstat = null;
         try
         {
-            pstat = connection.prepareStatement(deleteInfo.getSql());
-            pstat.setObject(1, unsafe.getObject(entity, idOffset));
-            pstat.executeUpdate();
-            return true;
+            pstat = connection.prepareStatement(deleteSql);
+            switch (idType)
+            {
+                case INT:
+                    pstat.setInt(1, (Integer) unsafe.getObject(entity, idOffset));
+                    break;
+                case LONG:
+                    pstat.setLong(1, (Long) unsafe.getObject(entity, idOffset));
+                    break;
+                case STRING:
+                    pstat.setString(1, (String) unsafe.getObject(entity, idOffset));
+                    break;
+            }
+            return pstat.executeUpdate();
         }
         catch (SQLException e)
         {
@@ -230,7 +318,18 @@ public class DAOBeanImpl<T> implements Dao<T>
         {
             pStat = connection.prepareStatement(getInfo.getSql());
             logger.trace("执行的sql是{}", getInfo.getSql());
-            pStat.setObject(1, pk);
+            switch (idType)
+            {
+                case INT:
+                    pStat.setInt(1, (Integer) pk);
+                    break;
+                case LONG:
+                    pStat.setLong(1, (Long) pk);
+                    break;
+                case STRING:
+                    pStat.setString(1, (String) pk);
+                    break;
+            }
             ResultSet resultSet = pStat.executeQuery();
             if (resultSet.next())
             {
@@ -249,68 +348,6 @@ public class DAOBeanImpl<T> implements Dao<T>
         catch (Exception e)
         {
             throw new RuntimeException(e);
-        }
-        finally
-        {
-            if (pStat != null)
-            {
-                try
-                {
-                    pStat.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
-        }
-    }
-    
-    @SuppressWarnings("unchecked")
-    public T getById(Object pk, Connection connection, String fieldNames)
-    {
-        SqlAndFields sqlAndFields = selectGetMap.get(fieldNames);
-        if (sqlAndFields == null)
-        {
-            StringCache cache = new StringCache("select ");
-            List<MapField> set = new LinkedList<MapField>();
-            for (String each : fieldNames.split(","))
-            {
-                MapField tmp = fieldMap.get(each);
-                set.add(tmp);
-                cache.append(tmp.getColName()).append(", ");
-            }
-            cache.append(idField.getColName());
-            set.add(idField);
-            cache.append(" from ").append(tableName).append(" where ").append(idField.getColName()).append(" = ?");
-            sqlAndFields = new SqlAndFields();
-            sqlAndFields.setSql(cache.toString());
-            sqlAndFields.setFields(set.toArray(new MapField[set.size()]));
-        }
-        logger.trace("执行的sql语句是{}", sqlAndFields.getSql());
-        PreparedStatement pStat = null;
-        try
-        {
-            pStat = connection.prepareStatement(sqlAndFields.getSql());
-            pStat.setObject(1, pk);
-            ResultSet resultSet = pStat.executeQuery();
-            if (resultSet.next())
-            {
-                Object entity = entityClass.newInstance();
-                for (MapField each : sqlAndFields.getFields())
-                {
-                    each.setEntityValue(entity, resultSet);
-                }
-                return (T) entity;
-            }
-            else
-            {
-                return null;
-            }
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
         }
         finally
         {
@@ -380,23 +417,19 @@ public class DAOBeanImpl<T> implements Dao<T>
     }
     
     @Override
-    public void batchInsert(List<T> entitys, Connection connection)
+    public int update(T entity, Connection connection)
     {
         PreparedStatement pStat = null;
         try
         {
-            pStat = connection.prepareStatement(insertInfo.getSql());
-            for (Object entity : entitys)
+            pStat = connection.prepareStatement(updateInfo.getSql());
+            int index = 1;
+            for (MapField each : updateInfo.getFields())
             {
-                int index = 1;
-                for (MapField field : insertInfo.getFields())
-                {
-                    field.setStatementValue(pStat, entity, index);
-                    index++;
-                }
-                pStat.addBatch();
+                each.setStatementValue(pStat, entity, index);
+                index++;
             }
-            pStat.executeBatch();
+            return pStat.executeUpdate();
         }
         catch (Exception e)
         {
@@ -419,40 +452,25 @@ public class DAOBeanImpl<T> implements Dao<T>
     }
     
     @Override
-    public int update(T entity, Connection connection, String fieldNames)
+    public void batchInsert(List<T> entitys, Connection connection)
     {
-        SqlAndFields sqlAndFields = selectUpdateMap.get(fieldNames);
-        if (sqlAndFields == null)
-        {
-            StringCache cache = new StringCache("update ");
-            cache.append(tableName).append(" set ");
-            List<MapField> set = new LinkedList<MapField>();
-            for (String each : fieldNames.split(","))
-            {
-                MapField tmp = fieldMap.get(each);
-                set.add(tmp);
-                cache.append(tmp.getColName()).append("=?, ");
-            }
-            cache.deleteEnds(2).append(" where ").append(idField.getColName()).append("=?");
-            sqlAndFields = new SqlAndFields();
-            sqlAndFields.setSql(cache.toString());
-            sqlAndFields.setFields(set.toArray(new MapField[set.size()]));
-        }
-        logger.trace("执行的sql语句是{}", sqlAndFields.getSql());
         PreparedStatement pStat = null;
         try
         {
-            pStat = connection.prepareStatement(sqlAndFields.getSql());
-            int index = 1;
-            for (MapField each : sqlAndFields.getFields())
+            pStat = connection.prepareStatement(insertInfo.getSql());
+            for (Object entity : entitys)
             {
-                each.setStatementValue(pStat, entity, index);
-                index++;
+                int index = 1;
+                for (MapField field : insertInfo.getFields())
+                {
+                    field.setStatementValue(pStat, entity, index);
+                    index++;
+                }
+                pStat.addBatch();
             }
-            idField.setStatementValue(pStat, entity, index);
-            return pStat.executeUpdate();
+            pStat.executeBatch();
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
             throw new JustThrowException(e);
         }
@@ -572,100 +590,6 @@ public class DAOBeanImpl<T> implements Dao<T>
         }
     }
     
-    @Override
-    public int deleteByIds(String ids, Connection connection)
-    {
-        StringCache cache = new StringCache(batchDeleteInfo.getSql());
-        ArrayList<String> params = new ArrayList<String>(16);
-        for (String id : ids.split(","))
-        {
-            cache.append("?,");
-            params.add(id);
-        }
-        if (params.size() == 0)
-        {
-            throw new RuntimeException("ids中不包含实际的id值，请加上判断");
-        }
-        cache.deleteLast().append(')');
-        PreparedStatement pStat = null;
-        try
-        {
-            pStat = connection.prepareStatement(cache.toString());
-            logger.trace("执行的sql是{}", cache.toString());
-            int index = 1;
-            for (String each : params)
-            {
-                pStat.setObject(index++, each);
-            }
-            return pStat.executeUpdate();
-        }
-        catch (SQLException e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            if (pStat != null)
-            {
-                try
-                {
-                    pStat.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
-        }
-    }
-    
-    @Override
-    public int deleteByIds(int[] ids, Connection connection)
-    {
-        StringCache cache = new StringCache(batchDeleteInfo.getSql());
-        ArrayList<Integer> params = new ArrayList<Integer>(16);
-        for (int id : ids)
-        {
-            cache.append("?,");
-            params.add(id);
-        }
-        if (params.size() == 0)
-        {
-            throw new RuntimeException("ids中不包含实际的id值，请加上判断");
-        }
-        cache.deleteLast().append(')');
-        PreparedStatement pStat = null;
-        try
-        {
-            pStat = connection.prepareStatement(cache.toString());
-            logger.trace("执行的sql是{}", cache.toString());
-            int index = 1;
-            for (Integer each : params)
-            {
-                pStat.setObject(index++, each);
-            }
-            return pStat.executeUpdate();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
-        finally
-        {
-            if (pStat != null)
-            {
-                try
-                {
-                    pStat.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
-        }
-    }
-    
     public String getTableName()
     {
         return tableName;
@@ -690,31 +614,28 @@ public class DAOBeanImpl<T> implements Dao<T>
     {
         return insertInfo.getFields();
     }
+    
 }
 
 class SqlAndFields
 {
-    private String     sql;
-    private MapField[] fields;
+    private final String     sql;
+    private final MapField[] fields;
+    
+    public SqlAndFields(String sql, MapField[] fields)
+    {
+        this.sql = sql;
+        this.fields = fields;
+    }
     
     public String getSql()
     {
         return sql;
     }
     
-    public void setSql(String sql)
-    {
-        this.sql = sql;
-    }
-    
     public MapField[] getFields()
     {
         return fields;
-    }
-    
-    public void setFields(MapField[] fields)
-    {
-        this.fields = fields;
     }
     
 }

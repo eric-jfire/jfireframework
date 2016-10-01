@@ -2,10 +2,11 @@ package com.jfireframework.sql.function.impl;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.PostConstruct;
@@ -14,20 +15,22 @@ import javax.sql.DataSource;
 import com.jfireframework.baseutil.PackageScan;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.context.bean.annotation.field.CanBeNull;
 import com.jfireframework.sql.annotation.BatchUpdate;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.Query;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.annotation.Update;
+import com.jfireframework.sql.dbstructure.DefaultNameStrategy;
 import com.jfireframework.sql.dbstructure.MariaDBStructure;
+import com.jfireframework.sql.dbstructure.NameStrategy;
 import com.jfireframework.sql.dbstructure.Structure;
 import com.jfireframework.sql.function.Dao;
 import com.jfireframework.sql.function.ResultMap;
 import com.jfireframework.sql.function.SessionFactory;
 import com.jfireframework.sql.function.SqlSession;
 import com.jfireframework.sql.function.mapper.Mapper;
+import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.util.MapperBuilder;
 
 public class SessionFactoryImpl implements SessionFactory
@@ -46,6 +49,7 @@ public class SessionFactoryImpl implements SessionFactory
     protected IdentityHashMap<Class<?>, Mapper> mappers      = new IdentityHashMap<Class<?>, Mapper>(128);
     protected IdentityHashMap<Class<?>, Dao<?>> daos         = new IdentityHashMap<Class<?>, Dao<?>>();
     protected Map<Class<?>, ResultMap<?>>       resultMaps   = new IdentityHashMap<Class<?>, ResultMap<?>>();
+    protected NameStrategy                      nameStrategy = new DefaultNameStrategy();
     
     public SessionFactoryImpl()
     {
@@ -60,15 +64,22 @@ public class SessionFactoryImpl implements SessionFactory
     @PostConstruct
     public void init()
     {
-        if (dataSource == null)
+        try
         {
-            return;
+            if (dataSource == null)
+            {
+                return;
+            }
+            Set<String> set = buildClassNameSet();
+            new ResuleMapBuilder().build(set, classLoader);
+            new DaoBuilder().buildDao(set, classLoader);
+            createMappers(set);
+            createOrUpdateDatabase(dataSource, set);
         }
-        Set<String> set = buildClassNameSet();
-        new ResuleMapBuilder().build(set, classLoader);
-        new DaoBuilder().buildDao(set, classLoader);
-        createMappers(set);
-        createOrUpdateDatabase();
+        catch (Exception e)
+        {
+            throw new JustThrowException(e);
+        }
     }
     
     private Set<String> buildClassNameSet()
@@ -117,64 +128,63 @@ public class SessionFactoryImpl implements SessionFactory
         }
     }
     
-    private void createOrUpdateDatabase()
+    private Structure buildStructure(String dbType)
     {
-        if ("create".equals(tableMode) == false && "update".equals(tableMode) == false)
-        {
-            return;
-        }
-        int type = "create".equals(tableMode) ? 0 : 1;
-        Structure structure;
-        Verify.notNull(dbType, "dbType不能为空，必须指定内容。当前支持：mysql,MariaDB");
         if (dbType.equals("mysql"))
         {
-            structure = new MariaDBStructure();
+            return new MariaDBStructure();
         }
         else if (dbType.equals("MariaDB"))
         {
-            structure = new MariaDBStructure();
+            return new MariaDBStructure();
         }
         else
         {
-            throw new RuntimeException("暂不支持的数据库结构类型新建或者修改,当前支持：mysql,MariaDB");
+            throw new IllegalArgumentException("暂不支持的数据库结构类型新建或者修改,当前支持：mysql,MariaDB");
         }
-        Connection connection = null;
-        try
+    }
+    
+    enum TableMode
+    {
+        create, update, none
+    }
+    
+    private void createOrUpdateDatabase(DataSource dataSource, Set<String> set) throws Exception
+    {
+        TableMetaData[] metaDatas = buildTableMetaData(set);
+        
+        TableMode type = TableMode.valueOf(tableMode);
+        switch (type)
         {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
-            for (Dao<?> each : daos.values())
+            case none:
+                return;
+            case create:
             {
-                if (type == 0)
-                {
-                    structure.createTable(connection, each);
-                }
-                else
-                {
-                    structure.updateTable(connection, each);
-                }
+                Structure structure = buildStructure(dbType);
+                structure.createTable(dataSource, metaDatas);
+                return;
             }
-            connection.commit();
-            connection.setAutoCommit(true);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-        finally
-        {
-            if (connection != null)
+            case update:
             {
-                try
-                {
-                    connection.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
+                Structure structure = buildStructure(dbType);
+                structure.updateTable(dataSource, metaDatas);
+                return;
             }
         }
+    }
+    
+    private TableMetaData[] buildTableMetaData(Set<String> set) throws ClassNotFoundException
+    {
+        List<TableMetaData> list = new LinkedList<TableMetaData>();
+        for (String each : set)
+        {
+            Class<?> ckass = classLoader == null ? Class.forName(each) : classLoader.loadClass(each);
+            if (ckass.isAnnotationPresent(TableEntity.class))
+            {
+                list.add(new TableMetaData(ckass, nameStrategy));
+            }
+        }
+        return list.toArray(new TableMetaData[list.size()]);
     }
     
     @Override

@@ -4,17 +4,6 @@ import com.jfireframework.sql.function.LockMode;
 
 public interface GetOperator
 {
-    /**
-     * 根据主键获取给定属性的值，并且组装成一个对象
-     * 
-     * @param <T>
-     *            
-     * @param entityClass
-     * @param pk
-     * @param fieldNames
-     * @return
-     */
-    public <T> T get(Class<T> entityClass, Object pk, String fieldNames);
     
     /**
      * 根据主键获取一条记录，并且使用该记录创造一个对象

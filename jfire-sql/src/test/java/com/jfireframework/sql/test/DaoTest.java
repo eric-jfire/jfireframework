@@ -189,25 +189,6 @@ public class DaoTest extends BaseTestSupport
     }
     
     @Test
-    public void test2()
-    {
-        User user = new User();
-        user.setId(1);
-        user.setAge(20);
-        session.selectUpdate(user, "age");
-        user = session.get(User.class, 1, "age");
-        assertEquals(20, user.getAge().intValue());
-        assertNull(user.getName());
-        user = new User();
-        user.setId(1);
-        user.setAge(30);
-        session.selectUpdate(user, "age");
-        user = session.get(User.class, 1, "age");
-        assertEquals(30, user.getAge().intValue());
-        assertNull(user.getName());
-    }
-    
-    @Test
     public void test3()
     {
         User user = session.get(User.class, 1, LockMode.SHARE);

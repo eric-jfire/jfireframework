@@ -4,7 +4,7 @@ public class TypeAndLength
 {
     private String type;
     private int    length;
-                   
+    
     public TypeAndLength(String type, int length)
     {
         this.type = type;
@@ -13,25 +13,27 @@ public class TypeAndLength
     
     public String getDbType()
     {
-        if (length == 0)
-        {
-            return type;
-        }
-        else
-        {
-            return type + "(" + length + ")";
-        }
+        return type + '(' + length + ')';
     }
     
-    public String getDbType(int length)
+    public String getType()
     {
-        if (length == 0)
-        {
-            return type;
-        }
-        else
-        {
-            return type + "(" + length + ")";
-        }
+        return type;
     }
+    
+    public void setType(String type)
+    {
+        this.type = type;
+    }
+    
+    public int getLength()
+    {
+        return length;
+    }
+    
+    public void setLength(int length)
+    {
+        this.length = length;
+    }
+    
 }

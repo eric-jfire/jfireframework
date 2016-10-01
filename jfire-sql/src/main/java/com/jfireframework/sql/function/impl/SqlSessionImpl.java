@@ -150,7 +150,7 @@ public class SqlSessionImpl implements SqlSession
     
     @SuppressWarnings("unchecked")
     @Override
-    public <T> boolean delete(T entity)
+    public <T> int delete(T entity)
     {
         return sessionFactory.getDao((Class<T>) entity.getClass()).delete(entity, connection);
     }
@@ -483,31 +483,6 @@ public class SqlSessionImpl implements SqlSession
     public <T> T get(Class<T> entityClass, Object pk, LockMode mode)
     {
         return sessionFactory.getDao(entityClass).getById(pk, connection, mode);
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> int selectUpdate(T entity, String fieldNames)
-    {
-        return sessionFactory.getDao((Class<T>) entity.getClass()).update(entity, connection, fieldNames);
-    }
-    
-    @Override
-    public <T> T get(Class<T> entityClass, Object pk, String fieldNames)
-    {
-        return sessionFactory.getDao(entityClass).getById(pk, connection, fieldNames);
-    }
-    
-    @Override
-    public <T> int deleteByIds(Class<T> entityClass, String ids)
-    {
-        return sessionFactory.getDao(entityClass).deleteByIds(ids, connection);
-    }
-    
-    @Override
-    public <T> int deleteByIds(Class<T> entityClass, int[] ids)
-    {
-        return sessionFactory.getDao(entityClass).deleteByIds(ids, connection);
     }
     
 }
