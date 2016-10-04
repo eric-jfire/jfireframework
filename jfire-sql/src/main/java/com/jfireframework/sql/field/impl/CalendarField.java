@@ -6,14 +6,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import com.jfireframework.sql.dbstructure.NameStrategy;
 
 @SuppressWarnings("restriction")
 public class CalendarField extends AbstractMapField
 {
     
-    public CalendarField(Field field)
+    public CalendarField(Field field, NameStrategy nameStrategy)
     {
-        super(field);
+        super(field, nameStrategy);
     }
     
     @Override

@@ -4,14 +4,15 @@ import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import com.jfireframework.sql.dbstructure.NameStrategy;
 
 @SuppressWarnings("restriction")
 public class WBooleanField extends AbstractMapField
 {
     
-    public WBooleanField(Field field)
+    public WBooleanField(Field field, NameStrategy nameStrategy)
     {
-        super(field);
+        super(field, nameStrategy);
     }
     
     @Override

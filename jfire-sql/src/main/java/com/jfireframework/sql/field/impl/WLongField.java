@@ -4,14 +4,15 @@ import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import com.jfireframework.sql.dbstructure.NameStrategy;
 
 @SuppressWarnings("restriction")
 public class WLongField extends AbstractMapField
 {
     
-    public WLongField(Field field)
+    public WLongField(Field field, NameStrategy nameStrategy)
     {
-        super(field);
+        super(field, nameStrategy);
     }
     
     @Override

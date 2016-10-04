@@ -12,7 +12,7 @@ public class LisUser
     @Column(name = "userid")
     private Integer   id;
     private Timestamp birthday;
-                      
+    
     public Integer getId()
     {
         return id;

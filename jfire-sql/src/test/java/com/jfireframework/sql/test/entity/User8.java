@@ -10,7 +10,7 @@ public class User8
     private Integer userid;
     private int     age;
     private Float   weight;
-                    
+    
     public Float getWeight()
     {
         return weight;

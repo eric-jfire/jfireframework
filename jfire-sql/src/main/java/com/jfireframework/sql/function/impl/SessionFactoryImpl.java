@@ -5,8 +5,6 @@ import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.PostConstruct;
@@ -16,7 +14,6 @@ import com.jfireframework.baseutil.PackageScan;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.context.bean.annotation.field.CanBeNull;
-import com.jfireframework.sql.annotation.BatchUpdate;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.Query;
 import com.jfireframework.sql.annotation.TableEntity;
@@ -30,7 +27,7 @@ import com.jfireframework.sql.function.ResultMap;
 import com.jfireframework.sql.function.SessionFactory;
 import com.jfireframework.sql.function.SqlSession;
 import com.jfireframework.sql.function.mapper.Mapper;
-import com.jfireframework.sql.metadata.TableMetaData;
+import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.util.MapperBuilder;
 
 public class SessionFactoryImpl implements SessionFactory
@@ -49,7 +46,8 @@ public class SessionFactoryImpl implements SessionFactory
     protected IdentityHashMap<Class<?>, Mapper> mappers      = new IdentityHashMap<Class<?>, Mapper>(128);
     protected IdentityHashMap<Class<?>, Dao<?>> daos         = new IdentityHashMap<Class<?>, Dao<?>>();
     protected Map<Class<?>, ResultMap<?>>       resultMaps   = new IdentityHashMap<Class<?>, ResultMap<?>>();
-    protected NameStrategy                      nameStrategy = new DefaultNameStrategy();
+    public static NameStrategy                  nameStrategy = new DefaultNameStrategy();
+    protected MetaContext                       metaContext;
     
     public SessionFactoryImpl()
     {
@@ -70,11 +68,16 @@ public class SessionFactoryImpl implements SessionFactory
             {
                 return;
             }
-            Set<String> set = buildClassNameSet();
-            new ResuleMapBuilder().build(set, classLoader);
+            if (classLoader == null)
+            {
+                classLoader = Thread.currentThread().getContextClassLoader();
+            }
+            Set<Class<?>> set = buildClassNameSet(classLoader);
+            metaContext = new MetaContext(set, nameStrategy);
+            createOrUpdateDatabase(dataSource, metaContext);
+            createMappers(set, metaContext);
+            // new ResuleMapBuilder().build(set, classLoader);
             new DaoBuilder().buildDao(set, classLoader);
-            createMappers(set);
-            createOrUpdateDatabase(dataSource, set);
         }
         catch (Exception e)
         {
@@ -82,7 +85,7 @@ public class SessionFactoryImpl implements SessionFactory
         }
     }
     
-    private Set<String> buildClassNameSet()
+    private Set<Class<?>> buildClassNameSet(ClassLoader classLoader) throws ClassNotFoundException
     {
         Set<String> set = new HashSet<String>();
         String[] packageNames = scanPackage.split(";");
@@ -93,28 +96,32 @@ public class SessionFactoryImpl implements SessionFactory
                 set.add(each);
             }
         }
-        return set;
+        Set<Class<?>> types = new HashSet<Class<?>>();
+        for (String each : set)
+        {
+            types.add(classLoader.loadClass(each));
+        }
+        return types;
     }
     
-    private void createMappers(Set<String> set)
+    private void createMappers(Set<Class<?>> set, MetaContext context)
     {
         try
         {
-            MapperBuilder mapperBuilder = new MapperBuilder();
-            mapperBuilder.initMetas(scanPackage);
-            next: for (String each : set)
+            MapperBuilder mapperBuilder = new MapperBuilder(metaContext);
+            nextSqlInterface: for (Class<?> each : set)
             {
-                Class<?> ckass = classLoader == null ? Class.forName(each) : classLoader.loadClass(each);
-                if (ckass.isInterface())
+                if (each.isInterface())
                 {
-                    for (Method method : ckass.getMethods())
+                    for (Method method : each.getMethods())
                     {
-                        if (method.isAnnotationPresent(Query.class) || method.isAnnotationPresent(Update.class) || method.isAnnotationPresent(BatchUpdate.class))
+                        if (method.isAnnotationPresent(Query.class) || method.isAnnotationPresent(Update.class))
                         {
-                            mappers.put(ckass, (Mapper) mapperBuilder.build(ckass).newInstance());
-                            continue next;
+                            mappers.put(each, (Mapper) mapperBuilder.build(each).newInstance());
+                            continue nextSqlInterface;
                         }
                     }
+                    
                 }
             }
             for (Mapper each : mappers.values())
@@ -149,10 +156,8 @@ public class SessionFactoryImpl implements SessionFactory
         create, update, none
     }
     
-    private void createOrUpdateDatabase(DataSource dataSource, Set<String> set) throws Exception
+    private void createOrUpdateDatabase(DataSource dataSource, MetaContext metaContext) throws Exception
     {
-        TableMetaData[] metaDatas = buildTableMetaData(set);
-        
         TableMode type = TableMode.valueOf(tableMode);
         switch (type)
         {
@@ -161,30 +166,16 @@ public class SessionFactoryImpl implements SessionFactory
             case create:
             {
                 Structure structure = buildStructure(dbType);
-                structure.createTable(dataSource, metaDatas);
+                structure.createTable(dataSource, metaContext.metaDatas());
                 return;
             }
             case update:
             {
                 Structure structure = buildStructure(dbType);
-                structure.updateTable(dataSource, metaDatas);
+                structure.updateTable(dataSource, metaContext.metaDatas());
                 return;
             }
         }
-    }
-    
-    private TableMetaData[] buildTableMetaData(Set<String> set) throws ClassNotFoundException
-    {
-        List<TableMetaData> list = new LinkedList<TableMetaData>();
-        for (String each : set)
-        {
-            Class<?> ckass = classLoader == null ? Class.forName(each) : classLoader.loadClass(each);
-            if (ckass.isAnnotationPresent(TableEntity.class))
-            {
-                list.add(new TableMetaData(ckass, nameStrategy));
-            }
-        }
-        return list.toArray(new TableMetaData[list.size()]);
     }
     
     @Override
@@ -268,32 +259,16 @@ public class SessionFactoryImpl implements SessionFactory
     class DaoBuilder
     {
         @SuppressWarnings({ "rawtypes", "unchecked" })
-        public void buildDao(Set<String> set, ClassLoader classLoader)
+        public void buildDao(Set<Class<?>> set, ClassLoader classLoader)
         {
-            for (String each : set)
+            for (Class<?> each : set)
             {
-                try
+                if (each.isAnnotationPresent(TableEntity.class))
                 {
-                    Class<?> ckass;
-                    if (classLoader == null)
+                    if (hasIdField(each))
                     {
-                        ckass = Class.forName(each);
+                        daos.put(each, new DAOBeanImpl(each));
                     }
-                    else
-                    {
-                        ckass = classLoader.loadClass(each);
-                    }
-                    if (ckass.isAnnotationPresent(TableEntity.class))
-                    {
-                        if (hasIdField(ckass))
-                        {
-                            daos.put(ckass, new DAOBeanImpl(ckass));
-                        }
-                    }
-                }
-                catch (ClassNotFoundException e)
-                {
-                    throw new RuntimeException(e);
                 }
             }
             
@@ -321,37 +296,21 @@ public class SessionFactoryImpl implements SessionFactory
         return (Dao<T>) daos.get(ckass);
     }
     
-    class ResuleMapBuilder
-    {
-        @SuppressWarnings({ "rawtypes", "unchecked" })
-        public void build(Set<String> set, ClassLoader classLoader)
-        {
-            for (String each : set)
-            {
-                Class<?> ckass;
-                try
-                {
-                    if (classLoader == null)
-                    {
-                        ckass = Class.forName(each);
-                    }
-                    else
-                    {
-                        ckass = classLoader.loadClass(each);
-                    }
-                    if (ckass.isAnnotationPresent(TableEntity.class))
-                    {
-                        ResultMap<?> resultMap = new ResultMapImpl(ckass);
-                        resultMaps.put(ckass, resultMap);
-                    }
-                }
-                catch (ClassNotFoundException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-    }
+    // class ResuleMapBuilder
+    // {
+    // @SuppressWarnings({ "rawtypes", "unchecked" })
+    // public void build(Set<Class<?>> set, ClassLoader classLoader)
+    // {
+    // for (Class<?> each : set)
+    // {
+    // if (each.isAnnotationPresent(TableEntity.class))
+    // {
+    // ResultMap<?> resultMap = new ResultMapImpl(each);
+    // resultMaps.put(each, resultMap);
+    // }
+    // }
+    // }
+    // }
     
     @SuppressWarnings("unchecked")
     @Override

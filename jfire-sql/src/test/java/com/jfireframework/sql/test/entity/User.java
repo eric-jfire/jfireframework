@@ -16,7 +16,7 @@ public class User
     private Integer age;
     private String  birthday;
     private boolean boy;
-                    
+    
     public boolean isBoy()
     {
         return boy;

@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 60005
 File Encoding         : 65001
 
-Date: 2015-05-12 19:41:02
+Date: 2016-10-04 20:14:48
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -25,9 +25,11 @@ CREATE TABLE `user` (
   `password` varchar(32) CHARACTER SET gbk DEFAULT NULL COMMENT '用户密码，保存的是密码的md5值',
   `age` int(11) DEFAULT NULL,
   `birthday` datetime DEFAULT NULL,
-  PRIMARY KEY (`userid`),
-  UNIQUE KEY `uni_username` (`username`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8;
+  `boy` tinyint(4) DEFAULT NULL,
+  `weight` float DEFAULT NULL,
+  `time` time DEFAULT NULL,
+  PRIMARY KEY (`userid`)
+) ENGINE=InnoDB AUTO_INCREMENT=248044 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Records of user

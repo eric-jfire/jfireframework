@@ -8,7 +8,7 @@ public abstract class AbstracePage implements Page
     protected int     page;
     protected int     pageSize;
     protected List<?> data;
-                      
+    
     @Override
     public int getTotal()
     {

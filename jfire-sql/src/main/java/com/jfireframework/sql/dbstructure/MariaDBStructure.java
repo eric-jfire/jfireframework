@@ -1,12 +1,12 @@
 package com.jfireframework.sql.dbstructure;
 
 import java.lang.reflect.Field;
-import java.security.Timestamp;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
@@ -34,12 +34,12 @@ public class MariaDBStructure implements Structure
         dbTypeMap.put(String.class, new TypeAndLength("varchar", 255));
         dbTypeMap.put(Date.class, new TypeAndLength("datetime", 0));
         dbTypeMap.put(java.util.Date.class, new TypeAndLength("datetime", 0));
+        dbTypeMap.put(Timestamp.class, new TypeAndLength("datetime", 0));
         dbTypeMap.put(float.class, new TypeAndLength("float", 0));
         dbTypeMap.put(Float.class, new TypeAndLength("float", 0));
         dbTypeMap.put(double.class, new TypeAndLength("double", 0));
         dbTypeMap.put(Double.class, new TypeAndLength("double", 0));
         dbTypeMap.put(Time.class, new TypeAndLength("time", 0));
-        dbTypeMap.put(Timestamp.class, new TypeAndLength("timestamp", 0));
         dbTypeMap.put(boolean.class, new TypeAndLength("tinyint", 1));
         dbTypeMap.put(Boolean.class, new TypeAndLength("tinyint", 1));
     }
@@ -54,6 +54,10 @@ public class MariaDBStructure implements Structure
             connection.setAutoCommit(false);
             for (TableMetaData metaData : metaDatas)
             {
+                if (metaData.getIdInfo() == null)
+                {
+                    continue;
+                }
                 String tableName = metaData.getTableName();
                 FieldInfo idInfo = metaData.getIdInfo();
                 IdStrategy idStrategy = metaData.getIdStrategy();
@@ -73,7 +77,15 @@ public class MariaDBStructure implements Structure
                     {
                         continue;
                     }
-                    cache.append(each.getDbColName()).append(' ').append(getTypeAndLength(each.getField()).getDbType()).appendComma();
+                    try
+                    {
+                        cache.append(each.getDbColName()).append(' ').append(getTypeAndLength(each.getField()).getDbType()).appendComma();
+                    }
+                    catch (Exception e)
+                    {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                 }
                 cache.deleteLast().append(")");
                 logger.warn("进行表:{}的创建，创建语句是\n{}", tableName, cache.toString());

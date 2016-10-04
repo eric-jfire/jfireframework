@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  * 表明该字段是一个数据库的映射列
  * 
  * @author 林斌（windfire@zailanghua.com）
- *         
+ * 
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)

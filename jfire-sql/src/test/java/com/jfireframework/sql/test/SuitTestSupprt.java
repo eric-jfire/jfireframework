@@ -8,7 +8,6 @@ import org.junit.runners.Suite;
         DaoTest.class, //
         FieldTest.class, //
         InterfaceTest.class, //
-        SessionTest.class, //
         TxManagerTest.class, //
         TxTest.class//
 })

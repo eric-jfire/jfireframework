@@ -3,7 +3,6 @@ package com.jfireframework.sql.function;
 import java.sql.Connection;
 import com.jfireframework.sql.function.sqloperation.GetOperator;
 import com.jfireframework.sql.function.sqloperation.SaveOperator;
-import com.jfireframework.sql.function.sqloperation.SqlOperator;
 import com.jfireframework.sql.function.sqloperation.UpdateOperator;
 
 /**
@@ -12,7 +11,7 @@ import com.jfireframework.sql.function.sqloperation.UpdateOperator;
  * @author eric
  * 
  */
-public interface SqlSession extends GetOperator, SaveOperator, UpdateOperator, SqlOperator
+public interface SqlSession extends GetOperator, SaveOperator, UpdateOperator
 {
     
     /**

@@ -13,7 +13,14 @@ public class TypeAndLength
     
     public String getDbType()
     {
-        return type + '(' + length + ')';
+        if (length != 0)
+        {
+            return type + '(' + length + ')';
+        }
+        else
+        {
+            return type;
+        }
     }
     
     public String getType()

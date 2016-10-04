@@ -10,12 +10,12 @@ import java.lang.annotation.Target;
  * 使用该注解表明无论是dao还是map都会忽略该字段
  * 
  * @author 林斌
- *         
+ * 
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface SqlIgnore
 {
-
+    
 }

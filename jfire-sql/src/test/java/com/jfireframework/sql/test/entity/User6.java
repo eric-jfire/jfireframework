@@ -10,7 +10,7 @@ public class User6
     @Id
     private Integer userid;
     private Time    time;
-                    
+    
     public Integer getUserid()
     {
         return userid;

@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.sql.dbstructure.NameStrategy;
 import com.jfireframework.sql.field.impl.BooleanField;
 import com.jfireframework.sql.field.impl.CalendarField;
 import com.jfireframework.sql.field.impl.DateField;
@@ -33,22 +34,22 @@ public class MapFieldBuilder
     {
         try
         {
-            fieldMap.put(boolean.class, BooleanField.class.getConstructor(Field.class));
-            fieldMap.put(Calendar.class, CalendarField.class.getConstructor(Field.class));
-            fieldMap.put(java.util.Date.class, DateField.class.getConstructor(Field.class));
-            fieldMap.put(Date.class, DateField.class.getConstructor(Field.class));
-            fieldMap.put(double.class, DoubleField.class.getConstructor(Field.class));
-            fieldMap.put(float.class, FloatField.class.getConstructor(Field.class));
-            fieldMap.put(long.class, LongField.class.getConstructor(Field.class));
-            fieldMap.put(int.class, IntField.class.getConstructor(Field.class));
-            fieldMap.put(String.class, StringField.class.getConstructor(Field.class));
-            fieldMap.put(Time.class, TimeField.class.getConstructor(Field.class));
-            fieldMap.put(Timestamp.class, TimestampField.class.getConstructor(Field.class));
-            fieldMap.put(Boolean.class, WBooleanField.class.getConstructor(Field.class));
-            fieldMap.put(Double.class, WDoubleField.class.getConstructor(Field.class));
-            fieldMap.put(Float.class, WFloatField.class.getConstructor(Field.class));
-            fieldMap.put(Integer.class, IntegerField.class.getConstructor(Field.class));
-            fieldMap.put(Long.class, WLongField.class.getConstructor(Field.class));
+            fieldMap.put(boolean.class, BooleanField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(Calendar.class, CalendarField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(java.util.Date.class, DateField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(Date.class, DateField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(double.class, DoubleField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(float.class, FloatField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(long.class, LongField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(int.class, IntField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(String.class, StringField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(Time.class, TimeField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(Timestamp.class, TimestampField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(Boolean.class, WBooleanField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(Double.class, WDoubleField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(Float.class, WFloatField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(Integer.class, IntegerField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(Long.class, WLongField.class.getConstructor(Field.class, NameStrategy.class));
         }
         catch (Exception e)
         {
@@ -57,7 +58,7 @@ public class MapFieldBuilder
         
     }
     
-    public static MapField buildMapField(Field field)
+    public static MapField buildMapField(Field field, NameStrategy nameStrategy)
     {
         Class<?> fieldType = field.getType();
         Constructor<?> constructor = fieldMap.get(fieldType);
@@ -65,7 +66,7 @@ public class MapFieldBuilder
         {
             try
             {
-                return (MapField) constructor.newInstance(field);
+                return (MapField) constructor.newInstance(field, nameStrategy);
             }
             catch (Exception e)
             {

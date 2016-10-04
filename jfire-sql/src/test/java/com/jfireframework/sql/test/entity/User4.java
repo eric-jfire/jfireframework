@@ -15,7 +15,7 @@ public class User4
     private float   weight;
     @Column(name = "birthday")
     private Date    date;
-                    
+    
     public Long getAge()
     {
         return age;

@@ -4,8 +4,7 @@ import javax.annotation.Resource;
 import com.jfireframework.sql.function.SessionFactory;
 
 /**
- * 用来给生成接口对象的类作为继承用
- * 方便在其中设置sqlSession
+ * 用来给生成接口对象的类作为继承用 方便在其中设置sqlSession
  * 
  * @author linbin
  * 

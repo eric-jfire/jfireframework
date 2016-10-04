@@ -24,6 +24,7 @@ import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.dbstructure.NameStrategy;
 import com.jfireframework.sql.field.MapField;
 import com.jfireframework.sql.field.MapFieldBuilder;
 import com.jfireframework.sql.field.impl.IntegerField;
@@ -62,12 +63,21 @@ public class DAOBeanImpl<T> implements Dao<T>
     public DAOBeanImpl(Class<T> entityClass)
     {
         this.entityClass = entityClass;
+        NameStrategy nameStrategy;
+        try
+        {
+            nameStrategy = entityClass.getAnnotation(TableEntity.class).nameStrategy().newInstance();
+        }
+        catch (Exception e)
+        {
+            throw new JustThrowException(e);
+        }
         tableName = entityClass.getAnnotation(TableEntity.class).name();
         Field[] fields = ReflectUtil.getAllFields(entityClass);
-        MapField[] allMapFields = buildMapfields(fields);
+        MapField[] allMapFields = buildMapfields(fields, nameStrategy);
         Field t_idField = findIdField(fields);
         idType = getIdType(t_idField);
-        idField = MapFieldBuilder.buildMapField(t_idField);
+        idField = MapFieldBuilder.buildMapField(t_idField, nameStrategy);
         idOffset = unsafe.objectFieldOffset(t_idField);
         idStrategy = getIdStrategy(t_idField);
         MapField[] insertOrUpdateFields = buildInsertOrUpdateFields(allMapFields);
@@ -127,7 +137,7 @@ public class DAOBeanImpl<T> implements Dao<T>
         
     }
     
-    private MapField[] buildMapfields(Field[] fields)
+    private MapField[] buildMapfields(Field[] fields, NameStrategy nameStrategy)
     {
         List<MapField> list = new ArrayList<MapField>(fields.length);
         for (Field each : fields)
@@ -136,7 +146,7 @@ public class DAOBeanImpl<T> implements Dao<T>
             {
                 continue;
             }
-            list.add(MapFieldBuilder.buildMapField(each));
+            list.add(MapFieldBuilder.buildMapField(each, nameStrategy));
             if (each.isAnnotationPresent(Id.class))
             {
                 if (each.getType().isPrimitive())

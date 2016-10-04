@@ -1,7 +1,6 @@
 package com.jfireframework.sql.test;
 
 import java.util.List;
-import com.jfireframework.sql.annotation.BatchUpdate;
 import com.jfireframework.sql.annotation.Query;
 import com.jfireframework.sql.annotation.Update;
 import com.jfireframework.sql.jfirecontext.MapperOp;
@@ -11,14 +10,13 @@ import com.jfireframework.sql.test.entity.User;
 @MapperOp
 public interface UserDAO
 {
-    @Query(sql = "select * from User [$name.contains(\"asd\")  && $name.length()>2] where name like $%name% #", paramNames = "name")
+    @Query(sql = "select * from User [ $name.length()>2] where name like $%name% #", paramNames = "name")
     public List<User> functionUse(String name);
     
     @Query(sql = "select * from User [$name && $name1] where age>20 #", paramNames = "name,name1")
     public List<User> functionUse2(String name, String name2);
     
     @Query(sql = "select username from user order by userid", paramNames = "")
-    
     public List<String> getUsernames();
     
     @Query(sql = "select username from user order by userid", paramNames = "")
@@ -30,7 +28,7 @@ public interface UserDAO
     @Query(sql = "select name from User where id=$userid ", paramNames = "userid")
     public String getUserName(int userid);
     
-    @Query(sql = "select User.id,username,age from User where userid=$id ", paramNames = "id")
+    @Query(sql = "select User.id,name,age from User where userid=$id ", paramNames = "id")
     public User getUserByid(int id);
     
     @Query(sql = "select * from user where userid=$id ", paramNames = "id")
@@ -42,8 +40,11 @@ public interface UserDAO
     @Update(sql = "delete  from User where userid=$id", paramNames = "id")
     public int deleteUser(int id);
     
-    @BatchUpdate(sql = "insert into user (username,age,password,birthday,userid) values($user.name,$user.age,$user.password,$user.birthday,$user.id)", paramNames = "user")
-    public int[] insertUsers(List<User> user);
+    // @BatchUpdate(sql = "insert into user
+    // (username,age,password,birthday,userid)
+    // values($user.name,$user.age,$user.password,$user.birthday,$user.id)",
+    // paramNames = "user")
+    // public int[] insertUsers(List<User> user);
     
     @Query(sql = "select * from User where 1=1 [$user.age] and age=$user.age# [$user.name] and username like $%user.name%# [$user.id] and userid=$user.id#", paramNames = "user")
     public List<User> dynamicQuery(User user);

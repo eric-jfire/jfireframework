@@ -14,7 +14,7 @@ public class User7
     private Double   weight;
     @Column(name = "birthday")
     private Calendar calendar;
-                     
+    
     public Calendar getCalendar()
     {
         return calendar;

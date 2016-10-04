@@ -11,7 +11,7 @@ public class LongUser
     @Column(name = "userid")
     private Integer id;
     private long    birthday;
-                    
+    
     public Integer getId()
     {
         return id;

@@ -1,16 +1,16 @@
 package com.jfireframework.sql.util;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
-import com.jfireframework.sql.metadata.MetaData;
+import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.page.MysqlPage;
+import com.jfireframework.sql.util.MapperBuilder.InvokeNameAndType;
+import com.jfireframework.sql.util.MapperBuilder.SqlContext;
 
 public class DynamicSqlTool
 {
@@ -24,9 +24,9 @@ public class DynamicSqlTool
      * @throws NoSuchFieldException
      * @throws SecurityException
      */
-    public static String analyseDynamicSql(String sql, String[] paramNames, Class<?>[] paramTypes, boolean isPage, String countSql, Map<String, MetaData> metaDatas) throws NoSuchFieldException, SecurityException
+    public static String analyseDynamicSql(String sql, String[] paramNames, Class<?>[] paramTypes, boolean isPage, String countSql, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
     {
-        sql = transMapSql(sql, metaDatas);
+        sql = transMapSql(sql, sqlContext, metaContext);
         String bk = "\t";
         String context = bk + "com.jfireframework.baseutil.collection.StringCache builder = new StringCache();\n" + bk + "List list = new ArrayList();\n";
         int pre = 0;
@@ -49,7 +49,7 @@ public class DynamicSqlTool
                     section = sql.substring(pre, now);
                     now++;
                     pre = now;
-                    context += bk + "builder.append(" + buildParam(section, paramNames, paramTypes, sql) + ");\n";
+                    context += bk + "builder.append(" + buildParam(section, paramNames, paramTypes).getInvokeName() + ");\n";
                     break;
                 case '[':
                     section = sql.substring(pre, now);
@@ -84,47 +84,47 @@ public class DynamicSqlTool
                         Class<?> paramType = getParamType(section, paramNames, paramTypes, sql);
                         if (paramType.equals(String.class))
                         {
-                            context += bk + "{\n" + bk + "\tString[] tmp = ((String)" + buildParam(section, paramNames, paramTypes, sql) + ").split(\",\");\n";
+                            context += bk + "{\n" + bk + "\tString[] tmp = ((String)" + buildParam(section, paramNames, paramTypes).getInvokeName() + ").split(\",\");\n";
                         }
                         else if (paramType.equals(String[].class))
                         {
-                            context += bk + bk + "{\n" + bk + "\n" + bk + "\tString[] tmp = " + buildParam(section, paramNames, paramTypes, sql) + ";\n";
+                            context += bk + bk + "{\n" + bk + "\n" + bk + "\tString[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
                         }
                         else if (paramType.equals(int[].class))
                         {
-                            context += bk + "{\n" + bk + "\tint[] tmp = " + buildParam(section, paramNames, paramTypes, sql) + ";\n";
+                            context += bk + "{\n" + bk + "\tint[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
                         }
                         else if (paramType.equals(Integer[].class))
                         {
-                            context += bk + "{\n" + bk + "\tInteger[] tmp = " + buildParam(section, paramNames, paramTypes, sql) + ";\n";
+                            context += bk + "{\n" + bk + "\tInteger[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
                         }
                         else if (paramType.equals(long[].class))
                         {
-                            context += bk + "{\n" + bk + "\tlong[] tmp = " + buildParam(section, paramNames, paramTypes, sql) + ";\n";
+                            context += bk + "{\n" + bk + "\tlong[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
                         }
                         else if (paramType.equals(Long[].class))
                         {
-                            context += bk + "{\n" + bk + "\tLong[] tmp = " + buildParam(section, paramNames, paramTypes, sql) + ";\n";
+                            context += bk + "{\n" + bk + "\tLong[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
                         }
                         else if (paramType.equals(float[].class))
                         {
-                            context += bk + "{\n" + bk + "\tfloat[] tmp = " + buildParam(section, paramNames, paramTypes, sql) + ";\n";
+                            context += bk + "{\n" + bk + "\tfloat[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
                         }
                         else if (paramType.equals(Float[].class))
                         {
-                            context += bk + "{\n" + bk + "\tFloat[] tmp = " + buildParam(section, paramNames, paramTypes, sql) + ";\n";
+                            context += bk + "{\n" + bk + "\tFloat[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
                         }
                         else if (paramType.equals(double[].class))
                         {
-                            context += bk + "{\n" + bk + "\tdouble[] tmp = " + buildParam(section, paramNames, paramTypes, sql) + ";\n";
+                            context += bk + "{\n" + bk + "\tdouble[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
                         }
                         else if (paramType.equals(Double[].class))
                         {
-                            context += bk + "{\n" + bk + "\tDouble[] tmp = " + buildParam(section, paramNames, paramTypes, sql) + ";\n";
+                            context += bk + "{\n" + bk + "\tDouble[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
                         }
                         else if (List.class.isAssignableFrom(paramType))
                         {
-                            context += bk + "{\n" + bk + "\tjava.util.List tmp = " + buildParam(section, paramNames, paramTypes, sql) + ";\n";
+                            context += bk + "{\n" + bk + "\tjava.util.List tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
                         }
                         else
                         {
@@ -143,7 +143,7 @@ public class DynamicSqlTool
                         context += bk + "builder.deleteLast().append(\")\");\n";
                         if (List.class.isAssignableFrom(paramType))
                         {
-                            context += bk + "for(int i=0;i<length;i++){list.add(($w)tmp.get(i));}\n";
+                            context += bk + "for(int i=0;i<length;i++){list.add(tmp.get(i));}\n";
                         }
                         else
                         {
@@ -157,11 +157,11 @@ public class DynamicSqlTool
                         section = sql.substring(pre, now);
                         if (section.startsWith("%") || section.endsWith("%"))
                         {
-                            context += bk + "list.add(" + buildParam(section, paramNames, paramTypes, sql) + ");\n";
+                            context += bk + "list.add(" + buildParam(section, paramNames, paramTypes).getInvokeName() + ");\n";
                         }
                         else
                         {
-                            context += bk + "list.add(($w)(" + buildParam(section, paramNames, paramTypes, sql) + "));\n";
+                            context += bk + "list.add(($w)(" + buildParam(section, paramNames, paramTypes).getInvokeName() + "));\n";
                         }
                     }
                     pre = now;
@@ -199,10 +199,12 @@ public class DynamicSqlTool
                 {
                     context += bk + "String countSql = \"select count(*) \"+builder.substring(builder.indexOf(\"from\"));\n";
                 }
-                context += bk + "builder.append(\" limit ?,?\");\n";
                 context += bk + "Object[] countParam = list.toArray();\n";
+                context += bk + "builder.append(\" limit ?,?\");\n";
+                context += bk + "String sql = builder.toString();\n";
                 context += bk + "list.add(($w)((com.jfireframework.sql.page.Page)$" + paramTypes.length + ").getStart());\n";
                 context += bk + "list.add(($w)((com.jfireframework.sql.page.Page)$" + paramTypes.length + ").getPageSize());\n";
+                context += bk + "Object[] queryParam = list.toArray();\n";
                 return context;
             }
             else
@@ -212,6 +214,8 @@ public class DynamicSqlTool
         }
         else
         {
+            context += bk + "String sql = builder.toString();\n";
+            context += bk + "Object[] queryParam = list.toArray();\n";
             return context;
         }
     }
@@ -230,7 +234,7 @@ public class DynamicSqlTool
      * @throws NoSuchFieldException
      * @throws SecurityException
      */
-    private static String buildParam(String inject, String[] paramNames, Class<?>[] paramTypes, String originalSql) throws NoSuchFieldException, SecurityException
+    private static InvokeNameAndType buildParam(String inject, String[] paramNames, Class<?>[] paramTypes) throws NoSuchFieldException, SecurityException
     {
         boolean before = false;
         boolean after = false;
@@ -257,31 +261,32 @@ public class DynamicSqlTool
             {
                 result += "+\"%\"";
             }
-            return result;
+            InvokeNameAndType invokeNameAndType = new InvokeNameAndType(result, paramTypes[index], inject);
+            return invokeNameAndType;
         }
         else
         {
             String[] tmp = inject.split("\\.");
             int index = getParamNameIndex(tmp[0], paramNames);
-            String getMethodName = ReflectUtil.buildGetMethod(inject, paramTypes[index]);
+            Object[] returns = ReflectUtil.getBuildMethodAndType(inject, paramTypes[index]);
             String result = "";
             if (before)
             {
                 result += "\"%\"+";
             }
-            result += "$" + (index + 1) + getMethodName;
+            result += "$" + (index + 1) + returns[0];
             if (after)
             {
                 result += "+\"%\"";
             }
-            return result;
+            InvokeNameAndType invokeNameAndType = new InvokeNameAndType(result, (Class<?>) returns[1], inject);
+            return invokeNameAndType;
         }
     }
     
     /**
      * 给定字符串inject，搜索可能的参数字符串。比如字符串为user.name，有一个参数为类user。
-     * 则参数字符串应该是user.getName()
-     * 返回的结果是这个方法或者这个参数的类型。如果方法的返回类型是数组，则返回的结果是这个数组的元素类型
+     * 则参数字符串应该是user.getName() 返回的结果是这个方法或者这个参数的类型。如果方法的返回类型是数组，则返回的结果是这个数组的元素类型
      * 
      * @param inject
      * @param paramNames
@@ -333,12 +338,11 @@ public class DynamicSqlTool
      * @param sql
      * @return
      */
-    public static String transMapSql(String sql, Map<String, MetaData> metaDatas)
+    public static String transMapSql(String sql, SqlContext sqlContext, MetaContext metaContext)
     {
-        Map<String, String> asNameMap = new HashMap<String, String>();
         try
         {
-            String rootSimpleClassName = null;
+            String simpleClassName = null;
             int end = 0;
             int index = 0;
             boolean as = false;
@@ -376,8 +380,8 @@ public class DynamicSqlTool
                     }
                     else if (tmp.charAt(0) >= 'A' && tmp.charAt(0) <= 'Z')
                     {
-                        rootSimpleClassName = tmp;
-                        Verify.notNull(metaDatas.get(rootSimpleClassName), "sql:{}存在错误，类{}没有被注解MapTabel或TableEntity标记。", sql, rootSimpleClassName);
+                        simpleClassName = tmp;
+                        sqlContext.addMetaData(metaContext.get(simpleClassName));
                     }
                     else if (tmp.equals("as") && end < sql.length() && sql.charAt(end) == ' ')
                     {
@@ -385,7 +389,7 @@ public class DynamicSqlTool
                     }
                     else if (as == true)
                     {
-                        asNameMap.put(tmp, rootSimpleClassName);
+                        sqlContext.addAliasName(tmp, metaContext.get(simpleClassName));
                         as = false;
                     }
                     index = end;
@@ -407,7 +411,7 @@ public class DynamicSqlTool
                     continue;
                 }
             }
-            if (rootSimpleClassName == null)
+            if (simpleClassName == null)
             {
                 return sql;
             }
@@ -451,50 +455,30 @@ public class DynamicSqlTool
                     {
                         String[] tmp = var.split("\\.");
                         Verify.True(tmp.length == 2, "sql有错误，请检查{},关注：{}", sql, var);
-                        MetaData metaData = metaDatas.get(tmp[0]);
-                        if (metaData == null && asNameMap.containsKey(tmp[0]))
+                        String dbColName = sqlContext.getDbColName(var);
+                        if (dbColName == null)
                         {
-                            metaData = metaDatas.get(asNameMap.get(tmp[0]));
-                        }
-                        Verify.notNull(metaData, "sql存在错误，请检查{},类{}不存在映射，关注{}", sql, tmp[0], var);
-                        Verify.notNull(metaData.getColumnName(tmp[1]), "sql存在错误，请检查{},类{}的属性{}不存在映射，关注{}", sql, metaData.getSimpleClassName(), tmp[1], var);
-                        if (tmp[0].charAt(0) >= 'A' && tmp[0].charAt(0) <= 'Z')
-                        {
-                            cache.append(metaData.getTableName()).append('.').append(metaData.getColumnName(tmp[1]));
+                            throw new IllegalArgumentException(StringUtil.format("字段{}不存在数据库映射，请检查{}", var, sql));
                         }
                         else
                         {
-                            cache.append(tmp[0]).append('.').append(metaData.getColumnName(tmp[1]));
+                            cache.append(dbColName);
                         }
                     }
                     else if (var.charAt(0) >= 'A' && var.charAt(0) <= 'Z')
                     {
-                        String replaceName = metaDatas.get(var).getTableName();
-                        cache.append(replaceName);
-                    }
-                    else if (var.equals("as"))
-                    {
-                        as = true;
-                        cache.append("as");
+                        cache.append(metaContext.get(var).getTableName());
                     }
                     else
                     {
-                        if (as)
+                        String dbColName = sqlContext.getDbColName(var);
+                        if (dbColName == null)
                         {
-                            as = false;
                             cache.append(var);
                         }
                         else
                         {
-                            String replaceName = metaDatas.get(rootSimpleClassName).getColumnName(var);
-                            if (replaceName == null)
-                            {
-                                cache.append(var);
-                            }
-                            else
-                            {
-                                cache.append(replaceName);
-                            }
+                            cache.append(dbColName);
                         }
                     }
                     index = end;
@@ -524,7 +508,9 @@ public class DynamicSqlTool
     {
         while (start < sql.length())
         {
-            if (sql.charAt(start) == '>' || sql.charAt(start) == '<' || sql.charAt(start) == '!' || sql.charAt(start) == '=' || sql.charAt(start) == ' ' || sql.charAt(start) == ',' || sql.charAt(start) == '#' || sql.charAt(start) == '+' || sql.charAt(start) == '-' || sql.charAt(start) == '(' || sql.charAt(start) == ')' || sql.charAt(start) == ']' || sql.charAt(start) == '[')
+            char c = sql.charAt(start);
+            if (c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
+                    || c == '#' || c == '+' || c == '-' || c == '(' || c == ')' || c == ']' || c == '[')
             {
                 break;
             }
@@ -542,35 +528,29 @@ public class DynamicSqlTool
      * @throws SecurityException
      * @throws NoSuchFieldException
      */
-    public static String[] analyseFormatSql(String originalSql, String[] paramNames, Class<?>[] paramTypes, boolean isPage, String annoCountSql, Map<String, MetaData> metaDatas) throws NoSuchFieldException, SecurityException
+    public static void analyseFormatSql(String originalSql, String[] paramNames, Class<?>[] paramTypes, boolean isPage, String annoCountSql, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
     {
-        String querySql, queryParam, countSql = null, countParam = null;
-        List<String> variateNames = new ArrayList<String>();
-        String formatSql = getFormatSql(originalSql, variateNames, metaDatas);
-        querySql = formatSql;
+        String querySql, countSql = null;
+        getFormatSql(originalSql, metaContext, sqlContext);
+        querySql = sqlContext.getSql();
         if (isPage)
         {
             if (MysqlPage.class == paramTypes[paramTypes.length - 1])
             {
                 if (annoCountSql == null)
                 {
-                    int index = formatSql.indexOf("from");
-                    countSql = "select count(*) " + formatSql.substring(index);
+                    int index = querySql.indexOf("from");
+                    countSql = "select count(*) " + querySql.substring(index);
                 }
                 else
                 {
                     countSql = annoCountSql;
                 }
-                countParam = buildParams(formatSql, variateNames.toArray(new String[0]), paramNames, paramTypes);
-                String pageParamName = "page_" + System.currentTimeMillis();
-                variateNames.add(pageParamName + ".start");
-                variateNames.add(pageParamName + ".pageSize");
-                formatSql += " limit ?,?";
-                querySql = formatSql;
-                String[] newParamNames = new String[paramTypes.length];
-                System.arraycopy(paramNames, 0, newParamNames, 0, paramTypes.length - 1);
-                newParamNames[newParamNames.length - 1] = pageParamName;
-                queryParam = buildParams(formatSql, variateNames.toArray(new String[0]), newParamNames, paramTypes);
+                sqlContext.setCountSql(countSql);
+                List<InvokeNameAndType> invokeNameAndTypes = buildParams(sqlContext.getInjectNames(), paramNames, paramTypes);
+                sqlContext.setQueryParams(invokeNameAndTypes);
+                querySql += " limit ?,?";
+                sqlContext.setSql(querySql);
             }
             else
             {
@@ -579,22 +559,21 @@ public class DynamicSqlTool
         }
         else
         {
-            queryParam = buildParams(formatSql, variateNames.toArray(new String[0]), paramNames, paramTypes);
+            List<InvokeNameAndType> invokeNameAndTypes = buildParams(sqlContext.getInjectNames(), paramNames, paramTypes);
+            sqlContext.setQueryParams(invokeNameAndTypes);
         }
-        return new String[] { querySql, queryParam, countSql, countParam };
     }
     
     /**
-     * 将给定的sql语句转换为格式化的sql语句。将其中的{变量名}替换为?。并且将{}中的内容增加到paramNames中
-     * 返回格式化后的sql语句
+     * 将给定的sql语句转换为格式化的sql语句。将其中的{变量名}替换为?。并且将{}中的内容增加到paramNames中 返回格式化后的sql语句
      * 
      * @param sql
      * @param paramNames
      * @return
      */
-    public static String getFormatSql(String sql, List<String> variateNames, Map<String, MetaData> metaDatas)
+    public static void getFormatSql(String sql, MetaContext metaContext, SqlContext sqlContext)
     {
-        sql = transMapSql(sql, metaDatas);
+        sql = transMapSql(sql, sqlContext, metaContext);
         StringCache formatSql = new StringCache();
         int length = sql.length();
         char c;
@@ -609,7 +588,7 @@ public class DynamicSqlTool
                     variateStart = now + 1;
                     now = getEndFlag(sql, now);
                     formatSql.append('?');
-                    variateNames.add(sql.substring(variateStart, now));
+                    sqlContext.addInjectName(sql.substring(variateStart, now));
                     break;
                 default:
                     formatSql.append(c);
@@ -617,11 +596,11 @@ public class DynamicSqlTool
                     break;
             }
         }
-        return formatSql.toString();
+        sqlContext.setSql(formatSql.toString());
     }
     
     /**
-     * 根据格式化sql中的注入字段，和方法形参名称数组，返回Object[]形式的参数数组
+     * 根据格式化sql中的注入字段，和方法形参名称数组，返回解析后的List<InvokeNameAndType>内容
      * 
      * @param originalSql
      * @param length
@@ -631,31 +610,19 @@ public class DynamicSqlTool
      * @throws SecurityException
      * @throws NoSuchFieldException
      */
-    private static String buildParams(String originalSql, String[] injects, String[] paramNames, Class<?>[] paramTypes) throws NoSuchFieldException, SecurityException
+    private static List<InvokeNameAndType> buildParams(List<String> injects, String[] paramNames, Class<?>[] paramTypes) throws NoSuchFieldException, SecurityException
     {
-        int length = injects.length;
+        List<InvokeNameAndType> list = new LinkedList<MapperBuilder.InvokeNameAndType>();
+        int length = injects.size();
         if (length == 0)
         {
-            return "new Object[0]";
+            return list;
         }
-        String[] params = new String[length];
-        for (int i = 0; i < length; i++)
+        for (String inject : injects)
         {
-            String inject = injects[i];
-            params[i] = buildParam(inject, paramNames, paramTypes, originalSql);
+            list.add(buildParam(inject, paramNames, paramTypes));
         }
-        StringCache cache = new StringCache();
-        cache.append("new Object[]{");
-        for (int i = 0; i < length; i++)
-        {
-            cache.append("($w)(").append(params[i]).append(')').appendComma();
-        }
-        if (cache.isCommaLast())
-        {
-            cache.deleteLast();
-        }
-        cache.append("}");
-        return cache.toString();
+        return list;
     }
     
     /**
@@ -746,12 +713,10 @@ public class DynamicSqlTool
         StringCache cache = new StringCache();
         char c;
         int flag = 0;
+        InvokeNameAndType invokeNameAndType = null;
         String condition = null;
-        // 变量的类型
-        Class<?> varType = null;
-        // 变量名经过转换后的内容。比如user.name转换后可能是$1.getName()
-        String transVar = null;
         String param = null;
+        // 表达式的写法只支持变量在前，参数在后。也就是说只能写$user.age >24 而不能写24<$user.age
         while (flag < conditionStatment.length())
         {
             c = conditionStatment.charAt(flag);
@@ -767,17 +732,13 @@ public class DynamicSqlTool
                 }
                 else if (flag < conditionStatment.length() - 1 && conditionStatment.charAt(flag) == '(')
                 {
-                    flag = conditionStatment.indexOf(')', flag) + 1;
-                    Verify.False(flag == -1, "sql语句存在异常，请检查{}", conditionStatment);
-                    var = conditionStatment.substring(varStart, flag);
-                    
+                    throw new IllegalArgumentException(StringUtil.format("动态sql功能只支持无参方法，请检查{}", conditionStatment));
                 }
                 else
                 {
                     var = conditionStatment.substring(varStart, flag);
                 }
-                transVar = buildParam(var, paramNames, types, conditionStatment);
-                varType = getParamType(var, paramNames, types, conditionStatment);
+                invokeNameAndType = buildParam(var, paramNames, types);
                 continue;
             }
             else if (c == '>' || c == '<' || c == '!' || c == '=')
@@ -798,20 +759,20 @@ public class DynamicSqlTool
             else if (c == ' ' || c == '(' || c == ')' || c == '|' || c == '&')
             {
                 // 在遇到(,||,&& 时代表条件的结束。此时可以生成一个表达式
-                if (transVar != null && c != ' ' && c != ')' && flag < conditionStatment.length() - 1)
+                if (invokeNameAndType != null && c != ' ' && c != ')' && flag < conditionStatment.length() - 1)
                 {
                     if (c == '(' || conditionStatment.charAt(flag + 1) == '|' || conditionStatment.charAt(flag + 1) == '&')
                     {
-                        if (varType != null)
+                        if (param == null && condition == null)
                         {
-                            createStatement("null", cache, transVar, varType, "!=");
+                            createStatement("null", cache, invokeNameAndType.getInvokeName(), invokeNameAndType.getReturnType(), "!=");
                         }
                         else
                         {
-                            createStatement(param, cache, transVar, null, condition);
+                            createStatement(param, cache, invokeNameAndType.getInvokeName(), invokeNameAndType.getReturnType(), condition);
                         }
                         cache.append(' ');
-                        transVar = null;
+                        invokeNameAndType = null;
                         condition = null;
                         param = null;
                     }
@@ -824,8 +785,8 @@ public class DynamicSqlTool
             {
                 int end = conditionStatment.indexOf('\'', flag);
                 param = conditionStatment.substring(flag + 1, end);
-                createStatement(param, cache, transVar, varType, condition);
-                transVar = null;
+                createStatement(param, cache, invokeNameAndType.getInvokeName(), invokeNameAndType.getReturnType(), condition);
+                invokeNameAndType = null;
                 condition = null;
                 param = null;
                 flag = end + 1;
@@ -834,29 +795,21 @@ public class DynamicSqlTool
             // 如果都不是上面的那些字符，就意味着可能是数字或者是布尔值。（在输入正确的情况下，故意输错不说。）
             else
             {
-                Verify.notNull(transVar, "sql语句错误，请检查是否参数'{}'前面是否缺少了$", param);
+                Verify.notNull(invokeNameAndType, "sql语句错误，请检查是否参数'{}'前面是否缺少了$", invokeNameAndType.getOrigin());
                 int paramStart = flag;
                 flag = getEndFlag(conditionStatment, flag);
                 param = conditionStatment.substring(paramStart, flag);
-                createStatement(param, cache, transVar, varType, condition);
-                transVar = null;
+                createStatement(param, cache, invokeNameAndType.getInvokeName(), invokeNameAndType.getReturnType(), condition);
+                invokeNameAndType = null;
                 condition = null;
                 param = null;
                 continue;
             }
         }
-        if (transVar != null && condition == null && param == null)
+        if (invokeNameAndType != null && condition == null && param == null)
         {
-            if (varType != null)
-            {
-                createStatement("null", cache, transVar, varType, "!=");
-            }
-            else
-            {
-                createStatement(param, cache, transVar, null, condition);
-            }
+            createStatement("null", cache, invokeNameAndType.getInvokeName(), invokeNameAndType.getReturnType(), "!=");
         }
-        
         return cache.toString();
     }
     

@@ -18,7 +18,7 @@ public class User5
     private Boolean   boy;
     @Column(saveIgnore = true)
     private Time      birthday;
-                      
+    
     public Time getBirthday()
     {
         return birthday;

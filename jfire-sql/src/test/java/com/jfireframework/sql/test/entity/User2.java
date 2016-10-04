@@ -12,7 +12,7 @@ public class User2
     @Column(name = "userid")
     private Integer id;
     private Date    birthday;
-                    
+    
     public Date getBirthday()
     {
         return birthday;

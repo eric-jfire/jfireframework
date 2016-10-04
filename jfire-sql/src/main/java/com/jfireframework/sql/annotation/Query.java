@@ -48,4 +48,5 @@ public @interface Query
      */
     public String countSql() default "";
     
+    public String selectFields() default "";
 }

@@ -2,6 +2,7 @@ package com.jfireframework.sql.metadata;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -16,10 +17,12 @@ import com.jfireframework.sql.dbstructure.NameStrategy;
 
 public class TableMetaData
 {
-    private final String      tableName;
-    private final FieldInfo[] fieldInfos;
-    private final FieldInfo   idInfo;
-    private final IdStrategy  idStrategy;
+    private final String              tableName;
+    private final FieldInfo[]         fieldInfos;
+    private final FieldInfo           idInfo;
+    private final IdStrategy          idStrategy;
+    private final Class<?>            ckass;
+    private final Map<String, String> fieldNameMap = new HashMap<String, String>();
     
     public static class FieldInfo
     {
@@ -43,7 +46,7 @@ public class TableMetaData
                 {
                     dbColName = nameStrategy.toDbName(field.getName());
                 }
-                length = field.getAnnotation(column.getClass()).length();
+                length = field.getAnnotation(Column.class).length();
             }
             else
             {
@@ -76,25 +79,63 @@ public class TableMetaData
     
     public TableMetaData(Class<?> ckass, NameStrategy nameStrategy)
     {
+        this.ckass = ckass;
         TableEntity entity = ckass.getAnnotation(TableEntity.class);
         tableName = entity.name();
         List<FieldInfo> list = new LinkedList<FieldInfo>();
         Field t_idField = null;
+        String prefix = tableName + '.';
         for (Field each : ReflectUtil.getAllFields(ckass))
         {
             if (notTableField(each))
             {
                 continue;
             }
-            list.add(new FieldInfo(each, nameStrategy));
+            FieldInfo info = new FieldInfo(each, nameStrategy);
+            fieldNameMap.put(prefix + info.getDbColName(), each.getName());
+            list.add(info);
             if (each.isAnnotationPresent(Id.class))
             {
                 t_idField = each;
             }
         }
         fieldInfos = list.toArray(new FieldInfo[list.size()]);
-        idInfo = new FieldInfo(t_idField, nameStrategy);
-        idStrategy = t_idField.getType().getAnnotation(Id.class).idStrategy();
+        if (t_idField != null)
+        {
+            idInfo = new FieldInfo(t_idField, nameStrategy);
+            idStrategy = getIdStrategy(t_idField);
+        }
+        else
+        {
+            idInfo = null;
+            idStrategy = null;
+        }
+    }
+    
+    private IdStrategy getIdStrategy(Field idField)
+    {
+        IdStrategy idStrategy = idField.getAnnotation(Id.class).idStrategy();
+        if (idStrategy == IdStrategy.autoDecision)
+        {
+            Class<?> type = idField.getType();
+            if (type == Integer.class //
+                    || type == Long.class)
+            {
+                return IdStrategy.nativeDb;
+            }
+            else if (type == String.class)
+            {
+                return IdStrategy.stringUid;
+            }
+            else
+            {
+                throw new IllegalArgumentException();
+            }
+        }
+        else
+        {
+            return idStrategy;
+        }
     }
     
     private boolean notTableField(Field field)
@@ -135,4 +176,13 @@ public class TableMetaData
         return idInfo;
     }
     
+    public Class<?> getEntityClass()
+    {
+        return ckass;
+    }
+    
+    public String getFieldName(String dbColName)
+    {
+        return fieldNameMap.get(dbColName);
+    }
 }

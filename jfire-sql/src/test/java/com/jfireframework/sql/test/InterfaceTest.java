@@ -109,52 +109,6 @@ public class InterfaceTest extends BaseTestSupport
     }
     
     @Test
-    public void insertUsersTest()
-    {
-        List<User> users = new ArrayList<User>();
-        User user = new User();
-        user.setId(4);
-        user.setName("林斌1");
-        user.setPassword("23123");
-        user.setBirthday("2015-06-06 00:00:00.0");
-        user.setAge(13);
-        users.add(user);
-        user = new User();
-        user.setId(5);
-        user.setName("林斌2");
-        user.setPassword("sdas");
-        user.setBirthday("2015-06-07 00:00:00.0");
-        user.setAge(15);
-        users.add(user);
-        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
-        int[] result = userDAO.insertUsers(users);
-        for (int each : result)
-        {
-            logger.debug("插入的用户条数{}", each);
-        }
-        try
-        {
-            PreparedStatement pstat = session.getConnection().prepareStatement("select * from user where userid in(4,5) order by userid");
-            ResultSet rs = pstat.executeQuery();
-            rs.next();
-            assertEquals("林斌1", rs.getString("username"));
-            assertEquals("2015-06-06 00:00:00.0", rs.getString("birthday"));
-            assertEquals(13, rs.getInt("age"));
-            assertEquals(4, rs.getInt("userid"));
-            rs.next();
-            assertEquals("林斌2", rs.getString("username"));
-            assertEquals("2015-06-07 00:00:00.0", rs.getString("birthday"));
-            assertEquals(15, rs.getInt("age"));
-            assertEquals(5, rs.getInt("userid"));
-        }
-        catch (SQLException e)
-        {
-            e.printStackTrace();
-            Assert.fail();
-        }
-    }
-    
-    @Test
     public void dyncTest()
     {
         UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
