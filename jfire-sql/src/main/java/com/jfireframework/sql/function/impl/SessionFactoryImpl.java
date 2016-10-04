@@ -1,6 +1,5 @@
 package com.jfireframework.sql.function.impl;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.HashSet;
@@ -12,11 +11,8 @@ import javax.annotation.Resource;
 import javax.sql.DataSource;
 import com.jfireframework.baseutil.PackageScan;
 import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.context.bean.annotation.field.CanBeNull;
-import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.Query;
-import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.annotation.Update;
 import com.jfireframework.sql.dbstructure.DefaultNameStrategy;
 import com.jfireframework.sql.dbstructure.MariaDBStructure;
@@ -28,6 +24,7 @@ import com.jfireframework.sql.function.SessionFactory;
 import com.jfireframework.sql.function.SqlSession;
 import com.jfireframework.sql.function.mapper.Mapper;
 import com.jfireframework.sql.metadata.MetaContext;
+import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.util.MapperBuilder;
 
 public class SessionFactoryImpl implements SessionFactory
@@ -73,11 +70,10 @@ public class SessionFactoryImpl implements SessionFactory
                 classLoader = Thread.currentThread().getContextClassLoader();
             }
             Set<Class<?>> set = buildClassNameSet(classLoader);
-            metaContext = new MetaContext(set, nameStrategy);
-            createOrUpdateDatabase(dataSource, metaContext);
-            createMappers(set, metaContext);
-            // new ResuleMapBuilder().build(set, classLoader);
-            new DaoBuilder().buildDao(set, classLoader);
+            metaContext = new MetaContext(set);
+            createOrUpdateDatabase(dataSource);
+            createMappers(set);
+            new DaoBuilder().buildDao(set);
         }
         catch (Exception e)
         {
@@ -104,7 +100,7 @@ public class SessionFactoryImpl implements SessionFactory
         return types;
     }
     
-    private void createMappers(Set<Class<?>> set, MetaContext context)
+    private void createMappers(Set<Class<?>> set)
     {
         try
         {
@@ -156,7 +152,7 @@ public class SessionFactoryImpl implements SessionFactory
         create, update, none
     }
     
-    private void createOrUpdateDatabase(DataSource dataSource, MetaContext metaContext) throws Exception
+    private void createOrUpdateDatabase(DataSource dataSource) throws Exception
     {
         TableMode type = TableMode.valueOf(tableMode);
         switch (type)
@@ -258,33 +254,16 @@ public class SessionFactoryImpl implements SessionFactory
     
     class DaoBuilder
     {
-        @SuppressWarnings({ "rawtypes", "unchecked" })
-        public void buildDao(Set<Class<?>> set, ClassLoader classLoader)
+        @SuppressWarnings("rawtypes")
+        public void buildDao(Set<Class<?>> set)
         {
-            for (Class<?> each : set)
+            for (TableMetaData each : metaContext.metaDatas())
             {
-                if (each.isAnnotationPresent(TableEntity.class))
+                if (each.getIdInfo() != null)
                 {
-                    if (hasIdField(each))
-                    {
-                        daos.put(each, new DAOBeanImpl(each));
-                    }
+                    daos.put(each.getEntityClass(), new DAOBeanImpl(each));
                 }
             }
-            
-        }
-        
-        private boolean hasIdField(Class<?> ckass)
-        {
-            Field[] fields = ReflectUtil.getAllFields(ckass);
-            for (Field each : fields)
-            {
-                if (each.isAnnotationPresent(Id.class))
-                {
-                    return true;
-                }
-            }
-            return false;
         }
         
     }
@@ -295,22 +274,6 @@ public class SessionFactoryImpl implements SessionFactory
     {
         return (Dao<T>) daos.get(ckass);
     }
-    
-    // class ResuleMapBuilder
-    // {
-    // @SuppressWarnings({ "rawtypes", "unchecked" })
-    // public void build(Set<Class<?>> set, ClassLoader classLoader)
-    // {
-    // for (Class<?> each : set)
-    // {
-    // if (each.isAnnotationPresent(TableEntity.class))
-    // {
-    // ResultMap<?> resultMap = new ResultMapImpl(each);
-    // resultMaps.put(each, resultMap);
-    // }
-    // }
-    // }
-    // }
     
     @SuppressWarnings("unchecked")
     @Override

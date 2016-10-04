@@ -23,6 +23,7 @@ public class TableMetaData
     private final IdStrategy          idStrategy;
     private final Class<?>            ckass;
     private final Map<String, String> fieldNameMap = new HashMap<String, String>();
+    private final NameStrategy        nameStrategy;
     
     public static class FieldInfo
     {
@@ -80,6 +81,7 @@ public class TableMetaData
     public TableMetaData(Class<?> ckass, NameStrategy nameStrategy)
     {
         this.ckass = ckass;
+        this.nameStrategy = nameStrategy;
         TableEntity entity = ckass.getAnnotation(TableEntity.class);
         tableName = entity.name();
         List<FieldInfo> list = new LinkedList<FieldInfo>();
@@ -102,6 +104,10 @@ public class TableMetaData
         fieldInfos = list.toArray(new FieldInfo[list.size()]);
         if (t_idField != null)
         {
+            if (t_idField.getType().isPrimitive())
+            {
+                throw new IllegalArgumentException("作为主键的属性不可以使用基本类型，必须使用包装类。请检查" + t_idField.getDeclaringClass().getName() + "." + t_idField.getName());
+            }
             idInfo = new FieldInfo(t_idField, nameStrategy);
             idStrategy = getIdStrategy(t_idField);
         }
@@ -159,6 +165,11 @@ public class TableMetaData
     public IdStrategy getIdStrategy()
     {
         return idStrategy;
+    }
+    
+    public NameStrategy getNameStrategy()
+    {
+        return nameStrategy;
     }
     
     public String getTableName()

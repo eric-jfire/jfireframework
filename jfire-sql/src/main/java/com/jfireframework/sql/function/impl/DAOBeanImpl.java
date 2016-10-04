@@ -1,7 +1,6 @@
 package com.jfireframework.sql.function.impl;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,10 +18,7 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.uniqueid.AutumnId;
-import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.IdStrategy;
-import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dbstructure.NameStrategy;
 import com.jfireframework.sql.field.MapField;
@@ -32,6 +28,8 @@ import com.jfireframework.sql.field.impl.StringField;
 import com.jfireframework.sql.field.impl.WLongField;
 import com.jfireframework.sql.function.Dao;
 import com.jfireframework.sql.function.LockMode;
+import com.jfireframework.sql.metadata.TableMetaData;
+import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
@@ -60,26 +58,17 @@ public class DAOBeanImpl<T> implements Dao<T>
         INT, LONG, STRING
     }
     
-    public DAOBeanImpl(Class<T> entityClass)
+    public DAOBeanImpl(TableMetaData metaData)
     {
-        this.entityClass = entityClass;
-        NameStrategy nameStrategy;
-        try
-        {
-            nameStrategy = entityClass.getAnnotation(TableEntity.class).nameStrategy().newInstance();
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
+        this.entityClass = metaData.getEntityClass();
+        NameStrategy nameStrategy = metaData.getNameStrategy();
         tableName = entityClass.getAnnotation(TableEntity.class).name();
-        Field[] fields = ReflectUtil.getAllFields(entityClass);
-        MapField[] allMapFields = buildMapfields(fields, nameStrategy);
-        Field t_idField = findIdField(fields);
+        MapField[] allMapFields = buildMapfields(metaData.getFieldInfos(), nameStrategy);
+        Field t_idField = metaData.getIdInfo().getField();
         idType = getIdType(t_idField);
         idField = MapFieldBuilder.buildMapField(t_idField, nameStrategy);
         idOffset = unsafe.objectFieldOffset(t_idField);
-        idStrategy = getIdStrategy(t_idField);
+        idStrategy = metaData.getIdStrategy();
         MapField[] insertOrUpdateFields = buildInsertOrUpdateFields(allMapFields);
         for (MapField each : insertOrUpdateFields)
         {
@@ -110,17 +99,6 @@ public class DAOBeanImpl<T> implements Dao<T>
         }
     }
     
-    private Field findIdField(Field[] fields)
-    {
-        for (Field each : fields)
-        {
-            if (each.isAnnotationPresent(Id.class))
-            {
-                return each;
-            }
-        }
-        throw new NullPointerException();
-    }
     
     private MapField[] buildInsertOrUpdateFields(MapField[] mapFields)
     {
@@ -137,69 +115,14 @@ public class DAOBeanImpl<T> implements Dao<T>
         
     }
     
-    private MapField[] buildMapfields(Field[] fields, NameStrategy nameStrategy)
+    private MapField[] buildMapfields(FieldInfo[] infos, NameStrategy nameStrategy)
     {
-        List<MapField> list = new ArrayList<MapField>(fields.length);
-        for (Field each : fields)
+        List<MapField> list = new ArrayList<MapField>(infos.length);
+        for (FieldInfo each : infos)
         {
-            if (NotMapField(each))
-            {
-                continue;
-            }
-            list.add(MapFieldBuilder.buildMapField(each, nameStrategy));
-            if (each.isAnnotationPresent(Id.class))
-            {
-                if (each.getType().isPrimitive())
-                {
-                    throw new IllegalArgumentException("作为主键的属性不可以使用基本类型，必须使用包装类。请检查" + each.getDeclaringClass().getName() + "." + each.getName());
-                }
-            }
+            list.add(MapFieldBuilder.buildMapField(each.getField(), nameStrategy));
         }
         return list.toArray(new MapField[list.size()]);
-    }
-    
-    private boolean NotMapField(Field field)
-    {
-        if (field.isAnnotationPresent(SqlIgnore.class) //
-                || Map.class.isAssignableFrom(field.getType())//
-                || List.class.isAssignableFrom(field.getType())//
-                || field.getType().isInterface()//
-                || field.getType().isArray()//
-                || Modifier.isStatic(field.getModifiers())//
-                || (field.isAnnotationPresent(Column.class) && field.getAnnotation(Column.class).daoIgnore()))
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-    
-    private IdStrategy getIdStrategy(Field idField)
-    {
-        IdStrategy idStrategy = idField.getAnnotation(Id.class).idStrategy();
-        if (idStrategy == IdStrategy.autoDecision)
-        {
-            Class<?> type = idField.getType();
-            if (type == Integer.class //
-                    || type == Long.class)
-            {
-                return IdStrategy.nativeDb;
-            }
-            else if (type == String.class)
-            {
-                return IdStrategy.stringUid;
-            }
-            else
-            {
-                throw new IllegalArgumentException();
-            }
-        }
-        else
-        {
-            return idStrategy;
-        }
     }
     
     private SqlAndFields buildInsertSql(MapField[] insertOrUpdateFields)
