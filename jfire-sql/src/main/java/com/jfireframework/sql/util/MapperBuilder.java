@@ -250,18 +250,20 @@ public class MapperBuilder
     private String createTransferField(CtClass ctClass, Class<?> returnType, Method method, MetaContext metaContext, SqlContext sqlContext) throws CannotCompileException, NotFoundException
     {
         String fieldName = method.getName() + "$" + System.nanoTime();
+        String fieldInitStatement = null;
+        CtField ctField;
         if (isBaseType(returnType))
         {
             Class<?> transferType = getTransferType(returnType);
-            CtField ctField = new CtField(classPool.get(transferType.getName()), fieldName, ctClass);
-            ctClass.addField(ctField, StringUtil.format("new {}()", transferType.getName()));
+            ctField = new CtField(classPool.get(transferType.getName()), fieldName, ctClass);
+            fieldInitStatement = StringUtil.format("new {}()", transferType.getName());
         }
         else
         {
             if (method.getAnnotation(Query.class).selectFields().equals("") == false)
             {
-                CtField ctField = new CtField(classPool.get(FixationBeanTransfer.class.getName()), fieldName, ctClass);
-                ctClass.addField(ctField, StringUtil.format("new com.jfireframework.sql.resultsettransfer.FixationBeanTransfer({}.class,\"{}\")", returnType.getName(), method.getAnnotation(Query.class).selectFields()));
+                ctField = new CtField(classPool.get(FixationBeanTransfer.class.getName()), fieldName, ctClass);
+                fieldInitStatement = StringUtil.format("new com.jfireframework.sql.resultsettransfer.FixationBeanTransfer({}.class,\"{}\")", returnType.getName(), method.getAnnotation(Query.class).selectFields());
             }
             else
             {
@@ -274,10 +276,10 @@ public class MapperBuilder
                     int start = sql.indexOf("select") + 6;
                     int end = sql.indexOf("from");
                     String var = sql.substring(start, end).trim();
-                    CtField ctField = new CtField(classPool.get(FixationBeanTransfer.class.getName()), fieldName, ctClass);
+                    ctField = new CtField(classPool.get(FixationBeanTransfer.class.getName()), fieldName, ctClass);
                     if (var.equals("*"))
                     {
-                        ctClass.addField(ctField, StringUtil.format("new com.jfireframework.sql.resultsettransfer.FixationBeanTransfer({}.class,\"*\")", returnType.getName()));
+                        fieldInitStatement = StringUtil.format("new com.jfireframework.sql.resultsettransfer.FixationBeanTransfer({}.class,\"*\")", returnType.getName());
                     }
                     else
                     {
@@ -288,16 +290,18 @@ public class MapperBuilder
                             cache.append(tableMetaData.getFieldName(tmp[i].trim())).appendComma();
                         }
                         cache.deleteLast();
-                        ctClass.addField(ctField, StringUtil.format("new com.jfireframework.sql.resultsettransfer.FixationBeanTransfer({}.class,\"{}\")", returnType.getName(), cache.toString()));
+                        fieldInitStatement = StringUtil.format("new com.jfireframework.sql.resultsettransfer.FixationBeanTransfer({}.class,\"{}\")", returnType.getName(), cache.toString());
                     }
                 }
                 else
                 {
-                    CtField ctField = new CtField(classPool.get(VariableBeanTransfer.class.getName()), fieldName, ctClass);
-                    ctClass.addField(ctField, StringUtil.format("new com.jfireframework.sql.resultsettransfer.VariableBeanTransfer({}.class)", returnType.getName()));
+                    ctField = new CtField(classPool.get(VariableBeanTransfer.class.getName()), fieldName, ctClass);
+                    fieldInitStatement = StringUtil.format("new com.jfireframework.sql.resultsettransfer.VariableBeanTransfer({}.class)", returnType.getName());
                 }
             }
         }
+        ctClass.addField(ctField, fieldInitStatement);
+        logger.debug("为方法:{}.{}创建的属性内容是{}", method.getDeclaringClass().getName(), method.getName(), fieldInitStatement);
         return fieldName;
     }
     
