@@ -27,10 +27,12 @@ public class TableMetaData
     
     public static class FieldInfo
     {
-        private final String dbColName;
-        private final String fieldName;
-        private final Field  field;
-        private final int    length;
+        private final String  dbColName;
+        private final String  fieldName;
+        private final Field   field;
+        private final int     length;
+        private final boolean daoIgnore;
+        private final boolean saveIgnore;
         
         public FieldInfo(Field field, NameStrategy nameStrategy)
         {
@@ -48,14 +50,28 @@ public class TableMetaData
                     dbColName = nameStrategy.toDbName(field.getName());
                 }
                 length = field.getAnnotation(Column.class).length();
+                daoIgnore = column.daoIgnore();
+                saveIgnore = column.saveIgnore();
             }
             else
             {
                 dbColName = nameStrategy.toDbName(field.getName());
                 length = -1;
+                daoIgnore = false;
+                saveIgnore = false;
             }
         }
         
+        public boolean isDaoIgnore()
+        {
+            return daoIgnore;
+        }
+
+        public boolean isSaveIgnore()
+        {
+            return saveIgnore;
+        }
+
         public String getDbColName()
         {
             return dbColName;
@@ -151,8 +167,7 @@ public class TableMetaData
                 || List.class.isAssignableFrom(field.getType())//
                 || field.getType().isInterface()//
                 || field.getType().isArray()//
-                || Modifier.isStatic(field.getModifiers())//
-                || (field.isAnnotationPresent(Column.class) && (field.getAnnotation(Column.class).daoIgnore() || field.getAnnotation(Column.class).saveIgnore())))
+                || Modifier.isStatic(field.getModifiers()))
         {
             return true;
         }

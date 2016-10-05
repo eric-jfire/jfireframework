@@ -15,8 +15,6 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
-import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.uniqueid.AutumnId;
 import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.annotation.TableEntity;
@@ -28,6 +26,7 @@ import com.jfireframework.sql.field.impl.StringField;
 import com.jfireframework.sql.field.impl.WLongField;
 import com.jfireframework.sql.function.Dao;
 import com.jfireframework.sql.function.LockMode;
+import com.jfireframework.sql.log.LogInterceptor;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import sun.misc.Unsafe;
@@ -35,7 +34,6 @@ import sun.misc.Unsafe;
 @SuppressWarnings("restriction")
 public class DAOBeanImpl<T> implements Dao<T>
 {
-    private final static Logger         logger   = ConsoleLogFactory.getLogger();
     private final Class<?>              entityClass;
     // 存储类的属性名和其对应的Mapfield映射关系
     private final Map<String, MapField> fieldMap = new HashMap<String, MapField>();
@@ -52,14 +50,16 @@ public class DAOBeanImpl<T> implements Dao<T>
     private final SqlAndFields          insertInfo;
     private final SqlAndFields          updateInfo;
     private final String                deleteSql;
+    private final LogInterceptor        logInterceptor;
     
     enum IdType
     {
         INT, LONG, STRING
     }
     
-    public DAOBeanImpl(TableMetaData metaData)
+    public DAOBeanImpl(TableMetaData metaData, LogInterceptor logInterceptor)
     {
+        this.logInterceptor = logInterceptor;
         this.entityClass = metaData.getEntityClass();
         NameStrategy nameStrategy = metaData.getNameStrategy();
         tableName = entityClass.getAnnotation(TableEntity.class).name();
@@ -99,7 +99,6 @@ public class DAOBeanImpl<T> implements Dao<T>
         }
     }
     
-    
     private MapField[] buildInsertOrUpdateFields(MapField[] mapFields)
     {
         List<MapField> tmp = new LinkedList<MapField>();
@@ -120,6 +119,10 @@ public class DAOBeanImpl<T> implements Dao<T>
         List<MapField> list = new ArrayList<MapField>(infos.length);
         for (FieldInfo each : infos)
         {
+            if (each.isDaoIgnore())
+            {
+                continue;
+            }
             list.add(MapFieldBuilder.buildMapField(each.getField(), nameStrategy));
         }
         return list.toArray(new MapField[list.size()]);
@@ -250,7 +253,10 @@ public class DAOBeanImpl<T> implements Dao<T>
         try
         {
             pStat = connection.prepareStatement(getInfo.getSql());
-            logger.trace("执行的sql是{}", getInfo.getSql());
+            if (logInterceptor.isLogOn(getInfo.getSql()))
+            {
+                logInterceptor.log(getInfo.getSql(), pk);
+            }
             switch (idType)
             {
                 case INT:
@@ -325,6 +331,10 @@ public class DAOBeanImpl<T> implements Dao<T>
                     each.setStatementValue(pStat, entity, index);
                     index++;
                 }
+                if (logInterceptor.isLogOn(updateInfo.getSql()))
+                {
+                    logInterceptor.log(updateInfo.getSql(), entity);
+                }
                 pStat.executeUpdate();
             }
             catch (SQLException e)
@@ -361,6 +371,10 @@ public class DAOBeanImpl<T> implements Dao<T>
             {
                 each.setStatementValue(pStat, entity, index);
                 index++;
+            }
+            if (logInterceptor.isLogOn(updateInfo.getSql()))
+            {
+                logInterceptor.log(updateInfo.getSql(), entity);
             }
             return pStat.executeUpdate();
         }
@@ -401,6 +415,10 @@ public class DAOBeanImpl<T> implements Dao<T>
                 }
                 pStat.addBatch();
             }
+            if (logInterceptor.isLogOn(insertInfo.getSql()))
+            {
+                logInterceptor.log(insertInfo.getSql(), entitys.toArray());
+            }
             pStat.executeBatch();
         }
         catch (Exception e)
@@ -434,6 +452,10 @@ public class DAOBeanImpl<T> implements Dao<T>
             {
                 each.setStatementValue(pStat, entity, index);
                 index++;
+            }
+            if (logInterceptor.isLogOn(insertInfo.getSql()))
+            {
+                logInterceptor.log(insertInfo.getSql(), entity);
             }
             pStat.executeUpdate();
             ResultSet resultSet = pStat.getGeneratedKeys();
@@ -486,7 +508,10 @@ public class DAOBeanImpl<T> implements Dao<T>
         try
         {
             pStat = connection.prepareStatement(sql);
-            logger.trace("执行的sql是{}", sql);
+            if (logInterceptor.isLogOn(sql))
+            {
+                logInterceptor.log(sql, pk);
+            }
             pStat.setObject(1, pk);
             ResultSet resultSet = pStat.executeQuery();
             if (resultSet.next())

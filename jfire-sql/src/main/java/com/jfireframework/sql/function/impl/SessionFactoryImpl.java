@@ -23,6 +23,8 @@ import com.jfireframework.sql.function.ResultMap;
 import com.jfireframework.sql.function.SessionFactory;
 import com.jfireframework.sql.function.SqlSession;
 import com.jfireframework.sql.function.mapper.Mapper;
+import com.jfireframework.sql.log.LogInterceptor;
+import com.jfireframework.sql.log.NopLogInterceptor;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.util.MapperBuilder;
@@ -70,15 +72,28 @@ public class SessionFactoryImpl implements SessionFactory
                 classLoader = Thread.currentThread().getContextClassLoader();
             }
             Set<Class<?>> set = buildClassNameSet(classLoader);
+            LogInterceptor logInterceptor = findLogInterceptorClass(set);
             metaContext = new MetaContext(set);
-            createOrUpdateDatabase(dataSource);
-            createMappers(set);
-            new DaoBuilder().buildDao(set);
+            createOrUpdateDatabase();
+            createMappers(set, logInterceptor);
+            new DaoBuilder().buildDao(logInterceptor);
         }
         catch (Exception e)
         {
             throw new JustThrowException(e);
         }
+    }
+    
+    private LogInterceptor findLogInterceptorClass(Set<Class<?>> set) throws InstantiationException, IllegalAccessException
+    {
+        for (Class<?> each : set)
+        {
+            if (LogInterceptor.class.isAssignableFrom(each))
+            {
+                return (LogInterceptor) each.newInstance();
+            }
+        }
+        return new NopLogInterceptor();
     }
     
     private Set<Class<?>> buildClassNameSet(ClassLoader classLoader) throws ClassNotFoundException
@@ -100,10 +115,11 @@ public class SessionFactoryImpl implements SessionFactory
         return types;
     }
     
-    private void createMappers(Set<Class<?>> set)
+    private void createMappers(Set<Class<?>> set, LogInterceptor logInterceptor)
     {
         try
         {
+            
             MapperBuilder mapperBuilder = new MapperBuilder(metaContext);
             nextSqlInterface: for (Class<?> each : set)
             {
@@ -117,12 +133,12 @@ public class SessionFactoryImpl implements SessionFactory
                             continue nextSqlInterface;
                         }
                     }
-                    
                 }
             }
             for (Mapper each : mappers.values())
             {
                 each.setSessionFactory(this);
+                each.setLog(logInterceptor);
             }
         }
         catch (Exception e1)
@@ -152,7 +168,7 @@ public class SessionFactoryImpl implements SessionFactory
         create, update, none
     }
     
-    private void createOrUpdateDatabase(DataSource dataSource) throws Exception
+    private void createOrUpdateDatabase() throws Exception
     {
         TableMode type = TableMode.valueOf(tableMode);
         switch (type)
@@ -255,13 +271,13 @@ public class SessionFactoryImpl implements SessionFactory
     class DaoBuilder
     {
         @SuppressWarnings("rawtypes")
-        public void buildDao(Set<Class<?>> set)
+        public void buildDao(LogInterceptor logInterceptor)
         {
             for (TableMetaData each : metaContext.metaDatas())
             {
                 if (each.getIdInfo() != null)
                 {
-                    daos.put(each.getEntityClass(), new DAOBeanImpl(each));
+                    daos.put(each.getEntityClass(), new DAOBeanImpl(each, logInterceptor));
                 }
             }
         }

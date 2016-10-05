@@ -25,7 +25,7 @@ public class TimeTest
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        int count = 100;
+        int count = 10000;
         long t0 = System.nanoTime();
         for (int i = 0; i < count; i++)
         {

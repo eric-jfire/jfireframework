@@ -95,6 +95,10 @@ public class MapperBuilder
                 {
                     targetCtClass.addMethod(createUpdateMethod(targetCtClass, method, method.getAnnotation(Update.class)));
                 }
+                else
+                {
+                    throw new UnsupportedOperationException(StringUtil.format("Mapper接口内不能存在非注解的方法。请检查{}.{}", method.getDeclaringClass().getName(), method.getName()));
+                }
             }
             catch (Exception e)
             {
@@ -139,6 +143,7 @@ public class MapperBuilder
             methodBody.append("for(int i=0;i<queryParam.length;i++){\n");
             methodBody.append("pStat.setObject(i+1,queryParam[i]);\n");
             methodBody.append("}\n");
+            logCode(methodBody, "sql", "queryParam");
             methodBody.append("java.sql.ResultSet resultSet = pStat.executeQuery();\n");
             if (isList)
             {
@@ -152,6 +157,7 @@ public class MapperBuilder
                     methodBody.append("for(int i=0;i<countParam.length;i++){\n");
                     methodBody.append("pStat.setObject(i+1,countParam[i]);\n");
                     methodBody.append("}\n");
+                    logCode(methodBody, "countSql", "countParam");
                     methodBody.append("resultSet = pStat.executeQuery();\n");
                     methodBody.append("resultSet.next();\n");
                     methodBody.append("int total = resultSet.getInt(1);\n");
@@ -199,6 +205,25 @@ public class MapperBuilder
                 {
                     ;
                 }
+                // 插入log记录代码
+                {
+                    if (isPage)
+                    {
+                        int pageIndex = method.getParameterTypes().length;
+                        methodBody.append("if(log.isLogOn(").append("sql").append(")){\n");
+                        methodBody.append("log.log(").append("sql").append(",new Object[]{");
+                        for (InvokeNameAndType each : sqlContext.getQueryParams())
+                        {
+                            methodBody.append("($w)").append(each.getInvokeName()).appendComma();
+                        }
+                        methodBody.append("($w)").append("$" + pageIndex + ".getStart()").appendComma().append("($w)$" + pageIndex + ".getPageSize()");
+                        methodBody.append("});}\n");
+                    }
+                    else
+                    {
+                        logCode(methodBody, sqlContext.getQueryParams(), "sql");
+                    }
+                }
                 methodBody.append("java.sql.ResultSet resultSet = pStat.executeQuery();\n");
                 methodBody.append("java.util.List result = " + fieldName + ".transferList(resultSet);\n");
                 if (isPage)
@@ -209,6 +234,10 @@ public class MapperBuilder
                     methodBody.append("String countSql = \"").append(sqlContext.getCountSql()).append("\";\n");
                     methodBody.append("pStat = connection.prepareStatement(countSql);\n");
                     setPrestatementParam(methodBody, sqlContext.getQueryParams());
+                    // 插入log记录代码
+                    {
+                        logCode(methodBody, sqlContext.getQueryParams(), "countSql");
+                    }
                     methodBody.append("resultSet = pStat.executeQuery();\n");
                     methodBody.append("resultSet.next();\n");
                     methodBody.append("int total = resultSet.getInt(1);\n");
@@ -225,6 +254,7 @@ public class MapperBuilder
                 Class<?> returnType = method.getReturnType();
                 String fieldName = createTransferField(weaveClass, returnType, method, metaContext, sqlContext);
                 setPrestatementParam(methodBody, sqlContext.getQueryParams());
+                logCode(methodBody, sqlContext.getQueryParams(), "sql");
                 methodBody.append("java.sql.ResultSet resultSet = pStat.executeQuery();\n");
                 if (returnType.isPrimitive())
                 {
@@ -245,6 +275,34 @@ public class MapperBuilder
         CtMethod targetMethod = forCtMethod(method, weaveClass);
         targetMethod.setBody(methodBody.toString());
         return targetMethod;
+    }
+    
+    private void logCode(StringCache methodBody, String sqlParamName, String paramsName)
+    {
+        methodBody.append("if(log.isLogOn(").append(sqlParamName).append(")){\n");
+        methodBody.append("log.log(").append(sqlParamName).append(",").append(paramsName).append(");}\n");
+    }
+    
+    private void logCode(StringCache methodBody, List<InvokeNameAndType> invokeNameAndTypes, String sqlParamName)
+    {
+        methodBody.append("if(log.isLogOn(").append(sqlParamName).append(")){\n");
+        if (invokeNameAndTypes == null || invokeNameAndTypes.isEmpty())
+        {
+            methodBody.append("log.log(").append(sqlParamName).append(",null);}\n");
+        }
+        else
+        {
+            methodBody.append("log.log(").append(sqlParamName).append(",new Object[]{");
+            for (InvokeNameAndType each : invokeNameAndTypes)
+            {
+                methodBody.append("($w)").append(each.getInvokeName()).appendComma();
+            }
+            if (methodBody.isCommaLast())
+            {
+                methodBody.deleteLast();
+            }
+            methodBody.append("});}\n");
+        }
     }
     
     private String createTransferField(CtClass ctClass, Class<?> returnType, Method method, MetaContext metaContext, SqlContext sqlContext) throws CannotCompileException, NotFoundException
@@ -420,6 +478,7 @@ public class MapperBuilder
             cache.append("for(int i=0;i<queryParam.length;i++){\n");
             cache.append("pStat.setObject(i+1,queryParam[i]);\n");
             cache.append("}\n");
+            logCode(cache, "sql", "queryParam");
         }
         else
         {
@@ -429,6 +488,7 @@ public class MapperBuilder
             cache.append("pStat = connection.prepareStatement(sql);\n");
             setPrestatementParam(cache, sqlContext.queryParams);
         }
+        logCode(cache, sqlContext.getQueryParams(), "sql");
         cache.append("int updateRows = pStat.executeUpdate();\n");
         if (method.getReturnType() == Void.class)
         {
