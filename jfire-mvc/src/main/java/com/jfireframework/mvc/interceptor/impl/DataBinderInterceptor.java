@@ -38,7 +38,10 @@ public class DataBinderInterceptor implements ActionInterceptor
             {
                 for (String value : each.getValue())
                 {
-                    node.put(each.getKey(), value);
+                    if (value.equals("") == false)
+                    {
+                        node.put(each.getKey(), value);
+                    }
                 }
             }
         }

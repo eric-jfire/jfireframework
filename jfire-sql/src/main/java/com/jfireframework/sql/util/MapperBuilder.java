@@ -340,7 +340,7 @@ public class MapperBuilder
                     }
                     else
                     {
-                        if (var.contains("as") || var.contains("{") || var.contains("}"))
+                        if (var.contains("{") || var.contains("}"))
                         {
                             ctField = new CtField(classPool.get(VariableBeanTransfer.class.getName()), fieldName, ctClass);
                             fieldInitStatement = StringUtil.format("new com.jfireframework.sql.resultsettransfer.VariableBeanTransfer({}.class)", returnType.getName());
@@ -351,7 +351,17 @@ public class MapperBuilder
                             StringCache cache = new StringCache(128);
                             for (int i = 0; i < tmp.length; i++)
                             {
-                                cache.append(tableMetaData.getFieldName(tmp[i].trim())).appendComma();
+                                String value = tmp[i].trim();
+                                if (value.contains("as"))
+                                {
+                                    int index = value.indexOf("as") + 2;
+                                    value = value.substring(index).trim();
+                                }
+                                else
+                                {
+                                    ;
+                                }
+                                cache.append(tableMetaData.getFieldName(value)).appendComma();
                             }
                             cache.deleteLast();
                             ctField = new CtField(classPool.get(FixationBeanTransfer.class.getName()), fieldName, ctClass);
@@ -581,6 +591,10 @@ public class MapperBuilder
             String tablePrefix = metaData.getTableName() + ".";
             for (FieldInfo each : metaData.getFieldInfos())
             {
+                if (each.isDaoIgnore())
+                {
+                    continue;
+                }
                 dbColNameMap.put(each.getFieldName(), tablePrefix + each.getDbColName());
                 dbColNameMap.put(prefix + each.getFieldName(), tablePrefix + each.getDbColName());
                 fieldNameMap.put(tablePrefix + each.getDbColName(), each.getFieldName());
