@@ -5,17 +5,17 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.baseutil.reflect.trans.Transfer;
-import com.jfireframework.baseutil.reflect.trans.TransferFactory;
 import com.jfireframework.mvc.annotation.CookieValue;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.binder.node.TreeValueNode;
+import com.jfireframework.mvc.binder.transfer.Transfer;
+import com.jfireframework.mvc.binder.transfer.TransferFactory;
 
 public class CookieBinder implements DataBinder
 {
     private final String cookieName;
     private final String defaultValue;
-    private Transfer     transfer;
+    private Transfer<?>  transfer;
     private final String prefixName;
     
     public CookieBinder(Class<?> ckass, String prefixName, Annotation[] annotations)
@@ -42,7 +42,7 @@ public class CookieBinder implements DataBinder
         }
         this.cookieName = cookieName;
         this.defaultValue = defaultValue;
-        transfer = TransferFactory.get(ckass);
+        transfer = TransferFactory.build(ckass);
     }
     
     @Override

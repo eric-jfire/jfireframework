@@ -8,6 +8,7 @@ import java.lang.annotation.Target;
 
 /**
  * 这个注解表示对属性名称进行重命名工作
+ * 
  * @author 林斌
  *
  */

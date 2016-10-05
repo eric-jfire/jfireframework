@@ -19,19 +19,17 @@ public class ArrayObjectField extends AbstractArrayField
         ckass = field.getType().getComponentType();
         binder = new ObjectDataBinder(ckass, "", null);
     }
-
+    
     @Override
     protected Object buildByString(String str)
     {
-     throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException();
     }
-
+    
     @Override
     protected Object buildByNode(ParamNode node, HttpServletRequest request, HttpServletResponse response)
     {
         return binder.bind(request, (TreeValueNode) node, response);
     }
-    
-   
     
 }

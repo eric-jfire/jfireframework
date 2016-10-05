@@ -5,23 +5,23 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.UnSupportException;
-import com.jfireframework.baseutil.reflect.trans.Transfer;
-import com.jfireframework.baseutil.reflect.trans.TransferFactory;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.binder.node.ParamNode;
 import com.jfireframework.mvc.binder.node.StringValueNode;
 import com.jfireframework.mvc.binder.node.TreeValueNode;
+import com.jfireframework.mvc.binder.transfer.Transfer;
+import com.jfireframework.mvc.binder.transfer.TransferFactory;
 
 public class BaseBinder implements DataBinder
 {
     
-    private final Transfer transfer;
-    private final String   prefixName;
+    private final Transfer<?> transfer;
+    private final String      prefixName;
     
     public BaseBinder(Class<?> ckass, String prefixName, Annotation[] annotations)
     {
         this.prefixName = prefixName;
-        transfer = TransferFactory.get(ckass);
+        transfer = TransferFactory.build(ckass);
     }
     
     @Override

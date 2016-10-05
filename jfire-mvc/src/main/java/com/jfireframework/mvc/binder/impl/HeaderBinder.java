@@ -4,19 +4,19 @@ import java.lang.annotation.Annotation;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.baseutil.reflect.trans.Transfer;
-import com.jfireframework.baseutil.reflect.trans.TransferFactory;
 import com.jfireframework.mvc.annotation.HeaderValue;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.binder.node.TreeValueNode;
+import com.jfireframework.mvc.binder.transfer.Transfer;
+import com.jfireframework.mvc.binder.transfer.TransferFactory;
 
 public class HeaderBinder implements DataBinder
 {
     
-    private final String   headerName;
-    private final String   defaultValue;
-    private final Transfer transfer;
-    private final String   prefixName;
+    private final String      headerName;
+    private final String      defaultValue;
+    private final Transfer<?> transfer;
+    private final String      prefixName;
     
     public HeaderBinder(Class<?> ckass, String prefixName, Annotation[] annotations)
     {
@@ -42,7 +42,7 @@ public class HeaderBinder implements DataBinder
         }
         this.headerName = headerName;
         this.defaultValue = defaultValue;
-        transfer = TransferFactory.get(ckass);
+        transfer = TransferFactory.build(ckass);
     }
     
     @Override
