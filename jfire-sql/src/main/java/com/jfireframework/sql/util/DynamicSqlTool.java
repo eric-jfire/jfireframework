@@ -8,6 +8,7 @@ import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.metadata.MetaContext;
+import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.MysqlPage;
 import com.jfireframework.sql.util.MapperBuilder.InvokeNameAndType;
 import com.jfireframework.sql.util.MapperBuilder.SqlContext;
@@ -389,7 +390,15 @@ public class DynamicSqlTool
                     }
                     else if (as == true)
                     {
-                        sqlContext.addAliasName(tmp, metaContext.get(simpleClassName));
+                        TableMetaData tableMetaData = metaContext.get(simpleClassName);
+                        if (tableMetaData != null)
+                        {
+                            sqlContext.addAliasName(tmp, metaContext.get(simpleClassName));
+                        }
+                        else
+                        {
+                            ;
+                        }
                         as = false;
                     }
                     index = end;

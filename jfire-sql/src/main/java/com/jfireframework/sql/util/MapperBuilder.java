@@ -325,7 +325,6 @@ public class MapperBuilder
             }
             else
             {
-                
                 TableMetaData tableMetaData = metaContext.get(returnType.getSimpleName());
                 sqlContext.addMetaData(tableMetaData);
                 if (sqlContext.getSql() != null)
@@ -334,21 +333,30 @@ public class MapperBuilder
                     int start = sql.indexOf("select") + 6;
                     int end = sql.indexOf("from");
                     String var = sql.substring(start, end).trim();
-                    ctField = new CtField(classPool.get(FixationBeanTransfer.class.getName()), fieldName, ctClass);
                     if (var.equals("*"))
                     {
+                        ctField = new CtField(classPool.get(FixationBeanTransfer.class.getName()), fieldName, ctClass);
                         fieldInitStatement = StringUtil.format("new com.jfireframework.sql.resultsettransfer.FixationBeanTransfer({}.class,\"*\")", returnType.getName());
                     }
                     else
                     {
-                        String[] tmp = var.split(",");
-                        StringCache cache = new StringCache(128);
-                        for (int i = 0; i < tmp.length; i++)
+                        if (var.contains("as") || var.contains("{") || var.contains("}"))
                         {
-                            cache.append(tableMetaData.getFieldName(tmp[i].trim())).appendComma();
+                            ctField = new CtField(classPool.get(VariableBeanTransfer.class.getName()), fieldName, ctClass);
+                            fieldInitStatement = StringUtil.format("new com.jfireframework.sql.resultsettransfer.VariableBeanTransfer({}.class)", returnType.getName());
                         }
-                        cache.deleteLast();
-                        fieldInitStatement = StringUtil.format("new com.jfireframework.sql.resultsettransfer.FixationBeanTransfer({}.class,\"{}\")", returnType.getName(), cache.toString());
+                        else
+                        {
+                            String[] tmp = var.split(",");
+                            StringCache cache = new StringCache(128);
+                            for (int i = 0; i < tmp.length; i++)
+                            {
+                                cache.append(tableMetaData.getFieldName(tmp[i].trim())).appendComma();
+                            }
+                            cache.deleteLast();
+                            ctField = new CtField(classPool.get(FixationBeanTransfer.class.getName()), fieldName, ctClass);
+                            fieldInitStatement = StringUtil.format("new com.jfireframework.sql.resultsettransfer.FixationBeanTransfer({}.class,\"{}\")", returnType.getName(), cache.toString());
+                        }
                     }
                 }
                 else
