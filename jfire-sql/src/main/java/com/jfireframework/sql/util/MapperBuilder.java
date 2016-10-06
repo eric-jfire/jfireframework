@@ -588,6 +588,11 @@ public class MapperBuilder
         private String                  countSql;
         private List<InvokeNameAndType> queryParams;
         
+        public boolean hasMetaContext()
+        {
+            return !metaContexts.isEmpty();
+        }
+        
         public List<String> getInjectNames()
         {
             return injectNames;
@@ -659,12 +664,11 @@ public class MapperBuilder
             {
                 throw new NullPointerException();
             }
-            String tablePrefix = metaData.getTableName() + ".";
             String prefix = name + '.';
             for (FieldInfo each : metaData.getFieldInfos())
             {
-                dbColNameMap.put(prefix + each.getFieldName(), tablePrefix + each.getDbColName());
-                fieldNameMap.put(tablePrefix + each.getDbColName(), each.getFieldName());
+                dbColNameMap.put(prefix + each.getFieldName(), prefix + each.getDbColName());
+                fieldNameMap.put(prefix + each.getDbColName(), each.getFieldName());
             }
         }
         
