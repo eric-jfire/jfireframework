@@ -72,5 +72,12 @@ public class VariableBeanTransfer<T> extends AbstractResultsetTransfer<T>
         }
         return list;
     }
+
+    @Override
+    protected T valueOf(ResultSet resultSet) throws Exception
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
     
 }

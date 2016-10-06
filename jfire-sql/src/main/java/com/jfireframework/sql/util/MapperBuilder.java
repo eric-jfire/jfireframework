@@ -26,9 +26,18 @@ import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
+import com.jfireframework.sql.resultsettransfer.BooleanTransfer;
+import com.jfireframework.sql.resultsettransfer.DoubleTransfer;
 import com.jfireframework.sql.resultsettransfer.FixationBeanTransfer;
-import com.jfireframework.sql.resultsettransfer.IntTransfer;
+import com.jfireframework.sql.resultsettransfer.FloatTransfer;
+import com.jfireframework.sql.resultsettransfer.IntegerTransfer;
+import com.jfireframework.sql.resultsettransfer.LongTransfer;
+import com.jfireframework.sql.resultsettransfer.ShortTransfer;
+import com.jfireframework.sql.resultsettransfer.SqlDateTransfer;
 import com.jfireframework.sql.resultsettransfer.StringTransfer;
+import com.jfireframework.sql.resultsettransfer.TimeStampTransfer;
+import com.jfireframework.sql.resultsettransfer.TimeTransfer;
+import com.jfireframework.sql.resultsettransfer.UtilDateTransfer;
 import com.jfireframework.sql.resultsettransfer.VariableBeanTransfer;
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
@@ -383,15 +392,21 @@ public class MapperBuilder
     
     private boolean isBaseType(Class<?> type)
     {
-        if (type == int.class || type == Integer.class //
-                || type == short.class || type == Short.class //
-                || type == long.class || type == Long.class //
-                || type == float.class || type == Float.class //
-                || type == double.class || type == Double.class //
-                || type == boolean.class || type == Boolean.class //
-                || type == Date.class || type == java.util.Date.class //
+        if (type.isPrimitive())
+        {
+            throw new UnsupportedOperationException(StringUtil.format("在query方法中，返回值不能是基本类型。必须使用包装类"));
+        }
+        if (type == Integer.class //
+                || type == Short.class //
+                || type == Long.class //
+                || type == Float.class //
+                || type == Double.class //
+                || type == Boolean.class //
+                || type == Date.class//
+                || type == java.util.Date.class //
                 || type == String.class //
-                || type == Time.class || type == Timestamp.class)
+                || type == Time.class//
+                || type == Timestamp.class)
         {
             return true;
         }
@@ -403,17 +418,54 @@ public class MapperBuilder
     
     private Class<?> getTransferType(Class<?> type)
     {
-        if (type == int.class || type == Integer.class)
+        if (type == Integer.class)
         {
-            return IntTransfer.class;
+            return IntegerTransfer.class;
+        }
+        else if (type == Short.class)
+        {
+            return ShortTransfer.class;
+        }
+        else if (type == Long.class)
+        {
+            return LongTransfer.class;
+        }
+        else if (type == Float.class)
+        {
+            return FloatTransfer.class;
+        }
+        else if (type == Double.class)
+        {
+            return DoubleTransfer.class;
+        }
+        else if (type == Boolean.class)
+        {
+            return BooleanTransfer.class;
         }
         else if (type == String.class)
         {
             return StringTransfer.class;
         }
+        else if (type == Date.class)
+        {
+            return SqlDateTransfer.class;
+        }
+        else if (type == java.util.Date.class)
+        {
+            return UtilDateTransfer.class;
+        }
+        else if (type == Time.class)
+        {
+            return TimeTransfer.class;
+        }
+        else if (type == Timestamp.class)
+        {
+            return TimeStampTransfer.class;
+        }
         else
         {
-            return FixationBeanTransfer.class;
+            // 程序不会走到这里
+            return null;
         }
     }
     
