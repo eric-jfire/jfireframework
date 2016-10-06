@@ -34,6 +34,6 @@ public class TimeTest
             sessionFactory.init();
         }
         long t1 = System.nanoTime();
-        System.out.println((t1 - t0)/1000000);
+        System.out.println((t1 - t0) / 1000000);
     }
 }

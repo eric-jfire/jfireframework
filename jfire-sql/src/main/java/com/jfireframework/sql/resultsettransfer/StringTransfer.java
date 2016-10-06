@@ -6,11 +6,6 @@ import java.sql.SQLException;
 public class StringTransfer extends AbstractResultsetTransfer<String>
 {
     
-    public StringTransfer()
-    {
-        super(String.class);
-    }
-    
     @Override
     protected String valueOf(ResultSet resultSet) throws SQLException
     {

@@ -5,11 +5,6 @@ import java.sql.ResultSet;
 public class DoubleTransfer extends AbstractResultsetTransfer<Double>
 {
     
-    public DoubleTransfer(Class<Double> entityClass)
-    {
-        super(entityClass);
-    }
-    
     @Override
     protected Double valueOf(ResultSet resultSet) throws Exception
     {

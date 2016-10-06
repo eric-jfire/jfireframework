@@ -66,12 +66,12 @@ public class TableMetaData
         {
             return daoIgnore;
         }
-
+        
         public boolean isSaveIgnore()
         {
             return saveIgnore;
         }
-
+        
         public String getDbColName()
         {
             return dbColName;

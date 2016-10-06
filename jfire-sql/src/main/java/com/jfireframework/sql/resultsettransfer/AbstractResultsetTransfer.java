@@ -22,10 +22,10 @@ public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<
     protected final MapField[] mapFields;
     protected final Class<?>   entityClass;
     
-    public AbstractResultsetTransfer(Class<T> entityClass)
+    public AbstractResultsetTransfer()
     {
-        this.entityClass = entityClass;
         mapFields = null;
+        entityClass = null;
     }
     
     public AbstractResultsetTransfer(Class<T> entityClass, String fieldNames)

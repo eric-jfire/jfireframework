@@ -72,7 +72,7 @@ public class VariableBeanTransfer<T> extends AbstractResultsetTransfer<T>
         }
         return list;
     }
-
+    
     @Override
     protected T valueOf(ResultSet resultSet) throws Exception
     {
