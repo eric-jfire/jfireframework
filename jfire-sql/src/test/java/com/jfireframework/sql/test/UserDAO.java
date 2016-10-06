@@ -16,7 +16,7 @@ public interface UserDAO
     @Query(sql = "select * from User [$name && $name1] where age>20 #", paramNames = "name,name1")
     public List<User> functionUse2(String name, String name2);
     
-    @Query(sql = "select username from user order by userid", paramNames = "")
+    @Query(sql = "select u.name as name from User as u order by u.id", paramNames = "")
     public List<String> getUsernames();
     
     @Query(sql = "select username from user order by userid", paramNames = "")

@@ -347,12 +347,13 @@ public class DynamicSqlTool
             int end = 0;
             int index = 0;
             boolean as = false;
+            boolean preIsTableName = false;
             while (index < sql.length())
             {
                 char c = sql.charAt(index);
                 if (c == '\'')
                 {
-                    
+                    preIsTableName = false;
                     end = sql.indexOf('\'', index);
                     end++;
                     index = end;
@@ -365,6 +366,7 @@ public class DynamicSqlTool
                     String tmp = sql.substring(index, end).trim();
                     if (tmp.equals(""))
                     {
+                        preIsTableName = false;
                         continue;
                     }
                     while (tmp.charAt(0) == '(')
@@ -373,14 +375,16 @@ public class DynamicSqlTool
                     }
                     if (tmp.equals(""))
                     {
+                        preIsTableName = false;
                         continue;
                     }
                     if (tmp.indexOf(".") != -1 || tmp.indexOf("$") != -1)
                     {
-                        ;
+                        preIsTableName = false;
                     }
                     else if (tmp.charAt(0) >= 'A' && tmp.charAt(0) <= 'Z')
                     {
+                        preIsTableName = true;
                         simpleClassName = tmp;
                         sqlContext.addMetaData(metaContext.get(simpleClassName));
                     }
@@ -390,16 +394,29 @@ public class DynamicSqlTool
                     }
                     else if (as == true)
                     {
-                        TableMetaData tableMetaData = metaContext.get(simpleClassName);
-                        if (tableMetaData != null)
+                        if (preIsTableName)
                         {
-                            sqlContext.addAliasName(tmp, metaContext.get(simpleClassName));
+                            TableMetaData tableMetaData = metaContext.get(simpleClassName);
+                            if (tableMetaData != null)
+                            {
+                                sqlContext.addAliasName(tmp, metaContext.get(simpleClassName));
+                            }
+                            else
+                            {
+                                ;
+                            }
+                            preIsTableName = false;
+                            simpleClassName = null;
                         }
                         else
                         {
                             ;
                         }
                         as = false;
+                    }
+                    else
+                    {
+                        preIsTableName = false;
                     }
                     index = end;
                     continue;
@@ -411,16 +428,21 @@ public class DynamicSqlTool
                     {
                         as = true;
                     }
+                    else
+                    {
+                        preIsTableName = false;
+                    }
                     index++;
                     continue;
                 }
                 else
                 {
+                    preIsTableName = false;
                     index++;
                     continue;
                 }
             }
-            if (simpleClassName == null)
+            if (sqlContext.hasMetaContext() == false)
             {
                 return sql;
             }
@@ -447,6 +469,13 @@ public class DynamicSqlTool
                     String var = sql.substring(index, end).trim();
                     if (var.equals(""))
                     {
+                        index = end;
+                        continue;
+                    }
+                    if (var.equals("as"))
+                    {
+                        as = true;
+                        cache.append("as");
                         index = end;
                         continue;
                     }
@@ -480,14 +509,22 @@ public class DynamicSqlTool
                     }
                     else
                     {
-                        String dbColName = sqlContext.getDbColName(var);
-                        if (dbColName == null)
+                        if (as)
                         {
+                            as = false;
                             cache.append(var);
                         }
                         else
                         {
-                            cache.append(dbColName);
+                            String dbColName = sqlContext.getDbColName(var);
+                            if (dbColName == null)
+                            {
+                                cache.append(var);
+                            }
+                            else
+                            {
+                                cache.append(dbColName);
+                            }
                         }
                     }
                     index = end;
