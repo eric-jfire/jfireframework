@@ -25,10 +25,10 @@ public class PrintTest
         List<EventContext> eventContexts = new LinkedList<EventContext>();
         eventContexts.add(bus.post("1", Print.single, "1"));
         eventContexts.add(bus.post("2", Print.single, "1"));
-        eventContexts.add(bus.post("3", Print.single, "1"));
-        eventContexts.add(bus.post("4", Print.single, "1"));
-        eventContexts.add(bus.post("5", Print.single, "1"));
-        eventContexts.add(bus.post("6", Print.single, "1"));
+        eventContexts.add(bus.post("3", Print.single, "3"));
+        eventContexts.add(bus.post("4", Print.single, "2"));
+        eventContexts.add(bus.post("5", Print.single, "2"));
+        eventContexts.add(bus.post("6", Print.single, "3"));
         for (EventContext each : eventContexts)
         {
             each.await();

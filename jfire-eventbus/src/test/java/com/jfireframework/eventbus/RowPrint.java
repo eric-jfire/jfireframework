@@ -7,6 +7,7 @@ import com.jfireframework.eventbus.handler.EventHandler;
 
 public class RowPrint implements EventHandler<Print>
 {
+    private long t0;
     
     @Override
     public int getOrder()
@@ -18,7 +19,12 @@ public class RowPrint implements EventHandler<Print>
     public void handle(EventContext eventContext, EventBus eventBus)
     {
         String value = (String) eventContext.getEventData();
-        System.out.println(Thread.currentThread().getName() + "打印：" + value);
+        if (t0 == 0)
+        {
+            t0 = System.currentTimeMillis();
+        }
+        System.out.println(Thread.currentThread().getName() + "打印：" + value + "," + (System.currentTimeMillis() - t0));
+        t0 = System.currentTimeMillis();
         try
         {
             Thread.sleep(5000);

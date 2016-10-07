@@ -2,14 +2,41 @@ package com.jfireframework.eventbus.handler;
 
 import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.concurrent.MPSCQueue;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.event.Event;
 import com.jfireframework.eventbus.eventcontext.EventContext;
 import com.jfireframework.eventbus.eventcontext.RowEventContext;
+import sun.misc.Unsafe;
 
 public class RowKeyHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
 {
-    private final ConcurrentHashMap<Object, MPSCQueue<RowEventContext>> map = new ConcurrentHashMap<Object, MPSCQueue<RowEventContext>>();
+    private final ConcurrentHashMap<Object, RowBucket> map = new ConcurrentHashMap<Object, RowBucket>();
+    
+    static class RowBucket
+    {
+        public static final int                  IN_WORK        = 1;
+        public static final int                  END_OF_WORK    = -1;
+        public static final int                  SENDING_LEFT   = -2;
+        public static final int                  END_OF_SENDING = -3;
+        private volatile int                     status         = IN_WORK;
+        private final MPSCQueue<RowEventContext> eventQueue     = new MPSCQueue<RowEventContext>();
+        private static final long                offset         = ReflectUtil.getFieldOffset("status", RowBucket.class);
+        private static final Unsafe              unsafe         = ReflectUtil.getUnsafe();
+        
+        public boolean takeControlOfSendingLeft()
+        {
+            int now = status;
+            if (now == END_OF_WORK || now == END_OF_SENDING)
+            {
+                return unsafe.compareAndSwapInt(this, offset, now, SENDING_LEFT);
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
     
     public RowKeyHandlerContextImpl(Enum<? extends Event<T>> event)
     {
@@ -21,37 +48,67 @@ public class RowKeyHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
     {
         RowEventContext rowEventContext = (RowEventContext) eventContext;
         Object rowKey = rowEventContext.rowkey();
-        MPSCQueue<RowEventContext> pre = map.get(rowKey);
-        if (pre == null)
+        RowBucket rowBucket = map.get(rowKey);
+        if (rowBucket != null)
         {
-            MPSCQueue<RowEventContext> inwork = new MPSCQueue<RowEventContext>();
-            pre = map.putIfAbsent(rowKey, inwork);
+            rowBucket.eventQueue.offer(rowEventContext);
+            trySendLeft(rowBucket, eventBus);
+        }
+        else
+        {
+            rowBucket = new RowBucket();
+            RowBucket pre = map.putIfAbsent(rowKey, rowBucket);
             if (pre == null)
             {
-                inwork.offer(rowEventContext);
-                while ((rowEventContext = inwork.poll()) != null)
+                rowBucket.eventQueue.offer(rowEventContext);
+                while ((rowEventContext = rowBucket.eventQueue.poll()) != null)
                 {
                     _handle(rowEventContext, eventBus);
                 }
                 map.remove(rowKey);
-                while ((rowEventContext = inwork.poll()) != null)
-                {
-                    eventBus.post(rowEventContext);
-                }
+                rowBucket.status = RowBucket.END_OF_WORK;
+                trySendLeft(rowBucket, eventBus);
             }
             else
             {
-                pre.offer(rowEventContext);
+                pre.eventQueue.offer(rowEventContext);
+                trySendLeft(pre, eventBus);
             }
         }
-        else
-        {
-            pre.offer(rowEventContext);
-        }
-        
     }
     
-    private void _handle(EventContext eventContext, EventBus eventBus)
+    private void trySendLeft(RowBucket rowBucket, EventBus eventBus)
+    {
+        EventContext rowEventContext;
+        int status = rowBucket.status;
+        if (status == RowBucket.IN_WORK || status == RowBucket.SENDING_LEFT)
+        {
+            return;
+        }
+        do
+        {
+            status = rowBucket.status;
+            if ((status == RowBucket.END_OF_WORK && rowBucket.takeControlOfSendingLeft()) //
+                    || (status == RowBucket.END_OF_SENDING && rowBucket.eventQueue.isEmpty() == false && rowBucket.takeControlOfSendingLeft()))
+            {
+                while ((rowEventContext = rowBucket.eventQueue.poll()) != null)
+                {
+                    eventBus.post(rowEventContext);
+                }
+                rowBucket.status = RowBucket.END_OF_SENDING;
+                if (rowBucket.eventQueue.isEmpty())
+                {
+                    break;
+                }
+                else
+                {
+                    continue;
+                }
+            }
+        } while (true);
+    }
+    
+    private void _handle(RowEventContext eventContext, EventBus eventBus)
     {
         try
         {
