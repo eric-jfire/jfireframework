@@ -78,34 +78,31 @@ public class HierarchyWheelTimer extends BaseTimer
         {
             final int index = (int) (tickNows[0] & masks[0]);
             final Bucket bucket = buckets[0][index];
-            pool.execute(
-                    new Runnable() {
-                        @Override
-                        public void run()
-                        {
-                            bucket.expire();
-                        }
-                    }
-            );
+            pool.execute(new Runnable() {
+                @Override
+                public void run()
+                {
+                    bucket.expire();
+                }
+            });
             waitToNextTick(tickNows[0]);
             tickNows[0] += 1;
             if (index == masks[0])
             {
-                for (int i = 1; i < level; i++)
+                int nowLevel = 1;
+                for (; nowLevel < level; nowLevel++)
                 {
-                    final int highLevelIndex = (int) (tickNows[i] & masks[i]);
-                    final Bucket highLevelBucket = buckets[i][highLevelIndex];
-                    pool.execute(
-                            new Runnable() {
-                                @Override
-                                public void run()
-                                {
-                                    highLevelBucket.expire();
-                                }
-                            }
-                    );
-                    tickNows[i] += 1;
-                    if (highLevelIndex == masks[i])
+                    int highLevelIndex = (int) (tickNows[nowLevel] & masks[nowLevel]);
+                    final Bucket highLevelBucket = buckets[nowLevel][highLevelIndex];
+                    pool.execute(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            highLevelBucket.expire();
+                        }
+                    });
+                    tickNows[nowLevel] += 1;
+                    if (highLevelIndex == masks[nowLevel])
                     {
                         ;
                     }
@@ -114,34 +111,32 @@ public class HierarchyWheelTimer extends BaseTimer
                         break;
                     }
                 }
-                if ((tickNows[level - 1] & masks[level - 1]) == 1)
+                if (nowLevel == level)
                 {
-                    pool.execute(
-                            new Runnable() {
-                                @Override
-                                public void run()
+                    pool.execute(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            List<Trigger> tmp = new LinkedList<Trigger>();
+                            long threshold = thresholds[level - 1];
+                            for (Trigger trigger = tooBigTriggers.poll(); trigger != null; trigger = tooBigTriggers.poll())
+                            {
+                                if (trigger.deadline() - System.currentTimeMillis() < threshold)
                                 {
-                                    List<Trigger> tmp = new LinkedList<Trigger>();
-                                    long threshold = thresholds[level - 1];
-                                    for (Trigger trigger = tooBigTriggers.poll(); trigger != null; trigger = tooBigTriggers.poll())
-                                    {
-                                        if (trigger.deadline() - System.currentTimeMillis() < threshold)
-                                        {
-                                            add(trigger);
-                                        }
-                                        else
-                                        {
-                                            tmp.add(trigger);
-                                        }
-                                    }
-                                    for (Trigger each : tmp)
-                                    {
-                                        tooBigTriggers.offer(each);
-                                    }
+                                    add(trigger);
                                 }
-                                
+                                else
+                                {
+                                    tmp.add(trigger);
+                                }
                             }
-                    );
+                            for (Trigger each : tmp)
+                            {
+                                tooBigTriggers.offer(each);
+                            }
+                        }
+                        
+                    });
                 }
             }
         }
