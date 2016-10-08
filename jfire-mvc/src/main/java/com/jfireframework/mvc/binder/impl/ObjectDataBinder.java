@@ -8,6 +8,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
+import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.mvc.annotation.MvcIgnore;
 import com.jfireframework.mvc.binder.DataBinder;
 import com.jfireframework.mvc.binder.field.AbstractBinderField;
@@ -20,6 +22,7 @@ public class ObjectDataBinder implements DataBinder
     private final String        prefixName;
     private final BinderField[] fields;
     private final Class<?>      ckass;
+    private final static Logger LOGGER = ConsoleLogFactory.getLogger();
     
     public ObjectDataBinder(Class<?> ckass, String prefixName, Annotation[] annotations)
     {
@@ -47,6 +50,11 @@ public class ObjectDataBinder implements DataBinder
         }
         try
         {
+            if (treeValueNode == null)
+            {
+                LOGGER.debug("尝试获取对象{}的数据，但是不存在", prefixName);
+                return null;
+            }
             Object entity = null;
             for (BinderField each : fields)
             {
