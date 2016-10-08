@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.sql.page.MysqlPage;
 import com.jfireframework.sql.test.entity.User;
@@ -23,6 +22,13 @@ public class InterfaceTest extends BaseTestSupport
         assertEquals(1, user.getId().intValue());
         assertEquals("林斌", user.getName());
         assertEquals(15, user.getAge().intValue());
+    }
+    
+    @Test
+    public void getUserAgeTest()
+    {
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
+        System.out.println(userDAO.getUserAge(1));
     }
     
     @Test
@@ -171,6 +177,13 @@ public class InterfaceTest extends BaseTestSupport
     {
         UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         System.out.println(userDAO.name2(14));
+    }
+    
+    @Test
+    public void selectTest()
+    {
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
+        System.out.println(userDAO.select(0));
     }
     
     @Test

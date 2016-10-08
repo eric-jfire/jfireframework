@@ -129,7 +129,9 @@ public class MapperBuilder
         boolean isDynamicSql = DynamicSqlTool.isDynamic(query.sql());
         StringCache methodBody = new StringCache(1024);
         methodBody.append("{\n");
-        methodBody.append("java.sql.Connection connection = sessionFactory.getCurrentSession().getConnection();\n");
+        methodBody.append("SqlSession session = sessionFactory.getCurrentSession();\n");
+        methodBody.append("if(session==null){throw new NullPointerException(\"current session 为空，请检查\");}\n");
+        methodBody.append("java.sql.Connection connection = session.getConnection();\n");
         methodBody.append("java.sql.PreparedStatement pStat = null;\n");
         if (isDynamicSql)
         {
@@ -180,8 +182,15 @@ public class MapperBuilder
             }
             else
             {
-                methodBody.append("Object result = " + fieldName + ".transfer(resultSet);\n");
-                methodBody.append("return ($r)result;\n");
+                if (method.getReturnType().isPrimitive())
+                {
+                    methodBody.append("return ").append(fieldName).append(".primitiveValue(resultSet);\n");
+                }
+                else
+                {
+                    methodBody.append("Object result = " + fieldName + ".transfer(resultSet);\n");
+                    methodBody.append("return ($r)result;\n");
+                }
             }
             methodBody.append("}catch(Exception e){throw new JustThrowException(e);}\n");
             methodBody.append("finally{\n");
@@ -267,7 +276,7 @@ public class MapperBuilder
                 methodBody.append("java.sql.ResultSet resultSet = pStat.executeQuery();\n");
                 if (returnType.isPrimitive())
                 {
-                    methodBody.append("return " + fieldName + ".transfer(resultSet);\n");
+                    methodBody.append("return ").append(fieldName).append(".primitiveValue(resultSet);\n");
                 }
                 else
                 {
@@ -394,7 +403,7 @@ public class MapperBuilder
     {
         if (type.isPrimitive())
         {
-            throw new UnsupportedOperationException(StringUtil.format("在query方法中，返回值不能是基本类型。必须使用包装类"));
+            return true;
         }
         if (
             type == Integer.class //
@@ -420,27 +429,27 @@ public class MapperBuilder
     
     private Class<?> getTransferType(Class<?> type)
     {
-        if (type == Integer.class)
+        if (type == Integer.class || type == int.class)
         {
             return IntegerTransfer.class;
         }
-        else if (type == Short.class)
+        else if (type == Short.class || type == short.class)
         {
             return ShortTransfer.class;
         }
-        else if (type == Long.class)
+        else if (type == Long.class || type == long.class)
         {
             return LongTransfer.class;
         }
-        else if (type == Float.class)
+        else if (type == Float.class || type == float.class)
         {
             return FloatTransfer.class;
         }
-        else if (type == Double.class)
+        else if (type == Double.class || type == double.class)
         {
             return DoubleTransfer.class;
         }
-        else if (type == Boolean.class)
+        else if (type == Boolean.class || type == boolean.class)
         {
             return BooleanTransfer.class;
         }
@@ -539,7 +548,9 @@ public class MapperBuilder
         SqlContext sqlContext = new SqlContext();
         StringCache cache = new StringCache(1024);
         cache.append("{\n");
-        cache.append("java.sql.Connection connection = sessionFactory.getCurrentSession().getConnection();\n");
+        cache.append("SqlSession session = sessionFactory.getCurrentSession();\n");
+        cache.append("if(session==null){throw new NullPointerException(\"current session 为空，请检查\");}\n");
+        cache.append("java.sql.Connection connection = session.getConnection();\n");
         cache.append("java.sql.PreparedStatement pStat = null;\n");
         boolean isDynamicSql = DynamicSqlTool.isDynamic(update.sql());
         if (isDynamicSql)

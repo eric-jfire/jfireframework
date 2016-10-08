@@ -28,6 +28,9 @@ public interface UserDAO
     @Query(sql = "select name from User where id=$userid ", paramNames = "userid")
     public String getUserName(int userid);
     
+    @Query(sql = "select age from User  where id=$userid ", paramNames = "userid")
+    public long getUserAge(int userid);
+    
     @Query(sql = "select User.id,name,age from User where userid=$id ", paramNames = "id")
     public User getUserByid(int id);
     
@@ -72,6 +75,9 @@ public interface UserDAO
     
     @Query(sql = "select * from user where userid=$id for update", paramNames = "id")
     public User selectForUpdate(int id);
+    
+    @Query(sql = "select * from User where userid=$id", paramNames = "id")
+    public User select(int id);
     
     @Update(sql = "update user set age=$newAge where age=$oldAge", paramNames = "newAge,oldAge")
     public int updateAge(int newAge, int oldAge);
