@@ -8,7 +8,7 @@ public class LogSql implements LogInterceptor
     @Override
     public boolean isLogOn(String sql)
     {
-        return true;
+        return false;
     }
     
     @Override

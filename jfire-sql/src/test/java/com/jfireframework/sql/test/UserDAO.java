@@ -62,7 +62,7 @@ public interface UserDAO
     public List<User> listinquestion(Integer[] ids);
     
     @Update(sql = "update User set name=$name where id in $~ids", paramNames = "name,ids")
-    public void updatename(String name, String ids);
+    public Long updatename(String name, String ids);
     
     @Query(sql = "select name from User [$age > 15 && $age < 20] where id =1 # [ $age <=15] where id=3 #", paramNames = "age")
     public String name2(Integer age);

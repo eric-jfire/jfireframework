@@ -396,17 +396,19 @@ public class MapperBuilder
         {
             throw new UnsupportedOperationException(StringUtil.format("在query方法中，返回值不能是基本类型。必须使用包装类"));
         }
-        if (type == Integer.class //
-                || type == Short.class //
-                || type == Long.class //
-                || type == Float.class //
-                || type == Double.class //
-                || type == Boolean.class //
-                || type == Date.class//
-                || type == java.util.Date.class //
-                || type == String.class //
-                || type == Time.class//
-                || type == Timestamp.class)
+        if (
+            type == Integer.class //
+                    || type == Short.class //
+                    || type == Long.class //
+                    || type == Float.class //
+                    || type == Double.class //
+                    || type == Boolean.class //
+                    || type == Date.class//
+                    || type == java.util.Date.class //
+                    || type == String.class //
+                    || type == Time.class//
+                    || type == Timestamp.class
+        )
         {
             return true;
         }
@@ -560,13 +562,30 @@ public class MapperBuilder
         }
         logCode(cache, sqlContext.getQueryParams(), "sql");
         cache.append("int updateRows = pStat.executeUpdate();\n");
-        if (method.getReturnType() == Void.class)
+        Class<?> returnType = method.getReturnType();
+        if (returnType == Void.class || returnType == void.class)
         {
             ;
         }
-        else
+        else if (returnType == int.class)
         {
             cache.append("return updateRows;\n");
+        }
+        else if (returnType == long.class)
+        {
+            cache.append("return (long)updateRows;\n");
+        }
+        else if (returnType == Integer.class)
+        {
+            cache.append("return ($w)updateRows;\n");
+        }
+        else if (returnType == Long.class)
+        {
+            cache.append("return ($w)((long)updateRows);\n");
+        }
+        else
+        {
+            throw new UnsupportedOperationException(StringUtil.format("更新方法只支持void，int，long，Integer，Long 五种返回类型"));
         }
         cache.append("}catch(Exception e){throw new JustThrowException(e);}\n");
         cache.append("finally{\n");

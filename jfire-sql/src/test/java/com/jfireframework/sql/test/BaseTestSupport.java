@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import org.junit.After;
 import org.junit.Before;
-import com.alibaba.druid.pool.DruidDataSource;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.dbunit.schema.DbUnit;
