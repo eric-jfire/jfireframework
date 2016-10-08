@@ -117,6 +117,10 @@ public class MariaDBStructure implements Structure
                     typeAndLength.setLength(3000);
                     typeAndLength.setType("text");
                 }
+                else
+                {
+                    typeAndLength.setLength(length);
+                }
             }
             return typeAndLength;
         }
