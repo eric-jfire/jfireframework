@@ -1,8 +1,10 @@
 package com.jfireframework.sql.function.impl;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.sql.function.LockMode;
@@ -161,6 +163,35 @@ public class SqlSessionImpl implements SqlSession
     public <T> T get(Class<T> entityClass, Object pk, LockMode mode)
     {
         return sessionFactory.getDao(entityClass).getById(pk, connection, mode);
+    }
+    
+    @Override
+    public int update(String sql)
+    {
+        PreparedStatement pStat = null;
+        try
+        {
+            pStat = connection.prepareStatement(sql);
+            return pStat.executeUpdate();
+        }
+        catch (SQLException e)
+        {
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (pStat != null)
+            {
+                try
+                {
+                    pStat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
+        }
     }
     
 }

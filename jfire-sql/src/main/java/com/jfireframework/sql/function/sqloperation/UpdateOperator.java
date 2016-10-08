@@ -13,4 +13,6 @@ public interface UpdateOperator
      */
     public <T> int delete(T entity);
     
+    public int update(String sql);
+    
 }
