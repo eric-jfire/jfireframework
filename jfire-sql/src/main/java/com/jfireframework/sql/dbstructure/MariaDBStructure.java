@@ -183,13 +183,13 @@ public class MariaDBStructure implements Structure
                         rs = connection.prepareStatement(describeSql + each.getDbColName()).executeQuery();
                         if (rs.next())
                         {
-                            logger.debug("执行sql语句:{}", modityColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()));
-                            connection.prepareStatement(modityColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField())).execute();
+                            logger.debug("执行sql语句:{}", modityColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()).getDbType());
+                            connection.prepareStatement(modityColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()).getDbType()).execute();
                         }
                         else
                         {
-                            logger.debug("执行sql语句:{}", addColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()));
-                            connection.prepareStatement(addColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField())).execute();
+                            logger.debug("执行sql语句:{}", addColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()).getDbType());
+                            connection.prepareStatement(addColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()).getDbType()).execute();
                         }
                         rs.close();
                     }
