@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.mvc.annotation.MvcRename;
@@ -30,6 +31,7 @@ import com.jfireframework.mvc.binder.field.base.ShortField;
 import com.jfireframework.mvc.binder.field.extra.DateField;
 import com.jfireframework.mvc.binder.field.extra.ListField;
 import com.jfireframework.mvc.binder.field.extra.ObjectField;
+import com.jfireframework.mvc.binder.field.extra.SqlDateField;
 import com.jfireframework.mvc.binder.field.extra.StringField;
 import com.jfireframework.mvc.binder.field.wrapper.WBooleanField;
 import com.jfireframework.mvc.binder.field.wrapper.WByteField;
@@ -74,6 +76,7 @@ public abstract class AbstractBinderField implements BinderField
             binderConstructors.put(String.class, StringField.class.getConstructor(Field.class));
             binderConstructors.put(String[].class, ArrayStringField.class.getConstructor(Field.class));
             binderConstructors.put(Date.class, DateField.class.getConstructor(Field.class));
+            binderConstructors.put(java.sql.Date.class, SqlDateField.class.getConstructor(Field.class));
             //
             binderConstructors.put(int[].class, ArrayWIntegerField.class.getConstructor(Field.class));
             binderConstructors.put(boolean[].class, ArrayWBooleanField.class.getConstructor(Field.class));
@@ -144,6 +147,10 @@ public abstract class AbstractBinderField implements BinderField
             else if (List.class.isAssignableFrom(type))
             {
                 return ListField.valueOf(field);
+            }
+            else if (Set.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type))
+            {
+                return new NopField(field);
             }
             else
             {

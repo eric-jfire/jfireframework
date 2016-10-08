@@ -22,6 +22,7 @@ import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
 import com.jfireframework.mvc.binder.impl.ListBinder;
 import com.jfireframework.mvc.binder.impl.ListUploadBinder;
 import com.jfireframework.mvc.binder.impl.ObjectDataBinder;
+import com.jfireframework.mvc.binder.impl.SqlDateBinder;
 import com.jfireframework.mvc.binder.impl.StringBinder;
 import com.jfireframework.mvc.binder.impl.UploadBinder;
 import com.jfireframework.mvc.binder.impl.WrapperBinder;
@@ -53,14 +54,16 @@ public class BinderFactory
             {
                 binders.add(new BaseBinder(target, prefixName, annotations));
             }
-            else if (target == Integer.class //
-                    || target == Short.class //
-                    || target == Long.class //
-                    || target == Float.class //
-                    || target == Double.class //
-                    || target == Boolean.class //
-                    || target == Byte.class //
-                    || target == Character.class)
+            else if (
+                target == Integer.class //
+                        || target == Short.class //
+                        || target == Long.class //
+                        || target == Float.class //
+                        || target == Double.class //
+                        || target == Boolean.class //
+                        || target == Byte.class //
+                        || target == Character.class
+            )
             {
                 binders.add(new WrapperBinder(target, prefixName, annotations));
             }
@@ -71,6 +74,10 @@ public class BinderFactory
             else if (target == Date.class)
             {
                 binders.add(new DateBinder(target, prefixName, annotations));
+            }
+            else if (target == java.sql.Date.class)
+            {
+                binders.add(new SqlDateBinder(target, prefixName, annotations));
             }
             else if (target == HttpServletRequest.class)
             {
