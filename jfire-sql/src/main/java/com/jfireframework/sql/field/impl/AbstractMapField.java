@@ -14,7 +14,6 @@ import sun.misc.Unsafe;
  * @author linbin
  * 
  */
-@SuppressWarnings("restriction")
 public abstract class AbstractMapField implements MapField
 {
     protected long          offset;
@@ -55,21 +54,25 @@ public abstract class AbstractMapField implements MapField
         return dbColName;
     }
     
+    @Override
     public boolean saveIgnore()
     {
         return saveIgnore;
     }
     
+    @Override
     public String getFieldName()
     {
         return field.getName();
     }
     
+    @Override
     public Class<?> getFieldType()
     {
         return field.getType();
     }
     
+    @Override
     public int getDbLength()
     {
         return length;

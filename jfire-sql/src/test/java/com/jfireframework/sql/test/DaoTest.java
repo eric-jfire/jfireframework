@@ -15,12 +15,26 @@ import org.junit.Test;
 import com.jfireframework.baseutil.time.Timewatch;
 import com.jfireframework.sql.function.LockMode;
 import com.jfireframework.sql.test.entity.User;
+import com.jfireframework.sql.test.entity.User.Enumint;
+import com.jfireframework.sql.test.entity.User.Enumstring;
 import com.jfireframework.sql.test.entity.User2;
 import com.jfireframework.sql.test.entity.User4;
 import com.jfireframework.sql.test.table.User3;
 
 public class DaoTest extends BaseTestSupport
 {
+    
+    @Test
+    public void enumTest()
+    {
+        User user = session.get(User.class, 1);
+        assertEquals(Enumint.a, user.getEnumint());
+        assertEquals(Enumstring.a, user.getEnumstring());
+        user = session.get(User.class, 2);
+        assertEquals(Enumint.b, user.getEnumint());
+        assertEquals(Enumstring.b, user.getEnumstring());
+        
+    }
     
     @Test
     public void saveTest()

@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import com.jfireframework.sql.dbstructure.NameStrategy;
 
-@SuppressWarnings("restriction")
 public class BooleanField extends AbstractMapField
 {
     public BooleanField(Field field, NameStrategy nameStrategy)

@@ -31,7 +31,7 @@ public interface UserDAO
     @Query(sql = "select age from User  where id=$userid ", paramNames = "userid")
     public long getUserAge(int userid);
     
-    @Query(sql = "select User.id,name,age from User where userid=$id ", paramNames = "id")
+    @Query(sql = "select User.id,name,age,enumint,enumstring from User where userid=$id ", paramNames = "id")
     public User getUserByid(int id);
     
     @Query(sql = "select * from user where userid=$id ", paramNames = "id")

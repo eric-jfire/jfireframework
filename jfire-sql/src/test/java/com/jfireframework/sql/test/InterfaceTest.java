@@ -10,6 +10,8 @@ import java.util.List;
 import org.junit.Test;
 import com.jfireframework.sql.page.MysqlPage;
 import com.jfireframework.sql.test.entity.User;
+import com.jfireframework.sql.test.entity.User.Enumint;
+import com.jfireframework.sql.test.entity.User.Enumstring;
 
 public class InterfaceTest extends BaseTestSupport
 {
@@ -21,7 +23,12 @@ public class InterfaceTest extends BaseTestSupport
         user = userDAO.getUserByid(1);
         assertEquals(1, user.getId().intValue());
         assertEquals("林斌", user.getName());
+        assertEquals(Enumint.a, user.getEnumint());
+        assertEquals(Enumstring.a, user.getEnumstring());
         assertEquals(15, user.getAge().intValue());
+        user = userDAO.getUserByid(2);
+        assertEquals(Enumint.b, user.getEnumint());
+        assertEquals(Enumstring.b, user.getEnumstring());
     }
     
     @Test

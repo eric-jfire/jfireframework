@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import com.jfireframework.sql.dbstructure.NameStrategy;
 
-@SuppressWarnings("restriction")
 public class DateField extends AbstractMapField
 {
     

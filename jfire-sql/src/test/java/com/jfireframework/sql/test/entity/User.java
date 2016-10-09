@@ -1,22 +1,56 @@
 package com.jfireframework.sql.test.entity;
 
 import com.jfireframework.sql.annotation.Column;
+import com.jfireframework.sql.annotation.EnumUseInt;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.TableEntity;
 
 @TableEntity(name = "user")
 public class User
 {
+    public static enum Enumint
+    {
+        a, b;
+    }
+    
+    public static enum Enumstring
+    {
+        a, b;
+    }
+    
     @Id
     @Column(name = "userid")
-    private Integer   id;
+    private Integer    id;
     @Column(name = "username")
-    private String    name;
-    private String    password;
-    private Integer   age;
-    private String    birthday;
-    private boolean   boy;
-    public static int staticId = 1;
+    private String     name;
+    private String     password;
+    private Integer    age;
+    private String     birthday;
+    private boolean    boy;
+    public static int  staticId = 1;
+    @EnumUseInt
+    private Enumint    enumint;
+    private Enumstring enumstring;
+    
+    public Enumint getEnumint()
+    {
+        return enumint;
+    }
+    
+    public void setEnumint(Enumint enumint)
+    {
+        this.enumint = enumint;
+    }
+    
+    public Enumstring getEnumstring()
+    {
+        return enumstring;
+    }
+    
+    public void setEnumstring(Enumstring enumstring)
+    {
+        this.enumstring = enumstring;
+    }
     
     public boolean isBoy()
     {

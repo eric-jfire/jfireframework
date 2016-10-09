@@ -15,6 +15,7 @@ import com.jfireframework.sql.field.impl.BooleanField;
 import com.jfireframework.sql.field.impl.CalendarField;
 import com.jfireframework.sql.field.impl.DateField;
 import com.jfireframework.sql.field.impl.DoubleField;
+import com.jfireframework.sql.field.impl.EnumField;
 import com.jfireframework.sql.field.impl.FloatField;
 import com.jfireframework.sql.field.impl.IntField;
 import com.jfireframework.sql.field.impl.IntegerField;
@@ -72,6 +73,10 @@ public class MapFieldBuilder
             {
                 throw new JustThrowException(e);
             }
+        }
+        else if (Enum.class.isAssignableFrom(fieldType))
+        {
+            return new EnumField(field, nameStrategy);
         }
         else
         {

@@ -8,7 +8,6 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import com.jfireframework.sql.dbstructure.NameStrategy;
 
-@SuppressWarnings("restriction")
 public class CalendarField extends AbstractMapField
 {
     

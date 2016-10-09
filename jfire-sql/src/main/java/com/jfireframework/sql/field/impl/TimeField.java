@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.sql.Time;
 import com.jfireframework.sql.dbstructure.NameStrategy;
 
-@SuppressWarnings("restriction")
 public class TimeField extends AbstractMapField
 {
     

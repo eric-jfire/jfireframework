@@ -15,6 +15,8 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
+import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.uniqueid.AutumnId;
 import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.annotation.TableEntity;
@@ -31,7 +33,6 @@ import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import sun.misc.Unsafe;
 
-@SuppressWarnings("restriction")
 public class DAOBeanImpl<T> implements Dao<T>
 {
     private final Class<?>              entityClass;
@@ -51,6 +52,7 @@ public class DAOBeanImpl<T> implements Dao<T>
     private final SqlAndFields          updateInfo;
     private final String                deleteSql;
     private final LogInterceptor        logInterceptor;
+    private static final Logger         LOGGER   = ConsoleLogFactory.getLogger();
     
     enum IdType
     {
@@ -77,9 +79,20 @@ public class DAOBeanImpl<T> implements Dao<T>
         insertInfo = buildInsertSql(insertOrUpdateFields);
         updateInfo = buildUpdateSql(insertOrUpdateFields);
         getInfo = buildGetInfo(allMapFields);
-        getInShareInfo = buildGetInShareInfo(allMapFields);
         getForUpdateInfo = buildGetForUpdateInfo(allMapFields);
+        getInShareInfo = buildGetInShareInfo(allMapFields);
         deleteSql = "delete from " + tableName + " where " + idField.getColName() + "=?";
+        logSql();
+    }
+    
+    private void logSql()
+    {
+        LOGGER.debug("为表{},类{}创建的插入语句是{}", tableName, entityClass.getName(), insertInfo.getSql());
+        LOGGER.debug("为表{},类{}创建的更新语句是{}", tableName, entityClass.getName(), updateInfo.getSql());
+        LOGGER.debug("为表{},类{}创建的获取语句是{}", tableName, entityClass.getName(), getInfo.getSql());
+        LOGGER.debug("为表{},类{}创建的获取加锁语句是{}", tableName, entityClass.getName(), getForUpdateInfo.getSql());
+        LOGGER.debug("为表{},类{}创建的获取共享语句是{}", tableName, entityClass.getName(), getInShareInfo.getSql());
+        LOGGER.debug("为表{},类{}创建的删除语句是{}", tableName, entityClass.getName(), deleteSql);
     }
     
     private IdType getIdType(Field field)
@@ -441,6 +454,7 @@ public class DAOBeanImpl<T> implements Dao<T>
         }
     }
     
+    @Override
     public void insert(T entity, Connection connection)
     {
         PreparedStatement pStat = null;
@@ -548,16 +562,19 @@ public class DAOBeanImpl<T> implements Dao<T>
         }
     }
     
+    @Override
     public String getTableName()
     {
         return tableName;
     }
     
+    @Override
     public IdStrategy getIdStrategy()
     {
         return idStrategy;
     }
     
+    @Override
     public MapField getIdField()
     {
         return idField;
@@ -568,6 +585,7 @@ public class DAOBeanImpl<T> implements Dao<T>
      * 
      * @return
      */
+    @Override
     public MapField[] getStructureFields()
     {
         return insertInfo.getFields();
