@@ -58,39 +58,7 @@ public class MariaDBStructure implements Structure
                 {
                     continue;
                 }
-                String tableName = metaData.getTableName();
-                FieldInfo idInfo = metaData.getIdInfo();
-                IdStrategy idStrategy = metaData.getIdStrategy();
-                StringCache cache = new StringCache();
-                cache.append("CREATE TABLE ").append(tableName).append(" (");
-                cache.append(idInfo.getDbColName()).append(' ');
-                TypeAndLength typeAndLength = getTypeAndLength(idInfo.getField());
-                cache.append(typeAndLength.getDbType());
-                if (idStrategy.equals(IdStrategy.nativeDb) && (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class))
-                {
-                    cache.append(" AUTO_INCREMENT ");
-                }
-                cache.append(" primary key").appendComma();
-                for (FieldInfo each : metaData.getFieldInfos())
-                {
-                    if (each.getFieldName().equals(idInfo.getFieldName()) || each.isSaveIgnore() || each.isDaoIgnore())
-                    {
-                        continue;
-                    }
-                    try
-                    {
-                        cache.append(each.getDbColName()).append(' ').append(getTypeAndLength(each.getField()).getDbType()).appendComma();
-                    }
-                    catch (Exception e)
-                    {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                }
-                cache.deleteLast().append(")");
-                logger.warn("进行表:{}的创建，创建语句是\n{}", tableName, cache.toString());
-                connection.prepareStatement("DROP TABLE IF EXISTS " + tableName).execute();
-                connection.prepareStatement(cache.toString()).execute();
+                _createTable(connection, metaData);
             }
             connection.commit();
         }
@@ -102,6 +70,43 @@ public class MariaDBStructure implements Structure
             }
         }
         
+    }
+    
+    private void _createTable(Connection connection, TableMetaData tableMetaData) throws SQLException
+    {
+        String tableName = tableMetaData.getTableName();
+        FieldInfo idInfo = tableMetaData.getIdInfo();
+        IdStrategy idStrategy = tableMetaData.getIdStrategy();
+        StringCache cache = new StringCache();
+        cache.append("CREATE TABLE ").append(tableName).append(" (");
+        cache.append(idInfo.getDbColName()).append(' ');
+        TypeAndLength typeAndLength = getTypeAndLength(idInfo.getField());
+        cache.append(typeAndLength.getDbType());
+        if (idStrategy.equals(IdStrategy.nativeDb) && (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class))
+        {
+            cache.append(" AUTO_INCREMENT ");
+        }
+        cache.append(" primary key").appendComma();
+        for (FieldInfo each : tableMetaData.getFieldInfos())
+        {
+            if (each.getFieldName().equals(idInfo.getFieldName()) || each.isSaveIgnore() || each.isDaoIgnore())
+            {
+                continue;
+            }
+            try
+            {
+                cache.append(each.getDbColName()).append(' ').append(getTypeAndLength(each.getField()).getDbType()).appendComma();
+            }
+            catch (Exception e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        cache.deleteLast().append(")");
+        logger.warn("进行表:{}的创建，创建语句是\n{}", tableName, cache.toString());
+        connection.prepareStatement("DROP TABLE IF EXISTS " + tableName).execute();
+        connection.prepareStatement(cache.toString()).execute();
     }
     
     private TypeAndLength getTypeAndLength(Field field)
@@ -142,65 +147,11 @@ public class MariaDBStructure implements Structure
             {
                 try
                 {
-                    String tableName = metaData.getTableName();
-                    String addColSql = "alter table " + tableName + " add ";
-                    String describeSql = "describe " + tableName + ' ';
-                    String modityColSql = "alter table " + tableName + " modify ";
-                    connection.prepareStatement("describe " + tableName).execute();
-                    FieldInfo idInfo = metaData.getIdInfo();
-                    ResultSet rs = connection.prepareStatement("describe " + tableName + " " + idInfo.getDbColName()).executeQuery();
-                    if (rs.next())
-                    {
-                        // 字段存在，需要执行更新操作
-                        if (metaData.getIdStrategy() == IdStrategy.nativeDb && (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class))
-                        {
-                            logger.debug("执行sql语句:{}", "alter table " + tableName + " modify " + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType() + " auto_increment");
-                            connection.prepareStatement("alter table " + tableName + " modify " + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType() + " auto_increment").execute();
-                        }
-                        else
-                        {
-                            logger.debug("执行sql语句:{}", "alter table " + tableName + " modify " + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType());
-                            connection.prepareStatement("alter table " + tableName + " modify " + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType()).execute();
-                        }
-                    }
-                    else
-                    {
-                        // 字段不存在，需要执行新建动作
-                        if (metaData.getIdStrategy() == IdStrategy.nativeDb && (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class))
-                        {
-                            logger.warn("执行sql语句:{}", addColSql + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType() + " auto_increment");
-                            connection.prepareStatement(addColSql + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType() + " auto_increment").execute();
-                        }
-                        else
-                        {
-                            logger.warn("执行sql语句:{}", addColSql + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType());
-                            connection.prepareStatement(addColSql + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType()).execute();
-                        }
-                    }
-                    rs.close();
-                    for (FieldInfo each : metaData.getFieldInfos())
-                    {
-                        if (each.getDbColName().equals(idInfo.getDbColName()))
-                        {
-                            continue;
-                        }
-                        rs = connection.prepareStatement(describeSql + each.getDbColName()).executeQuery();
-                        if (rs.next())
-                        {
-                            logger.debug("执行sql语句:{}", modityColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()).getDbType());
-                            connection.prepareStatement(modityColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()).getDbType()).execute();
-                        }
-                        else
-                        {
-                            logger.debug("执行sql语句:{}", addColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()).getDbType());
-                            connection.prepareStatement(addColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()).getDbType()).execute();
-                        }
-                        rs.close();
-                    }
+                    _updateTable(connection, metaData);
                 }
                 catch (Exception e)
                 {
-                    createTable(dataSource, metaDatas);
+                    _createTable(connection, metaData);
                 }
             }
             connection.commit();
@@ -214,4 +165,62 @@ public class MariaDBStructure implements Structure
         }
     }
     
+    private void _updateTable(Connection connection, TableMetaData tableMetaData) throws SQLException
+    {
+        String tableName = tableMetaData.getTableName();
+        String addColSql = "alter table " + tableName + " add ";
+        String describeSql = "describe " + tableName + ' ';
+        String modityColSql = "alter table " + tableName + " modify ";
+        connection.prepareStatement("describe " + tableName).execute();
+        FieldInfo idInfo = tableMetaData.getIdInfo();
+        ResultSet rs = connection.prepareStatement("describe " + tableName + " " + idInfo.getDbColName()).executeQuery();
+        if (rs.next())
+        {
+            // 字段存在，需要执行更新操作
+            if (tableMetaData.getIdStrategy() == IdStrategy.nativeDb && (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class))
+            {
+                logger.debug("执行sql语句:{}", "alter table " + tableName + " modify " + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType() + " auto_increment");
+                connection.prepareStatement("alter table " + tableName + " modify " + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType() + " auto_increment").execute();
+            }
+            else
+            {
+                logger.debug("执行sql语句:{}", "alter table " + tableName + " modify " + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType());
+                connection.prepareStatement("alter table " + tableName + " modify " + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType()).execute();
+            }
+        }
+        else
+        {
+            // 字段不存在，需要执行新建动作
+            if (tableMetaData.getIdStrategy() == IdStrategy.nativeDb && (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class))
+            {
+                logger.warn("执行sql语句:{}", addColSql + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType() + " auto_increment");
+                connection.prepareStatement(addColSql + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType() + " auto_increment").execute();
+            }
+            else
+            {
+                logger.warn("执行sql语句:{}", addColSql + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType());
+                connection.prepareStatement(addColSql + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType()).execute();
+            }
+        }
+        rs.close();
+        for (FieldInfo each : tableMetaData.getFieldInfos())
+        {
+            if (each.getDbColName().equals(idInfo.getDbColName()))
+            {
+                continue;
+            }
+            rs = connection.prepareStatement(describeSql + each.getDbColName()).executeQuery();
+            if (rs.next())
+            {
+                logger.debug("执行sql语句:{}", modityColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()).getDbType());
+                connection.prepareStatement(modityColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()).getDbType()).execute();
+            }
+            else
+            {
+                logger.debug("执行sql语句:{}", addColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()).getDbType());
+                connection.prepareStatement(addColSql + each.getDbColName() + ' ' + getTypeAndLength(each.getField()).getDbType()).execute();
+            }
+            rs.close();
+        }
+    }
 }
