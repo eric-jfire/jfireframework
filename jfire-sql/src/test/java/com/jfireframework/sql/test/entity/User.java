@@ -9,13 +9,14 @@ public class User
 {
     @Id
     @Column(name = "userid")
-    private Integer id;
+    private Integer   id;
     @Column(name = "username")
-    private String  name;
-    private String  password;
-    private Integer age;
-    private String  birthday;
-    private boolean boy;
+    private String    name;
+    private String    password;
+    private Integer   age;
+    private String    birthday;
+    private boolean   boy;
+    public static int staticId = 1;
     
     public boolean isBoy()
     {

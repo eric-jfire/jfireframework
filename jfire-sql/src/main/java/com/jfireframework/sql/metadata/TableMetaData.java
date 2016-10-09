@@ -22,8 +22,9 @@ public class TableMetaData
     private final FieldInfo           idInfo;
     private final IdStrategy          idStrategy;
     private final Class<?>            ckass;
-    private final Map<String, String> fieldNameMap = new HashMap<String, String>();
+    private final Map<String, String> fieldNameMap   = new HashMap<String, String>();
     private final NameStrategy        nameStrategy;
+    private final Map<String, Field>  staticFieldMap = new HashMap<String, Field>();
     
     public static class FieldInfo
     {
@@ -107,6 +108,11 @@ public class TableMetaData
         {
             if (notTableField(each))
             {
+                if (Modifier.isStatic(each.getModifiers()))
+                {
+                    each.setAccessible(true);
+                    staticFieldMap.put(each.getName(), each);
+                }
                 continue;
             }
             FieldInfo info = new FieldInfo(each, nameStrategy);
@@ -140,8 +146,10 @@ public class TableMetaData
         if (idStrategy == IdStrategy.autoDecision)
         {
             Class<?> type = idField.getType();
-            if (type == Integer.class //
-                    || type == Long.class)
+            if (
+                type == Integer.class //
+                        || type == Long.class
+            )
             {
                 return IdStrategy.nativeDb;
             }
@@ -162,12 +170,14 @@ public class TableMetaData
     
     private boolean notTableField(Field field)
     {
-        if (field.isAnnotationPresent(SqlIgnore.class) //
-                || Map.class.isAssignableFrom(field.getType())//
-                || List.class.isAssignableFrom(field.getType())//
-                || field.getType().isInterface()//
-                || field.getType().isArray()//
-                || Modifier.isStatic(field.getModifiers()))
+        if (
+            field.isAnnotationPresent(SqlIgnore.class) //
+                    || Map.class.isAssignableFrom(field.getType())//
+                    || List.class.isAssignableFrom(field.getType())//
+                    || field.getType().isInterface()//
+                    || field.getType().isArray()//
+                    || Modifier.isStatic(field.getModifiers())
+        )
         {
             return true;
         }
@@ -205,6 +215,11 @@ public class TableMetaData
     public Class<?> getEntityClass()
     {
         return ckass;
+    }
+    
+    public Map<String, Field> staticFieldMap()
+    {
+        return staticFieldMap;
     }
     
     public String getFieldName(String dbColName)

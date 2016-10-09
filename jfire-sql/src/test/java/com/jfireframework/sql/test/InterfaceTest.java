@@ -25,6 +25,19 @@ public class InterfaceTest extends BaseTestSupport
     }
     
     @Test
+    public void getUserByStaticIdTest()
+    {
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
+        User user = null;
+        user = userDAO.getUserByStaticValue();
+        assertEquals("林斌", user.getName());
+        user = userDAO.getUserByStaticValue2();
+        assertEquals("林斌", user.getName());
+        user = userDAO.getUserByStaticValue3();
+        assertEquals("林斌", user.getName());
+    }
+    
+    @Test
     public void getUserAgeTest()
     {
         UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);

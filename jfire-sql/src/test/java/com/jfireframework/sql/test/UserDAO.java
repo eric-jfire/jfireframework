@@ -43,11 +43,14 @@ public interface UserDAO
     @Update(sql = "delete  from User where userid=$id", paramNames = "id")
     public int deleteUser(int id);
     
-    // @BatchUpdate(sql = "insert into user
-    // (username,age,password,birthday,userid)
-    // values($user.name,$user.age,$user.password,$user.birthday,$user.id)",
-    // paramNames = "user")
-    // public int[] insertUsers(List<User> user);
+    @Query(sql = "select * from User where userid=User.staticId", paramNames = "")
+    public User getUserByStaticValue();
+    
+    @Query(sql = "select * from User where userid=staticId", paramNames = "")
+    public User getUserByStaticValue2();
+    
+    @Query(sql = "select * from User as u where userid=u.staticId", paramNames = "")
+    public User getUserByStaticValue3();
     
     @Query(sql = "select * from User where 1=1 [$user.age] and age=$user.age# [$user.name] and username like $%user.name%# [$user.id] and userid=$user.id#", paramNames = "user")
     public List<User> dynamicQuery(User user);

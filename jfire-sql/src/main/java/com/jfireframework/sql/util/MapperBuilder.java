@@ -1,5 +1,6 @@
 package com.jfireframework.sql.util;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -12,6 +13,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
@@ -610,10 +612,11 @@ public class MapperBuilder
     
     public static class SqlContext
     {
-        private List<String>            injectNames  = new LinkedList<String>();
-        private Set<TableMetaData>      metaContexts = new HashSet<TableMetaData>();
-        private Map<String, String>     dbColNameMap = new HashMap<String, String>();
-        private Map<String, String>     fieldNameMap = new HashMap<String, String>();
+        private List<String>            injectNames    = new LinkedList<String>();
+        private Set<TableMetaData>      metaContexts   = new HashSet<TableMetaData>();
+        private Map<String, String>     dbColNameMap   = new HashMap<String, String>();
+        private Map<String, String>     fieldNameMap   = new HashMap<String, String>();
+        private Map<String, Field>      statifFieldMap = new HashMap<String, Field>();
         private String                  sql;
         private String                  countSql;
         private List<InvokeNameAndType> queryParams;
@@ -686,6 +689,11 @@ public class MapperBuilder
                 dbColNameMap.put(prefix + each.getFieldName(), tablePrefix + each.getDbColName());
                 fieldNameMap.put(tablePrefix + each.getDbColName(), each.getFieldName());
             }
+            for (Entry<String, Field> each : metaData.staticFieldMap().entrySet())
+            {
+                statifFieldMap.put(prefix + each.getKey(), each.getValue());
+                statifFieldMap.put(each.getKey(), each.getValue());
+            }
         }
         
         public void addAliasName(String name, TableMetaData metaData)
@@ -697,8 +705,14 @@ public class MapperBuilder
             String prefix = name + '.';
             for (FieldInfo each : metaData.getFieldInfos())
             {
+                dbColNameMap.put(each.getFieldName(), prefix + each.getDbColName());
                 dbColNameMap.put(prefix + each.getFieldName(), prefix + each.getDbColName());
                 fieldNameMap.put(prefix + each.getDbColName(), each.getFieldName());
+            }
+            for (Entry<String, Field> each : metaData.staticFieldMap().entrySet())
+            {
+                statifFieldMap.put(prefix + each.getKey(), each.getValue());
+                statifFieldMap.put(each.getKey(), each.getValue());
             }
         }
         
@@ -710,6 +724,11 @@ public class MapperBuilder
         public String getFieldName(String dbColName)
         {
             return fieldNameMap.get(dbColName);
+        }
+        
+        public Field getStaticField(String name)
+        {
+            return statifFieldMap.get(name);
         }
     }
     

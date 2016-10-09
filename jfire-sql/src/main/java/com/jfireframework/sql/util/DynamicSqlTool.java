@@ -403,7 +403,7 @@ public class DynamicSqlTool
                             }
                             else
                             {
-                                ;
+                                throw new NullPointerException(StringUtil.format("无法识别类{}", simpleClassName));
                             }
                             preIsTableName = false;
                             simpleClassName = null;
@@ -489,18 +489,21 @@ public class DynamicSqlTool
                         index = end;
                         continue;
                     }
-                    if (var.indexOf(".") != -1 && var.indexOf("$") == -1)
+                    if (var.indexOf(".") != -1 && var.indexOf("$") == -1 && as == false)
                     {
                         String[] tmp = var.split("\\.");
                         Verify.True(tmp.length == 2, "sql有错误，请检查{},关注：{}", sql, var);
-                        String dbColName = sqlContext.getDbColName(var);
-                        if (dbColName == null)
+                        if (sqlContext.getDbColName(var) != null)
                         {
-                            throw new IllegalArgumentException(StringUtil.format("字段{}不存在数据库映射，请检查{}", var, sql));
+                            cache.append(sqlContext.getDbColName(var));
+                        }
+                        else if (sqlContext.getStaticField(var) != null)
+                        {
+                            cache.append(sqlContext.getStaticField(var).get(null));
                         }
                         else
                         {
-                            cache.append(dbColName);
+                            throw new IllegalArgumentException(StringUtil.format("字段{}不存在数据库映射，请检查{}", var, sql));
                         }
                     }
                     else if (var.charAt(0) >= 'A' && var.charAt(0) <= 'Z')
@@ -516,14 +519,17 @@ public class DynamicSqlTool
                         }
                         else
                         {
-                            String dbColName = sqlContext.getDbColName(var);
-                            if (dbColName == null)
+                            if (sqlContext.getDbColName(var) != null)
                             {
-                                cache.append(var);
+                                cache.append(sqlContext.getDbColName(var));
+                            }
+                            else if (sqlContext.getStaticField(var) != null)
+                            {
+                                cache.append(sqlContext.getStaticField(var).get(null));
                             }
                             else
                             {
-                                cache.append(dbColName);
+                                cache.append(var);
                             }
                         }
                     }
@@ -555,8 +561,10 @@ public class DynamicSqlTool
         while (start < sql.length())
         {
             char c = sql.charAt(start);
-            if (c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
-                    || c == '#' || c == '+' || c == '-' || c == '(' || c == ')' || c == ']' || c == '[')
+            if (
+                c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
+                        || c == '#' || c == '+' || c == '-' || c == '(' || c == ')' || c == ']' || c == '['
+            )
             {
                 break;
             }
