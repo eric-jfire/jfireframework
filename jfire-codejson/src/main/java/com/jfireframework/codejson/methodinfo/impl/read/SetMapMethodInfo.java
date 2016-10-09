@@ -3,6 +3,8 @@ package com.jfireframework.codejson.methodinfo.impl.read;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
+import java.util.HashMap;
+import java.util.Map;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.codejson.function.ReadStrategy;
 import com.jfireframework.codejson.util.NameTool;
@@ -16,6 +18,10 @@ public class SetMapMethodInfo extends AbstractReadMethodInfo
         str = "if(json.contains(\"" + NameTool.getNameFromMethod(method, strategy) + "\"))\n";
         str += "{\n";
         Class<?> paramType = getParamType();
+        if (paramType == Map.class)
+        {
+            paramType = HashMap.class;
+        }
         if (paramType.isInterface() || Modifier.isAbstract(paramType.getModifiers()))
         {
             throw new RuntimeException(StringUtil.format("反序列必须有足够的信息，方法的入参类型只能是类，不能是接口。请检查{}.{}", method.getDeclaringClass().getName(), method.getName()));

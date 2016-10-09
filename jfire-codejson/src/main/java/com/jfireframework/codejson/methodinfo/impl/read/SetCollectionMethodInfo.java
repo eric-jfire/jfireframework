@@ -3,6 +3,10 @@ package com.jfireframework.codejson.methodinfo.impl.read;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.codejson.function.ReadStrategy;
 import com.jfireframework.codejson.util.NameTool;
@@ -18,6 +22,14 @@ public class SetCollectionMethodInfo extends AbstractReadMethodInfo
         str += "\tJsonArray jsonArray = json.getJsonArray(\"" + NameTool.getNameFromMethod(method, strategy) + "\");\n";
         str += "\tint size = jsonArray.size();\n";
         Class<?> paramType = getParamType();
+        if (paramType == List.class)
+        {
+            paramType = LinkedList.class;
+        }
+        else if (paramType == Set.class)
+        {
+            paramType = HashSet.class;
+        }
         if (paramType.isInterface() || Modifier.isAbstract(paramType.getModifiers()))
         {
             throw new RuntimeException(StringUtil.format("反序列必须有足够的信息，方法的入参类型只能是类，不能是接口。请检查{}.{}", method.getDeclaringClass().getName(), method.getName()));
