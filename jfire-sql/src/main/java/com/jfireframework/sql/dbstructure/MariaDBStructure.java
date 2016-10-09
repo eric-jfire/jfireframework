@@ -113,21 +113,25 @@ public class MariaDBStructure implements Structure
     {
         try
         {
+            TypeAndLength result;
             TypeAndLength typeAndLength = dbTypeMap.get(field.getType());
             if (field.isAnnotationPresent(Column.class) && field.getAnnotation(Column.class).length() != -1)
             {
                 int length = field.getAnnotation(Column.class).length();
                 if (field.getType() == String.class && length > 3000)
                 {
-                    typeAndLength.setLength(3000);
-                    typeAndLength.setType("text");
+                    result = new TypeAndLength("text", 3000);
                 }
                 else
                 {
-                    typeAndLength.setLength(length);
+                    result = new TypeAndLength("varchar", length);
                 }
             }
-            return typeAndLength;
+            else
+            {
+                result = typeAndLength;
+            }
+            return result;
         }
         catch (Exception e)
         {

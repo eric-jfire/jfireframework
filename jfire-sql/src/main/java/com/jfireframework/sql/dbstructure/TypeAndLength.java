@@ -2,8 +2,8 @@ package com.jfireframework.sql.dbstructure;
 
 public class TypeAndLength
 {
-    private String type;
-    private int    length;
+    private final String type;
+    private final int    length;
     
     public TypeAndLength(String type, int length)
     {
@@ -28,19 +28,8 @@ public class TypeAndLength
         return type;
     }
     
-    public void setType(String type)
-    {
-        this.type = type;
-    }
-    
     public int getLength()
     {
         return length;
     }
-    
-    public void setLength(int length)
-    {
-        this.length = length;
-    }
-    
 }
