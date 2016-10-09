@@ -7,6 +7,7 @@ import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.mvc.binder.impl.ObjectDataBinder;
 import com.jfireframework.mvc.binder.node.TreeValueNode;
 import com.jfireframework.mvc.vo.Desk;
+import com.jfireframework.mvc.vo.Desk.length;
 import com.jfireframework.mvc.vo.Home;
 import com.jfireframework.mvc.vo.Person;
 
@@ -36,9 +37,15 @@ public class NewBinderTest
         TreeValueNode paramTree = new TreeValueNode();
         paramTree.put("name", "hello");
         paramTree.put("width", "20");
+        paramTree.put("l", "LONG");
         Desk desk = (Desk) binder.bind(null, paramTree, null);
         assertEquals("hello", desk.getName());
         assertEquals(20, desk.getWidth());
+        assertEquals(length.LONG, desk.getL());
+        paramTree.clear();
+        paramTree.put("l", "0");
+        desk = (Desk) binder.bind(null, paramTree, null);
+        assertEquals(length.LONG, desk.getL());
         binder = new ObjectDataBinder(Desk.class, "desk", null);
         paramTree.clear();
         paramTree.put("desk[name]", "hello");

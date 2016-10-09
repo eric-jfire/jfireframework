@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -511,7 +512,7 @@ public final class ReflectUtil
         {
             Method method = Class.class.getDeclaredMethod("enumConstantDirectory");
             method.setAccessible(true);
-            return (Map<String, T>) method.invoke(type);
+            return new HashMap<String, T>((Map<String, T>) method.invoke(type));
         }
         catch (Exception e)
         {

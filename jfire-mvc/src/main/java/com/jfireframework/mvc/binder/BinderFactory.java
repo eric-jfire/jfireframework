@@ -15,6 +15,7 @@ import com.jfireframework.mvc.binder.impl.ArrayBinder;
 import com.jfireframework.mvc.binder.impl.BaseBinder;
 import com.jfireframework.mvc.binder.impl.CookieBinder;
 import com.jfireframework.mvc.binder.impl.DateBinder;
+import com.jfireframework.mvc.binder.impl.EnumBinder;
 import com.jfireframework.mvc.binder.impl.HeaderBinder;
 import com.jfireframework.mvc.binder.impl.HttpServletRequestBinder;
 import com.jfireframework.mvc.binder.impl.HttpServletResponseBinder;
@@ -110,6 +111,10 @@ public class BinderFactory
                 {
                     binders.add(ListBinder.valueOf(paramType, prefixName, annotations));
                 }
+            }
+            else if (Enum.class.isAssignableFrom(target))
+            {
+                binders.add(new EnumBinder(target, prefixName, annotations));
             }
             else
             {

@@ -18,6 +18,7 @@ import com.jfireframework.mvc.binder.field.array.base.ArrayWFloatField;
 import com.jfireframework.mvc.binder.field.array.base.ArrayWIntegerField;
 import com.jfireframework.mvc.binder.field.array.base.ArrayWLongField;
 import com.jfireframework.mvc.binder.field.array.base.ArrayWShortField;
+import com.jfireframework.mvc.binder.field.array.extra.ArrayEnumField;
 import com.jfireframework.mvc.binder.field.array.extra.ArrayObjectField;
 import com.jfireframework.mvc.binder.field.array.extra.ArrayStringField;
 import com.jfireframework.mvc.binder.field.base.BooleanField;
@@ -29,6 +30,7 @@ import com.jfireframework.mvc.binder.field.base.IntField;
 import com.jfireframework.mvc.binder.field.base.LongField;
 import com.jfireframework.mvc.binder.field.base.ShortField;
 import com.jfireframework.mvc.binder.field.extra.DateField;
+import com.jfireframework.mvc.binder.field.extra.EnumField;
 import com.jfireframework.mvc.binder.field.extra.ListField;
 import com.jfireframework.mvc.binder.field.extra.ObjectField;
 import com.jfireframework.mvc.binder.field.extra.SqlDateField;
@@ -142,7 +144,14 @@ public abstract class AbstractBinderField implements BinderField
         {
             if (type.isArray())
             {
-                return new ArrayObjectField(field);
+                if (Enum.class.isAssignableFrom(type.getComponentType()))
+                {
+                    return new ArrayEnumField(field);
+                }
+                else
+                {
+                    return new ArrayObjectField(field);
+                }
             }
             else if (List.class.isAssignableFrom(type))
             {
@@ -151,6 +160,10 @@ public abstract class AbstractBinderField implements BinderField
             else if (Set.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type))
             {
                 return new NopField(field);
+            }
+            else if (Enum.class.isAssignableFrom(type))
+            {
+                return new EnumField(field);
             }
             else
             {

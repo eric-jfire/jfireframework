@@ -4,6 +4,22 @@ public class Desk
 {
     private String name;
     private int    width;
+    private length l;
+    
+    public length getL()
+    {
+        return l;
+    }
+    
+    public void setL(length l)
+    {
+        this.l = l;
+    }
+    
+    public static enum length
+    {
+        LONG, SHORT;
+    }
     
     public String getName()
     {

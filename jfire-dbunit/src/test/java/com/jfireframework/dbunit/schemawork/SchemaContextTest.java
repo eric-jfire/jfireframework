@@ -6,14 +6,15 @@ import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 
 public class SchemaContextTest
 {
-//    @Test
+    @Test
     public void test()
     {
         MysqlDataSource dataSource = new MysqlDataSource();
-        dataSource.setUrl("jdbc:mysql://localhost:3306/test");
+        dataSource.setUrl("jdbc:mysql://localhost:3306/thirdpay");
         dataSource.setUser("root");
         dataSource.setPassword("centerm");
         DbUnit unit = new DbUnit(1, dataSource);
         unit.exportExcelWithData();
+        unit.importExcelFile(null);
     }
 }
