@@ -10,26 +10,42 @@ Target Server Type    : MYSQL
 Target Server Version : 60005
 File Encoding         : 65001
 
-Date: 2016-10-04 20:14:48
+Date: 2016-10-09 17:13:03
 */
 
 SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for `home`
+-- ----------------------------
+DROP TABLE IF EXISTS `home`;
+CREATE TABLE `home` (
+  `homeId` int(9) NOT NULL AUTO_INCREMENT,
+  `home_name` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`homeId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of home
+-- ----------------------------
 
 -- ----------------------------
 -- Table structure for `user`
 -- ----------------------------
 DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
-  `userid` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(32) CHARACTER SET gbk DEFAULT NULL COMMENT '账号名称',
-  `password` varchar(32) CHARACTER SET gbk DEFAULT NULL COMMENT '用户密码，保存的是密码的md5值',
-  `age` int(11) DEFAULT NULL,
+  `userid` int(9) NOT NULL AUTO_INCREMENT,
+  `username` varchar(255) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `age` int(9) DEFAULT NULL,
   `birthday` datetime DEFAULT NULL,
-  `boy` tinyint(4) DEFAULT NULL,
-  `weight` float DEFAULT NULL,
+  `boy` tinyint(1) DEFAULT NULL,
+  `weight` double DEFAULT NULL,
   `time` time DEFAULT NULL,
+  `enumint` int(11) DEFAULT NULL,
+  `enumstring` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`userid`)
-) ENGINE=InnoDB AUTO_INCREMENT=248044 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=498084 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Records of user
