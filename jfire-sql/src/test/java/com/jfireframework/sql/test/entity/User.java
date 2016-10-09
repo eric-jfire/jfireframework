@@ -1,13 +1,14 @@
 package com.jfireframework.sql.test.entity;
 
 import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.EnumUseInt;
 import com.jfireframework.sql.annotation.Id;
+import com.jfireframework.sql.annotation.SqlEnumFieldUseInt;
 import com.jfireframework.sql.annotation.TableEntity;
 
 @TableEntity(name = "user")
 public class User
 {
+    @SqlEnumFieldUseInt
     public static enum Enumint
     {
         a, b;
@@ -27,10 +28,9 @@ public class User
     private Integer    age;
     private String     birthday;
     private boolean    boy;
-    public static int  staticId = 1;
-    @EnumUseInt
-    private Enumint    enumint;
-    private Enumstring enumstring;
+    public static int  staticId   = 1;
+    private Enumint    enumint    = Enumint.a;
+    private Enumstring enumstring = Enumstring.a;
     
     public Enumint getEnumint()
     {

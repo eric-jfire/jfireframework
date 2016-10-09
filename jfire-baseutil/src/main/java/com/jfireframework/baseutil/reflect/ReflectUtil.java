@@ -4,15 +4,19 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
-import java.util.*;
-
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.code.CodeLocation;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.verify.Verify;
-
 import sun.misc.Unsafe;
 import sun.reflect.MethodAccessor;
 
@@ -497,6 +501,21 @@ public final class ReflectUtil
                 result += "[]";
             } while (type.isArray());
             return type.getName() + result;
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    public static <T extends Enum<?>> Map<String, T> getAllEnumInstances(Class<T> type)
+    {
+        try
+        {
+            Method method = Class.class.getDeclaredMethod("enumConstantDirectory");
+            method.setAccessible(true);
+            return (Map<String, T>) method.invoke(type);
+        }
+        catch (Exception e)
+        {
+            throw new JustThrowException(e);
         }
     }
 }

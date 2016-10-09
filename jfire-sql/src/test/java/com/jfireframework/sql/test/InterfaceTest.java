@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.sql.page.MysqlPage;
 import com.jfireframework.sql.test.entity.User;
@@ -15,6 +16,19 @@ import com.jfireframework.sql.test.entity.User.Enumstring;
 
 public class InterfaceTest extends BaseTestSupport
 {
+    @Test
+    public void getUser()
+    {
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
+        User user = userDAO.selectUser(1, Enumint.a, Enumstring.a);
+        assertEquals(1, user.getId().intValue());
+        assertEquals("林斌", user.getName());
+        assertEquals(Enumint.a, user.getEnumint());
+        assertEquals(Enumstring.a, user.getEnumstring());
+        user = userDAO.selectUser(2, Enumint.a, Enumstring.a);
+        Assert.assertTrue(user == null);
+    }
+    
     @Test
     public void getUserByIdTest()
     {

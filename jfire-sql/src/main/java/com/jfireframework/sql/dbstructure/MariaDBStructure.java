@@ -15,7 +15,7 @@ import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.EnumUseInt;
+import com.jfireframework.sql.annotation.SqlEnumFieldUseInt;
 import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
@@ -117,7 +117,7 @@ public class MariaDBStructure implements Structure
             TypeAndLength result;
             if (Enum.class.isAssignableFrom(field.getType()))
             {
-                if (field.isAnnotationPresent(EnumUseInt.class))
+                if (field.getType().isAnnotationPresent(SqlEnumFieldUseInt.class))
                 {
                     return new TypeAndLength("int", 9);
                 }

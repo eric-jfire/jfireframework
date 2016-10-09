@@ -6,10 +6,16 @@ import com.jfireframework.sql.annotation.Update;
 import com.jfireframework.sql.jfirecontext.MapperOp;
 import com.jfireframework.sql.page.MysqlPage;
 import com.jfireframework.sql.test.entity.User;
+import com.jfireframework.sql.test.entity.User.Enumint;
+import com.jfireframework.sql.test.entity.User.Enumstring;
 
 @MapperOp
 public interface UserDAO
 {
+    
+    @Query(sql = "select * from User where id=$id and enumint=$enumint and enumstring=$enumstring", paramNames = "id,enumint,enumstring")
+    public User selectUser(int id, Enumint enumint, Enumstring enumstring);
+    
     @Query(sql = "select * from User [ $name.length()>2] where name like $%name% #", paramNames = "name")
     public List<User> functionUse(String name);
     

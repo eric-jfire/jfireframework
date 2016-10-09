@@ -7,6 +7,7 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.sql.annotation.SqlEnumFieldUseInt;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.MysqlPage;
@@ -82,76 +83,7 @@ public class DynamicSqlTool
                     {
                         section = sql.substring(pre, now);
                         section = section.substring(1);
-                        Class<?> paramType = getParamType(section, paramNames, paramTypes, sql);
-                        if (paramType.equals(String.class))
-                        {
-                            context += bk + "{\n" + bk + "\tString[] tmp = ((String)" + buildParam(section, paramNames, paramTypes).getInvokeName() + ").split(\",\");\n";
-                        }
-                        else if (paramType.equals(String[].class))
-                        {
-                            context += bk + bk + "{\n" + bk + "\n" + bk + "\tString[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
-                        }
-                        else if (paramType.equals(int[].class))
-                        {
-                            context += bk + "{\n" + bk + "\tint[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
-                        }
-                        else if (paramType.equals(Integer[].class))
-                        {
-                            context += bk + "{\n" + bk + "\tInteger[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
-                        }
-                        else if (paramType.equals(long[].class))
-                        {
-                            context += bk + "{\n" + bk + "\tlong[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
-                        }
-                        else if (paramType.equals(Long[].class))
-                        {
-                            context += bk + "{\n" + bk + "\tLong[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
-                        }
-                        else if (paramType.equals(float[].class))
-                        {
-                            context += bk + "{\n" + bk + "\tfloat[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
-                        }
-                        else if (paramType.equals(Float[].class))
-                        {
-                            context += bk + "{\n" + bk + "\tFloat[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
-                        }
-                        else if (paramType.equals(double[].class))
-                        {
-                            context += bk + "{\n" + bk + "\tdouble[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
-                        }
-                        else if (paramType.equals(Double[].class))
-                        {
-                            context += bk + "{\n" + bk + "\tDouble[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
-                        }
-                        else if (List.class.isAssignableFrom(paramType))
-                        {
-                            context += bk + "{\n" + bk + "\tjava.util.List tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
-                        }
-                        else
-                        {
-                            throw new RuntimeException("in操作中存在不识别的类型");
-                        }
-                        bk += "\t";
-                        if (List.class.isAssignableFrom(paramType))
-                        {
-                            context += bk + "int length = tmp.size();\n";
-                        }
-                        else
-                        {
-                            context += bk + "int length = tmp.length;\n";
-                        }
-                        context += bk + "for(int i=0;i<length;i++){builder.append(\"?,\");}\n";
-                        context += bk + "builder.deleteLast().append(\")\");\n";
-                        if (List.class.isAssignableFrom(paramType))
-                        {
-                            context += bk + "for(int i=0;i<length;i++){list.add(tmp.get(i));}\n";
-                        }
-                        else
-                        {
-                            context += bk + "for(int i=0;i<length;i++){list.add(($w)tmp[i]);}\n";
-                        }
-                        bk = bk.substring(0, bk.length() - 1);
-                        context += bk + "}\n";
+                        context = _handleWithTidle(context, section, paramNames, paramTypes, sql);
                     }
                     else
                     {
@@ -221,6 +153,82 @@ public class DynamicSqlTool
         }
     }
     
+    private static String _handleWithTidle(String context, String section, String[] paramNames, Class<?>[] paramTypes, String sql) throws SecurityException, NoSuchFieldException
+    {
+        String bk = "\t";
+        Class<?> paramType = getParamType(section, paramNames, paramTypes, sql);
+        if (paramType.equals(String.class))
+        {
+            context += bk + "{\n" + bk + "\tString[] tmp = ((String)" + buildParam(section, paramNames, paramTypes).getInvokeName() + ").split(\",\");\n";
+        }
+        else if (paramType.equals(String[].class))
+        {
+            context += bk + bk + "{\n" + bk + "\n" + bk + "\tString[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+        }
+        else if (paramType.equals(int[].class))
+        {
+            context += bk + "{\n" + bk + "\tint[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+        }
+        else if (paramType.equals(Integer[].class))
+        {
+            context += bk + "{\n" + bk + "\tInteger[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+        }
+        else if (paramType.equals(long[].class))
+        {
+            context += bk + "{\n" + bk + "\tlong[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+        }
+        else if (paramType.equals(Long[].class))
+        {
+            context += bk + "{\n" + bk + "\tLong[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+        }
+        else if (paramType.equals(float[].class))
+        {
+            context += bk + "{\n" + bk + "\tfloat[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+        }
+        else if (paramType.equals(Float[].class))
+        {
+            context += bk + "{\n" + bk + "\tFloat[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+        }
+        else if (paramType.equals(double[].class))
+        {
+            context += bk + "{\n" + bk + "\tdouble[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+        }
+        else if (paramType.equals(Double[].class))
+        {
+            context += bk + "{\n" + bk + "\tDouble[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+        }
+        else if (List.class.isAssignableFrom(paramType))
+        {
+            context += bk + "{\n" + bk + "\tjava.util.List tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+        }
+        else
+        {
+            throw new RuntimeException("in操作中存在不识别的类型");
+        }
+        bk += "\t";
+        if (List.class.isAssignableFrom(paramType))
+        {
+            context += bk + "int length = tmp.size();\n";
+        }
+        else
+        {
+            context += bk + "int length = tmp.length;\n";
+        }
+        context += bk + "for(int i=0;i<length;i++){builder.append(\"?,\");}\n";
+        context += bk + "builder.deleteLast().append(\")\");\n";
+        if (List.class.isAssignableFrom(paramType))
+        {
+            context += bk + "for(int i=0;i<length;i++){list.add(tmp.get(i));}\n";
+        }
+        else
+        {
+            context += bk + "for(int i=0;i<length;i++){list.add(($w)tmp[i]);}\n";
+        }
+        bk = bk.substring(0, bk.length() - 1);
+        context += bk + "}\n";
+        return context;
+    }
+    
     /**
      * 给定参数字符串inject，在所有的方法入参名称中搜索可能的对应值。
      * 比如字符串为user.name。有一个参数为类user,并且参数位置在第一个。则返回的内容是$1.getName()
@@ -257,7 +265,21 @@ public class DynamicSqlTool
             {
                 result += "\"%\"+";
             }
-            result += "$" + (index + 1);
+            if (Enum.class.isAssignableFrom(paramTypes[index]))
+            {
+                if (paramTypes[index].isAnnotationPresent(SqlEnumFieldUseInt.class))
+                {
+                    result += "$" + (index + 1) + ".ordinal()";
+                }
+                else
+                {
+                    result += "$" + (index + 1) + ".name()";
+                }
+            }
+            else
+            {
+                result += "$" + (index + 1);
+            }
             if (after)
             {
                 result += "+\"%\"";
@@ -270,17 +292,32 @@ public class DynamicSqlTool
             String[] tmp = inject.split("\\.");
             int index = getParamNameIndex(tmp[0], paramNames);
             Object[] returns = ReflectUtil.getBuildMethodAndType(inject, paramTypes[index]);
+            Class<?> returnType = (Class<?>) returns[1];
             String result = "";
             if (before)
             {
                 result += "\"%\"+";
             }
-            result += "$" + (index + 1) + returns[0];
+            if (Enum.class.isAssignableFrom(returnType))
+            {
+                if (returnType.isAnnotationPresent(SqlEnumFieldUseInt.class))
+                {
+                    result += "$" + (index + 1) + returns[0] + ".ordinal()";
+                }
+                else
+                {
+                    result += "$" + (index + 1) + returns[0] + ".name()";
+                }
+            }
+            else
+            {
+                result += "$" + (index + 1) + returns[0];
+            }
             if (after)
             {
                 result += "+\"%\"";
             }
-            InvokeNameAndType invokeNameAndType = new InvokeNameAndType(result, (Class<?>) returns[1], inject);
+            InvokeNameAndType invokeNameAndType = new InvokeNameAndType(result, returnType, inject);
             return invokeNameAndType;
         }
     }

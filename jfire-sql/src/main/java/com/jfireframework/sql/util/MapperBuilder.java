@@ -21,6 +21,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.Query;
+import com.jfireframework.sql.annotation.SqlEnumFieldUseInt;
 import com.jfireframework.sql.annotation.Update;
 import com.jfireframework.sql.function.SqlSession;
 import com.jfireframework.sql.function.mapper.Mapper;
@@ -515,6 +516,17 @@ public class MapperBuilder
             else if (returnType == String.class)
             {
                 methodBody.append("pStat.setString(");
+            }
+            else if (Enum.class.isAssignableFrom(returnType))
+            {
+                if (returnType.isAnnotationPresent(SqlEnumFieldUseInt.class))
+                {
+                    methodBody.append("pStat.setInt(");
+                }
+                else
+                {
+                    methodBody.append("pStat.setString(");
+                }
             }
             else
             {
