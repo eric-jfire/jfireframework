@@ -155,7 +155,7 @@ public class TableMetaData
             }
             else if (type == String.class)
             {
-                return IdStrategy.stringUid;
+                return IdStrategy.custom;
             }
             else
             {

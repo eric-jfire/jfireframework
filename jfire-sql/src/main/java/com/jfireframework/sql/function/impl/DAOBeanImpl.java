@@ -11,21 +11,18 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.uniqueid.AutumnId;
+import com.jfireframework.baseutil.uniqueid.Uid;
 import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dbstructure.NameStrategy;
 import com.jfireframework.sql.field.MapField;
 import com.jfireframework.sql.field.MapFieldBuilder;
-import com.jfireframework.sql.field.impl.IntegerField;
-import com.jfireframework.sql.field.impl.StringField;
-import com.jfireframework.sql.field.impl.WLongField;
 import com.jfireframework.sql.function.Dao;
 import com.jfireframework.sql.function.LockMode;
 import com.jfireframework.sql.log.LogInterceptor;
@@ -53,6 +50,7 @@ public class DAOBeanImpl<T> implements Dao<T>
     private final String                deleteSql;
     private final LogInterceptor        logInterceptor;
     private static final Logger         LOGGER   = ConsoleLogFactory.getLogger();
+    private static final Uid            uid      = AutumnId.instance();
     
     enum IdType
     {
@@ -106,10 +104,15 @@ public class DAOBeanImpl<T> implements Dao<T>
         {
             return IdType.INT;
         }
-        else
+        else if (type == Long.class)
         {
             return IdType.LONG;
         }
+        else
+        {
+            throw new UnsupportedOperationException("id字段只支持Integer，Long，String");
+        }
+        
     }
     
     private MapField[] buildInsertOrUpdateFields(MapField[] mapFields)
@@ -326,7 +329,7 @@ public class DAOBeanImpl<T> implements Dao<T>
             // id值为null，执行插入操作
             if (idStrategy == IdStrategy.stringUid)
             {
-                String id = AutumnId.instance().generateDigits();
+                String id = uid.generateDigits();
                 unsafe.putObject(entity, idOffset, id);
             }
             insert(entity, connection);
@@ -475,21 +478,16 @@ public class DAOBeanImpl<T> implements Dao<T>
             ResultSet resultSet = pStat.getGeneratedKeys();
             if (resultSet.next())
             {
-                if (idField instanceof IntegerField)
+                switch (idType)
                 {
-                    unsafe.putObject(entity, idOffset, resultSet.getInt(1));
-                }
-                else if (idField instanceof StringField)
-                {
-                    unsafe.putObject(entity, idOffset, resultSet.getString(1));
-                }
-                else if (idField instanceof WLongField)
-                {
-                    unsafe.putObject(entity, idOffset, resultSet.getLong(1));
-                }
-                else
-                {
-                    throw new RuntimeException(StringUtil.format("id字段暂时支持Integer,Long,String.请检查{}", entity.getClass().getName()));
+                    case INT:
+                        unsafe.putObject(entity, idOffset, resultSet.getInt(1));
+                        break;
+                    case LONG:
+                        unsafe.putObject(entity, idOffset, resultSet.getLong(1));
+                    case STRING:
+                        unsafe.putObject(entity, idOffset, resultSet.getString(1));
+                        break;
                 }
             }
         }

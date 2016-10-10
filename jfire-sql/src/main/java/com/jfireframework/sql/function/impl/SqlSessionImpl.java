@@ -109,7 +109,6 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             closed = true;
-            connection.setAutoCommit(false);
             sessionFactory.removeCurrentSession();
             connection.close();
         }
