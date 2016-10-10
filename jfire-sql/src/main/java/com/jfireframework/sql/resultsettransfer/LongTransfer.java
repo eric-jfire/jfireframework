@@ -5,6 +5,11 @@ import java.sql.SQLException;
 
 public class LongTransfer extends AbstractResultsetTransfer<Long>
 {
+    public LongTransfer(Class<?> type)
+    {
+        super(type);
+    }
+    
     @Override
     protected Long valueOf(ResultSet resultSet) throws Exception
     {

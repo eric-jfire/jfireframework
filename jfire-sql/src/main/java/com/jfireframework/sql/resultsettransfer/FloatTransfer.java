@@ -6,6 +6,11 @@ import java.sql.SQLException;
 public class FloatTransfer extends AbstractResultsetTransfer<Float>
 {
     
+    public FloatTransfer(Class<?> type)
+    {
+        super(type);
+    }
+
     @Override
     protected Float valueOf(ResultSet resultSet) throws Exception
     {

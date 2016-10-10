@@ -348,14 +348,12 @@ public final class ReflectUtil
         {
             for (Method each : ckass.getDeclaredMethods())
             {
-                if (
-                    Modifier.isPublic(each.getModifiers()) == false //
-                            || each.getParameterTypes().length > 0//
-                            || (each.getName().startsWith("get") | each.getName().startsWith("is")) == false //
-                            || each.getReturnType().equals(Void.class)//
-                            || each.getName().equals("get") //
-                            || each.getName().equals("is")
-                )
+                if (Modifier.isPublic(each.getModifiers()) == false //
+                        || each.getParameterTypes().length > 0//
+                        || (each.getName().startsWith("get") | each.getName().startsWith("is")) == false //
+                        || each.getReturnType().equals(Void.class)//
+                        || each.getName().equals("get") //
+                        || each.getName().equals("is"))
                 {
                     continue;
                 }
@@ -383,12 +381,10 @@ public final class ReflectUtil
         {
             for (Method each : ckass.getDeclaredMethods())
             {
-                if (
-                    Modifier.isPublic(each.getModifiers()) == false//
-                            || each.getParameterTypes().length != 1//
-                            || each.getName().startsWith("set") == false//
-                            || each.getName().equals("set")
-                )
+                if (Modifier.isPublic(each.getModifiers()) == false//
+                        || each.getParameterTypes().length != 1//
+                        || each.getName().startsWith("set") == false//
+                        || each.getName().equals("set"))
                 {
                     continue;
                 }
@@ -505,14 +501,14 @@ public final class ReflectUtil
         }
     }
     
-    @SuppressWarnings("unchecked")
-    public static <T extends Enum<?>> Map<String, T> getAllEnumInstances(Class<T> type)
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public static Map<String, ? extends Enum<?>> getAllEnumInstances(Class<? extends Enum<?>> type)
     {
         try
         {
             Method method = Class.class.getDeclaredMethod("enumConstantDirectory");
             method.setAccessible(true);
-            return new HashMap<String, T>((Map<String, T>) method.invoke(type));
+            return new HashMap((Map<String, ?>) method.invoke(type));
         }
         catch (Exception e)
         {

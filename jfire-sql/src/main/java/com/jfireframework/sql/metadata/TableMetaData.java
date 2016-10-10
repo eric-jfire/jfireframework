@@ -25,6 +25,7 @@ public class TableMetaData
     private final Map<String, String> fieldNameMap   = new HashMap<String, String>();
     private final NameStrategy        nameStrategy;
     private final Map<String, Field>  staticFieldMap = new HashMap<String, Field>();
+    private final Map<String, Field>  enumFieldMap   = new HashMap<String, Field>();
     
     public static class FieldInfo
     {
@@ -122,6 +123,10 @@ public class TableMetaData
             {
                 t_idField = each;
             }
+            if (Enum.class.isAssignableFrom(each.getType()))
+            {
+                enumFieldMap.put(each.getName(), each);
+            }
         }
         fieldInfos = list.toArray(new FieldInfo[list.size()]);
         if (t_idField != null)
@@ -146,10 +151,8 @@ public class TableMetaData
         if (idStrategy == IdStrategy.autoDecision)
         {
             Class<?> type = idField.getType();
-            if (
-                type == Integer.class //
-                        || type == Long.class
-            )
+            if (type == Integer.class //
+                    || type == Long.class)
             {
                 return IdStrategy.nativeDb;
             }
@@ -170,14 +173,12 @@ public class TableMetaData
     
     private boolean notTableField(Field field)
     {
-        if (
-            field.isAnnotationPresent(SqlIgnore.class) //
-                    || Map.class.isAssignableFrom(field.getType())//
-                    || List.class.isAssignableFrom(field.getType())//
-                    || field.getType().isInterface()//
-                    || field.getType().isArray()//
-                    || Modifier.isStatic(field.getModifiers())
-        )
+        if (field.isAnnotationPresent(SqlIgnore.class) //
+                || Map.class.isAssignableFrom(field.getType())//
+                || List.class.isAssignableFrom(field.getType())//
+                || field.getType().isInterface()//
+                || field.getType().isArray()//
+                || Modifier.isStatic(field.getModifiers()))
         {
             return true;
         }
@@ -220,6 +221,11 @@ public class TableMetaData
     public Map<String, Field> staticFieldMap()
     {
         return staticFieldMap;
+    }
+    
+    public Map<String, Field> enumFieldMap()
+    {
+        return enumFieldMap;
     }
     
     public String getFieldName(String dbColName)

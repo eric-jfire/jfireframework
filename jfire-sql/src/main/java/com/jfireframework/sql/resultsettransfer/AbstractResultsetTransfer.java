@@ -22,7 +22,7 @@ public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<
     protected final MapField[] mapFields;
     protected final Class<?>   entityClass;
     
-    public AbstractResultsetTransfer()
+    public AbstractResultsetTransfer(Class<?> type)
     {
         mapFields = null;
         entityClass = null;

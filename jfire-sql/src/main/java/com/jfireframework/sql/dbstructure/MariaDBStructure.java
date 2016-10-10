@@ -15,10 +15,11 @@ import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.SqlEnumFieldUseInt;
 import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
+import com.jfireframework.sql.util.enumhandler.AbstractEnumHandler;
+import com.jfireframework.sql.util.enumhandler.EnumHandler;
 
 public class MariaDBStructure implements Structure
 {
@@ -110,6 +111,7 @@ public class MariaDBStructure implements Structure
         connection.prepareStatement(cache.toString()).execute();
     }
     
+    @SuppressWarnings("unchecked")
     private TypeAndLength getTypeAndLength(Field field)
     {
         try
@@ -117,11 +119,26 @@ public class MariaDBStructure implements Structure
             TypeAndLength result;
             if (Enum.class.isAssignableFrom(field.getType()))
             {
-                if (field.getType().isAnnotationPresent(SqlEnumFieldUseInt.class))
+                Class<?> fieldType = field.getType();
+                Class<? extends EnumHandler<?>> handlerClass = AbstractEnumHandler.getEnumBoundHandler((Class<? extends Enum<?>>) fieldType);
+                Class<?> returnType = handlerClass.getDeclaredMethod("getValue", Enum.class).getReturnType();
+                if (returnType == Integer.class || returnType == Long.class || returnType == Short.class)
                 {
                     return new TypeAndLength("int", 9);
                 }
-                else
+                else if (returnType == Float.class)
+                {
+                    return new TypeAndLength("float", 0);
+                }
+                else if (returnType == Double.class)
+                {
+                    return new TypeAndLength("double", 0);
+                }
+                else if (returnType == Boolean.class)
+                {
+                    return new TypeAndLength("tinyint", 1);
+                }
+                else if (returnType == String.class)
                 {
                     if (field.isAnnotationPresent(Column.class) && field.getAnnotation(Column.class).length() != -1)
                     {

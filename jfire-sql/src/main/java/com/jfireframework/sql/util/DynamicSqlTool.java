@@ -7,12 +7,13 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
-import com.jfireframework.sql.annotation.SqlEnumFieldUseInt;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.MysqlPage;
 import com.jfireframework.sql.util.MapperBuilder.InvokeNameAndType;
 import com.jfireframework.sql.util.MapperBuilder.SqlContext;
+import com.jfireframework.sql.util.enumhandler.AbstractEnumHandler;
+import com.jfireframework.sql.util.enumhandler.EnumHandler;
 
 public class DynamicSqlTool
 {
@@ -51,7 +52,7 @@ public class DynamicSqlTool
                     section = sql.substring(pre, now);
                     now++;
                     pre = now;
-                    context += bk + "builder.append(" + buildParam(section, paramNames, paramTypes).getInvokeName() + ");\n";
+                    context += bk + "builder.append(" + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ");\n";
                     break;
                 case '[':
                     section = sql.substring(pre, now);
@@ -59,7 +60,7 @@ public class DynamicSqlTool
                     pre = now + 1;
                     now = sql.indexOf(']', pre);
                     section = sql.substring(pre, now).trim();
-                    context += bk + "if(" + createVarIf(section, paramNames, paramTypes) + ")\n";
+                    context += bk + "if(" + createVarIf(section, paramNames, paramTypes, sqlContext) + ")\n";
                     context += bk + "{\n";
                     bk += "\t";
                     now++;
@@ -83,18 +84,18 @@ public class DynamicSqlTool
                     {
                         section = sql.substring(pre, now);
                         section = section.substring(1);
-                        context = _handleWithTidle(context, section, paramNames, paramTypes, sql);
+                        context = _handleWithTidle(context, section, paramNames, paramTypes, sql, sqlContext);
                     }
                     else
                     {
                         section = sql.substring(pre, now);
                         if (section.startsWith("%") || section.endsWith("%"))
                         {
-                            context += bk + "list.add(" + buildParam(section, paramNames, paramTypes).getInvokeName() + ");\n";
+                            context += bk + "list.add(" + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ");\n";
                         }
                         else
                         {
-                            context += bk + "list.add(($w)(" + buildParam(section, paramNames, paramTypes).getInvokeName() + "));\n";
+                            context += bk + "list.add(($w)(" + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + "));\n";
                         }
                     }
                     pre = now;
@@ -153,53 +154,53 @@ public class DynamicSqlTool
         }
     }
     
-    private static String _handleWithTidle(String context, String section, String[] paramNames, Class<?>[] paramTypes, String sql) throws SecurityException, NoSuchFieldException
+    private static String _handleWithTidle(String context, String section, String[] paramNames, Class<?>[] paramTypes, String sql, SqlContext sqlContext) throws SecurityException, NoSuchFieldException
     {
         String bk = "\t";
         Class<?> paramType = getParamType(section, paramNames, paramTypes, sql);
         if (paramType.equals(String.class))
         {
-            context += bk + "{\n" + bk + "\tString[] tmp = ((String)" + buildParam(section, paramNames, paramTypes).getInvokeName() + ").split(\",\");\n";
+            context += bk + "{\n" + bk + "\tString[] tmp = ((String)" + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ").split(\",\");\n";
         }
         else if (paramType.equals(String[].class))
         {
-            context += bk + bk + "{\n" + bk + "\n" + bk + "\tString[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+            context += bk + bk + "{\n" + bk + "\n" + bk + "\tString[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
         }
         else if (paramType.equals(int[].class))
         {
-            context += bk + "{\n" + bk + "\tint[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+            context += bk + "{\n" + bk + "\tint[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
         }
         else if (paramType.equals(Integer[].class))
         {
-            context += bk + "{\n" + bk + "\tInteger[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+            context += bk + "{\n" + bk + "\tInteger[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
         }
         else if (paramType.equals(long[].class))
         {
-            context += bk + "{\n" + bk + "\tlong[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+            context += bk + "{\n" + bk + "\tlong[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
         }
         else if (paramType.equals(Long[].class))
         {
-            context += bk + "{\n" + bk + "\tLong[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+            context += bk + "{\n" + bk + "\tLong[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
         }
         else if (paramType.equals(float[].class))
         {
-            context += bk + "{\n" + bk + "\tfloat[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+            context += bk + "{\n" + bk + "\tfloat[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
         }
         else if (paramType.equals(Float[].class))
         {
-            context += bk + "{\n" + bk + "\tFloat[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+            context += bk + "{\n" + bk + "\tFloat[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
         }
         else if (paramType.equals(double[].class))
         {
-            context += bk + "{\n" + bk + "\tdouble[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+            context += bk + "{\n" + bk + "\tdouble[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
         }
         else if (paramType.equals(Double[].class))
         {
-            context += bk + "{\n" + bk + "\tDouble[] tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+            context += bk + "{\n" + bk + "\tDouble[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
         }
         else if (List.class.isAssignableFrom(paramType))
         {
-            context += bk + "{\n" + bk + "\tjava.util.List tmp = " + buildParam(section, paramNames, paramTypes).getInvokeName() + ";\n";
+            context += bk + "{\n" + bk + "\tjava.util.List tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
         }
         else
         {
@@ -243,7 +244,8 @@ public class DynamicSqlTool
      * @throws NoSuchFieldException
      * @throws SecurityException
      */
-    private static InvokeNameAndType buildParam(String inject, String[] paramNames, Class<?>[] paramTypes) throws NoSuchFieldException, SecurityException
+    @SuppressWarnings("unchecked")
+    private static InvokeNameAndType buildParam(String inject, String[] paramNames, Class<?>[] paramTypes, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
     {
         boolean before = false;
         boolean after = false;
@@ -267,14 +269,10 @@ public class DynamicSqlTool
             }
             if (Enum.class.isAssignableFrom(paramTypes[index]))
             {
-                if (paramTypes[index].isAnnotationPresent(SqlEnumFieldUseInt.class))
-                {
-                    result += "$" + (index + 1) + ".ordinal()";
-                }
-                else
-                {
-                    result += "$" + (index + 1) + ".name()";
-                }
+                Class<? extends EnumHandler<?>> handlerType = AbstractEnumHandler.getEnumBoundHandler((Class<? extends Enum<?>>) paramTypes[index]);
+                String fieldName = "enumHandler$" + System.nanoTime();
+                sqlContext.addEnumHandler(fieldName, (Class<? extends Enum<?>>) paramTypes[index], handlerType);
+                result += fieldName + ".getValue($" + (index + 1) + ")";
             }
             else
             {
@@ -300,14 +298,10 @@ public class DynamicSqlTool
             }
             if (Enum.class.isAssignableFrom(returnType))
             {
-                if (returnType.isAnnotationPresent(SqlEnumFieldUseInt.class))
-                {
-                    result += "$" + (index + 1) + returns[0] + ".ordinal()";
-                }
-                else
-                {
-                    result += "$" + (index + 1) + returns[0] + ".name()";
-                }
+                Class<? extends EnumHandler<?>> handlerType = AbstractEnumHandler.getEnumBoundHandler((Class<? extends Enum<?>>) returnType);
+                String fieldName = "enumHandler$" + System.nanoTime();
+                sqlContext.addEnumHandler(fieldName, (Class<? extends Enum<?>>) returnType, handlerType);
+                result += fieldName + ".getValue($" + (index + 1) + returns[0] + ")";
             }
             else
             {
@@ -534,9 +528,9 @@ public class DynamicSqlTool
                         {
                             cache.append(sqlContext.getDbColName(var));
                         }
-                        else if (sqlContext.getStaticField(var) != null)
+                        else if (sqlContext.getStaticValue(var) != null)
                         {
-                            cache.append(sqlContext.getStaticField(var).get(null));
+                            cache.append(sqlContext.getStaticValue(var));
                         }
                         else
                         {
@@ -560,9 +554,9 @@ public class DynamicSqlTool
                             {
                                 cache.append(sqlContext.getDbColName(var));
                             }
-                            else if (sqlContext.getStaticField(var) != null)
+                            else if (sqlContext.getStaticValue(var) != null)
                             {
-                                cache.append(sqlContext.getStaticField(var).get(null));
+                                cache.append(sqlContext.getStaticValue(var));
                             }
                             else
                             {
@@ -598,10 +592,8 @@ public class DynamicSqlTool
         while (start < sql.length())
         {
             char c = sql.charAt(start);
-            if (
-                c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
-                        || c == '#' || c == '+' || c == '-' || c == '(' || c == ')' || c == ']' || c == '['
-            )
+            if (c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
+                    || c == '#' || c == '+' || c == '-' || c == '(' || c == ')' || c == ']' || c == '[')
             {
                 break;
             }
@@ -638,7 +630,7 @@ public class DynamicSqlTool
                     countSql = annoCountSql;
                 }
                 sqlContext.setCountSql(countSql);
-                List<InvokeNameAndType> invokeNameAndTypes = buildParams(sqlContext.getInjectNames(), paramNames, paramTypes);
+                List<InvokeNameAndType> invokeNameAndTypes = buildParams(sqlContext.getInjectNames(), paramNames, paramTypes, sqlContext);
                 sqlContext.setQueryParams(invokeNameAndTypes);
                 querySql += " limit ?,?";
                 sqlContext.setSql(querySql);
@@ -650,7 +642,7 @@ public class DynamicSqlTool
         }
         else
         {
-            List<InvokeNameAndType> invokeNameAndTypes = buildParams(sqlContext.getInjectNames(), paramNames, paramTypes);
+            List<InvokeNameAndType> invokeNameAndTypes = buildParams(sqlContext.getInjectNames(), paramNames, paramTypes, sqlContext);
             sqlContext.setQueryParams(invokeNameAndTypes);
         }
     }
@@ -701,7 +693,7 @@ public class DynamicSqlTool
      * @throws SecurityException
      * @throws NoSuchFieldException
      */
-    private static List<InvokeNameAndType> buildParams(List<String> injects, String[] paramNames, Class<?>[] paramTypes) throws NoSuchFieldException, SecurityException
+    private static List<InvokeNameAndType> buildParams(List<String> injects, String[] paramNames, Class<?>[] paramTypes, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
     {
         List<InvokeNameAndType> list = new LinkedList<MapperBuilder.InvokeNameAndType>();
         int length = injects.size();
@@ -711,7 +703,7 @@ public class DynamicSqlTool
         }
         for (String inject : injects)
         {
-            list.add(buildParam(inject, paramNames, paramTypes));
+            list.add(buildParam(inject, paramNames, paramTypes, sqlContext));
         }
         return list;
     }
@@ -798,7 +790,7 @@ public class DynamicSqlTool
      * @throws NoSuchFieldException
      * @throws SecurityException
      */
-    private static String createVarIf(String conditionStatment, String[] paramNames, Class<?>[] types) throws NoSuchFieldException, SecurityException
+    private static String createVarIf(String conditionStatment, String[] paramNames, Class<?>[] types, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
     {
         conditionStatment = conditionStatment.trim();
         StringCache cache = new StringCache();
@@ -829,7 +821,7 @@ public class DynamicSqlTool
                 {
                     var = conditionStatment.substring(varStart, flag);
                 }
-                invokeNameAndType = buildParam(var, paramNames, types);
+                invokeNameAndType = buildParam(var, paramNames, types, sqlContext);
                 continue;
             }
             else if (c == '>' || c == '<' || c == '!' || c == '=')

@@ -6,6 +6,11 @@ import java.sql.SQLException;
 public class ShortTransfer extends AbstractResultsetTransfer<Short>
 {
     
+    public ShortTransfer(Class<?> type)
+    {
+        super(type);
+    }
+    
     @Override
     protected Short valueOf(ResultSet resultSet) throws Exception
     {
