@@ -16,6 +16,19 @@ import com.jfireframework.sql.test.entity.User.Enumstring;
 
 public class InterfaceTest extends BaseTestSupport
 {
+    
+    @Test
+    public void enumTest()
+    {
+        UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
+        Enumint value = userDAO.selectEnumInt(1);
+        assertEquals(Enumint.a, value);
+        User user = userDAO.selectUserByEnumint(Enumint.b);
+        assertEquals("林曦", user.getName());
+        user = userDAO.selectUserEnumintA();
+        assertEquals("林曦", user.getName());
+    }
+    
     @Test
     public void getUser()
     {

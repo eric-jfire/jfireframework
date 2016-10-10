@@ -5,6 +5,11 @@ import java.util.Date;
 
 public class UtilDateTransfer extends AbstractResultsetTransfer<Date>
 {
+    public UtilDateTransfer(Class<?> type)
+    {
+        super(type);
+    }
+    
     @Override
     protected Date valueOf(ResultSet resultSet) throws Exception
     {

@@ -17,11 +17,13 @@ import java.util.Map.Entry;
 import java.util.Set;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.sql.annotation.EnumBoundHandler;
 import com.jfireframework.sql.annotation.Query;
-import com.jfireframework.sql.annotation.SqlEnumFieldUseInt;
 import com.jfireframework.sql.annotation.Update;
 import com.jfireframework.sql.function.SqlSession;
 import com.jfireframework.sql.function.mapper.Mapper;
@@ -31,6 +33,7 @@ import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.BooleanTransfer;
 import com.jfireframework.sql.resultsettransfer.DoubleTransfer;
+import com.jfireframework.sql.resultsettransfer.EnumTransfer;
 import com.jfireframework.sql.resultsettransfer.FixationBeanTransfer;
 import com.jfireframework.sql.resultsettransfer.FloatTransfer;
 import com.jfireframework.sql.resultsettransfer.IntegerTransfer;
@@ -42,6 +45,9 @@ import com.jfireframework.sql.resultsettransfer.TimeStampTransfer;
 import com.jfireframework.sql.resultsettransfer.TimeTransfer;
 import com.jfireframework.sql.resultsettransfer.UtilDateTransfer;
 import com.jfireframework.sql.resultsettransfer.VariableBeanTransfer;
+import com.jfireframework.sql.util.MapperBuilder.SqlContext.EnumHandlerInfo;
+import com.jfireframework.sql.util.enumhandler.EnumHandler;
+import com.jfireframework.sql.util.enumhandler.EnumStringHandler;
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
 import javassist.ClassPool;
@@ -293,9 +299,19 @@ public class MapperBuilder
             methodBody.append("}\n");
         }
         logger.debug("为{}.{}创建的方法体是\n{}\n", method.getDeclaringClass().getName(), method.getName(), methodBody.toString());
+        createEnumBoundHandlerField(sqlContext, weaveClass);
         CtMethod targetMethod = forCtMethod(method, weaveClass);
         targetMethod.setBody(methodBody.toString());
         return targetMethod;
+    }
+    
+    private void createEnumBoundHandlerField(SqlContext sqlContext, CtClass ctClass) throws CannotCompileException, NotFoundException
+    {
+        for (EnumHandlerInfo each : sqlContext.enumHandlerInfos)
+        {
+            CtField ctField = new CtField(classPool.get(each.getHandlerType().getName()), each.getName(), ctClass);
+            ctClass.addField(ctField, StringUtil.format("new {}({}.class)", each.getHandlerType().getName(), each.getType().getName()));
+        }
     }
     
     private void logCode(StringCache methodBody, String sqlParamName, String paramsName)
@@ -335,7 +351,7 @@ public class MapperBuilder
         {
             Class<?> transferType = getTransferType(returnType);
             ctField = new CtField(classPool.get(transferType.getName()), fieldName, ctClass);
-            fieldInitStatement = StringUtil.format("new {}()", transferType.getName());
+            fieldInitStatement = StringUtil.format("new {}({}.class)", transferType.getName(), returnType.getName());
         }
         else
         {
@@ -408,19 +424,18 @@ public class MapperBuilder
         {
             return true;
         }
-        if (
-            type == Integer.class //
-                    || type == Short.class //
-                    || type == Long.class //
-                    || type == Float.class //
-                    || type == Double.class //
-                    || type == Boolean.class //
-                    || type == Date.class//
-                    || type == java.util.Date.class //
-                    || type == String.class //
-                    || type == Time.class//
-                    || type == Timestamp.class
-        )
+        if (type == Integer.class //
+                || type == Short.class //
+                || type == Long.class //
+                || type == Float.class //
+                || type == Double.class //
+                || type == Boolean.class //
+                || type == Date.class//
+                || type == java.util.Date.class //
+                || type == String.class //
+                || type == Time.class//
+                || type == Timestamp.class //
+                || Enum.class.isAssignableFrom(type))
         {
             return true;
         }
@@ -476,6 +491,10 @@ public class MapperBuilder
         {
             return TimeStampTransfer.class;
         }
+        else if (Enum.class.isAssignableFrom(type))
+        {
+            return EnumTransfer.class;
+        }
         else
         {
             // 程序不会走到这里
@@ -516,17 +535,6 @@ public class MapperBuilder
             else if (returnType == String.class)
             {
                 methodBody.append("pStat.setString(");
-            }
-            else if (Enum.class.isAssignableFrom(returnType))
-            {
-                if (returnType.isAnnotationPresent(SqlEnumFieldUseInt.class))
-                {
-                    methodBody.append("pStat.setInt(");
-                }
-                else
-                {
-                    methodBody.append("pStat.setString(");
-                }
             }
             else
             {
@@ -624,14 +632,15 @@ public class MapperBuilder
     
     public static class SqlContext
     {
-        private List<String>            injectNames    = new LinkedList<String>();
-        private Set<TableMetaData>      metaContexts   = new HashSet<TableMetaData>();
-        private Map<String, String>     dbColNameMap   = new HashMap<String, String>();
-        private Map<String, String>     fieldNameMap   = new HashMap<String, String>();
-        private Map<String, Field>      statifFieldMap = new HashMap<String, Field>();
+        private List<String>            injectNames      = new LinkedList<String>();
+        private Set<TableMetaData>      metaContexts     = new HashSet<TableMetaData>();
+        private Map<String, String>     dbColNameMap     = new HashMap<String, String>();
+        private Map<String, String>     fieldNameMap     = new HashMap<String, String>();
+        private Map<String, Object>     staticValueMap   = new HashMap<String, Object>();
         private String                  sql;
         private String                  countSql;
-        private List<InvokeNameAndType> queryParams;
+        private List<InvokeNameAndType> queryParams      = new LinkedList<MapperBuilder.InvokeNameAndType>();
+        private List<EnumHandlerInfo>   enumHandlerInfos = new LinkedList<MapperBuilder.SqlContext.EnumHandlerInfo>();
         
         public boolean hasMetaContext()
         {
@@ -678,6 +687,7 @@ public class MapperBuilder
             this.sql = sql;
         }
         
+        @SuppressWarnings("unchecked")
         public void addMetaData(TableMetaData metaData)
         {
             if (metaData == null)
@@ -701,13 +711,48 @@ public class MapperBuilder
                 dbColNameMap.put(prefix + each.getFieldName(), tablePrefix + each.getDbColName());
                 fieldNameMap.put(tablePrefix + each.getDbColName(), each.getFieldName());
             }
-            for (Entry<String, Field> each : metaData.staticFieldMap().entrySet())
+            try
             {
-                statifFieldMap.put(prefix + each.getKey(), each.getValue());
-                statifFieldMap.put(each.getKey(), each.getValue());
+                for (Entry<String, Field> each : metaData.staticFieldMap().entrySet())
+                {
+                    staticValueMap.put(prefix + each.getKey(), each.getValue().get(null));
+                    staticValueMap.put(each.getKey(), each.getValue().get(null));
+                }
+            }
+            catch (Exception e)
+            {
+                throw new JustThrowException(e);
+            }
+            for (Entry<String, Field> each : metaData.enumFieldMap().entrySet())
+            {
+                Class<? extends Enum<?>> fieldType = (Class<? extends Enum<?>>) each.getValue().getType();
+                Class<? extends EnumHandler<?>> ckass = null;
+                if (fieldType.isAnnotationPresent(EnumBoundHandler.class))
+                {
+                    ckass = fieldType.getAnnotation(EnumBoundHandler.class).value();
+                }
+                else
+                {
+                    ckass = EnumStringHandler.class;
+                }
+                try
+                {
+                    EnumHandler<?> enumHandler = ckass.getConstructor(Class.class).newInstance(fieldType);
+                    for (Enum<?> enumInstance : ReflectUtil.getAllEnumInstances(fieldType).values())
+                    {
+                        staticValueMap.put(fieldType.getSimpleName() + "." + enumInstance.name(), enumHandler.getValue(enumInstance));
+                        staticValueMap.put(enumInstance.name(), enumHandler.getValue(enumInstance));
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new JustThrowException(e);
+                }
+                
             }
         }
         
+        @SuppressWarnings("unchecked")
         public void addAliasName(String name, TableMetaData metaData)
         {
             if (metaData == null)
@@ -721,11 +766,100 @@ public class MapperBuilder
                 dbColNameMap.put(prefix + each.getFieldName(), prefix + each.getDbColName());
                 fieldNameMap.put(prefix + each.getDbColName(), each.getFieldName());
             }
-            for (Entry<String, Field> each : metaData.staticFieldMap().entrySet())
+            try
             {
-                statifFieldMap.put(prefix + each.getKey(), each.getValue());
-                statifFieldMap.put(each.getKey(), each.getValue());
+                for (Entry<String, Field> each : metaData.staticFieldMap().entrySet())
+                {
+                    staticValueMap.put(prefix + each.getKey(), each.getValue().get(null));
+                    staticValueMap.put(each.getKey(), each.getValue().get(null));
+                }
             }
+            catch (Exception e)
+            {
+                throw new JustThrowException(e);
+            }
+            for (Entry<String, Field> each : metaData.enumFieldMap().entrySet())
+            {
+                Class<? extends Enum<?>> fieldType = (Class<? extends Enum<?>>) each.getValue().getType();
+                Class<? extends EnumHandler<?>> ckass = null;
+                if (fieldType.isAnnotationPresent(EnumBoundHandler.class))
+                {
+                    ckass = fieldType.getAnnotation(EnumBoundHandler.class).value();
+                }
+                else
+                {
+                    ckass = EnumStringHandler.class;
+                }
+                try
+                {
+                    EnumHandler<?> enumHandler = ckass.getConstructor(Class.class).newInstance(fieldType);
+                    for (Enum<?> enumInstance : ReflectUtil.getAllEnumInstances(fieldType).values())
+                    {
+                        staticValueMap.put(fieldType.getSimpleName() + "." + enumInstance.name(), enumHandler.getValue(enumInstance));
+                        staticValueMap.put(enumInstance.name(), enumHandler.getValue(enumInstance));
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new JustThrowException(e);
+                }
+                
+            }
+        }
+        
+        public static class EnumHandlerInfo
+        {
+            private Class<? extends Enum<?>>        type;
+            private Class<? extends EnumHandler<?>> handlerType;
+            private String                          name;
+            
+            public EnumHandlerInfo(String name, Class<? extends Enum<?>> type, Class<? extends EnumHandler<?>> handlerType)
+            {
+                this.name = name;
+                this.type = type;
+                this.handlerType = handlerType;
+            }
+            
+            public Class<? extends Enum<?>> getType()
+            {
+                return type;
+            }
+            
+            public void setType(Class<? extends Enum<?>> type)
+            {
+                this.type = type;
+            }
+            
+            public Class<? extends EnumHandler<?>> getHandlerType()
+            {
+                return handlerType;
+            }
+            
+            public void setHandlerType(Class<? extends EnumHandler<?>> handlerType)
+            {
+                this.handlerType = handlerType;
+            }
+            
+            public String getName()
+            {
+                return name;
+            }
+            
+            public void setName(String name)
+            {
+                this.name = name;
+            }
+            
+        }
+        
+        public void addEnumHandler(String name, Class<? extends Enum<?>> enumType, Class<? extends EnumHandler<?>> handleType)
+        {
+            enumHandlerInfos.add(new EnumHandlerInfo(name, enumType, handleType));
+        }
+        
+        public List<EnumHandlerInfo> enumHandlerInfos()
+        {
+            return enumHandlerInfos;
         }
         
         public String getDbColName(String fieldName)
@@ -738,10 +872,11 @@ public class MapperBuilder
             return fieldNameMap.get(dbColName);
         }
         
-        public Field getStaticField(String name)
+        public Object getStaticValue(String name)
         {
-            return statifFieldMap.get(name);
+            return staticValueMap.get(name);
         }
+        
     }
     
     /**

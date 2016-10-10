@@ -16,6 +16,15 @@ public interface UserDAO
     @Query(sql = "select * from User where id=$id and enumint=$enumint and enumstring=$enumstring", paramNames = "id,enumint,enumstring")
     public User selectUser(int id, Enumint enumint, Enumstring enumstring);
     
+    @Query(sql = "select enumint from User where id=$id", paramNames = "id")
+    public Enumint selectEnumInt(int id);
+    
+    @Query(sql = "select * from User where enumint=$enumint", paramNames = "enumint")
+    public User selectUserByEnumint(Enumint enumint);
+    
+    @Query(sql = "select * from User where enumint=Enumint.b", paramNames = "")
+    public User selectUserEnumintA();
+    
     @Query(sql = "select * from User [ $name.length()>2] where name like $%name% #", paramNames = "name")
     public List<User> functionUse(String name);
     

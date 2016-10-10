@@ -6,6 +6,11 @@ import java.sql.SQLException;
 public class DoubleTransfer extends AbstractResultsetTransfer<Double>
 {
     
+    public DoubleTransfer(Class<?> type)
+    {
+        super(type);
+    }
+
     @Override
     protected Double valueOf(ResultSet resultSet) throws Exception
     {

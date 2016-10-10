@@ -6,6 +6,11 @@ import java.sql.SQLException;
 public class IntegerTransfer extends AbstractResultsetTransfer<Integer>
 {
     
+    public IntegerTransfer(Class<?> type)
+    {
+        super(type);
+    }
+    
     @Override
     protected Integer valueOf(ResultSet resultSet) throws SQLException
     {

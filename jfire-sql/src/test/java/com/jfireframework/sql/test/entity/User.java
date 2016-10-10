@@ -1,14 +1,15 @@
 package com.jfireframework.sql.test.entity;
 
+import com.jfireframework.sql.annotation.EnumBoundHandler;
 import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.annotation.Id;
-import com.jfireframework.sql.annotation.SqlEnumFieldUseInt;
 import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.util.enumhandler.EnumOrdinalHandler;
 
 @TableEntity(name = "user")
 public class User
 {
-    @SqlEnumFieldUseInt
+    @EnumBoundHandler(value = EnumOrdinalHandler.class)
     public static enum Enumint
     {
         a, b;

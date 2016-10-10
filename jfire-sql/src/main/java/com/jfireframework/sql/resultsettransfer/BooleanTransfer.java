@@ -6,6 +6,11 @@ import java.sql.SQLException;
 public class BooleanTransfer extends AbstractResultsetTransfer<Boolean>
 {
     
+    public BooleanTransfer(Class<?> type)
+    {
+        super(type);
+    }
+    
     @Override
     protected Boolean valueOf(ResultSet resultSet) throws Exception
     {
