@@ -1,15 +1,18 @@
 package com.jfireframework.eventbus.eventcontext.impl;
 
-import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.bus.EventBus;
+import com.jfireframework.eventbus.event.EventConfig;
 import com.jfireframework.eventbus.eventcontext.RowEventContext;
+import com.jfireframework.eventbus.executor.EventHandlerExecutor;
+import com.jfireframework.eventbus.handler.EventHandler;
 
-public class RowEventContextImpl extends NormalEventContext implements RowEventContext
+public class RowEventContextImpl<T extends Enum<? extends EventConfig>> extends NormalEventContext<T> implements RowEventContext<T>
 {
     private final Object rowkey;
     
-    public RowEventContextImpl(Object eventData, Enum<? extends Event<?>> event, Object rowkey)
+    public RowEventContextImpl(Object eventData, T event, EventHandler<T, ?>[] combination, EventHandlerExecutor executor, EventBus eventBus, Object rowkey)
     {
-        super(eventData, event);
+        super(eventData, event, combination, executor, eventBus);
         this.rowkey = rowkey;
         if (rowkey == null)
         {

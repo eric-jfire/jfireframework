@@ -1,9 +1,9 @@
 package com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async.event;
 
-import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventConfig;
 import com.jfireframework.eventbus.event.ParallelLevel;
 
-public enum Message implements Event<Message>
+public enum Message implements EventConfig<Message>
 {
     recive;
     

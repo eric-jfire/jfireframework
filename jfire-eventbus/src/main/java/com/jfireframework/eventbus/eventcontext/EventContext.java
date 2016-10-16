@@ -1,9 +1,25 @@
 package com.jfireframework.eventbus.eventcontext;
 
-import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventConfig;
+import com.jfireframework.eventbus.executor.EventHandlerExecutor;
+import com.jfireframework.eventbus.handler.EventHandler;
 
-public interface EventContext
+public interface EventContext<T extends Enum<? extends EventConfig>>
 {
+    /**
+     * 返回该事件绑定执行器
+     * 
+     * @return
+     */
+    public EventHandlerExecutor executor();
+    
+    /**
+     * 返回该事件绑定的处理器
+     * 
+     * @return
+     */
+    public EventHandler<T, ?>[] combinationHandlers();
+    
     /**
      * 等待直到该事件被处理完成
      */
@@ -44,11 +60,6 @@ public interface EventContext
     public void signal();
     
     /**
-     * 等待该任务的完成。并且在等待的过程中。尝试去完成总线上的别的任务。尽量避免让线程陷入无谓等待
-     */
-    public void join();
-    
-    /**
      * 等待该事件的完成，最多等待指定的毫秒数
      * 
      * @param mills
@@ -74,6 +85,6 @@ public interface EventContext
      * 
      * @return
      */
-    public Enum<? extends Event<?>> getEvent();
+    public T getEvent();
     
 }

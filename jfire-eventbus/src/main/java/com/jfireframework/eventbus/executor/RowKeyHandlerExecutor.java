@@ -1,28 +1,28 @@
-package com.jfireframework.eventbus.handler;
+package com.jfireframework.eventbus.executor;
 
 import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.concurrent.MPSCQueue;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.event.Event;
 import com.jfireframework.eventbus.eventcontext.EventContext;
 import com.jfireframework.eventbus.eventcontext.RowEventContext;
+import com.jfireframework.eventbus.handler.EventHandler;
 import sun.misc.Unsafe;
 
-public class RowKeyHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
+public class RowKeyHandlerExecutor implements EventHandlerExecutor
 {
     private final ConcurrentHashMap<Object, RowBucket> map = new ConcurrentHashMap<Object, RowBucket>();
     
     static class RowBucket
     {
-        public static final int                  IN_WORK        = 1;
-        public static final int                  END_OF_WORK    = -1;
-        public static final int                  SENDING_LEFT   = -2;
-        public static final int                  END_OF_SENDING = -3;
-        private volatile int                     status         = IN_WORK;
-        private final MPSCQueue<RowEventContext> eventQueue     = new MPSCQueue<RowEventContext>();
-        private static final long                offset         = ReflectUtil.getFieldOffset("status", RowBucket.class);
-        private static final Unsafe              unsafe         = ReflectUtil.getUnsafe();
+        public static final int                     IN_WORK        = 1;
+        public static final int                     END_OF_WORK    = -1;
+        public static final int                     SENDING_LEFT   = -2;
+        public static final int                     END_OF_SENDING = -3;
+        private volatile int                        status         = IN_WORK;
+        private final MPSCQueue<RowEventContext<?>> eventQueue     = new MPSCQueue<RowEventContext<?>>();
+        private static final long                   offset         = ReflectUtil.getFieldOffset("status", RowBucket.class);
+        private static final Unsafe                 unsafe         = ReflectUtil.getUnsafe();
         
         public boolean takeControlOfSendingLeft()
         {
@@ -38,15 +38,10 @@ public class RowKeyHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
         }
     }
     
-    public RowKeyHandlerContextImpl(Enum<? extends Event<T>> event)
-    {
-        super(event);
-    }
-    
     @Override
-    public void handle(EventContext eventContext, EventBus eventBus)
+    public void handle(EventContext<?> eventContext, EventBus eventBus)
     {
-        RowEventContext rowEventContext = (RowEventContext) eventContext;
+        RowEventContext<?> rowEventContext = (RowEventContext<?>) eventContext;
         Object rowKey = rowEventContext.rowkey();
         RowBucket rowBucket = map.get(rowKey);
         if (rowBucket != null)
@@ -79,7 +74,7 @@ public class RowKeyHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
     
     private void trySendLeft(RowBucket rowBucket, EventBus eventBus)
     {
-        EventContext rowEventContext;
+        EventContext<?> rowEventContext;
         int status = rowBucket.status;
         if (status == RowBucket.IN_WORK || status == RowBucket.SENDING_LEFT)
         {
@@ -108,14 +103,17 @@ public class RowKeyHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
         } while (true);
     }
     
-    private void _handle(RowEventContext eventContext, EventBus eventBus)
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private void _handle(RowEventContext<?> eventContext, EventBus eventBus)
     {
         try
         {
-            for (EventHandler<T> each : handlers)
+            Object trans = eventContext.getEventData();
+            for (EventHandler each : eventContext.combinationHandlers())
             {
-                each.handle(eventContext, eventBus);
+                trans = each.handle(trans, eventBus);
             }
+            eventContext.setResult(trans);
         }
         catch (Throwable e)
         {

@@ -1,25 +1,21 @@
-package com.jfireframework.eventbus.handler;
+package com.jfireframework.eventbus.executor;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.concurrent.MPSCQueue;
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.event.Event;
 import com.jfireframework.eventbus.eventcontext.EventContext;
+import com.jfireframework.eventbus.handler.EventHandler;
 
-public class SerialHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
+public class EventSerialHandlerExecutor implements EventHandlerExecutor
 {
-    private static final int              idle   = 0;
-    private static final int              busy   = 1;
-    private AtomicInteger                 state  = new AtomicInteger(idle);
-    private final MPSCQueue<EventContext> events = new MPSCQueue<EventContext>();
+    private static final int                 idle   = 0;
+    private static final int                 busy   = 1;
+    private AtomicInteger                    state  = new AtomicInteger(idle);
+    private final MPSCQueue<EventContext<?>> events = new MPSCQueue<EventContext<?>>();
     
-    public SerialHandlerContextImpl(Enum<? extends Event<T>> event)
-    {
-        super(event);
-    }
-    
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public void handle(EventContext eventContext, EventBus eventBus)
+    public void handle(EventContext<?> eventContext, EventBus eventBus)
     {
         events.offer(eventContext);
         do
@@ -31,10 +27,12 @@ public class SerialHandlerContextImpl<T> extends AbstractEventHandlerContext<T>
                 {
                     try
                     {
-                        for (EventHandler<T> each : handlers)
+                        Object trans = eventContext.getEventData();
+                        for (EventHandler each : eventContext.combinationHandlers())
                         {
-                            each.handle(eventContext, eventBus);
+                            trans = each.handle(trans, eventBus);
                         }
+                        eventContext.setResult(trans);
                     }
                     catch (Throwable e)
                     {

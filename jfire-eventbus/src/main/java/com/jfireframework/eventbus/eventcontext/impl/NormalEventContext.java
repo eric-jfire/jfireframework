@@ -2,50 +2,32 @@ package com.jfireframework.eventbus.eventcontext.impl;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
-import com.jfireframework.baseutil.concurrent.MPMCQueue;
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventConfig;
 import com.jfireframework.eventbus.eventcontext.EventContext;
-import com.jfireframework.eventbus.eventcontext.MoreContextInfo;
-import com.jfireframework.eventbus.handler.EventHandlerContext;
+import com.jfireframework.eventbus.executor.EventHandlerExecutor;
+import com.jfireframework.eventbus.handler.EventHandler;
 
-public class NormalEventContext implements EventContext, MoreContextInfo
+public class NormalEventContext<T extends Enum<? extends EventConfig>> implements EventContext<T>
 {
-    protected EventBus                       eventBus;
-    protected MPMCQueue<EventContext>        eventQueue;
-    protected EventHandlerContext<?>         handlerContext;
-    protected final Object                   eventData;
-    protected final Enum<? extends Event<?>> event;
-    protected volatile boolean               finished = false;
-    protected Thread                         owner;
-    protected volatile boolean               await    = false;
-    protected Throwable                      e;
-    protected Object                         result;
+    protected final EventBus             eventBus;
+    protected final EventHandlerExecutor executor;
+    protected final EventHandler<T, ?>[] combination;
+    protected final Object               eventData;
+    protected final T                    event;
+    protected volatile boolean           finished = false;
+    protected Thread                     owner;
+    protected volatile boolean           await    = false;
+    protected Throwable                  e;
+    protected Object                     result;
     
-    public NormalEventContext(Object eventData, Enum<? extends Event<?>> event)
+    public NormalEventContext(Object eventData, T event, EventHandler<T, ?>[] combination, EventHandlerExecutor executor, EventBus eventBus)
     {
         this.eventData = eventData;
         this.event = event;
-    }
-    
-    @Override
-    public void join()
-    {
-        owner = Thread.currentThread();
-        await = true;
-        while (finished == false)
-        {
-            EventContext another = eventQueue.poll();
-            if (another != null)
-            {
-                EventHandlerContext<?> handlerContext = ((MoreContextInfo) another).getEventHandlerContext();
-                handlerContext.handle(another, eventBus);
-            }
-            else
-            {
-                LockSupport.park();
-            }
-        }
+        this.combination = combination;
+        this.executor = executor;
+        this.eventBus = eventBus;
     }
     
     @Override
@@ -118,7 +100,7 @@ public class NormalEventContext implements EventContext, MoreContextInfo
     }
     
     @Override
-    public Enum<? extends Event<?>> getEvent()
+    public T getEvent()
     {
         return event;
     }
@@ -136,28 +118,14 @@ public class NormalEventContext implements EventContext, MoreContextInfo
     }
     
     @Override
-    public EventHandlerContext<?> getEventHandlerContext()
+    public EventHandlerExecutor executor()
     {
-        return handlerContext;
+        return executor;
     }
     
     @Override
-    public MPMCQueue<EventContext> getEventQueue()
+    public EventHandler<T, ?>[] combinationHandlers()
     {
-        return eventQueue;
-    }
-    
-    @Override
-    public void setMoreInfo(EventHandlerContext<?> eventHandlerContext, EventBus eventBus, MPMCQueue<EventContext> eventQueue)
-    {
-        this.eventBus = eventBus;
-        this.eventQueue = eventQueue;
-        handlerContext = eventHandlerContext;
-    }
-    
-    @Override
-    public EventBus getEventBus()
-    {
-        return eventBus;
+        return combination;
     }
 }

@@ -4,7 +4,7 @@ import javax.annotation.Resource;
 import com.jfireframework.context.ContextInitFinish;
 import com.jfireframework.context.event.EventPoster;
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventConfig;
 import com.jfireframework.eventbus.eventcontext.EventContext;
 import com.jfireframework.eventbus.handler.EventHandler;
 
@@ -39,7 +39,7 @@ public class HaftHandler implements EventHandler<SmsEvent>, ContextInitFinish
     }
     
     @Override
-    public Enum<? extends Event<SmsEvent>> interest()
+    public Enum<? extends EventConfig<SmsEvent>> interest()
     {
         return SmsEvent.halt;
     }

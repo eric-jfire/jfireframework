@@ -1,11 +1,9 @@
 package com.jfireframework.eventbus;
 
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.eventcontext.EventContext;
 import com.jfireframework.eventbus.handler.EventHandler;
 
-public class PrintHandler implements EventHandler<Print>
+public class PrintHandler implements EventHandler<Print, String>
 {
     
     @Override
@@ -15,13 +13,14 @@ public class PrintHandler implements EventHandler<Print>
     }
     
     @Override
-    public void handle(EventContext event, EventBus eventBus)
+    public Object handle(String data, EventBus eventBus)
     {
-        System.out.println("打印:" + event.getEventData());
+        System.out.println("打印:" + data);
+        return null;
     }
     
     @Override
-    public Enum<? extends Event<Print>> interest()
+    public Print interest()
     {
         return Print.one;
     }

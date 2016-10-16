@@ -1,11 +1,9 @@
 package com.jfireframework.eventbus;
 
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.eventcontext.EventContext;
 import com.jfireframework.eventbus.handler.EventHandler;
 
-public class RowPrint implements EventHandler<Print>
+public class RowPrint implements EventHandler<Print, String>
 {
     private long t0;
     
@@ -16,9 +14,9 @@ public class RowPrint implements EventHandler<Print>
     }
     
     @Override
-    public void handle(EventContext eventContext, EventBus eventBus)
+    public Object handle(String data, EventBus eventBus)
     {
-        String value = (String) eventContext.getEventData();
+        String value = data;
         if (t0 == 0)
         {
             t0 = System.currentTimeMillis();
@@ -34,11 +32,11 @@ public class RowPrint implements EventHandler<Print>
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
+        return null;
     }
     
     @Override
-    public Enum<? extends Event<Print>> interest()
+    public Print interest()
     {
         return Print.single;
     }

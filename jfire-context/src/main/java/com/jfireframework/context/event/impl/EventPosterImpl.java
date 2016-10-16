@@ -6,18 +6,18 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import com.jfireframework.context.event.EventPoster;
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.bus.impl.FlexibleQueueEventBusImpl;
-import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.bus.impl.IoEventBus;
+import com.jfireframework.eventbus.event.EventConfig;
 import com.jfireframework.eventbus.eventcontext.EventContext;
 import com.jfireframework.eventbus.handler.EventHandler;
 import com.jfireframework.eventbus.util.AtomicIntergerIdleCount;
-import com.jfireframework.eventbus.util.IdleCount;
+import com.jfireframework.eventbus.util.WorkerCount;
 
 public class EventPosterImpl implements EventPoster
 {
     @Resource
     private List<EventHandler<?>> handlers           = new LinkedList<EventHandler<?>>();
-    private IdleCount             idleCount          = new AtomicIntergerIdleCount();
+    private WorkerCount             idleCount          = new AtomicIntergerIdleCount();
     private int                   coreEventThreadNum = Runtime.getRuntime().availableProcessors();
     private long                  waitTime           = 60 * 1000;;
     private EventBus              eventBus;
@@ -25,7 +25,7 @@ public class EventPosterImpl implements EventPoster
     @PostConstruct
     public void init()
     {
-        eventBus = new FlexibleQueueEventBusImpl(idleCount, waitTime, coreEventThreadNum);
+        eventBus = new IoEventBus(idleCount, waitTime, coreEventThreadNum);
         for (EventHandler<?> handler : handlers)
         {
             eventBus.addHandler(handler);
@@ -40,13 +40,13 @@ public class EventPosterImpl implements EventPoster
     }
     
     @Override
-    public EventContext post(Object data, Enum<? extends Event<?>> event, Object rowkey)
+    public EventContext post(Object data, Enum<? extends EventConfig<?>> event, Object rowkey)
     {
         return eventBus.post(data, event, rowkey);
     }
     
     @Override
-    public EventContext post(Object data, Enum<? extends Event<?>> event)
+    public EventContext post(Object data, Enum<? extends EventConfig<?>> event)
     {
         return eventBus.post(data, event);
     }

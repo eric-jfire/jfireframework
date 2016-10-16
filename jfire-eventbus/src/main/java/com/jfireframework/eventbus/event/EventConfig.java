@@ -1,6 +1,6 @@
 package com.jfireframework.eventbus.event;
 
-public interface Event<T>
+public interface EventConfig
 {
     public ParallelLevel parallelLevel();
 }

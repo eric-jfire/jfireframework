@@ -4,16 +4,15 @@ import java.util.LinkedList;
 import java.util.List;
 import org.junit.Test;
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.bus.impl.FlexibleQueueEventBusImpl;
+import com.jfireframework.eventbus.bus.impl.IoEventBus;
 import com.jfireframework.eventbus.eventcontext.EventContext;
-import com.jfireframework.eventbus.util.AtomicIntergerIdleCount;
 
 public class PrintTest
 {
     @Test
     public void test() throws InterruptedException
     {
-        EventBus bus = new FlexibleQueueEventBusImpl(new AtomicIntergerIdleCount(), 200, 8);
+        EventBus bus = new IoEventBus(1, 20, 200);
         bus.addHandler(new PrintHandler());
         bus.addHandler(new RowPrint());
         bus.start();

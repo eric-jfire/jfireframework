@@ -1,104 +1,108 @@
 package com.jfireframework.eventbus.bus.impl;
 
 import java.util.IdentityHashMap;
-import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.concurrent.MPMCQueue;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
+import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventConfig;
 import com.jfireframework.eventbus.event.ParallelLevel;
 import com.jfireframework.eventbus.eventcontext.EventContext;
-import com.jfireframework.eventbus.eventcontext.MoreContextInfo;
 import com.jfireframework.eventbus.eventcontext.impl.NormalEventContext;
 import com.jfireframework.eventbus.eventcontext.impl.RowEventContextImpl;
+import com.jfireframework.eventbus.executor.EventHandlerExecutor;
+import com.jfireframework.eventbus.executor.EventSerialHandlerExecutor;
+import com.jfireframework.eventbus.executor.ParallelHandlerExecutor;
+import com.jfireframework.eventbus.executor.RowKeyHandlerExecutor;
+import com.jfireframework.eventbus.executor.TypeSerialHandlerExecutor;
 import com.jfireframework.eventbus.handler.EventHandler;
-import com.jfireframework.eventbus.handler.EventHandlerContext;
-import com.jfireframework.eventbus.handler.ParallelHandlerContextImpl;
-import com.jfireframework.eventbus.handler.RowKeyHandlerContextImpl;
-import com.jfireframework.eventbus.handler.SerialHandlerContextImpl;
+import com.jfireframework.eventbus.handler.HandlerCombination;
 
 public abstract class AbstractEventBus implements EventBus
 {
-    protected final MPMCQueue<EventContext>                           eventQueue = new MPMCQueue<EventContext>();
-    protected final IdentityHashMap<Event<?>, EventHandlerContext<?>> contextMap = new IdentityHashMap<Event<?>, EventHandlerContext<?>>();
-    protected static final Logger                                     LOGGER     = ConsoleLogFactory.getLogger();
+    protected final MPMCQueue<EventContext<?>>                                         eventQueue     = new MPMCQueue<EventContext<?>>();
+    protected final IdentityHashMap<Enum<? extends EventConfig>, HandlerCombination>   combinationMap = new IdentityHashMap<Enum<? extends EventConfig>, HandlerCombination>();
+    protected final IdentityHashMap<Enum<? extends EventConfig>, EventHandlerExecutor> executorMap    = new IdentityHashMap<Enum<? extends EventConfig>, EventHandlerExecutor>();
+    private final IdentityHashMap<Class<?>, EventHandlerExecutor>                      typeSerialMap  = new IdentityHashMap<Class<?>, EventHandlerExecutor>();
+    protected static final Logger                                                      LOGGER         = ConsoleLogFactory.getLogger();
     
-    @SuppressWarnings("unchecked")
     @Override
-    public <T> void addHandler(EventHandler<T> eventHandler)
+    public void addHandler(EventHandler<?, ?> eventHandler)
     {
-        Enum<? extends Event<T>> event = eventHandler.interest();
-        if (((Event<?>) event).parallelLevel() == null)
+        Enum<? extends EventConfig> event = eventHandler.interest();
+        Verify.notNull(((EventConfig) event).parallelLevel(), "事件：{}的parallelLevel()方法缺少返回值", event.getClass());
+        HandlerCombination combination = combinationMap.get(event);
+        if (combination == null)
         {
-            throw new IllegalArgumentException("事件：" + event.getClass() + "的parallelLevel()方法缺少返回值");
+            combination = new HandlerCombination();
+            combinationMap.put(event, combination);
         }
-        EventHandlerContext<T> context = (EventHandlerContext<T>) contextMap.get(event);
-        if (context == null)
+        combination.addHandler(eventHandler);
+        if (executorMap.containsKey(event) == false)
         {
-            switch (((Event<?>) event).parallelLevel())
+            EventHandlerExecutor executor = null;
+            switch (((EventConfig) event).parallelLevel())
             {
                 case PAEALLEL:
-                    context = new ParallelHandlerContextImpl<T>(event);
-                    break;
-                case SERIAL:
-                    context = new SerialHandlerContextImpl<T>(event);
+                    executor = new ParallelHandlerExecutor();
                     break;
                 case ROWKEY_SERIAL:
-                    context = new RowKeyHandlerContextImpl<T>(event);
+                    executor = new RowKeyHandlerExecutor();
+                    break;
+                case EVENT_SERIAL:
+                    executor = new EventSerialHandlerExecutor();
+                    break;
+                case TYPE_SERIAL:
+                    executor = typeSerialMap.get(event.getClass());
+                    if (executor == null)
+                    {
+                        executor = new TypeSerialHandlerExecutor();
+                        typeSerialMap.put(event.getClass(), executor);
+                    }
                     break;
             }
-            contextMap.put((Event<?>) event, context);
+            executorMap.put(event, executor);
         }
-        context.addHandler(eventHandler);
     }
     
     @Override
     public void start()
     {
-        IdentityHashMap<Event<?>, EventHandlerContext<?>> copy_contextMap = new IdentityHashMap<Event<?>, EventHandlerContext<?>>(contextMap.size());
-        copy_contextMap.putAll(contextMap);
-        for (EventHandlerContext<?> context : copy_contextMap.values())
+        for (HandlerCombination each : combinationMap.values())
         {
-            context.endAdd();
+            each.sort();
         }
-        
     }
     
+    @SuppressWarnings("unchecked")
     @Override
-    public EventContext post(EventContext eventContext)
+    public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event)
     {
-        EventHandlerContext<?> eventHandlerContext = contextMap.get(eventContext.getEvent());
-        if (eventHandlerContext == null)
-        {
-            throw new IllegalArgumentException(StringUtil.format("不存在事件:{}的处理器", eventContext.getEvent()));
-        }
-        ((MoreContextInfo) eventContext).setMoreInfo(eventHandlerContext, this, eventQueue);
-        eventQueue.offerAndSignal(eventContext);
-        return eventContext;
-    }
-    
-    @Override
-    public EventContext post(Object data, Enum<? extends Event<?>> event)
-    {
-        if (((Event<?>) event).parallelLevel() == ParallelLevel.ROWKEY_SERIAL)
+        if (((EventConfig) event).parallelLevel() == ParallelLevel.ROWKEY_SERIAL)
         {
             throw new IllegalArgumentException("该方法不能接受并行度为：ROWKEY_SERIAL的事件");
         }
-        EventContext applicationEvent = new NormalEventContext(data, event);
-        post(applicationEvent);
-        return applicationEvent;
+        EventContext<T> eventContext = new NormalEventContext<T>(data, event, (EventHandler<T, ?>[]) combinationMap.get(event).combination(), executorMap.get(event), this);
+        post(eventContext);
+        return eventContext;
     }
     
+    @SuppressWarnings("unchecked")
     @Override
-    public EventContext post(Object data, Enum<? extends Event<?>> event, Object rowkey)
+    public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event, Object rowkey)
     {
-        if (((Event<?>) event).parallelLevel() != ParallelLevel.ROWKEY_SERIAL)
+        if (((EventConfig) event).parallelLevel() != ParallelLevel.ROWKEY_SERIAL)
         {
             throw new IllegalArgumentException("该方法只能接受并行度为：ROWKEY_SERIAL的事件");
         }
-        EventContext eventContext = new RowEventContextImpl(data, event, rowkey);
+        EventContext<T> eventContext = new RowEventContextImpl<T>(data, event, (EventHandler<T, ?>[]) combinationMap.get(event).combination(), executorMap.get(event), this, rowkey);
         post(eventContext);
         return eventContext;
+    }
+    
+    public <T extends Enum<? extends EventConfig>> void post(EventContext<T> eventContext)
+    {
+        eventQueue.offerAndSignal(eventContext);
     }
 }
