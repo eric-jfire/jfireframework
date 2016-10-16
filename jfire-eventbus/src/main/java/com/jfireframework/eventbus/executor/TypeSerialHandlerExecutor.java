@@ -8,7 +8,6 @@ import com.jfireframework.eventbus.handler.EventHandler;
 
 public class TypeSerialHandlerExecutor implements EventHandlerExecutor
 {
-    
     private static final int                 idle   = 0;
     private static final int                 busy   = 1;
     private AtomicInteger                    state  = new AtomicInteger(idle);
