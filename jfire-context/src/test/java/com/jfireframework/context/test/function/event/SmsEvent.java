@@ -3,7 +3,7 @@ package com.jfireframework.context.test.function.event;
 import com.jfireframework.eventbus.event.EventConfig;
 import com.jfireframework.eventbus.event.ParallelLevel;
 
-public enum SmsEvent implements EventConfig<SmsEvent>
+public enum SmsEvent implements EventConfig
 {
     // 欠费
     Arrearage,

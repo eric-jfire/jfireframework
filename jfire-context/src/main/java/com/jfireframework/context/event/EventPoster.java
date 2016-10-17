@@ -5,9 +5,7 @@ import com.jfireframework.eventbus.eventcontext.EventContext;
 
 public interface EventPoster
 {
-    public EventContext post(EventContext event);
+    public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event, Object rowkey);
     
-    public EventContext post(Object data, Enum<? extends EventConfig<?>> event, Object rowkey);
-    
-    public EventContext post(Object data, Enum<? extends EventConfig<?>> event);
+    public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event);
 }
