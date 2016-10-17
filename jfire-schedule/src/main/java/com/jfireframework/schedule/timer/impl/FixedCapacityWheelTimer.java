@@ -49,6 +49,7 @@ public class FixedCapacityWheelTimer extends BaseTimer
     {
         while (state == STARTED)
         {
+            waitToNextTick(tickNow);
             final Bucket bucket = buckets[(int) (tickNow & mask)];
             pool.execute(
                     new Runnable() {
@@ -59,7 +60,6 @@ public class FixedCapacityWheelTimer extends BaseTimer
                         }
                     }
             );
-            waitToNextTick(tickNow);
             tickNow += 1;
         }
         

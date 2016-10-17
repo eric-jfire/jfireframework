@@ -76,6 +76,7 @@ public class HierarchyWheelTimer extends BaseTimer
     {
         while (state == termination)
         {
+            waitToNextTick(tickNows[0]);
             final int index = (int) (tickNows[0] & masks[0]);
             final Bucket bucket = buckets[0][index];
             pool.execute(new Runnable() {
@@ -85,7 +86,6 @@ public class HierarchyWheelTimer extends BaseTimer
                     bucket.expire();
                 }
             });
-            waitToNextTick(tickNows[0]);
             tickNows[0] += 1;
             if (index == masks[0])
             {
