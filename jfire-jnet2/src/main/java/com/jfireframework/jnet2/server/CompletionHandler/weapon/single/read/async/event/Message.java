@@ -3,7 +3,7 @@ package com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.asy
 import com.jfireframework.eventbus.event.EventConfig;
 import com.jfireframework.eventbus.event.ParallelLevel;
 
-public enum Message implements EventConfig<Message>
+public enum Message implements EventConfig
 {
     recive;
     
