@@ -7,7 +7,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.bus.impl.ManualEventBusImpl;
+import com.jfireframework.eventbus.bus.impl.CalculateEventBus;
 import com.jfireframework.jnet2.common.channel.ChannelInitListener;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
 import com.jfireframework.jnet2.server.AioServer;
@@ -40,7 +40,7 @@ public class SingleAcceptHandler implements AcceptHandler
         initListener = serverConfig.getInitListener();
         if (workMode == WorkMode.ASYNC)
         {
-            eventBus = new ManualEventBusImpl();
+            eventBus = new CalculateEventBus();
             eventBus.addHandler(new ReciveHandler());
             eventBus.start();
         }

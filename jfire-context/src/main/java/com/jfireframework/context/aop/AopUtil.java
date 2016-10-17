@@ -11,6 +11,7 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.el.JelException;
 import com.jfireframework.baseutil.el.JelExplain;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
@@ -95,21 +96,22 @@ public class AopUtil
      */
     public static void enhance(Map<String, Bean> beanMap, ClassLoader classLoader)
     {
-        try
+        
+        initAopMethods(beanMap);
+        initAopbeanSet(beanMap);
+        for (Bean bean : beanMap.values())
         {
-            initAopMethods(beanMap);
-            initAopbeanSet(beanMap);
-            for (Bean bean : beanMap.values())
+            try
             {
                 if (bean.needEnhance())
                 {
                     enhanceBean(bean, classLoader);
                 }
             }
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException("aop增强出现异常", e);
+            catch (Exception e)
+            {
+                throw new JustThrowException("aop增强出现异常", e);
+            }
         }
         
     }
@@ -668,7 +670,7 @@ public class AopUtil
         CtMethod[] methods = getAllMethods(parentClass);
         for (CtMethod each : methods)
         {
-            if (Modifier.isPublic(each.getModifiers()) || Modifier.isProtected(each.getModifiers()))
+            if (canHaveChildMethod(each.getModifiers()))
             {
                 // 为所有的public或者protected方法设置原始的方法体，也就是默认直接调用父方法
                 CtMethod targetMethod = copyMethod(each, childCc);
@@ -683,6 +685,23 @@ public class AopUtil
                 logger.trace("初始化子类方法{}.{}", targetMethod.getDeclaringClass().getName(), targetMethod.getName());
                 childCc.addMethod(targetMethod);
             }
+        }
+    }
+    
+    private static boolean canHaveChildMethod(int moditifer)
+    {
+        if (
+            (Modifier.isPublic(moditifer) || Modifier.isProtected(moditifer)) //
+                    && Modifier.isFinal(moditifer) == false //
+                    && Modifier.isNative(moditifer) == false //
+                    && Modifier.isStatic(moditifer) == false
+        )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
     

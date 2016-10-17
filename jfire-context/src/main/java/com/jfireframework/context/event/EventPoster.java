@@ -1,13 +1,11 @@
 package com.jfireframework.context.event;
 
-import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventConfig;
 import com.jfireframework.eventbus.eventcontext.EventContext;
 
 public interface EventPoster
 {
-    public EventContext post(EventContext event);
+    public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event, Object rowkey);
     
-    public EventContext post(Object data, Enum<? extends Event<?>> event, Object rowkey);
-    
-    public EventContext post(Object data, Enum<? extends Event<?>> event);
+    public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event);
 }

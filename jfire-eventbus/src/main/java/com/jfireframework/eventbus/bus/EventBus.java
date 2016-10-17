@@ -1,20 +1,24 @@
 package com.jfireframework.eventbus.bus;
 
-import com.jfireframework.eventbus.event.Event;
+import com.jfireframework.eventbus.event.EventConfig;
 import com.jfireframework.eventbus.eventcontext.EventContext;
 import com.jfireframework.eventbus.handler.EventHandler;
 
 public interface EventBus
 {
-    public <T> void addHandler(EventHandler<T> eventHandler);
+    public void addHandler(EventHandler<?, ?> eventHandler);
+    
+    public void addWorker();
+    
+    public void reduceWorker();
     
     public void start();
     
     public void stop();
     
-    public EventContext post(EventContext event);
+    public <T extends Enum<? extends EventConfig>> void post(EventContext<T> eventContext);
     
-    public EventContext post(Object data, Enum<? extends Event<?>> event, Object rowkey);
+    public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event, Object rowkey);
     
-    public EventContext post(Object data, Enum<? extends Event<?>> event);
+    public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event);
 }

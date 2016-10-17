@@ -2,18 +2,17 @@ package com.jfireframework.eventbus.handler;
 
 import com.jfireframework.baseutil.order.Order;
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.eventcontext.EventContext;
+import com.jfireframework.eventbus.event.EventConfig;
 
-public interface EventHandler<T> extends Order
+public interface EventHandler<T extends Enum<? extends EventConfig>, E> extends Order
 {
     /**
      * 处理一个事件
      * 
      * @param event
      */
-    public void handle(EventContext eventContext, EventBus eventBus);
+    public Object handle(E data, EventBus eventBus);
     
-    public Enum<? extends Event<T>> interest();
+    public T interest();
     
 }

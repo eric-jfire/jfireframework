@@ -1,12 +1,10 @@
 package com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async.event;
 
 import com.jfireframework.eventbus.bus.EventBus;
-import com.jfireframework.eventbus.event.Event;
-import com.jfireframework.eventbus.eventcontext.EventContext;
 import com.jfireframework.eventbus.handler.EventHandler;
 import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async.AsyncReadHandler;
 
-public class ReciveHandler implements EventHandler<Message>
+public class ReciveHandler implements EventHandler<Message, AsyncReadHandler>
 {
     
     @Override
@@ -16,14 +14,14 @@ public class ReciveHandler implements EventHandler<Message>
     }
     
     @Override
-    public void handle(EventContext eventContext, EventBus eventBus)
+    public Object handle(AsyncReadHandler readHandler, EventBus eventBus)
     {
-        AsyncReadHandler readHandler = (AsyncReadHandler) eventContext.getEventData();
         readHandler.asyncHandle();
+        return null;
     }
     
     @Override
-    public Enum<? extends Event<Message>> interest()
+    public Message interest()
     {
         return Message.recive;
     }

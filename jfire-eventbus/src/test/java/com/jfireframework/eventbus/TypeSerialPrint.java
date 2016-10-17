@@ -3,7 +3,7 @@ package com.jfireframework.eventbus;
 import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.handler.EventHandler;
 
-public class RowPrint implements EventHandler<Print, String>
+public class TypeSerialPrint implements EventHandler<Print, String>
 {
     private long t0;
     
@@ -38,7 +38,7 @@ public class RowPrint implements EventHandler<Print, String>
     @Override
     public Print interest()
     {
-        return Print.single;
+        return Print.typeserial1;
     }
     
 }

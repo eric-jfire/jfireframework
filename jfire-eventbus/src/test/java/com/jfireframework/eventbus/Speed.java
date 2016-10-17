@@ -1,16 +1,15 @@
-package com.jfireframework.jnet2.server.CompletionHandler.weapon.single.read.async.event;
+package com.jfireframework.eventbus;
 
 import com.jfireframework.eventbus.event.EventConfig;
 import com.jfireframework.eventbus.event.ParallelLevel;
 
-public enum Message implements EventConfig
+public enum Speed implements EventConfig
 {
-    recive;
+    speed;
     
     @Override
     public ParallelLevel parallelLevel()
     {
-        return ParallelLevel.PAEALLEL;
+        return ParallelLevel.ROWKEY_SERIAL;
     }
-    
 }
