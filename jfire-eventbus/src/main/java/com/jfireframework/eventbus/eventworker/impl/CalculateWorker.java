@@ -5,24 +5,23 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.eventbus.bus.EventBus;
 import com.jfireframework.eventbus.eventcontext.EventContext;
-import com.jfireframework.eventbus.eventcontext.MoreContextInfo;
 import com.jfireframework.eventbus.eventworker.EventWorker;
-import com.jfireframework.eventbus.handler.EventHandlerContext;
+import com.jfireframework.eventbus.executor.EventHandlerExecutor;
 
 /**
- * 不包含线程资源判断逻辑的worker。启动和停止都依靠外部
+ * 主要用于计算任务的worker。该worker不关心当前的worker数量
  * 
  * @author 林斌
  *
  */
-public class CoreWorker implements EventWorker
+public class CalculateWorker implements EventWorker
 {
-    private final EventBus                eventBus;
-    private final MPMCQueue<EventContext> eventQueue;
-    private volatile Thread               ownerThread;
-    private static final Logger           LOGGER = ConsoleLogFactory.getLogger();
+    private final EventBus                   eventBus;
+    private final MPMCQueue<EventContext<?>> eventQueue;
+    private volatile Thread                  ownerThread;
+    private static final Logger              LOGGER = ConsoleLogFactory.getLogger();
     
-    public CoreWorker(EventBus eventBus, MPMCQueue<EventContext> eventQueue)
+    public CalculateWorker(EventBus eventBus, MPMCQueue<EventContext<?>> eventQueue)
     {
         this.eventBus = eventBus;
         this.eventQueue = eventQueue;
@@ -34,14 +33,14 @@ public class CoreWorker implements EventWorker
         ownerThread = Thread.currentThread();
         while (true)
         {
-            EventContext eventContext = eventQueue.take();
+            EventContext<?> eventContext = eventQueue.take();
             if (eventContext == null)
             {
                 LOGGER.debug("事件线程:{}退出对事件的获取", ownerThread);
                 break;
             }
-            EventHandlerContext<?> context = ((MoreContextInfo) eventContext).getEventHandlerContext();
-            context.handle(eventContext, eventBus);
+            EventHandlerExecutor executor = eventContext.executor();
+            executor.handle(eventContext, eventBus);
         }
     }
     

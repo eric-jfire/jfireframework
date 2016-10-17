@@ -4,11 +4,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import com.jfireframework.baseutil.concurrent.MPMCQueue;
-import com.jfireframework.eventbus.bus.ManualEventBus;
 import com.jfireframework.eventbus.eventworker.EventWorker;
-import com.jfireframework.eventbus.eventworker.impl.CoreWorker;
+import com.jfireframework.eventbus.eventworker.impl.CalculateWorker;
 
-public class ManualEventBusImpl extends AbstractEventBus implements ManualEventBus
+public class CalculateEventBus extends AbstractEventBus
 {
     private final ExecutorService        pool    = Executors.newCachedThreadPool(new ThreadFactory() {
                                                      private int count = 1;
@@ -16,21 +15,21 @@ public class ManualEventBusImpl extends AbstractEventBus implements ManualEventB
                                                      @Override
                                                      public Thread newThread(Runnable r)
                                                      {
-                                                         return new Thread(r, "ManualEventBus-eventWorker-" + (count++));
+                                                         return new Thread(r, "CalculateEventBus-Worker-" + (count++));
                                                      }
                                                  });
     private final MPMCQueue<EventWorker> workers = new MPMCQueue<EventWorker>();
     
-    public ManualEventBusImpl()
+    public CalculateEventBus()
     {
-        this(Runtime.getRuntime().availableProcessors());
+        this(Runtime.getRuntime().availableProcessors() * 2 + 1);
     }
     
-    public ManualEventBusImpl(int coreThreadNum)
+    public CalculateEventBus(int coreThreadNum)
     {
         for (int i = 0; i < coreThreadNum; i++)
         {
-            EventWorker worker = new CoreWorker(this, eventQueue);
+            EventWorker worker = new CalculateWorker(this, eventQueue);
             pool.submit(worker);
         }
     }
@@ -42,15 +41,15 @@ public class ManualEventBusImpl extends AbstractEventBus implements ManualEventB
     }
     
     @Override
-    public void createWorker()
+    public void addWorker()
     {
-        EventWorker worker = new CoreWorker(this, eventQueue);
+        EventWorker worker = new CalculateWorker(this, eventQueue);
         pool.submit(worker);
         workers.offer(worker);
     }
     
     @Override
-    public void recycleWorker()
+    public void reduceWorker()
     {
         EventWorker worker = workers.poll();
         if (worker != null)
