@@ -44,34 +44,28 @@ public class PackageScan
         try
         {
             Enumeration<URL> urls = loader.getResources(resourceName);
-            if (urls.hasMoreElements() == false)
+            while (urls.hasMoreElements())
             {
-                getClassNameByJars(((URLClassLoader) loader).getURLs(), packageName, classNames);
-            }
-            else
-            {
-                while (urls.hasMoreElements())
+                URL url = urls.nextElement();
+                if (url.getProtocol().contains("file"))
                 {
-                    URL url = urls.nextElement();
-                    if (url.getProtocol().contains("file"))
+                    try
                     {
-                        try
-                        {
-                            File urlFile = new File(url.toURI());
-                            packageName = packageName.substring(0, packageName.lastIndexOf(".") + 1);
-                            findClassNamesByFile(packageName, urlFile, classNames);
-                        }
-                        catch (URISyntaxException e)
-                        {
-                            throw new UnSupportException("路径：'" + url.toString() + "'不正确", e);
-                        }
+                        File urlFile = new File(url.toURI());
+                        packageName = packageName.substring(0, packageName.lastIndexOf(".") + 1);
+                        findClassNamesByFile(packageName, urlFile, classNames);
                     }
-                    else if (url.getProtocol().contains("jar"))
+                    catch (URISyntaxException e)
                     {
-                        getClassNamesByJar(url, resourceName, classNames);
+                        throw new UnSupportException("路径：'" + url.toString() + "'不正确", e);
                     }
                 }
+                else if (url.getProtocol().contains("jar"))
+                {
+                    getClassNamesByJar(url, resourceName, classNames);
+                }
             }
+            getClassNameByJars(((URLClassLoader) loader).getURLs(), packageName, classNames);
         }
         catch (IOException e1)
         {
@@ -171,7 +165,8 @@ public class PackageScan
                 }
                 catch (Exception e)
                 {
-//                    throw new UnSupportException("url地址：'" + jarPath + "'不正确", e);
+                    // throw new UnSupportException("url地址：'" + jarPath +
+                    // "'不正确", e);
                 }
             }
         }
