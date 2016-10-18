@@ -34,7 +34,7 @@ public class MariaDBStructure implements Structure
         dbTypeMap.put(Integer.class, new TypeAndLength("int", 9));
         dbTypeMap.put(Long.class, new TypeAndLength("bigint", 11));
         dbTypeMap.put(String.class, new TypeAndLength("varchar", 255));
-        dbTypeMap.put(Date.class, new TypeAndLength("datetime", 0));
+        dbTypeMap.put(Date.class, new TypeAndLength("date", 0));
         dbTypeMap.put(java.util.Date.class, new TypeAndLength("datetime", 0));
         dbTypeMap.put(Timestamp.class, new TypeAndLength("datetime", 0));
         dbTypeMap.put(float.class, new TypeAndLength("float", 0));

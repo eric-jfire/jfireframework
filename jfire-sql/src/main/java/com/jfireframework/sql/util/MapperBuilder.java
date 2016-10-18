@@ -424,18 +424,20 @@ public class MapperBuilder
         {
             return true;
         }
-        if (type == Integer.class //
-                || type == Short.class //
-                || type == Long.class //
-                || type == Float.class //
-                || type == Double.class //
-                || type == Boolean.class //
-                || type == Date.class//
-                || type == java.util.Date.class //
-                || type == String.class //
-                || type == Time.class//
-                || type == Timestamp.class //
-                || Enum.class.isAssignableFrom(type))
+        if (
+            type == Integer.class //
+                    || type == Short.class //
+                    || type == Long.class //
+                    || type == Float.class //
+                    || type == Double.class //
+                    || type == Boolean.class //
+                    || type == Date.class//
+                    || type == java.util.Date.class //
+                    || type == String.class //
+                    || type == Time.class//
+                    || type == Timestamp.class //
+                    || Enum.class.isAssignableFrom(type)
+        )
         {
             return true;
         }
@@ -510,37 +512,68 @@ public class MapperBuilder
             Class<?> returnType = invokeNameAndType.getReturnType();
             if (returnType == int.class)
             {
-                methodBody.append("pStat.setInt(");
+                methodBody.append("pStat.setInt(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(");\n");
             }
             else if (returnType == boolean.class)
             {
-                methodBody.append("pStat.setBoolean(");
+                methodBody.append("pStat.setBoolean(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(");\n");
             }
             else if (returnType == long.class)
             {
-                methodBody.append("pStat.setLong(");
+                methodBody.append("pStat.setLong(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(");\n");
             }
             else if (returnType == short.class)
             {
-                methodBody.append("pStat.setShort(");
+                methodBody.append("pStat.setShort(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(");\n");
             }
             else if (returnType == float.class)
             {
-                methodBody.append("pStat.setFloat(");
+                methodBody.append("pStat.setFloat(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(");\n");
             }
             else if (returnType == double.class)
             {
-                methodBody.append("pStat.setDouble(");
+                methodBody.append("pStat.setDouble(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(");\n");
+            }
+            else if (returnType == Integer.class)
+            {
+                methodBody.append("pStat.setInt(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(".intValue());\n");
+            }
+            else if (returnType == Boolean.class)
+            {
+                methodBody.append("pStat.setBoolean(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(".booleanValue());\n");
+            }
+            else if (returnType == Long.class)
+            {
+                methodBody.append("pStat.setLong(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(".longValue());\n");
+            }
+            else if (returnType == Short.class)
+            {
+                methodBody.append("pStat.setShort(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(".shortValue());\n");
+            }
+            else if (returnType == Float.class)
+            {
+                methodBody.append("pStat.setFloat(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(".floatValue());\n");
+            }
+            else if (returnType == Double.class)
+            {
+                methodBody.append("pStat.setDouble(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(".doubleValue());\n");
+            }
+            else if (returnType == Date.class)
+            {
+                methodBody.append("pStat.setDate(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(");\n");
+            }
+            else if (returnType == java.util.Date.class)
+            {
+                methodBody.append("pStat.setTimestamp(").append(index).append(",new java.sql.Timestamp(").append(invokeNameAndType.getInvokeName()).append(".getTime()));\n");
             }
             else if (returnType == String.class)
             {
-                methodBody.append("pStat.setString(");
+                methodBody.append("pStat.setString(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(");\n");
             }
             else
             {
-                methodBody.append("pStat.setObject(");
+                methodBody.append("pStat.setObject(").append(index).append(",").append(invokeNameAndType.getInvokeName()).append(");\n");
             }
-            methodBody.append(index).append(",").append(invokeNameAndType.getInvokeName()).append(");\n");
             index += 1;
         }
     }
