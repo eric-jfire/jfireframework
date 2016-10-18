@@ -19,7 +19,6 @@
 		<module>jfire-mvc</module>
 		<module>jfire-dbunit</module>
 		<module>jfire-test</module>
-		<module>jfire-litl</module>
 		<module>jfire-jnet2</module>
 		<module>jfire-eventbus</module>
 		<module>jfire-schedule</module>

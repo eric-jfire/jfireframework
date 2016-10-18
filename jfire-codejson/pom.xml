@@ -15,9 +15,6 @@
 	<description>Codejson is the best framework for json. The best is the fastest and customization capabilities.
 Can use the same object output according to the different strategies of different content.
 45% speed over Jackson2 serialization</description>
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>org.javassist</groupId>
