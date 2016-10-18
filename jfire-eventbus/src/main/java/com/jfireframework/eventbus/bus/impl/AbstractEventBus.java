@@ -15,17 +15,19 @@ import com.jfireframework.eventbus.executor.EventHandlerExecutor;
 import com.jfireframework.eventbus.executor.EventSerialHandlerExecutor;
 import com.jfireframework.eventbus.executor.ParallelHandlerExecutor;
 import com.jfireframework.eventbus.executor.RowKeyHandlerExecutor;
+import com.jfireframework.eventbus.executor.TypeRowKeySerialHandlerExecutor;
 import com.jfireframework.eventbus.executor.TypeSerialHandlerExecutor;
 import com.jfireframework.eventbus.handler.EventHandler;
 import com.jfireframework.eventbus.handler.HandlerCombination;
 
 public abstract class AbstractEventBus implements EventBus
 {
-    protected final MPMCQueue<EventContext<?>>                                         eventQueue     = new MPMCQueue<EventContext<?>>();
-    protected final IdentityHashMap<Enum<? extends EventConfig>, HandlerCombination>   combinationMap = new IdentityHashMap<Enum<? extends EventConfig>, HandlerCombination>();
-    protected final IdentityHashMap<Enum<? extends EventConfig>, EventHandlerExecutor> executorMap    = new IdentityHashMap<Enum<? extends EventConfig>, EventHandlerExecutor>();
-    private final IdentityHashMap<Class<?>, EventHandlerExecutor>                      typeSerialMap  = new IdentityHashMap<Class<?>, EventHandlerExecutor>();
-    protected static final Logger                                                      LOGGER         = ConsoleLogFactory.getLogger();
+    protected final MPMCQueue<EventContext<?>>                                         eventQueue          = new MPMCQueue<EventContext<?>>();
+    protected final IdentityHashMap<Enum<? extends EventConfig>, HandlerCombination>   combinationMap      = new IdentityHashMap<Enum<? extends EventConfig>, HandlerCombination>();
+    protected final IdentityHashMap<Enum<? extends EventConfig>, EventHandlerExecutor> executorMap         = new IdentityHashMap<Enum<? extends EventConfig>, EventHandlerExecutor>();
+    private final IdentityHashMap<Class<?>, EventHandlerExecutor>                      typeSerialMap       = new IdentityHashMap<Class<?>, EventHandlerExecutor>();
+    private final IdentityHashMap<Class<?>, EventHandlerExecutor>                      typeRowKeySerialMap = new IdentityHashMap<Class<?>, EventHandlerExecutor>();
+    protected static final Logger                                                      LOGGER              = ConsoleLogFactory.getLogger();
     
     @Override
     public void addHandler(EventHandler<?, ?> eventHandler)
@@ -61,6 +63,14 @@ public abstract class AbstractEventBus implements EventBus
                         typeSerialMap.put(event.getClass(), executor);
                     }
                     break;
+                case TYPE_ROWKEY_SERIAL:
+                    executor = typeRowKeySerialMap.get(event.getClass());
+                    if (executor == null)
+                    {
+                        executor = new TypeRowKeySerialHandlerExecutor();
+                        typeRowKeySerialMap.put(event.getClass(), executor);
+                    }
+                    break;
             }
             executorMap.put(event, executor);
         }
@@ -79,9 +89,9 @@ public abstract class AbstractEventBus implements EventBus
     @Override
     public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event)
     {
-        if (((EventConfig) event).parallelLevel() == ParallelLevel.ROWKEY_SERIAL)
+        if (((EventConfig) event).parallelLevel() == ParallelLevel.ROWKEY_SERIAL || ((EventConfig) event).parallelLevel() == ParallelLevel.TYPE_ROWKEY_SERIAL)
         {
-            throw new IllegalArgumentException("该方法不能接受并行度为：ROWKEY_SERIAL的事件");
+            throw new IllegalArgumentException("该方法不能接受并行度为：ROWKEY_SERIAL或TYPE_ROWKEY_SERIAL的事件");
         }
         EventContext<T> eventContext = new NormalEventContext<T>(data, event, (EventHandler<T, ?>[]) combinationMap.get(event).combination(), executorMap.get(event), this);
         post(eventContext);
@@ -92,15 +102,16 @@ public abstract class AbstractEventBus implements EventBus
     @Override
     public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event, Object rowkey)
     {
-        if (((EventConfig) event).parallelLevel() != ParallelLevel.ROWKEY_SERIAL)
+        if (((EventConfig) event).parallelLevel() != ParallelLevel.ROWKEY_SERIAL && ((EventConfig) event).parallelLevel() != ParallelLevel.TYPE_ROWKEY_SERIAL)
         {
-            throw new IllegalArgumentException("该方法只能接受并行度为：ROWKEY_SERIAL的事件");
+            throw new IllegalArgumentException("该方法只能接受并行度为：ROWKEY_SERIAL或TYPE_ROWKEY_SERIAL的事件");
         }
         EventContext<T> eventContext = new RowEventContextImpl<T>(data, event, (EventHandler<T, ?>[]) combinationMap.get(event).combination(), executorMap.get(event), this, rowkey);
         post(eventContext);
         return eventContext;
     }
     
+    @Override
     public <T extends Enum<? extends EventConfig>> void post(EventContext<T> eventContext)
     {
         eventQueue.offerAndSignal(eventContext);

@@ -51,4 +51,22 @@ public class PrintTest
             each.await();
         }
     }
+    
+    @Test
+    public void test3() throws InterruptedException
+    {
+        EventBus bus = new IoEventBus(1, 20, 3000);
+        bus.addHandler(new TypeRowPrint());
+        bus.addHandler(new TypeRowPrint2());
+        bus.start();
+        List<EventContext> eventContexts = new LinkedList<EventContext>();
+        eventContexts.add(bus.post("1", Print.rowtype, "1"));
+        eventContexts.add(bus.post("2", Print.rowtype, "2"));
+        eventContexts.add(bus.post("3", Print.rowtype2, "1"));
+        eventContexts.add(bus.post("4", Print.rowtype2, "3"));
+        for (EventContext each : eventContexts)
+        {
+            each.await();
+        }
+    }
 }
