@@ -1,7 +1,6 @@
 package com.jfireframework.baseutil.concurrent;
 
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-
 import sun.misc.Unsafe;
 
 abstract class left
@@ -37,9 +36,9 @@ public class CpuCachePadingLong extends value
         value = newValue;
     }
     
-    public void orderSet(int newValue)
+    public void orderSet(long newValue)
     {
-        
+        unsafe.putOrderedLong(this, offset, newValue);
     }
     
     public long value()

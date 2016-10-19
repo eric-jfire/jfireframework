@@ -1,7 +1,6 @@
 package com.jfireframework.baseutil.concurrent;
 
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-
 import sun.misc.Unsafe;
 
 public class CpuCachePadingInt
@@ -31,7 +30,7 @@ public class CpuCachePadingInt
     
     public void orderSet(int newValue)
     {
-        
+        unsafe.putOrderedInt(this, offset, newValue);
     }
     
     public int value()
