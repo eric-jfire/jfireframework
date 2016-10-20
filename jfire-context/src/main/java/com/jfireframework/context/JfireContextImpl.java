@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -65,6 +66,10 @@ public class JfireContextImpl implements JfireContext
     @Override
     public void addPackageNames(String... packageNames)
     {
+        if (packageNames.length == 0)
+        {
+            return;
+        }
         Verify.False(init, "不能在容器初始化后再加入需要扫描的包名");
         Verify.notNull(packageNames, "添加扫描的包名有误,不能为null.请检查{}", CodeLocation.getCodeLocation(2));
         List<String> classNames = new LinkedList<String>();
@@ -93,52 +98,81 @@ public class JfireContextImpl implements JfireContext
     {
         try
         {
-            ContextConfig contextConfig = JsonTool.read(ContextConfig.class, config);
             /** 将配置文件的内容，以json方式读取，并且得到json对象 */
-            String[] packageNames = contextConfig.getPackageNames();
-            if (packageNames != null)
-            {
-                addPackageNames(packageNames);
-            }
-            BeanInfo[] beans = contextConfig.getBeans();
-            if (beans != null)
-            {
-                for (BeanInfo each : beans)
-                {
-                    String beanName = each.getBeanName();
-                    String className = each.getClassName();
-                    boolean prototype = each.isPrototype();
-                    addBean(beanName, prototype, classLoader.loadClass(className));
-                    Map<String, String> dependencies = each.getDependencies();
-                    Map<String, String> params = each.getParams();
-                    if (dependencies.size() > 0 || params.size() > 0 || each.getPostConstructMethod() != null)
-                    {
-                        BeanConfig beanConfig = new BeanConfig(beanName);
-                        beanConfig.getParamMap().putAll(params);
-                        beanConfig.getDependencyMap().putAll(dependencies);
-                        beanConfig.setPostConstructMethod(each.getPostConstructMethod());
-                        addBeanConfig(beanConfig);
-                    }
-                }
-            }
-            if (contextConfig.getBeanConfigs() != null)
-            {
-                for (BeanAttribute each : contextConfig.getBeanConfigs())
-                {
-                    if (each.getParams().size() > 0 || each.getDependencies().size() > 0 || each.getPostConstructMethod() != null)
-                    {
-                        BeanConfig beanConfig = new BeanConfig(each.getBeanName());
-                        beanConfig.getParamMap().putAll(each.getParams());
-                        beanConfig.getDependencyMap().putAll(each.getDependencies());
-                        beanConfig.setPostConstructMethod(each.getPostConstructMethod());
-                        addBeanConfig(beanConfig);
-                    }
-                }
-            }
+            ContextConfig contextConfig = JsonTool.read(ContextConfig.class, config);
+            addPackageNames(contextConfig.getPackageNames());
+            readProperties(contextConfig.getProperties());
+            handleBeanInfos(contextConfig.getBeans());
+            handleBeanAttribute(contextConfig.getBeanConfigs());
         }
         catch (ClassNotFoundException e)
         {
             logger.error("配置的className错误", e);
+        }
+    }
+    
+    private void handleBeanAttribute(BeanAttribute[] attributes)
+    {
+        for (BeanAttribute each : attributes)
+        {
+            if (each.getParams().size() > 0 || each.getDependencies().size() > 0 || each.getPostConstructMethod() != null)
+            {
+                BeanConfig beanConfig = new BeanConfig(each.getBeanName());
+                beanConfig.getParamMap().putAll(each.getParams());
+                beanConfig.getDependencyMap().putAll(each.getDependencies());
+                beanConfig.setPostConstructMethod(each.getPostConstructMethod());
+                addBeanConfig(beanConfig);
+            }
+        }
+    }
+    
+    private void handleBeanInfos(BeanInfo[] infos) throws ClassNotFoundException
+    {
+        for (BeanInfo info : infos)
+        {
+            String beanName = info.getBeanName();
+            String className = info.getClassName();
+            boolean prototype = info.isPrototype();
+            addBean(beanName, prototype, classLoader.loadClass(className));
+            Map<String, String> dependencies = info.getDependencies();
+            Map<String, String> params = info.getParams();
+            String postConstructMethod = info.getPostConstructMethod();
+            if (dependencies.size() > 0 || params.size() > 0 || postConstructMethod != null)
+            {
+                BeanConfig beanConfig = new BeanConfig(beanName);
+                beanConfig.getParamMap().putAll(params);
+                beanConfig.getDependencyMap().putAll(dependencies);
+                beanConfig.setPostConstructMethod(postConstructMethod);
+                addBeanConfig(beanConfig);
+            }
+        }
+    }
+    
+    private void readProperties(String[] paths)
+    {
+        for (String path : paths)
+        {
+            if (path.startsWith("classpath:"))
+            {
+                try
+                {
+                    path = path.substring(10);
+                    InputStream in = this.getClass().getClassLoader().getResourceAsStream(path);
+                    Properties properties = new Properties();
+                    properties.load(in);
+                    in.close();
+                    addProperties(properties);
+                }
+                catch (IOException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
+            else
+            {
+                // 暂时不支持别的模式
+                ;
+            }
         }
     }
     
