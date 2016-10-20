@@ -7,11 +7,11 @@ import java.util.HashMap;
 import java.util.List;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 
-public class CopyUtilImpl<T, D> implements CopyUtil<T, D>
+public class CopyUtilImpl<S, D> implements CopyUtil<S, D>
 {
     private CopyField[] copyFields;
     
-    public CopyUtilImpl(Class<T> src, Class<D> des)
+    public CopyUtilImpl(Class<S> src, Class<D> des)
     {
         Field[] srcFields = ReflectUtil.getAllFields(src);
         Field[] desFields = ReflectUtil.getAllFields(des);
@@ -49,7 +49,7 @@ public class CopyUtilImpl<T, D> implements CopyUtil<T, D>
     }
     
     @Override
-    public D copy(T src, D desc)
+    public D copy(S src, D desc)
     {
         for (CopyField each : copyFields)
         {
