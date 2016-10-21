@@ -42,16 +42,16 @@ public interface EventContext<T>
     /**
      * 设置事件处理的结果数据
      * 
-     * @param result
+     * @param trans
      */
-    public void setResult(Object result);
+    public void setResult(Object trans);
     
     /**
      * 获取事件处理的结果数据,如果事件没有完成。就阻塞到完成为止
      * 
      * @return
      */
-    public Object getResult();
+    public T getResult();
     
     /**
      * 获取事件处理的结果数据。如果事件没有完成，就阻塞到事件完成为止或者超时退出
@@ -59,7 +59,7 @@ public interface EventContext<T>
      * 
      * @return
      */
-    public Object getResult(long mills) throws InterruptedException;
+    public T getResult(long mills) throws InterruptedException;
     
     /**
      * 

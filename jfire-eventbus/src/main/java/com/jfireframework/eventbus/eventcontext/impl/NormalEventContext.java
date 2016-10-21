@@ -8,20 +8,20 @@ import com.jfireframework.eventbus.eventcontext.EventContext;
 import com.jfireframework.eventbus.executor.EventHandlerExecutor;
 import com.jfireframework.eventbus.handler.EventHandler;
 
-public class NormalEventContext<T extends Enum<? extends EventConfig>> implements EventContext<T>
+public class NormalEventContext<T> implements EventContext<T>
 {
-    protected final EventBus             eventBus;
-    protected final EventHandlerExecutor executor;
-    protected final EventHandler<T, ?>[] combination;
-    protected final Object               eventData;
-    protected final T                    event;
-    protected volatile boolean           finished = false;
-    protected Thread                     owner;
-    protected volatile boolean           await    = false;
-    protected Throwable                  e;
-    protected Object                     result;
+    protected final EventBus                    eventBus;
+    protected final EventHandlerExecutor        executor;
+    protected final EventHandler<?, ?>[]        combination;
+    protected final Object                      eventData;
+    protected final Enum<? extends EventConfig> event;
+    protected volatile boolean                  finished = false;
+    protected Thread                            owner;
+    protected volatile boolean                  await    = false;
+    protected Throwable                         e;
+    protected T                                 result;
     
-    public NormalEventContext(Object eventData, T event, EventHandler<T, ?>[] combination, EventHandlerExecutor executor, EventBus eventBus)
+    public NormalEventContext(Object eventData, Enum<? extends EventConfig> event, EventHandler<?, ?>[] combination, EventHandlerExecutor executor, EventBus eventBus)
     {
         this.eventData = eventData;
         this.event = event;
@@ -100,19 +100,20 @@ public class NormalEventContext<T extends Enum<? extends EventConfig>> implement
     }
     
     @Override
-    public T getEvent()
+    public Enum<? extends EventConfig> getEvent()
     {
         return event;
     }
     
+    @SuppressWarnings("unchecked")
     @Override
     public void setResult(Object result)
     {
-        this.result = result;
+        this.result = (T) result;
     }
     
     @Override
-    public Object getResult()
+    public T getResult()
     {
         if (finished)
         {
@@ -129,13 +130,13 @@ public class NormalEventContext<T extends Enum<? extends EventConfig>> implement
     }
     
     @Override
-    public EventHandler<T, ?>[] combinationHandlers()
+    public EventHandler<?, ?>[] combinationHandlers()
     {
         return combination;
     }
     
     @Override
-    public Object getResult(long mills) throws InterruptedException
+    public T getResult(long mills) throws InterruptedException
     {
         if (finished)
         {

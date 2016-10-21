@@ -16,15 +16,14 @@ public abstract class AbstractEventPoster implements EventPoster
     protected EventBus                 eventBus;
     
     @Override
-    public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event, Object rowkey)
+    public <T> EventContext<T> post(Object data, Enum<? extends EventConfig> event, Object rowkey)
     {
         return eventBus.post(data, event, rowkey);
     }
     
     @Override
-    public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event)
+    public <T> EventContext<T> post(Object data, Enum<? extends EventConfig> event)
     {
         return eventBus.post(data, event);
     }
-    
 }

@@ -85,28 +85,28 @@ public abstract class AbstractEventBus implements EventBus
         }
     }
     
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public <T extends Enum<? extends EventConfig>> EventContext<?> post(Object data, T event)
+    public <T> EventContext<T> post(Object data, Enum<? extends EventConfig> event)
     {
         if (((EventConfig) event).parallelLevel() == ParallelLevel.ROWKEY_SERIAL || ((EventConfig) event).parallelLevel() == ParallelLevel.TYPE_ROWKEY_SERIAL)
         {
             throw new IllegalArgumentException("该方法不能接受并行度为：ROWKEY_SERIAL或TYPE_ROWKEY_SERIAL的事件");
         }
-        EventContext<T> eventContext = new NormalEventContext<T>(data, event, (EventHandler<T, ?>[]) combinationMap.get(event).combination(), executorMap.get(event), this);
+        EventContext<T> eventContext = new NormalEventContext(data, event, combinationMap.get(event).combination(), executorMap.get(event), this);
         post(eventContext);
         return eventContext;
     }
     
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public <T extends Enum<? extends EventConfig>> EventContext<?> post(Object data, T event, Object rowkey)
+    public <T> EventContext<T> post(Object data, Enum<? extends EventConfig> event, Object rowkey)
     {
         if (((EventConfig) event).parallelLevel() != ParallelLevel.ROWKEY_SERIAL && ((EventConfig) event).parallelLevel() != ParallelLevel.TYPE_ROWKEY_SERIAL)
         {
             throw new IllegalArgumentException("该方法只能接受并行度为：ROWKEY_SERIAL或TYPE_ROWKEY_SERIAL的事件");
         }
-        EventContext<T> eventContext = new RowEventContextImpl<T>(data, event, (EventHandler<T, ?>[]) combinationMap.get(event).combination(), executorMap.get(event), this, rowkey);
+        EventContext<T> eventContext = new RowEventContextImpl(data, event, combinationMap.get(event).combination(), executorMap.get(event), this, rowkey);
         post(eventContext);
         return eventContext;
     }

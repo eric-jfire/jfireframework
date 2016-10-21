@@ -18,7 +18,7 @@ public interface EventBus
     
     public void post(EventContext<?> eventContext);
     
-    public <T extends Enum<? extends EventConfig>> EventContext<?> post(Object data, T event, Object rowkey);
+    public <T> EventContext<T> post(Object data, Enum<? extends EventConfig> event, Object rowkey);
     
-    public <T extends Enum<? extends EventConfig>> EventContext<?> post(Object data, T event);
+    public <T> EventContext<T> post(Object data, Enum<? extends EventConfig> event);
 }
