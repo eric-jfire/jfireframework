@@ -1,5 +1,6 @@
 package com.jfireframework.baseutil.concurrent;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import sun.misc.Unsafe;
@@ -15,7 +16,6 @@ public abstract class Sync
     static class Waiter
     {
         private final Thread      thread;
-        // 通过HB关系来维持该属性的可见性
         private volatile Waiter   next;
         private volatile int      status;
         private static final long statusOffset = ReflectUtil.getFieldOffset("status", Waiter.class);
@@ -84,6 +84,75 @@ public abstract class Sync
     }
     
     protected abstract Object pull();
+    
+    public Object take(long time, TimeUnit unit)
+    {
+        Object result;
+        Waiter self = enqueue();
+        long nanos = unit.toNanos(time);
+        long t0 = System.nanoTime();
+        do
+        {
+            // head之后的next是本线程设置的，所以这里直接获取。可以读取到就意味着确实是head节点的后继节点
+            if (self == headWaiter.next)
+            {
+                result = pull();
+                if (result == null)
+                {
+                    if (nanos < 1000)
+                    {
+                        for (int i = 0; i < 1000; i++)
+                        {
+                            ;
+                        }
+                    }
+                    else
+                    {
+                        LockSupport.parkNanos(nanos);
+                    }
+                    nanos -= System.nanoTime() - t0;
+                    if (nanos < 0)
+                    {
+                        cancelWaiter(self);
+                        return null;
+                    }
+                    t0 = System.nanoTime();
+                }
+                else
+                {
+                    headWaiter = self;
+                    unparkNext(self);
+                    return result;
+                }
+            }
+            else
+            {
+                if (nanos < 1000)
+                {
+                    for (int i = 0; i < 1000; i++)
+                    {
+                        ;
+                    }
+                }
+                else
+                {
+                    LockSupport.parkNanos(nanos);
+                }
+                nanos -= System.nanoTime() - t0;
+                if (nanos < 0)
+                {
+                    cancelWaiter(self);
+                    return null;
+                }
+                t0 = System.nanoTime();
+            }
+            if (Thread.currentThread().isInterrupted())
+            {
+                cancelWaiter(self);
+                return null;
+            }
+        } while (true);
+    }
     
     public Object take()
     {
