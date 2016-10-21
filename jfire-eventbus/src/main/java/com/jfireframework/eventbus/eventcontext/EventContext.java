@@ -4,7 +4,7 @@ import com.jfireframework.eventbus.event.EventConfig;
 import com.jfireframework.eventbus.executor.EventHandlerExecutor;
 import com.jfireframework.eventbus.handler.EventHandler;
 
-public interface EventContext<T extends Enum<? extends EventConfig>>
+public interface EventContext<T>
 {
     /**
      * 返回该事件绑定执行器
@@ -18,7 +18,7 @@ public interface EventContext<T extends Enum<? extends EventConfig>>
      * 
      * @return
      */
-    public EventHandler<T, ?>[] combinationHandlers();
+    public EventHandler<?, ?>[] combinationHandlers();
     
     /**
      * 等待直到该事件被处理完成
@@ -47,11 +47,19 @@ public interface EventContext<T extends Enum<? extends EventConfig>>
     public void setResult(Object result);
     
     /**
-     * 获取事件处理的结果数据
+     * 获取事件处理的结果数据,如果事件没有完成。就阻塞到完成为止
      * 
      * @return
      */
     public Object getResult();
+    
+    /**
+     * 获取事件处理的结果数据。如果事件没有完成，就阻塞到事件完成为止或者超时退出
+     * 如果超时时间到达还没有完成，抛出异常
+     * 
+     * @return
+     */
+    public Object getResult(long mills) throws InterruptedException;
     
     /**
      * 
@@ -85,6 +93,6 @@ public interface EventContext<T extends Enum<? extends EventConfig>>
      * 
      * @return
      */
-    public T getEvent();
+    public Enum<? extends EventConfig> getEvent();
     
 }

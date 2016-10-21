@@ -87,7 +87,7 @@ public abstract class AbstractEventBus implements EventBus
     
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event)
+    public <T extends Enum<? extends EventConfig>> EventContext<?> post(Object data, T event)
     {
         if (((EventConfig) event).parallelLevel() == ParallelLevel.ROWKEY_SERIAL || ((EventConfig) event).parallelLevel() == ParallelLevel.TYPE_ROWKEY_SERIAL)
         {
@@ -100,7 +100,7 @@ public abstract class AbstractEventBus implements EventBus
     
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends Enum<? extends EventConfig>> EventContext<T> post(Object data, T event, Object rowkey)
+    public <T extends Enum<? extends EventConfig>> EventContext<?> post(Object data, T event, Object rowkey)
     {
         if (((EventConfig) event).parallelLevel() != ParallelLevel.ROWKEY_SERIAL && ((EventConfig) event).parallelLevel() != ParallelLevel.TYPE_ROWKEY_SERIAL)
         {
@@ -112,7 +112,7 @@ public abstract class AbstractEventBus implements EventBus
     }
     
     @Override
-    public <T extends Enum<? extends EventConfig>> void post(EventContext<T> eventContext)
+    public void post(EventContext<?> eventContext)
     {
         eventQueue.offerAndSignal(eventContext);
     }

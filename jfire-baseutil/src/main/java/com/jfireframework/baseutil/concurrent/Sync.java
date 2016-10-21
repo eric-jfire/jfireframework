@@ -5,13 +5,13 @@ import java.util.concurrent.locks.LockSupport;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import sun.misc.Unsafe;
 
-public abstract class Sync
+public abstract class Sync<E>
 {
     private static final Unsafe unsafe           = ReflectUtil.getUnsafe();
     private volatile Waiter     headWaiter;
     private volatile Waiter     tailWaiter;
-    private static final long   headWaiterOffset = ReflectUtil.getFieldOffset("headWaiter", MPMCQueue.class);
-    private static final long   tailWaiterOffset = ReflectUtil.getFieldOffset("tailWaiter", MPMCQueue.class);
+    private static final long   headWaiterOffset = ReflectUtil.getFieldOffset("headWaiter", Sync.class);
+    private static final long   tailWaiterOffset = ReflectUtil.getFieldOffset("tailWaiter", Sync.class);
     
     static class Waiter
     {
@@ -25,7 +25,7 @@ public abstract class Sync
         
         public Waiter(Thread thread)
         {
-            unsafe.putInt(this.thread, statusOffset, WAITING);
+            unsafe.putInt(this, statusOffset, WAITING);
             this.thread = thread;
         }
         
@@ -33,6 +33,11 @@ public abstract class Sync
         {
             unsafe.putOrderedObject(this, nextOffset, waiter);
         }
+    }
+    
+    public Sync()
+    {
+        headWaiter = tailWaiter = new Waiter(null);
     }
     
     private Waiter enqueue()
@@ -53,6 +58,11 @@ public abstract class Sync
                 return newTail;
             }
         }
+    }
+    
+    public boolean isThreadOnWaiting()
+    {
+        return headWaiter != tailWaiter;
     }
     
     private Waiter findNextWaiter(Waiter waiter)
@@ -83,11 +93,11 @@ public abstract class Sync
         }
     }
     
-    protected abstract Object pull();
+    protected abstract E pull();
     
-    public Object take(long time, TimeUnit unit)
+    public E take(long time, TimeUnit unit)
     {
-        Object result;
+        E result;
         Waiter self = enqueue();
         long nanos = unit.toNanos(time);
         long t0 = System.nanoTime();
@@ -121,7 +131,7 @@ public abstract class Sync
                 else
                 {
                     headWaiter = self;
-                    unparkNext(self);
+                    unparkHeadNext(self);
                     return result;
                 }
             }
@@ -154,14 +164,14 @@ public abstract class Sync
         } while (true);
     }
     
-    public Object take()
+    public E take()
     {
         Waiter self = enqueue();
         do
         {
             if (self == headWaiter.next)
             {
-                Object result = pull();
+                E result = pull();
                 if (result == null)
                 {
                     LockSupport.park();
@@ -169,7 +179,7 @@ public abstract class Sync
                 else
                 {
                     headWaiter = self;
-                    unparkNext(self);
+                    unparkHeadNext(self);
                     return result;
                 }
             }
@@ -190,7 +200,7 @@ public abstract class Sync
      * 
      * @param head
      */
-    private void unparkNext(Waiter head)
+    private void unparkHeadNext(Waiter head)
     {
         Waiter next = findNextWaiter(head);
         if (next == null)
@@ -254,7 +264,7 @@ public abstract class Sync
         Waiter h = headWaiter;
         if (h.next == waiter && casHead(h, waiter))
         {
-            unparkNext(waiter);
+            unparkHeadNext(waiter);
         }
     }
     

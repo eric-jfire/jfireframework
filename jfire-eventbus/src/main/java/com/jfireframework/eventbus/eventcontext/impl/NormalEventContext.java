@@ -114,6 +114,11 @@ public class NormalEventContext<T extends Enum<? extends EventConfig>> implement
     @Override
     public Object getResult()
     {
+        if (finished)
+        {
+            return result;
+        }
+        await();
         return result;
     }
     
@@ -127,5 +132,23 @@ public class NormalEventContext<T extends Enum<? extends EventConfig>> implement
     public EventHandler<T, ?>[] combinationHandlers()
     {
         return combination;
+    }
+    
+    @Override
+    public Object getResult(long mills) throws InterruptedException
+    {
+        if (finished)
+        {
+            return result;
+        }
+        await(mills);
+        if (finished)
+        {
+            return result;
+        }
+        else
+        {
+            throw new InterruptedException();
+        }
     }
 }
