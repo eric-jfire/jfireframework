@@ -1,10 +1,13 @@
 package com.jfireframework.baseutil.concurrent;
 
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import sun.misc.Unsafe;
 
-public class MPMCQueue<E>
+public class MPMCQueue<E> implements Queue<E>
 {
     private volatile Node<E>    head;
     private volatile Node<E>    tail;
@@ -44,6 +47,11 @@ public class MPMCQueue<E>
             unsafe.putObject(this, valueOffset, value);
         }
         
+        public void orderSetNext(Node<E> next)
+        {
+            unsafe.putOrderedObject(this, nextOffset, next);
+        }
+        
         public E clear()
         {
             E origin = value;
@@ -71,7 +79,7 @@ public class MPMCQueue<E>
         Node<E> old = tail;
         if (unsafe.compareAndSwapObject(this, tailOffset, old, insert_node))
         {
-            unsafe.putOrderedObject(old, Node.nextOffset, insert_node);
+            old.orderSetNext(insert_node);
             return true;
         }
         do
@@ -79,7 +87,7 @@ public class MPMCQueue<E>
             old = tail;
             if (unsafe.compareAndSwapObject(this, tailOffset, old, insert_node))
             {
-                unsafe.putOrderedObject(old, Node.nextOffset, insert_node);
+                old.orderSetNext(insert_node);
                 return true;
             }
         } while (true);
@@ -90,6 +98,51 @@ public class MPMCQueue<E>
     {
         offer(o);
         sync.signal();
+    }
+    
+    public E mastPull()
+    {
+        startFromHead: //
+        for (Node<E> h = head, next = h.next; //
+        ; //
+                h = head, next = h.next)
+        {
+            if (next == null)
+            {
+                for (next = h.next; h == head; next = h.next)
+                {
+                    if (next == null && (next = h.next) == null)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        ;
+                    }
+                    if (unsafe.compareAndSwapObject(this, headOffset, h, next))
+                    {
+                        h.unlink();
+                        return next.clear();
+                    }
+                    else
+                    {
+                        continue startFromHead;
+                    }
+                }
+            }
+            else
+            {
+                if (unsafe.compareAndSwapObject(this, headOffset, h, next))
+                {
+                    h.unlink();
+                    return next.clear();
+                }
+                else
+                {
+                    ;
+                }
+            }
+        }
     }
     
     public E poll()
@@ -229,6 +282,97 @@ public class MPMCQueue<E>
         {
             return unfairTake(time, unit);
         }
+    }
+    
+    @Override
+    public int size()
+    {
+        return -1;
+    }
+    
+    @Override
+    public boolean isEmpty()
+    {
+        return head == tail;
+    }
+    
+    @Override
+    public boolean contains(Object o)
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public Iterator<E> iterator()
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public Object[] toArray()
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public <T> T[] toArray(T[] a)
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public boolean remove(Object o)
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public boolean containsAll(Collection<?> c)
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public boolean addAll(Collection<? extends E> c)
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public boolean removeAll(Collection<?> c)
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public boolean retainAll(Collection<?> c)
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public boolean add(E e)
+    {
+        offer(e);
+        return true;
+    }
+    
+    @Override
+    public E remove()
+    {
+        return mastPull();
+    }
+    
+    @Override
+    public E element()
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public E peek()
+    {
+        throw new UnsupportedOperationException();
     }
     
 }
