@@ -7,33 +7,33 @@ import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import sun.misc.Unsafe;
 
-public class MPMCQueue<E> implements Queue<E>
+public class MPMCQueue2<E> implements Queue<E>
 {
-    private CpuCachePadingRefence<Node<E>> head;
-    private CpuCachePadingRefence<Node<E>> tail;
-    private static final Unsafe            unsafe     = ReflectUtil.getUnsafe();
-//    private static final long              tailOffset = ReflectUtil.getFieldOffset("tail", MPMCQueue.class);
-//    private static final long              headOffset = ReflectUtil.getFieldOffset("head", MPMCQueue.class);
-    private final boolean                  fair;
-    private Sync<E>                        sync       = new Sync<E>() {
-                                                          
-                                                          @Override
-                                                          protected E get()
-                                                          {
-                                                              return poll();
-                                                          }
-                                                      };
+    private volatile Node<E>    head;
+    private volatile Node<E>    tail;
+    private static final Unsafe unsafe     = ReflectUtil.getUnsafe();
+    private static final long   tailOffset = ReflectUtil.getFieldOffset("tail", MPMCQueue2.class);
+    private static final long   headOffset = ReflectUtil.getFieldOffset("head", MPMCQueue2.class);
+    private final boolean       fair;
+    private Sync<E>             sync       = new Sync<E>() {
+                                               
+                                               @Override
+                                               protected E get()
+                                               {
+                                                   return poll();
+                                               }
+                                           };
+    private static final int    HOPS       = 3;
     
-    public MPMCQueue()
+    public MPMCQueue2()
     {
         this(false);
     }
     
-    public MPMCQueue(boolean fair)
+    public MPMCQueue2(boolean fair)
     {
         Node<E> n = new Node<E>(null);
-        head = new CpuCachePadingRefence<MPMCQueue.Node<E>>(n);
-        tail = new CpuCachePadingRefence<MPMCQueue.Node<E>>(n);
+        head = tail = n;
         this.fair = fair;
     }
     
@@ -49,26 +49,24 @@ public class MPMCQueue<E> implements Queue<E>
             unsafe.putObject(this, valueOffset, value);
         }
         
-        public void orderSetNext(Node<E> next)
+        public boolean casNext(Node<E> next)
         {
-            unsafe.putOrderedObject(this, nextOffset, next);
+            return unsafe.compareAndSwapObject(this, nextOffset, null, next);
         }
         
-        public E clear()
+        public boolean casValue(E value)
         {
-            E origin = value;
-            unsafe.putObject(this, Node.valueOffset, null);
-            return origin;
-        }
-        
-        public void unlink()
-        {
-            unsafe.putObject(this, Node.nextOffset, null);
+            return unsafe.compareAndSwapObject(this, valueOffset, value, null);
         }
     }
     
     public void clear()
     {
+    }
+    
+    private void casHead(Node<E> originHead, Node<E> newHead)
+    {
+        unsafe.compareAndSwapObject(this, headOffset, originHead, newHead);
     }
     
     public boolean offer(E o)
@@ -78,22 +76,28 @@ public class MPMCQueue<E> implements Queue<E>
             throw new NullPointerException();
         }
         Node<E> insert_node = new Node<E>(o);
-        Node<E> old = tail.get();
-        if (tail.compareAndSwap(old, insert_node))
+        Node<E> t = tail;
+        Node<E> p = t;
+        if (p.next == null && p.casNext(insert_node))
         {
-            old.orderSetNext(insert_node);
             return true;
         }
-        do
+        p = p.next;
+        for (int i = 0;; i++)
         {
-            old = tail.get();
-            if (tail.compareAndSwap(old, insert_node))
+            if (p.next == null && p.casNext(insert_node))
             {
-                old.orderSetNext(insert_node);
+                if (i > HOPS)
+                {
+                    unsafe.compareAndSwapObject(this, tailOffset, t, insert_node);
+                }
                 return true;
             }
-        } while (true);
-        
+            else
+            {
+                p = p.next;
+            }
+        }
     }
     
     public void offerAndSignal(E o)
@@ -102,93 +106,22 @@ public class MPMCQueue<E> implements Queue<E>
         sync.signal();
     }
     
-    public E mastPull()
-    {
-        startFromHead: //
-        for (Node<E> h = head.get(), next = h.next; //
-        ; //
-                h = head.get(), next = h.next)
-        {
-            if (next == null)
-            {
-                for (next = h.next; h == head.get(); next = h.next)
-                {
-                    if (next == null && (next = h.next) == null)
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        ;
-                    }
-                    if (head.compareAndSwap(h, next))
-                    {
-                        h.unlink();
-                        return next.clear();
-                    }
-                    else
-                    {
-                        continue startFromHead;
-                    }
-                }
-            }
-            else
-            {
-                if (head.compareAndSwap(h, next))
-                {
-                    h.unlink();
-                    return next.clear();
-                }
-                else
-                {
-                    ;
-                }
-            }
-        }
-    }
-    
     public E poll()
     {
-        startFromHead: //
-        for (Node<E> h = head.get(), next = h.next, t = tail.get(); //
-                h != t || h != (t = tail.get()); //
-                h = head.get(), next = h.next)
+        Node<E> h = head;
+        Node<E> n = h.next;
+        for (int i = 0; n != null; i++)
         {
-            if (next == null)
+            E value = n.value;
+            if (value != null && n.casValue(value))
             {
-                for (next = h.next; h == head.get(); next = h.next)
+                if (i > HOPS)
                 {
-                    if (next == null && (next = h.next) == null)
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        ;
-                    }
-                    if (head.compareAndSwap(h, next))
-                    {
-                        h.unlink();
-                        return next.clear();
-                    }
-                    else
-                    {
-                        continue startFromHead;
-                    }
+                    casHead(h, n);
                 }
+                return value;
             }
-            else
-            {
-                if (head.compareAndSwap(h, next))
-                {
-                    h.unlink();
-                    return next.clear();
-                }
-                else
-                {
-                    ;
-                }
-            }
+            n = n.next;
         }
         return null;
     }
@@ -295,7 +228,15 @@ public class MPMCQueue<E> implements Queue<E>
     @Override
     public boolean isEmpty()
     {
-        return head == tail;
+        Node<E> h = head;
+        for (Node<E> n = h.next; n != null; n = n.next)
+        {
+            if (n.value != null)
+            {
+                return true;
+            }
+        }
+        return false;
     }
     
     @Override
@@ -362,7 +303,7 @@ public class MPMCQueue<E> implements Queue<E>
     @Override
     public E remove()
     {
-        return mastPull();
+        return poll();
     }
     
     @Override
@@ -376,5 +317,4 @@ public class MPMCQueue<E> implements Queue<E>
     {
         throw new UnsupportedOperationException();
     }
-    
 }

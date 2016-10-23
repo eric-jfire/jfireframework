@@ -93,7 +93,12 @@ public abstract class Sync<E>
         }
     }
     
-    protected abstract E pull();
+    /**
+     * 获取独占资源
+     * 
+     * @return
+     */
+    protected abstract E get();
     
     public E take(long time, TimeUnit unit)
     {
@@ -106,7 +111,7 @@ public abstract class Sync<E>
             // head之后的next是本线程设置的，所以这里直接获取。可以读取到就意味着确实是head节点的后继节点
             if (self == headWaiter.next)
             {
-                result = pull();
+                result = get();
                 if (result == null)
                 {
                     if (nanos < 1000)
@@ -171,7 +176,7 @@ public abstract class Sync<E>
         {
             if (self == headWaiter.next)
             {
-                E result = pull();
+                E result = get();
                 if (result == null)
                 {
                     LockSupport.park();

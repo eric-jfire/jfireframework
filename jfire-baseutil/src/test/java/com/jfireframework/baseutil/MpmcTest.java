@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import org.junit.Test;
 import com.jfireframework.baseutil.concurrent.MPMCQueue;
+import com.jfireframework.baseutil.concurrent.MPMCQueue2;
 import com.jfireframework.baseutil.time.NanoTimeWatch;
 import com.jfireframework.baseutil.time.Timewatch;
 
@@ -24,7 +25,20 @@ public class MpmcTest
         }
         timewatch.end();
         System.out.println("数据生产耗时:" + timewatch.getTotal());
-        final Queue<Integer> queue = new ConcurrentLinkedQueue<Integer>();
+        int testTime = 20;
+        timewatch.start();
+        for (int i = 0; i < testTime; i++)
+        {
+            dotest(count, source);
+        }
+        timewatch.end();
+        System.out.println("测试平均耗时:" + (timewatch.getTotal() / testTime));
+    }
+    
+    private void dotest(final int count, Integer[] source) throws InterruptedException
+    {
+        
+        final Queue<Integer> queue = new MPMCQueue2<Integer>();
         final CountDownLatch latch = new CountDownLatch(1);
         Thread thread = new Thread(new Runnable() {
             @Override
