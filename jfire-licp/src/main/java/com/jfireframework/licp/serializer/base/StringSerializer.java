@@ -1,8 +1,10 @@
 package com.jfireframework.licp.serializer.base;
 
+import java.nio.ByteBuffer;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
 import com.jfireframework.licp.serializer.LicpSerializer;
+import com.jfireframework.licp.util.BufferUtil;
 
 public class StringSerializer implements LicpSerializer
 {
@@ -18,6 +20,14 @@ public class StringSerializer implements LicpSerializer
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
         String value = buf.readString();
+        licp.putObject(value);
+        return value;
+    }
+    
+    @Override
+    public Object deserialize(ByteBuffer buf, Licp licp)
+    {
+        String value = BufferUtil.readString(buf);
         licp.putObject(value);
         return value;
     }

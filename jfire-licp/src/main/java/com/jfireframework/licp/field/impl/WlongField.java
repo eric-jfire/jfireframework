@@ -1,8 +1,10 @@
 package com.jfireframework.licp.field.impl;
 
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
+import com.jfireframework.licp.util.BufferUtil;
 
 public class WlongField extends AbstractCacheField
 {
@@ -34,6 +36,20 @@ public class WlongField extends AbstractCacheField
         if (exist)
         {
             unsafe.putObject(holder, offset, buf.readVarLong());
+        }
+        else
+        {
+            unsafe.putObject(holder, offset, null);
+        }
+    }
+    
+    @Override
+    public void read(Object holder, ByteBuffer buf, Licp licp)
+    {
+        boolean exist = buf.get() == 1 ? true : false;
+        if (exist)
+        {
+            unsafe.putObject(holder, offset, BufferUtil.readVarLong(buf));
         }
         else
         {

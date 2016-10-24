@@ -1,6 +1,7 @@
 package com.jfireframework.licp.field.impl;
 
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
 
@@ -29,6 +30,21 @@ public class WByteField extends AbstractCacheField
     
     @Override
     public void read(Object holder, ByteBuf<?> buf, Licp licp)
+    {
+        byte b = buf.get();
+        if (b == 0)
+        {
+            unsafe.putObject(holder, offset, null);
+        }
+        else
+        {
+            b = buf.get();
+            unsafe.putObject(holder, offset, b);
+        }
+    }
+    
+    @Override
+    public void read(Object holder, ByteBuffer buf, Licp licp)
     {
         byte b = buf.get();
         if (b == 0)

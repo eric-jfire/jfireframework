@@ -1,7 +1,9 @@
 package com.jfireframework.licp.serializer.array;
 
+import java.nio.ByteBuffer;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
+import com.jfireframework.licp.util.BufferUtil;
 
 public class LongArraySerializer extends AbstractArraySerializer
 {
@@ -31,6 +33,19 @@ public class LongArraySerializer extends AbstractArraySerializer
         for (int i = 0; i < length; i++)
         {
             array[i] = buf.readVarLong();
+        }
+        return array;
+    }
+    
+    @Override
+    public Object deserialize(ByteBuffer buf, Licp licp)
+    {
+        int length = BufferUtil.readPositive(buf);
+        long[] array = new long[length];
+        licp.putObject(array);
+        for (int i = 0; i < length; i++)
+        {
+            array[i] = BufferUtil.readVarLong(buf);
         }
         return array;
     }

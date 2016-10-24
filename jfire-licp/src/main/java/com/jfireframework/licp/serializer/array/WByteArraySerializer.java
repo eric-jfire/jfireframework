@@ -1,7 +1,9 @@
 package com.jfireframework.licp.serializer.array;
 
+import java.nio.ByteBuffer;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
+import com.jfireframework.licp.util.BufferUtil;
 
 public class WByteArraySerializer extends AbstractArraySerializer
 {
@@ -34,6 +36,27 @@ public class WByteArraySerializer extends AbstractArraySerializer
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
         int length = buf.readPositive();
+        Byte[] array = new Byte[length];
+        licp.putObject(array);
+        for (int i = 0; i < length; i++)
+        {
+            boolean exist = buf.get() == 1 ? true : false;
+            if (exist)
+            {
+                array[i] = buf.get();
+            }
+            else
+            {
+                array[i] = null;
+            }
+        }
+        return array;
+    }
+    
+    @Override
+    public Object deserialize(ByteBuffer buf, Licp licp)
+    {
+        int length = BufferUtil.readPositive(buf);
         Byte[] array = new Byte[length];
         licp.putObject(array);
         for (int i = 0; i < length; i++)

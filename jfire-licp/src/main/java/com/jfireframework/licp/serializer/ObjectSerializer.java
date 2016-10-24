@@ -2,6 +2,7 @@ package com.jfireframework.licp.serializer;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -80,7 +81,26 @@ public class ObjectSerializer implements LicpSerializer
         {
             throw new JustThrowException(e);
         }
-        
+    }
+    
+    @Override
+    public Object deserialize(ByteBuffer buf, Licp licp)
+    {
+        try
+        {
+            Object holder = unsafe.allocateInstance(type);
+            // 在这个地方把对象放入。在外面放入就来不及了
+            licp.putObject(holder);
+            for (CacheField each : fields)
+            {
+                each.read(holder, buf, licp);
+            }
+            return holder;
+        }
+        catch (InstantiationException e)
+        {
+            throw new JustThrowException(e);
+        }
     }
     
 }

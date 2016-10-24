@@ -1,7 +1,9 @@
 package com.jfireframework.licp.serializer.array;
 
+import java.nio.ByteBuffer;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
+import com.jfireframework.licp.util.BufferUtil;
 
 public class BooleanArraySerializer extends AbstractArraySerializer
 {
@@ -31,6 +33,19 @@ public class BooleanArraySerializer extends AbstractArraySerializer
         for (int i = 0; i < length; i++)
         {
             array[i] = buf.readBoolean();
+        }
+        return array;
+    }
+    
+    @Override
+    public Object deserialize(ByteBuffer buf, Licp licp)
+    {
+        int length = BufferUtil.readPositive(buf);
+        boolean[] array = new boolean[length];
+        licp.putObject(array);
+        for (int i = 0; i < length; i++)
+        {
+            array[i] = BufferUtil.readBoolean(buf);
         }
         return array;
     }

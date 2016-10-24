@@ -1,8 +1,10 @@
 package com.jfireframework.licp.field.impl;
 
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
+import com.jfireframework.licp.util.BufferUtil;
 
 public class StringField extends AbstractCacheField
 {
@@ -52,6 +54,33 @@ public class StringField extends AbstractCacheField
                 for (int i = 0; i < length; i++)
                 {
                     src[i] = buf.readVarChar();
+                }
+                unsafe.putObject(holder, offset, new String(src));
+            }
+        }
+    }
+    
+    @Override
+    public void read(Object holder, ByteBuffer buf, Licp licp)
+    {
+        int length = BufferUtil.readPositive(buf);
+        if (length == 0)
+        {
+            unsafe.putObject(holder, offset, null);
+        }
+        else
+        {
+            length >>>= 1;
+            if (length == 0)
+            {
+                unsafe.putObject(holder, offset, "");
+            }
+            else
+            {
+                char[] src = new char[length];
+                for (int i = 0; i < length; i++)
+                {
+                    src[i] = BufferUtil.readVarChar(buf);
                 }
                 unsafe.putObject(holder, offset, new String(src));
             }

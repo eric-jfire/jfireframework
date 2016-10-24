@@ -1,7 +1,9 @@
 package com.jfireframework.licp.serializer.array;
 
+import java.nio.ByteBuffer;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
+import com.jfireframework.licp.util.BufferUtil;
 
 public class WFloatArraySerializer extends AbstractArraySerializer
 {
@@ -42,6 +44,27 @@ public class WFloatArraySerializer extends AbstractArraySerializer
             if (exist)
             {
                 array[i] = buf.readFloat();
+            }
+            else
+            {
+                array[i] = null;
+            }
+        }
+        return array;
+    }
+    
+    @Override
+    public Object deserialize(ByteBuffer buf, Licp licp)
+    {
+        int length = BufferUtil.readPositive(buf);
+        Float[] array = new Float[length];
+        licp.putObject(array);
+        for (int i = 0; i < length; i++)
+        {
+            boolean exist = buf.get() == 1 ? true : false;
+            if (exist)
+            {
+                array[i] = BufferUtil.readFloat(buf);
             }
             else
             {

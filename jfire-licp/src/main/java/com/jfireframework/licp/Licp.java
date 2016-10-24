@@ -1,11 +1,13 @@
 package com.jfireframework.licp;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.licp.serializer.LicpSerializer;
 import com.jfireframework.licp.serializer.SerializerFactory;
+import com.jfireframework.licp.util.BufferUtil;
 
 public class Licp
 {
@@ -120,7 +122,8 @@ public class Licp
         return (T) _deserialize(buf);
     }
     
-    public Object deserialize(ByteBuf<?> buf)
+    @SuppressWarnings("unchecked")
+    public <T> T deserialize(ByteBuf<?> buf)
     {
         collect.clear();
         register.clear();
@@ -128,7 +131,19 @@ public class Licp
         {
             throw new UnSupportException("序号逆序列化的字节的版本号不对，请检查序列化和反序列化的licp是否同一个版本");
         }
-        return _deserialize(buf);
+        return (T) _deserialize(buf);
+    }
+    
+    @SuppressWarnings("unchecked")
+    public <T> T deserialize(ByteBuffer buffer)
+    {
+        collect.clear();
+        register.clear();
+        if (buffer.get() != Licp.version)
+        {
+            throw new UnSupportException("序号逆序列化的字节的版本号不对，请检查序列化和反序列化的licp是否同一个版本");
+        }
+        return (T) _deserialize(buffer);
     }
     
     public Object _deserialize(ByteBuf<?> buf)
@@ -168,9 +183,69 @@ public class Licp
         }
     }
     
+    public Object _deserialize(ByteBuffer buf)
+    {
+        int result = BufferUtil.readPositive(buf);
+        if (result == 0)
+        {
+            return null;
+        }
+        int flag = result & 0x03;
+        if (flag == 1)
+        {
+            result >>>= 2;
+            return collect.get(result);
+        }
+        else if (flag == 2)
+        {
+            result >>>= 2;
+            char[] src = new char[result];
+            for (int i = 0; i < src.length; i++)
+            {
+                src[i] = BufferUtil.readVarChar(buf);
+            }
+            Class<?> type = loadClass(new String(src));
+            register.registerTemporary(type);
+            return _getSerializer(type).deserialize(buf, this);
+        }
+        else if (flag == 3)
+        {
+            result >>>= 2;
+            Class<?> type = loadClass(result);
+            return _getSerializer(type).deserialize(buf, this);
+        }
+        else
+        {
+            throw new UnSupportException("not here");
+        }
+    }
+    
     public Object _deserialize(ByteBuf<?> buf, LicpSerializer serializer)
     {
         int result = buf.readPositive();
+        if (result == 0)
+        {
+            return null;
+        }
+        int flag = result & 0x03;
+        if (flag == 1)
+        {
+            result >>>= 2;
+            return collect.get(result);
+        }
+        else if (flag == 2)
+        {
+            return serializer.deserialize(buf, this);
+        }
+        else
+        {
+            throw new UnSupportException("not here");
+        }
+    }
+    
+    public Object _deserialize(ByteBuffer buf, LicpSerializer serializer)
+    {
+        int result = BufferUtil.readPositive(buf);
         if (result == 0)
         {
             return null;

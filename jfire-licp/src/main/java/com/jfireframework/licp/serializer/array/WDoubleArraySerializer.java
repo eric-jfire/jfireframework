@@ -1,7 +1,9 @@
 package com.jfireframework.licp.serializer.array;
 
+import java.nio.ByteBuffer;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
+import com.jfireframework.licp.util.BufferUtil;
 
 public class WDoubleArraySerializer extends AbstractArraySerializer
 {
@@ -42,6 +44,28 @@ public class WDoubleArraySerializer extends AbstractArraySerializer
             if (exist)
             {
                 array[i] = buf.readDouble();
+            }
+            else
+            {
+                array[i] = null;
+            }
+        }
+        return array;
+    }
+    
+    @Override
+    public Object deserialize(ByteBuffer buf, Licp licp)
+    {
+        
+        int length = BufferUtil.readPositive(buf);
+        Double[] array = new Double[length];
+        licp.putObject(array);
+        for (int i = 0; i < length; i++)
+        {
+            boolean exist = buf.get() == 1 ? true : false;
+            if (exist)
+            {
+                array[i] = BufferUtil.readDouble(buf);
             }
             else
             {

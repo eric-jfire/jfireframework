@@ -1,9 +1,11 @@
 package com.jfireframework.licp.serializer.extra;
 
+import java.nio.ByteBuffer;
 import java.util.HashSet;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
 import com.jfireframework.licp.serializer.LicpSerializer;
+import com.jfireframework.licp.util.BufferUtil;
 
 public class HashSetSerializer implements LicpSerializer
 {
@@ -24,6 +26,18 @@ public class HashSetSerializer implements LicpSerializer
     public Object deserialize(ByteBuf<?> buf, Licp licp)
     {
         int length = buf.readPositive();
+        HashSet<Object> set = new HashSet<Object>(length);
+        for (int i = 0; i < length; i++)
+        {
+            set.add(licp._deserialize(buf));
+        }
+        return set;
+    }
+    
+    @Override
+    public Object deserialize(ByteBuffer buf, Licp licp)
+    {
+        int length = BufferUtil.readPositive(buf);
         HashSet<Object> set = new HashSet<Object>(length);
         for (int i = 0; i < length; i++)
         {

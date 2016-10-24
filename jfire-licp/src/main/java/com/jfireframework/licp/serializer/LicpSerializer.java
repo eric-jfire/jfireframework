@@ -1,5 +1,6 @@
 package com.jfireframework.licp.serializer;
 
+import java.nio.ByteBuffer;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.licp.Licp;
 
@@ -27,5 +28,7 @@ public interface LicpSerializer
      * @param register TODO
      */
     public Object deserialize(ByteBuf<?> buf, Licp licp);
+    
+    public Object deserialize(ByteBuffer buf, Licp licp);
     
 }
