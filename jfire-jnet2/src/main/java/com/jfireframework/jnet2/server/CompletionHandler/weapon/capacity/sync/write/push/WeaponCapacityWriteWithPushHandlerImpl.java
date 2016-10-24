@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingLong;
-import com.jfireframework.baseutil.concurrent.MPSCLinkedQueue;
+import com.jfireframework.baseutil.concurrent.MPSCQueue;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
@@ -27,7 +27,7 @@ public final class WeaponCapacityWriteWithPushHandlerImpl implements WeaponCapac
      * 代表着已经被写入的序号，所以使用的时候，wrap的值应该是该属性的值+1
      */
     private final CpuCachePadingLong        writeCursor       = new CpuCachePadingLong(-1);
-    private final CapacityReadHandler readHandler;
+    private final CapacityReadHandler       readHandler;
     private final int                       idle              = 0;
     private final int                       work              = 1;
     private final CpuCachePadingInt         idleState         = new CpuCachePadingInt(idle);
@@ -36,7 +36,7 @@ public final class WeaponCapacityWriteWithPushHandlerImpl implements WeaponCapac
     private final AsynchronousSocketChannel socketChannel;
     private final ByteBuffer[]              batchBuffers;
     private final ByteBuf<?>[]              batchBufs;
-    private MPSCLinkedQueue<ByteBuf<?>>     asyncSendQueue    = new MPSCLinkedQueue<>();
+    private MPSCQueue<ByteBuf<?>>           asyncSendQueue    = new MPSCQueue<>();
     // 处于响应客户端请求并且回送数据的模式
     private static final int                response          = 0;
     // 处于主动推送消息给客户端的模式
@@ -170,6 +170,7 @@ public final class WeaponCapacityWriteWithPushHandlerImpl implements WeaponCapac
         buf.release();
     }
     
+    @Override
     public void write(ByteBuf<?> buf, long index)
     {
         setBuf(buf, index);

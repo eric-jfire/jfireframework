@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingLong;
-import com.jfireframework.baseutil.concurrent.MPSCLinkedQueue;
+import com.jfireframework.baseutil.concurrent.MPSCQueue;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
@@ -63,33 +63,33 @@ public class WeaponSyncWriteHandlerImpl implements WeaponCapacityWriteHandler
             throw new RuntimeException("错误的长度信息");
         }
     }
-    protected BufHolder[]               bufArray;
-    protected int                       lengthMask;
-    protected int                       capacity         = 0;
+    protected BufHolder[]             bufArray;
+    protected int                     lengthMask;
+    protected int                     capacity         = 0;
     /**
      * 写出处理器下一个数据可以放入的地方
      * 注意，是下一个
      */
-    private CpuCachePadingLong          putSequence      = new CpuCachePadingLong(0);
+    private CpuCachePadingLong        putSequence      = new CpuCachePadingLong(0);
     /**
      * 写出处理器写一个发送数据的位置
      */
     // private volatile long sendSequence = 0;
-    private CpuCachePadingLong          sendSequence     = new CpuCachePadingLong(0);
-    private long                        wrapSendSequence = 0;
-    private long                        wrapPutSequence  = 0;
-    private final CapacityReadHandler   readHandler;
-    private final ServerChannel         serverChannel;
-    private final int                   idle             = 0;
-    private final int                   work             = 1;
-    private final CpuCachePadingInt     idleState        = new CpuCachePadingInt(idle);
-    private final Logger                logger           = ConsoleLogFactory.getLogger();
-    private MPSCLinkedQueue<ByteBuf<?>> asyncSendQueue   = new MPSCLinkedQueue<>();
+    private CpuCachePadingLong        sendSequence     = new CpuCachePadingLong(0);
+    private long                      wrapSendSequence = 0;
+    private long                      wrapPutSequence  = 0;
+    private final CapacityReadHandler readHandler;
+    private final ServerChannel       serverChannel;
+    private final int                 idle             = 0;
+    private final int                 work             = 1;
+    private final CpuCachePadingInt   idleState        = new CpuCachePadingInt(idle);
+    private final Logger              logger           = ConsoleLogFactory.getLogger();
+    private MPSCQueue<ByteBuf<?>>     asyncSendQueue   = new MPSCQueue<>();
     // 处于响应客户端请求并且回送数据的模式
-    private static final int            response         = 0;
+    private static final int          response         = 0;
     // 处于主动推送消息给客户端的模式
-    private static final int            push             = 1;
-    private final CpuCachePadingInt     pushState        = new CpuCachePadingInt(response);
+    private static final int          push             = 1;
+    private final CpuCachePadingInt   pushState        = new CpuCachePadingInt(response);
     
     public WeaponSyncWriteHandlerImpl(ServerChannel serverChannel, int capacity, CapacityReadHandler readHandler)
     {
@@ -178,6 +178,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponCapacityWriteHandler
         readHandler.catchThrowable(exc);
     }
     
+    @Override
     public void write(ByteBuf<?> buf, long index)
     {
         setBuf(buf, index);
@@ -277,7 +278,7 @@ public class WeaponSyncWriteHandlerImpl implements WeaponCapacityWriteHandler
     @Override
     public void push(ByteBuf<?> buf)
     {
-        asyncSendQueue.add(buf);
+        asyncSendQueue.offer(buf);
         retryWrite();
     }
     

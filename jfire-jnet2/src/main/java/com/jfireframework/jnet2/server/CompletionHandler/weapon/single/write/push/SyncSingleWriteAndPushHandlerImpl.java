@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import com.jfireframework.baseutil.collection.buffer.ByteBuf;
 import com.jfireframework.baseutil.concurrent.CpuCachePadingInt;
-import com.jfireframework.baseutil.concurrent.MPSCLinkedQueue;
+import com.jfireframework.baseutil.concurrent.MPSCQueue;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.jnet2.common.channel.impl.ServerChannel;
@@ -13,13 +13,13 @@ import com.jfireframework.jnet2.server.CompletionHandler.weapon.single.SingleRea
 
 public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
 {
-    private final ServerChannel               serverChannel;
-    private final SingleReadHandler           readHandler;
-    private final static Logger               logger     = ConsoleLogFactory.getLogger();
-    private static final int                  IDLE       = 0;
-    private static final int                  WORK       = 1;
-    private final CpuCachePadingInt           writeState = new CpuCachePadingInt(IDLE);
-    private final MPSCLinkedQueue<ByteBuf<?>> pushQueue  = new MPSCLinkedQueue<>();
+    private final ServerChannel         serverChannel;
+    private final SingleReadHandler     readHandler;
+    private final static Logger         logger     = ConsoleLogFactory.getLogger();
+    private static final int            IDLE       = 0;
+    private static final int            WORK       = 1;
+    private final CpuCachePadingInt     writeState = new CpuCachePadingInt(IDLE);
+    private final MPSCQueue<ByteBuf<?>> pushQueue  = new MPSCQueue<>();
     
     public SyncSingleWriteAndPushHandlerImpl(ServerChannel serverChannel, SingleReadHandler readHandler)
     {
@@ -99,7 +99,7 @@ public class SyncSingleWriteAndPushHandlerImpl implements WeaponWriteHandler
         }
         else
         {
-            pushQueue.add(buf);
+            pushQueue.offer(buf);
             while (writeState.value() == IDLE && writeState.compareAndSwap(IDLE, WORK))
             {
                 buf = pushQueue.poll();
