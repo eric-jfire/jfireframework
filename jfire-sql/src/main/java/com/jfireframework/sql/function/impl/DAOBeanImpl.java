@@ -601,9 +601,9 @@ public class DAOBeanImpl<T> implements Dao<T>
     }
     
     @Override
-    public T findBy(Object param, Connection connection)
+    public T findBy(String name, Object param, Connection connection)
     {
-        String findBy = findBySqlMap.get(param);
+        String findBy = findBySqlMap.get(name);
         if (findBy == null)
         {
             throw new NullPointerException("没有对应条件的findBy");

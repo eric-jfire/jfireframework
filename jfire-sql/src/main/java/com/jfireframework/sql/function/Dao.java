@@ -83,7 +83,7 @@ public interface Dao<T>
      * @param connection
      * @return
      */
-    public T findBy(Object param, Connection connection);
+    public T findBy(String name, Object param, Connection connection);
     
     /**
      * 在数据库该表中，使用主键查询并且返回对象
