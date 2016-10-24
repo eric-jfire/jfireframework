@@ -33,26 +33,26 @@ import sun.misc.Unsafe;
 
 public class DAOBeanImpl<T> implements Dao<T>
 {
-    private final Class<T>                  entityClass;
+    private final Class<T>              entityClass;
     // 存储类的属性名和其对应的Mapfield映射关系
-    private final Map<String, MapField>     fieldMap     = new HashMap<String, MapField>();
-    private final Map<String, SqlAndFields> findBySqlMap = new HashMap<String, SqlAndFields>();
+    private final Map<String, MapField> fieldMap     = new HashMap<String, MapField>();
+    private final Map<String, String>   findBySqlMap = new HashMap<String, String>();
     // 代表数据库主键id的field
-    private final MapField                  idField;
-    private final long                      idOffset;
-    private final IdType                    idType;
-    private final static Unsafe             unsafe       = ReflectUtil.getUnsafe();
-    private final String                    tableName;
-    private final IdStrategy                idStrategy;
-    private final SqlAndFields              getInfo;
-    private final SqlAndFields              getInShareInfo;
-    private final SqlAndFields              getForUpdateInfo;
-    private final SqlAndFields              insertInfo;
-    private final SqlAndFields              updateInfo;
-    private final String                    deleteSql;
-    private final LogInterceptor            logInterceptor;
-    private static final Logger             LOGGER       = ConsoleLogFactory.getLogger();
-    private static final Uid                uid          = AutumnId.instance();
+    private final MapField              idField;
+    private final long                  idOffset;
+    private final IdType                idType;
+    private final static Unsafe         unsafe       = ReflectUtil.getUnsafe();
+    private final String                tableName;
+    private final IdStrategy            idStrategy;
+    private final SqlAndFields          getInfo;
+    private final SqlAndFields          getInShareInfo;
+    private final SqlAndFields          getForUpdateInfo;
+    private final SqlAndFields          insertInfo;
+    private final SqlAndFields          updateInfo;
+    private final String                deleteSql;
+    private final LogInterceptor        logInterceptor;
+    private static final Logger         LOGGER       = ConsoleLogFactory.getLogger();
+    private static final Uid            uid          = AutumnId.instance();
     
     enum IdType
     {
@@ -72,8 +72,7 @@ public class DAOBeanImpl<T> implements Dao<T>
             if (mapField.getField().isAnnotationPresent(FindBy.class))
             {
                 String sql = "select * from " + tableName + " where " + mapField.getColName() + " = ?";
-                SqlAndFields findBy = new SqlAndFields(sql, new MapField[] { mapField });
-                findBySqlMap.put(mapField.getFieldName(), findBy);
+                findBySqlMap.put(mapField.getFieldName(), sql);
             }
         }
         Field t_idField = metaData.getIdInfo().getField();
@@ -604,21 +603,20 @@ public class DAOBeanImpl<T> implements Dao<T>
     @Override
     public T findBy(Object param, Connection connection)
     {
-        SqlAndFields findBy = findBySqlMap.get(param);
+        String findBy = findBySqlMap.get(param);
         if (findBy == null)
         {
             throw new NullPointerException("没有对应条件的findBy");
         }
-        String sql = findBy.getSql();
         PreparedStatement pStat = null;
         try
         {
-            pStat = connection.prepareStatement(sql);
-            if (logInterceptor.isLogOn(sql))
+            pStat = connection.prepareStatement(findBy);
+            if (logInterceptor.isLogOn(findBy))
             {
-                logInterceptor.log(sql, param);
+                logInterceptor.log(findBy, param);
             }
-            findBy.getFields()[0].setStatementValue(pStat, param, 1);
+            pStat.setObject(1, param);
             ResultSet resultSet = pStat.executeQuery();
             if (resultSet.next())
             {

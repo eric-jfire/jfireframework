@@ -193,4 +193,10 @@ public class SqlSessionImpl implements SqlSession
         }
     }
     
+    @Override
+    public <T> T findBy(Class<T> entityClass, Object param)
+    {
+        return sessionFactory.getDao(entityClass).findBy(param, connection);
+    }
+    
 }
