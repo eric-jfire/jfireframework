@@ -77,4 +77,15 @@ public abstract class AbstractMapField implements MapField
     {
         return length;
     }
+    
+    /**
+     * 返回原始的field对象
+     * 
+     * @return
+     */
+    @Override
+    public Field getField()
+    {
+        return field;
+    }
 }

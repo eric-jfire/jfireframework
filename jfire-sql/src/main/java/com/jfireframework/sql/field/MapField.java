@@ -1,5 +1,6 @@
 package com.jfireframework.sql.field;
 
+import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -45,6 +46,13 @@ public interface MapField
      * @return
      */
     public String getFieldName();
+    
+    /**
+     * 返回原始的field对象
+     * 
+     * @return
+     */
+    public Field getField();
     
     /**
      * 获取该属性在数据库的对应类型

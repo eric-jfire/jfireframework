@@ -18,6 +18,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.uniqueid.AutumnId;
 import com.jfireframework.baseutil.uniqueid.Uid;
+import com.jfireframework.sql.annotation.FindBy;
 import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dbstructure.NameStrategy;
@@ -32,38 +33,49 @@ import sun.misc.Unsafe;
 
 public class DAOBeanImpl<T> implements Dao<T>
 {
-    private final Class<?>              entityClass;
+    private final Class<T>                  entityClass;
     // 存储类的属性名和其对应的Mapfield映射关系
-    private final Map<String, MapField> fieldMap = new HashMap<String, MapField>();
+    private final Map<String, MapField>     fieldMap     = new HashMap<String, MapField>();
+    private final Map<String, SqlAndFields> findBySqlMap = new HashMap<String, SqlAndFields>();
     // 代表数据库主键id的field
-    private final MapField              idField;
-    private final long                  idOffset;
-    private final IdType                idType;
-    private final static Unsafe         unsafe   = ReflectUtil.getUnsafe();
-    private final String                tableName;
-    private final IdStrategy            idStrategy;
-    private final SqlAndFields          getInfo;
-    private final SqlAndFields          getInShareInfo;
-    private final SqlAndFields          getForUpdateInfo;
-    private final SqlAndFields          insertInfo;
-    private final SqlAndFields          updateInfo;
-    private final String                deleteSql;
-    private final LogInterceptor        logInterceptor;
-    private static final Logger         LOGGER   = ConsoleLogFactory.getLogger();
-    private static final Uid            uid      = AutumnId.instance();
+    private final MapField                  idField;
+    private final long                      idOffset;
+    private final IdType                    idType;
+    private final static Unsafe             unsafe       = ReflectUtil.getUnsafe();
+    private final String                    tableName;
+    private final IdStrategy                idStrategy;
+    private final SqlAndFields              getInfo;
+    private final SqlAndFields              getInShareInfo;
+    private final SqlAndFields              getForUpdateInfo;
+    private final SqlAndFields              insertInfo;
+    private final SqlAndFields              updateInfo;
+    private final String                    deleteSql;
+    private final LogInterceptor            logInterceptor;
+    private static final Logger             LOGGER       = ConsoleLogFactory.getLogger();
+    private static final Uid                uid          = AutumnId.instance();
     
     enum IdType
     {
         INT, LONG, STRING
     }
     
+    @SuppressWarnings("unchecked")
     public DAOBeanImpl(TableMetaData metaData, LogInterceptor logInterceptor)
     {
         this.logInterceptor = logInterceptor;
-        this.entityClass = metaData.getEntityClass();
+        this.entityClass = (Class<T>) metaData.getEntityClass();
         NameStrategy nameStrategy = metaData.getNameStrategy();
         tableName = entityClass.getAnnotation(TableEntity.class).name();
         MapField[] allMapFields = buildMapfields(metaData.getFieldInfos(), nameStrategy);
+        for (MapField mapField : allMapFields)
+        {
+            if (mapField.getField().isAnnotationPresent(FindBy.class))
+            {
+                String sql = "select * from " + tableName + " where " + mapField.getColName() + " = ?";
+                SqlAndFields findBy = new SqlAndFields(sql, new MapField[] { mapField });
+                findBySqlMap.put(mapField.getFieldName(), findBy);
+            }
+        }
         Field t_idField = metaData.getIdInfo().getField();
         idType = getIdType(t_idField);
         idField = MapFieldBuilder.buildMapField(t_idField, nameStrategy);
@@ -587,6 +599,63 @@ public class DAOBeanImpl<T> implements Dao<T>
     public MapField[] getStructureFields()
     {
         return insertInfo.getFields();
+    }
+    
+    @Override
+    public T findBy(Object param, Connection connection)
+    {
+        SqlAndFields findBy = findBySqlMap.get(param);
+        if (findBy == null)
+        {
+            throw new NullPointerException("没有对应条件的findBy");
+        }
+        String sql = findBy.getSql();
+        PreparedStatement pStat = null;
+        try
+        {
+            pStat = connection.prepareStatement(sql);
+            if (logInterceptor.isLogOn(sql))
+            {
+                logInterceptor.log(sql, param);
+            }
+            findBy.getFields()[0].setStatementValue(pStat, param, 1);
+            ResultSet resultSet = pStat.executeQuery();
+            if (resultSet.next())
+            {
+                T entity = entityClass.newInstance();
+                for (MapField each : getInfo.getFields())
+                {
+                    each.setEntityValue(entity, resultSet);
+                }
+                if (resultSet.next())
+                {
+                    throw new IllegalArgumentException("查询存在两个或以上的数据，不符合要求");
+                }
+                return entity;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        catch (Exception e)
+        {
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (pStat != null)
+            {
+                try
+                {
+                    pStat.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
+        }
     }
     
 }
