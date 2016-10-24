@@ -23,7 +23,7 @@ public class MPMCQueue2<E> implements Queue<E>
                                                    return poll();
                                                }
                                            };
-    private static final int    HOPS       = 3;
+    private static final int    HOPS       = 2;
     
     public MPMCQueue2()
     {
@@ -60,6 +60,7 @@ public class MPMCQueue2<E> implements Queue<E>
         }
     }
     
+    @Override
     public void clear()
     {
     }
@@ -69,6 +70,7 @@ public class MPMCQueue2<E> implements Queue<E>
         unsafe.compareAndSwapObject(this, headOffset, originHead, newHead);
     }
     
+    @Override
     public boolean offer(E o)
     {
         if (o == null)
@@ -106,6 +108,7 @@ public class MPMCQueue2<E> implements Queue<E>
         sync.signal();
     }
     
+    @Override
     public E poll()
     {
         Node<E> h = head;

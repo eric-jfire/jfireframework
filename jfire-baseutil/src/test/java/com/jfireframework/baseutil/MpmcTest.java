@@ -25,57 +25,63 @@ public class MpmcTest
         }
         timewatch.end();
         System.out.println("数据生产耗时:" + timewatch.getTotal());
-        int testTime = 20;
+        Queue<Integer> queue = new ConcurrentLinkedQueue<Integer>();
+        int preTimes = 5;
+        int testTime = 10;
+        for (int i = 0; i < preTimes; i++)
+        {
+            dotest(count, source, queue);
+        }
         timewatch.start();
         for (int i = 0; i < testTime; i++)
         {
-            dotest(count, source);
+            dotest(count, source, queue);
         }
         timewatch.end();
-        System.out.println("测试平均耗时:" + (timewatch.getTotal() / testTime));
+        System.out.println(queue.getClass().getSimpleName() + "测试平均耗时:" + (timewatch.getTotal() / testTime));
     }
     
-    private void dotest(final int count, Integer[] source) throws InterruptedException
+    private void dotest(final int count, Integer[] source, final Queue<Integer> queue) throws InterruptedException
     {
-        
-        final Queue<Integer> queue = new MPMCQueue2<Integer>();
         final CountDownLatch latch = new CountDownLatch(1);
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run()
-            {
-                try
-                {
-                    Integer value;
-                    for (int i = 0; i < count; i++)
+        Thread thread = new Thread(
+                new Runnable() {
+                    @Override
+                    public void run()
                     {
-                        value = queue.poll();
-                        if (value != null)
+                        try
                         {
-                            ;
-                        }
-                        else
-                        {
-                            while ((value = queue.poll()) == null)
+                            Integer value;
+                            for (int i = 0; i < count; i++)
                             {
-                                ;
+                                value = queue.poll();
+                                if (value != null)
+                                {
+                                    ;
+                                }
+                                else
+                                {
+                                    while ((value = queue.poll()) == null)
+                                    {
+                                        ;
+                                    }
+                                }
+                                if (i != value.intValue())
+                                {
+                                    System.err.println("数据异常");
+                                }
                             }
+                            latch.countDown();
                         }
-                        if (i != value.intValue())
+                        catch (Exception e)
                         {
-                            System.err.println("数据异常");
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
                         }
+                        
                     }
-                    latch.countDown();
                 }
-                catch (Exception e)
-                {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                
-            }
-        });
+        );
         NanoTimeWatch watch = new NanoTimeWatch();
         watch.start();
         thread.start();
