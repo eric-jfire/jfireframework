@@ -625,6 +625,7 @@ public class DAOBeanImpl<T> implements Dao<T>
                 {
                     each.setEntityValue(entity, resultSet);
                 }
+                idField.setEntityValue(entity, resultSet);
                 if (resultSet.next())
                 {
                     throw new IllegalArgumentException("查询存在两个或以上的数据，不符合要求");
