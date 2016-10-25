@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.el.JelException;
@@ -503,13 +504,6 @@ public class AopUtil
                 String[] names = getParamNames(each);
                 Class<?>[] types = each.getParameterTypes();
                 CtMethod ctMethod = targetCc.getDeclaredMethod(each.getName(), getParamTypes(each));
-                // CtMethod originMethod = getCtMethod(each, targetCc);
-                // CtMethod newTargetMethod = copyMethod(originMethod,
-                // targetCc);
-                // originMethod.setName(each.getName() + "_" +
-                // System.nanoTime());
-                // newTargetMethod.setModifiers(originMethod.getModifiers());
-                // targetCc.addMethod(newTargetMethod);
                 String methodBody = null;
                 if (AnnotationUtil.isPresent(CacheGet.class, each))
                 {
@@ -810,12 +804,6 @@ public class AopUtil
         return list.toArray(new CtMethod[list.size()]);
     }
     
-    /**
-     * 获取一个方法的参数名
-     * 
-     * @param method
-     * @return
-     */
     public static String[] getParamNames(Method method)
     {
         Verify.False(method.getDeclaringClass().isInterface(), "使用反射获取方法形参名称的时候，方法必须是在类的方法不能是接口方法，请检查{}.{}", method.getDeclaringClass(), method.getName());
@@ -848,12 +836,6 @@ public class AopUtil
         return ctClass.getDeclaredMethod(method.getName(), list.toArray(new CtClass[list.size()]));
     }
     
-    /**
-     * 获取方法的参数的名称
-     * 
-     * @param cm
-     * @return
-     */
     public static String[] getParamNames(CtMethod cm)
     {
         try
@@ -864,10 +846,25 @@ public class AopUtil
             LocalVariableAttribute attr = (LocalVariableAttribute) codeAttribute.getAttribute(LocalVariableAttribute.tag);
             Verify.notNull(attr, "获取方法参数名称异常，方法为{}.{}", cm.getDeclaringClass().getName(), cm.getName());
             String[] paramNames = new String[cm.getParameterTypes().length];
-            int pos = Modifier.isStatic(cm.getModifiers()) ? 0 : 1;
-            for (int i = 0; i < paramNames.length; i++)
+            TreeMap<Integer, String> map = new TreeMap<Integer, String>();
+            for (int i = 0; i < attr.tableLength(); i++)
             {
-                paramNames[i] = attr.variableName(i + pos);
+                String name = attr.variableName(i);
+                if ("this".equals(name) == false)
+                {
+                    int index = attr.index(i);
+                    map.put(index, name);
+                }
+            }
+            int index = 0;
+            for (String each : map.values())
+            {
+                paramNames[index] = each;
+                index += 1;
+                if (index == paramNames.length)
+                {
+                    break;
+                }
             }
             return paramNames;
         }

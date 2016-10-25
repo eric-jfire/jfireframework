@@ -92,11 +92,13 @@ public class ActionFactory
                 {
                     for (DataBinder each : actionInfo.getDataBinders())
                     {
-                        if (each instanceof HttpSessionBinder //
-                                || each instanceof HttpServletRequestBinder //
-                                || each instanceof HttpServletResponseBinder //
-                                || each instanceof CookieBinder //
-                                || each instanceof HeaderBinder)
+                        if (
+                            each instanceof HttpSessionBinder //
+                                    || each instanceof HttpServletRequestBinder //
+                                    || each instanceof HttpServletResponseBinder //
+                                    || each instanceof CookieBinder //
+                                    || each instanceof HeaderBinder
+                        )
                         {
                             continue;
                         }
