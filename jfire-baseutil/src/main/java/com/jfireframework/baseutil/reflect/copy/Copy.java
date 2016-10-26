@@ -4,8 +4,9 @@ import java.lang.reflect.ParameterizedType;
 
 public abstract class Copy<S, D> implements CopyUtil<S, D>
 {
-    private Class<S> source;
-    private Class<D> destination;
+    private Class<S>             source;
+    private Class<D>             destination;
+    private final CopyUtil<S, D> util;
     
     @SuppressWarnings("unchecked")
     public Copy()
@@ -13,16 +14,13 @@ public abstract class Copy<S, D> implements CopyUtil<S, D>
         ParameterizedType tmp = (ParameterizedType) (this.getClass().getGenericSuperclass());
         source = (Class<S>) tmp.getActualTypeArguments()[0];
         destination = (Class<D>) tmp.getActualTypeArguments()[1];
+        util = new CopyUtilImpl<S, D>(source, destination);
     }
     
     @Override
     public D copy(S src, D desc)
     {
-        throw new UnsupportedOperationException();
+        return util.copy(src, desc);
     }
     
-    public CopyUtil<S, D> instance()
-    {
-        return new CopyUtilImpl<S, D>(source, destination);
-    }
 }
