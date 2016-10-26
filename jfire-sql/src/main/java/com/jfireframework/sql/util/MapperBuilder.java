@@ -736,10 +736,6 @@ public class MapperBuilder
             String tablePrefix = metaData.getTableName() + ".";
             for (FieldInfo each : metaData.getFieldInfos())
             {
-                if (each.isDaoIgnore())
-                {
-                    continue;
-                }
                 dbColNameMap.put(each.getFieldName(), tablePrefix + each.getDbColName());
                 dbColNameMap.put(prefix + each.getFieldName(), tablePrefix + each.getDbColName());
                 fieldNameMap.put(tablePrefix + each.getDbColName(), each.getFieldName());
