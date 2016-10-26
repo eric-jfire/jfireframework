@@ -35,9 +35,9 @@ public class Licp
         _serialize(src, buf);
     }
     
-    public void register(Class<?> type)
+    public void register(Class<?>... types)
     {
-        register.register(type);
+        register = new ClassNoRegister(types);
     }
     
     /**

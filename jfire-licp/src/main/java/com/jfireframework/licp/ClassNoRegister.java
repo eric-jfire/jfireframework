@@ -17,12 +17,12 @@ import java.util.List;
  */
 public class ClassNoRegister
 {
-    private static final IdentityHashMap<Class<?>, Integer> originMap = new IdentityHashMap<Class<?>, Integer>();
-    private static final int                                originSequence;
-    private static final Class<?>[]                         originTypes;
-    private int                                             sequence  = originSequence;
-    private Class<?>[]                                      types     = new Class[300];
-    static
+    private final IdentityHashMap<Class<?>, Integer> originMap = new IdentityHashMap<Class<?>, Integer>();
+    private final int                                originSequence;
+    private int                                      sequence;
+    private Class<?>[]                               types     = new Class[300];
+    
+    private List<Class<?>> pre(Class<?>... types)
     {
         List<Class<?>> tmp = new ArrayList<Class<?>>();
         tmp.add(boolean.class);
@@ -75,30 +75,29 @@ public class ClassNoRegister
         tmp.add(HashMap.class);
         tmp.add(HashSet.class);
         tmp.add(Object.class);
+        for (Class<?> each : types)
+        {
+            tmp.add(each);
+        }
+        return tmp;
+    }
+    
+    public ClassNoRegister(Class<?>... outerRegisters)
+    {
+        List<Class<?>> list = pre(outerRegisters);
         int index = 1;
-        for (Class<?> each : tmp)
+        for (Class<?> each : list)
         {
             originMap.put(each, index++);
         }
         originSequence = index;
-        Class<?>[] tmpTypes = tmp.toArray(new Class<?>[tmp.size()]);
-        originTypes = new Class<?>[originSequence];
-        System.arraycopy(tmpTypes, 0, originTypes, 1, tmpTypes.length);
-    }
-    
-    public ClassNoRegister()
-    {
-        System.arraycopy(originTypes, 0, types, 0, originTypes.length);
-    }
-    
-    /**
-     * 永久性的增加一个类型需要到fose中
-     * 
-     * @param type
-     */
-    public void register(Class<?> type)
-    {
-        registerTemporary(type);
+        Class<?>[] tmpTypes = list.toArray(new Class<?>[list.size()]);
+        if (types.length < tmpTypes.length + 200)
+        {
+            types = new Class<?>[tmpTypes.length + 200];
+        }
+        System.arraycopy(tmpTypes, 0, types, 1, tmpTypes.length);
+        sequence = originSequence;
     }
     
     /**
