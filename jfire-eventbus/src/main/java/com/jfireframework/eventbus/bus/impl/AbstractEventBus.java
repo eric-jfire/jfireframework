@@ -116,4 +116,32 @@ public abstract class AbstractEventBus implements EventBus
     {
         eventQueue.offerAndSignal(eventContext);
     }
+    
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @Override
+    public <T> EventContext<T> syncPost(Object data, Enum<? extends EventConfig> event, Object rowkey)
+    {
+        if (((EventConfig) event).parallelLevel() != ParallelLevel.ROWKEY_SERIAL && ((EventConfig) event).parallelLevel() != ParallelLevel.TYPE_ROWKEY_SERIAL)
+        {
+            throw new IllegalArgumentException("该方法只能接受并行度为：ROWKEY_SERIAL或TYPE_ROWKEY_SERIAL的事件");
+        }
+        EventContext<T> eventContext = new RowEventContextImpl(data, event, combinationMap.get(event).combination(), executorMap.get(event), this, rowkey);
+        eventContext.executor().handle(eventContext, this);
+        eventContext.await();
+        return eventContext;
+    }
+    
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @Override
+    public <T> EventContext<T> syncPost(Object data, Enum<? extends EventConfig> event)
+    {
+        if (((EventConfig) event).parallelLevel() == ParallelLevel.ROWKEY_SERIAL || ((EventConfig) event).parallelLevel() == ParallelLevel.TYPE_ROWKEY_SERIAL)
+        {
+            throw new IllegalArgumentException("该方法不能接受并行度为：ROWKEY_SERIAL或TYPE_ROWKEY_SERIAL的事件");
+        }
+        EventContext<T> eventContext = new NormalEventContext(data, event, combinationMap.get(event).combination(), executorMap.get(event), this);
+        eventContext.executor().handle(eventContext, this);
+        eventContext.await();
+        return eventContext;
+    }
 }

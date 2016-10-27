@@ -26,4 +26,16 @@ public abstract class AbstractEventPoster implements EventPoster
     {
         return eventBus.post(data, event);
     }
+    
+    @Override
+    public <T> EventContext<T> syncPost(Object data, Enum<? extends EventConfig> event, Object rowkey)
+    {
+        return eventBus.syncPost(data, event, rowkey);
+    }
+    
+    @Override
+    public <T> EventContext<T> syncPost(Object data, Enum<? extends EventConfig> event)
+    {
+        return eventBus.syncPost(data, event);
+    }
 }

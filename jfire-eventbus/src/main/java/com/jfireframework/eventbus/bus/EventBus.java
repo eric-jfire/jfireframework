@@ -21,4 +21,8 @@ public interface EventBus
     public <T> EventContext<T> post(Object data, Enum<? extends EventConfig> event, Object rowkey);
     
     public <T> EventContext<T> post(Object data, Enum<? extends EventConfig> event);
+    
+    public <T> EventContext<T> syncPost(Object data, Enum<? extends EventConfig> event, Object rowkey);
+    
+    public <T> EventContext<T> syncPost(Object data, Enum<? extends EventConfig> event);
 }
