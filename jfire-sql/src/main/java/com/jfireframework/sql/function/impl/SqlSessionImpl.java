@@ -14,6 +14,7 @@ import com.jfireframework.sql.function.SqlSession;
 public class SqlSessionImpl implements SqlSession
 {
     private int            transNum = 0;
+    private int            autoOpen = 0;
     private Connection     connection;
     private SessionFactory sessionFactory;
     private static Logger  logger   = ConsoleLogFactory.getLogger();
@@ -69,6 +70,20 @@ public class SqlSessionImpl implements SqlSession
         }
     }
     
+    public void autoOpen()
+    {
+        autoOpen += 1;
+    }
+    
+    public void autoClose()
+    {
+        autoOpen -= 1;
+        if (autoOpen == 0)
+        {
+            close();
+        }
+    }
+    
     @Override
     public void flush()
     {
@@ -102,7 +117,7 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public void close()
     {
-        if (closed || transNum > 0)
+        if (closed || transNum > 0 || autoOpen > 0)
         {
             return;
         }

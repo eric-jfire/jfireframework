@@ -6,6 +6,7 @@ import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.context.tx.RessourceManager;
 import com.jfireframework.sql.function.SessionFactory;
 import com.jfireframework.sql.function.SqlSession;
+import com.jfireframework.sql.function.impl.SqlSessionImpl;
 
 @Resource
 public class AutoSession implements RessourceManager
@@ -21,14 +22,15 @@ public class AutoSession implements RessourceManager
         SqlSession session = sessionFactory.getCurrentSession();
         if (session != null)
         {
-            session.close();
+            ((SqlSessionImpl) session).autoClose();
         }
     }
     
     @Override
     public void open()
     {
-        sessionFactory.getOrCreateCurrentSession();
+        SqlSessionImpl sessionImpl = (SqlSessionImpl) sessionFactory.getOrCreateCurrentSession();
+        sessionImpl.autoOpen();
     }
     
 }
