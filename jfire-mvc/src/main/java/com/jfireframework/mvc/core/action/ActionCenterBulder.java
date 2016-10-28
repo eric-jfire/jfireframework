@@ -55,13 +55,13 @@ public class ActionCenterBulder
         jfireContext.addSingletonEntity("servletContext", servletContext);
         jfireContext.addBean(DataBinderInterceptor.class);
         jfireContext.addBean(UploadInterceptor.class);
-        return new ActionCenter(generateActions(servletContext.getContextPath(), jfireContext, Charset.forName(encode), classLoader).toArray(new Action[0]));
+        return new ActionCenter(generateActions(servletContext.getContextPath(), jfireContext, Charset.forName(encode), servletContext).toArray(new Action[0]));
     }
     
     /**
      * 初始化Beancontext容器，并且抽取其中的ActionClass注解的类，将action实例化
      */
-    private static List<Action> generateActions(String contextUrl, JfireContext jfireContext, Charset charset, ClassLoader classLoader)
+    private static List<Action> generateActions(String contextUrl, JfireContext jfireContext, Charset charset, ServletContext servletContext)
     {
         Bean[] beans = jfireContext.getBeanByAnnotation(Controller.class);
         Bean[] listenerBeans = jfireContext.getBeanByInterface(ActionInitListener.class);
@@ -74,7 +74,7 @@ public class ActionCenterBulder
         List<Action> list = new ArrayList<Action>();
         for (Bean each : beans)
         {
-            list.addAll(generateActions(each, listeners, jfireContext, contextUrl, charset, classLoader));
+            list.addAll(generateActions(each, listeners, jfireContext, contextUrl, charset, servletContext));
         }
         return list;
     }
@@ -88,7 +88,7 @@ public class ActionCenterBulder
      * @param jfireContext
      * @return
      */
-    private static List<Action> generateActions(Bean bean, ActionInitListener[] listeners, JfireContext jfireContext, String contextUrl, Charset charset, ClassLoader classLoader)
+    private static List<Action> generateActions(Bean bean, ActionInitListener[] listeners, JfireContext jfireContext, String contextUrl, Charset charset, ServletContext servletContext)
     {
         Class<?> src = bean.getOriginType();
         String requestUrl = contextUrl;
@@ -104,7 +104,7 @@ public class ActionCenterBulder
         {
             if (AnnotationUtil.isPresent(RequestMapping.class, each))
             {
-                Action action = ActionFactory.buildAction(each, requestUrl, bean, jfireContext, charset, classLoader);
+                Action action = ActionFactory.buildAction(each, requestUrl, bean, jfireContext, charset, servletContext);
                 list.add(action);
                 for (ActionInitListener listener : listeners)
                 {

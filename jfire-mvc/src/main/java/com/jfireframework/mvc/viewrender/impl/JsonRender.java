@@ -11,7 +11,7 @@ public class JsonRender implements ViewRender
 {
     private final Charset charset;
     
-    public JsonRender(Charset charset, ClassLoader classLoader)
+    public JsonRender(Charset charset)
     {
         this.charset = charset;
     }

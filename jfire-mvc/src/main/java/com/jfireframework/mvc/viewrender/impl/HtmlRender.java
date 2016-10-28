@@ -1,6 +1,5 @@
 package com.jfireframework.mvc.viewrender.impl;
 
-import java.nio.charset.Charset;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.exception.UnSupportException;
@@ -10,9 +9,6 @@ import com.jfireframework.mvc.viewrender.ViewRender;
 
 public class HtmlRender implements ViewRender
 {
-    public HtmlRender(Charset charset, ClassLoader classLoader)
-    {
-    }
     
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response, Object result) throws Throwable

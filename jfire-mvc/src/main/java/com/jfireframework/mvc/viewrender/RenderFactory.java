@@ -1,48 +1,25 @@
 package com.jfireframework.mvc.viewrender;
 
-import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.ServletContext;
 import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.mvc.config.ResultType;
+import com.jfireframework.mvc.viewrender.impl.BeetlRender;
+import com.jfireframework.mvc.viewrender.impl.BytesRender;
+import com.jfireframework.mvc.viewrender.impl.HtmlRender;
+import com.jfireframework.mvc.viewrender.impl.JsonRender;
+import com.jfireframework.mvc.viewrender.impl.JspRender;
+import com.jfireframework.mvc.viewrender.impl.NoneRender;
+import com.jfireframework.mvc.viewrender.impl.RedirectRender;
+import com.jfireframework.mvc.viewrender.impl.StringRender;
 
 public class RenderFactory
 {
-    private static Constructor<?>              beetl;
-    private static Constructor<?>              bytes;
-    private static Constructor<?>              html;
-    private static Constructor<?>              json;
-    private static Constructor<?>              jsp;
-    private static Constructor<?>              none;
-    private static Constructor<?>              redirect;
-    private static Constructor<?>              string;
     private static Map<ResultType, ViewRender> map = new HashMap<ResultType, ViewRender>();
     
-    public static void clear()
-    {
-        map.clear();
-    }
-    
-    static
-    {
-        try
-        {
-            bytes = Class.forName("com.jfireframework.mvc.viewrender.impl.BytesRender").getConstructor(Charset.class, ClassLoader.class);
-            html = Class.forName("com.jfireframework.mvc.viewrender.impl.HtmlRender").getConstructor(Charset.class, ClassLoader.class);
-            json = Class.forName("com.jfireframework.mvc.viewrender.impl.JsonRender").getConstructor(Charset.class, ClassLoader.class);
-            jsp = Class.forName("com.jfireframework.mvc.viewrender.impl.JspRender").getConstructor(Charset.class, ClassLoader.class);
-            none = Class.forName("com.jfireframework.mvc.viewrender.impl.NoneRender").getConstructor(Charset.class, ClassLoader.class);
-            redirect = Class.forName("com.jfireframework.mvc.viewrender.impl.RedirectRender").getConstructor(Charset.class, ClassLoader.class);
-            string = Class.forName("com.jfireframework.mvc.viewrender.impl.StringRender").getConstructor(Charset.class, ClassLoader.class);
-        }
-        catch (Exception e)
-        {
-            throw new UnSupportException("", e);
-        }
-    }
-    
-    public static ViewRender getViewRender(ResultType resultType, Charset charset, ClassLoader classLoader)
+    public static ViewRender getViewRender(ResultType resultType, Charset charset, ServletContext servletContext)
     {
         try
         {
@@ -54,32 +31,28 @@ public class RenderFactory
             switch (resultType)
             {
                 case Beetl:
-                    if (beetl == null)
-                    {
-                        beetl = Class.forName("com.jfireframework.mvc.viewrender.impl.BeetlRender").getConstructor(Charset.class, ClassLoader.class);
-                    }
-                    viewRender = (ViewRender) beetl.newInstance(charset, classLoader);
+                    viewRender = new BeetlRender(servletContext);
                     break;
                 case Bytes:
-                    viewRender = (ViewRender) bytes.newInstance(charset, classLoader);
+                    viewRender = new BytesRender();
                     break;
                 case Html:
-                    viewRender = (ViewRender) html.newInstance(charset, classLoader);
+                    viewRender = new HtmlRender();
                     break;
                 case Json:
-                    viewRender = (ViewRender) json.newInstance(charset, classLoader);
+                    viewRender = new JsonRender(charset);
                     break;
                 case Jsp:
-                    viewRender = (ViewRender) jsp.newInstance(charset, classLoader);
+                    viewRender = new JspRender();
                     break;
                 case None:
-                    viewRender = (ViewRender) none.newInstance(charset, classLoader);
+                    viewRender = new NoneRender();
                     break;
                 case Redirect:
-                    viewRender = (ViewRender) redirect.newInstance(charset, classLoader);
+                    viewRender = new RedirectRender();
                     break;
                 case String:
-                    viewRender = (ViewRender) string.newInstance(charset, classLoader);
+                    viewRender = new StringRender(charset);
                     break;
                 case FreeMakrer:
                     throw new UnSupportException("不支持FreeMarker，建议使用Beetl");

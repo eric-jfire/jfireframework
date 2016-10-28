@@ -9,7 +9,7 @@ public class StringRender implements ViewRender
 {
     private final Charset charset;
     
-    public StringRender(Charset charset, ClassLoader classLoader)
+    public StringRender(Charset charset)
     {
         this.charset = charset;
     }

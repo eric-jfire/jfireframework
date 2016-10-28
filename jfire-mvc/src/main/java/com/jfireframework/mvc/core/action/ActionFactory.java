@@ -7,6 +7,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.servlet.ServletContext;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
@@ -45,7 +46,7 @@ public class ActionFactory
      * @param rootRequestPath 顶级请求路径，实际的请求路径为顶级请求路径/方法请求路径
      * @param beanContext
      */
-    public static Action buildAction(Method method, String requestPath, Bean bean, JfireContext jfireContext, Charset charset, ClassLoader classLoader)
+    public static Action buildAction(Method method, String requestPath, Bean bean, JfireContext jfireContext, Charset charset, ServletContext servletContext)
     {
         ActionInfo actionInfo = new ActionInfo();
         actionInfo.setMethod(method);
@@ -60,7 +61,7 @@ public class ActionFactory
             throw new UnSupportException(StringUtil.format("需要明确指定方法的返回类型，请检查{}.{}", method.getDeclaringClass().getName(), method.getName()));
         }
         actionInfo.setResultType(requestMapping.resultType());
-        actionInfo.setViewRender(RenderFactory.getViewRender(actionInfo.getResultType(), charset, classLoader));
+        actionInfo.setViewRender(RenderFactory.getViewRender(actionInfo.getResultType(), charset, servletContext));
         actionInfo.setContentType(requestMapping.contentType());
         actionInfo.setToken(requestMapping.token());
         if (actionInfo.getToken().equals(""))

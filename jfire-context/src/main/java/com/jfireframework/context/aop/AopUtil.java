@@ -520,40 +520,40 @@ public class AopUtil
                     String condition = cacheGet.condition();
                     if (condition.equals(""))
                     {
-                        methodBody = "\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody = "{\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
                         methodBody += "Object " + resultName + " = _cache.get(($w)" + finalKey + ");\n";
                         methodBody += "if(" + resultName + "!=null)\n{return (" + returnTypeName + ")" + resultName + ";}\n";
-                        ctMethod.insertBefore(methodBody);
-                        methodBody = "\ncom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
+                        methodBody += "else{" + resultName + " = super." + ctMethod.getName() + "($$);";
                         if (cacheGet.timeToLive() == -1)
                         {
-                            methodBody += "_cache.put(($w)" + finalKey + ",$_);\n";
+                            methodBody += "_cache.put(($w)" + finalKey + "," + resultName + ");\n";
                         }
                         else
                         {
-                            methodBody += "_cache.put(($w)" + finalKey + "$_," + cacheGet.timeToLive() + ");\n";
+                            methodBody += "_cache.put(($w)" + finalKey + "," + resultName + "," + cacheGet.timeToLive() + ");\n";
                         }
-                        ctMethod.insertAfter(methodBody);
+                        methodBody += "return (" + returnTypeName + ")" + resultName + ";}\n}";
+                        ctMethod.setBody(methodBody);
                     }
                     else
                     {
                         condition = JelExplain.createVarIf(condition, names, types);
                         methodBody = "{\nif(" + condition + ")\n{\n";
-                        methodBody += "\tcom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");;\n";
+                        methodBody += "\tcom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");\n";
                         methodBody += "\tObject " + resultName + " = _cache.get(($w)" + finalKey + ");\n";
-                        methodBody += "\tif(" + resultName + "!=null){return (" + each.getReturnType().getName() + ")" + resultName + ";}}}\n";
-                        ctMethod.insertBefore(methodBody);
-                        methodBody = "{\nif(" + condition + ")\n{\n";
-                        methodBody += "\tcom.jfireframework.context.cache.Cache _cache = " + cacheFieldName + ".get(\"" + cacheName + "\");;\n";
+                        methodBody += "\tif(" + resultName + "!=null){return (" + each.getReturnType().getName() + ")" + resultName + ";}\n";
+                        methodBody += "\telse{" + resultName + " = super." + ctMethod.getName() + "($$);";
                         if (cacheGet.timeToLive() == -1)
                         {
-                            methodBody += "\t\t_cache.put(($w)" + finalKey + ",$_);}}\n";
+                            methodBody += "\t\t_cache.put(($w)" + finalKey + "," + resultName + ");\n";
                         }
                         else
                         {
-                            methodBody += "\t\t_cache.put(($w)" + finalKey + ",$_," + cacheGet.timeToLive() + ");}}\n";
+                            methodBody += "\t\t_cache.put(($w)" + finalKey + "," + resultName + "," + cacheGet.timeToLive() + ");\n";
                         }
-                        ctMethod.insertAfter(methodBody);
+                        methodBody += "return (" + returnTypeName + ")" + resultName + ";}}\n";
+                        methodBody += "\telse{return super." + ctMethod.getName() + "($$);}}";
+                        ctMethod.setBody(methodBody);
                     }
                 }
                 if (AnnotationUtil.isPresent(CachePut.class, each))

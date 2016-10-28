@@ -2,14 +2,15 @@ package com.jfireframework.mvc.viewrender.impl;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.util.Enumeration;
 import java.util.Map;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.beetl.core.Configuration;
 import org.beetl.core.GroupTemplate;
 import org.beetl.core.Template;
+import org.beetl.core.resource.ClasspathResourceLoader;
 import org.beetl.core.resource.WebAppResourceLoader;
 import org.beetl.ext.web.SessionWrapper;
 import org.beetl.ext.web.WebVariable;
@@ -23,9 +24,11 @@ public class BeetlRender implements ViewRender
     
     GroupTemplate gt = null;
     
-    public BeetlRender(Charset charset, ClassLoader classLoader)
+    public BeetlRender(ServletContext servletContext)
     {
-        WebAppResourceLoader loader = new WebAppResourceLoader();
+        // WebAppResourceLoader loader = new
+        // WebAppResourceLoader(servletContext.getRealPath(""));
+        ClasspathResourceLoader loader = new ClasspathResourceLoader("web");
         Configuration configuration = null;
         try
         {
@@ -40,6 +43,7 @@ public class BeetlRender implements ViewRender
         gt.getConf().setDirectByteOutput(true);
     }
     
+    @Override
     public void render(HttpServletRequest request, HttpServletResponse response, Object result) throws Throwable
     {
         ModelAndView viewAndModel = (ModelAndView) result;
