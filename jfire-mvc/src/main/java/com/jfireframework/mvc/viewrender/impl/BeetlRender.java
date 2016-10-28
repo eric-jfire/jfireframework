@@ -10,7 +10,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.beetl.core.Configuration;
 import org.beetl.core.GroupTemplate;
 import org.beetl.core.Template;
-import org.beetl.core.resource.ClasspathResourceLoader;
 import org.beetl.core.resource.WebAppResourceLoader;
 import org.beetl.ext.web.SessionWrapper;
 import org.beetl.ext.web.WebVariable;
@@ -26,9 +25,7 @@ public class BeetlRender implements ViewRender
     
     public BeetlRender(ServletContext servletContext)
     {
-        // WebAppResourceLoader loader = new
-        // WebAppResourceLoader(servletContext.getRealPath(""));
-        ClasspathResourceLoader loader = new ClasspathResourceLoader("web");
+        WebAppResourceLoader loader = new WebAppResourceLoader(servletContext.getRealPath(""));
         Configuration configuration = null;
         try
         {

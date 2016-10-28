@@ -29,7 +29,7 @@ public class BootStarter
         {
             this.appName = '/' + appName;
         }
-        docBase = locationClass.getResource("/web/").getPath();
+        docBase = locationClass.getResource("/web").getPath();
     }
     
     public BootStarter(String appName, String docBase)
@@ -46,11 +46,11 @@ public class BootStarter
             tomcat.setBaseDir(baseDir);
         }
         tomcat.setPort(port);
-        tomcat.getHost().setAutoDeploy(false);
+        tomcat.getHost().setAutoDeploy(true);
         tomcat.getHost().setDeployOnStartup(true);
         Context ctx = new StandardContext();
         ctx.setPath(appName);
-        ctx.setDocBase("web/");
+        ctx.setDocBase(docBase);
         System.out.println(docBase);
         ctx.addLifecycleListener(new DefaultWebXmlListener());
         ctx.setConfigFile(null);

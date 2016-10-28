@@ -1,6 +1,8 @@
 package com.jfireframework.mvc.core;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -34,6 +36,7 @@ public class EasyMvcDispathServlet extends HttpServlet
     private DispathServletHelper helper;
     private String               encode;
     private static final String  DEFAULT_METHOD_PREFIX = "_method";
+    private ResourcesHandler     resourcesHandler;
     
     @Override
     public void init(ServletConfig servletConfig) throws ServletException
@@ -41,6 +44,10 @@ public class EasyMvcDispathServlet extends HttpServlet
         logger.debug("初始化Context-mvc Servlet");
         helper = new DispathServletHelper(servletConfig);
         encode = helper.encode();
+        Set<String> set = new HashSet<String>();
+        set.add("img/");
+        set.add("classpath:i:img/");
+        resourcesHandler = new ResourcesHandler(servletConfig.getServletContext().getContextPath(), set);
     }
     
     @Override
@@ -55,6 +62,10 @@ public class EasyMvcDispathServlet extends HttpServlet
         {
             String method = request.getParameter(DEFAULT_METHOD_PREFIX).toUpperCase();
             request = new ChangeMethodRequest(method, request);
+        }
+        if (resourcesHandler.handle(request, response))
+        {
+            return;
         }
         Action action = helper.getAction(request);
         if (action == null)
