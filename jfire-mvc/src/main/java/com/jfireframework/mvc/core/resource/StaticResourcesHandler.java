@@ -1,4 +1,4 @@
-package com.jfireframework.mvc.core;
+package com.jfireframework.mvc.core.resource;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.exception.JustThrowException;
 
-public class ResourcesHandler
+public class StaticResourcesHandler implements ResourcesHandler
 {
     private static final String         HEADER_IF_MODIFIED_SINCE = "If-Modified-Since";
     private static final String         HEADER_LAST_MODIFIED     = "Last-Modified";
@@ -21,7 +21,7 @@ public class ResourcesHandler
     private static final String         HEADER_CACHE_CONTROL     = "Cache-Control";
     private static final int            cacheSeconds             = 3600;
     private Map<String, StaticResource> resourcesMap             = new ConcurrentHashMap<String, StaticResource>();
-    private Set<ResourceRule>           rules                    = new HashSet<ResourcesHandler.ResourceRule>();
+    private ResourceRule[]              rules;
     
     class ResourceRule
     {
@@ -129,8 +129,9 @@ public class ResourcesHandler
         
     }
     
-    public ResourcesHandler(String app, String[] staticResourceMaps)
+    public StaticResourcesHandler(String app, String[] staticResourceMaps)
     {
+        Set<ResourceRule> tmp = new HashSet<StaticResourcesHandler.ResourceRule>();
         for (String each : staticResourceMaps)
         {
             if (each.startsWith("classpath:"))
@@ -139,14 +140,15 @@ public class ResourcesHandler
                 String name = key.split(":")[0];
                 String value = key.split(":")[1];
                 ResourceRule resource = new ResourceRule(app + '/' + name, 2, value);
-                rules.add(resource);
+                tmp.add(resource);
             }
             else
             {
                 ResourceRule resource = new ResourceRule(app + '/' + each, 1, each);
-                rules.add(resource);
+                tmp.add(resource);
             }
         }
+        rules = tmp.toArray(new ResourceRule[tmp.size()]);
     }
     
     private void cachedHeader(HttpServletResponse response)
@@ -203,11 +205,11 @@ public class ResourcesHandler
     
     public boolean handle(HttpServletRequest request, HttpServletResponse response)
     {
-        cachedHeader(response);
         String path = request.getRequestURI();
         StaticResource resource = resourcesMap.get(path);
         if (resource != null)
         {
+            cachedHeader(response);
             handleCachedResource(request, response, resource);
             return true;
         }
@@ -229,6 +231,7 @@ public class ResourcesHandler
                     resource = new ClasspathStreamResource(resourcePath);
                 }
                 resourcesMap.put(path, resource);
+                cachedHeader(response);
                 response.setDateHeader(HEADER_LAST_MODIFIED, resource.lastModity());
                 try
                 {

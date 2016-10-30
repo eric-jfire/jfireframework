@@ -9,12 +9,8 @@ import com.jfireframework.mvc.viewrender.ViewRender;
 @Resource
 public class StringRender implements ViewRender
 {
-    private final Charset charset;
-    
-    public StringRender(Charset charset)
-    {
-        this.charset = charset;
-    }
+    @Resource
+    private Charset charset;
     
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response, Object result) throws Throwable

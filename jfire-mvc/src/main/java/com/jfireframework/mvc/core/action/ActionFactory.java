@@ -62,7 +62,7 @@ public class ActionFactory
         actionInfo.setReadStream(requestMapping.readStream());
         actionInfo.setEntity(bean.getInstance());
         actionInfo.setHeaders(requestMapping.headers());
-        if (requestMapping.resultType() == null)
+        if (requestMapping.resultType() == ResultType.Class_Head)
         {
             throw new UnSupportException(StringUtil.format("需要明确指定方法的返回类型，请检查{}.{}", method.getDeclaringClass().getName(), method.getName()));
         }
@@ -251,6 +251,8 @@ public class ActionFactory
                 return jfireContext.getBean(JspRender.class);
             case None:
                 return jfireContext.getBean(NoneRender.class);
+            case Class_Head:
+                throw new NullPointerException();
         }
         throw new NullPointerException();
     }

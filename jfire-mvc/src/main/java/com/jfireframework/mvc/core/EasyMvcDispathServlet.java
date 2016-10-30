@@ -19,6 +19,9 @@ import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.codejson.JsonObject;
 import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.mvc.core.action.Action;
+import com.jfireframework.mvc.core.resource.NoneResourcesHandler;
+import com.jfireframework.mvc.core.resource.ResourcesHandler;
+import com.jfireframework.mvc.core.resource.StaticResourcesHandler;
 import com.jfireframework.mvc.util.ChangeMethodRequest;
 
 /**
@@ -48,8 +51,15 @@ public class EasyMvcDispathServlet extends HttpServlet
         JsonObject config = readConfigFile();
         helper = new DispathServletHelper(servletConfig.getServletContext(), config);
         encode = helper.encode();
-        String[] staticResourceMaps = JsonTool.read(String[].class, config.getJsonArray("staticResource"));
-        resourcesHandler = new ResourcesHandler(servletConfig.getServletContext().getContextPath(), staticResourceMaps);
+        if (config.getJsonArray("staticResource") != null)
+        {
+            String[] staticResourceMaps = JsonTool.read(String[].class, config.getJsonArray("staticResource"));
+            resourcesHandler = new StaticResourcesHandler(servletConfig.getServletContext().getContextPath(), staticResourceMaps);
+        }
+        else
+        {
+            resourcesHandler = new NoneResourcesHandler();
+        }
     }
     
     private JsonObject readConfigFile()

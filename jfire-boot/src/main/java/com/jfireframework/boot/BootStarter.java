@@ -1,6 +1,5 @@
 package com.jfireframework.boot;
 
-import java.io.File;
 import java.io.InputStream;
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
@@ -54,15 +53,11 @@ public class BootStarter
         mvcServlet.setName("easymvcservlet");
         mvcServlet.setServletClass(EasyMvcDispathServlet.class.getName());
         mvcServlet.setLoadOnStartup(1);
-        // Otherwise the default location of a Spring DispatcherServlet cannot
-        // be set
         mvcServlet.setOverridable(true);
         ctx.addChild(mvcServlet);
         ctx.addServletMapping("/*", "easymvcservlet");
         ctx.setPath(appName);
-        docBase = new File("").getAbsolutePath();
         ctx.setDocBase(docBase);
-        System.out.println(docBase);
         ctx.addLifecycleListener(new DefaultWebXmlListener());
         ctx.setConfigFile(null);
         ctx.setParentClassLoader(EasyMvcDispathServlet.class.getClassLoader());
@@ -79,7 +74,6 @@ public class BootStarter
             }
         };
         ctx.addLifecycleListener(ctxCfg);
-        System.out.println(BootStarter.class.getClassLoader().getResource("web.xml").getPath());
         ctxCfg.setDefaultWebXml(BootStarter.class.getClassLoader().getResource("web.xml").getPath());
         tomcat.getHost().addChild(ctx);
         try
