@@ -14,28 +14,17 @@ import com.jfireframework.mvc.core.EasyMvcDispathServlet;
 
 public class BootStarter
 {
-    private int          port = 80;
-    private String       baseDir;
+    private final int    port;
+    private final String baseDir;
     private final String appName;
-    private String       docBase;
+    private final String docBase;
     
-    public BootStarter(String appName, Class<?> locationClass)
+    public BootStarter(BootConfig config)
     {
-        if (appName.charAt(0) == '/')
-        {
-            this.appName = appName;
-        }
-        else
-        {
-            this.appName = '/' + appName;
-        }
-        docBase = locationClass.getResource("/web").getPath();
-    }
-    
-    public BootStarter(String appName, String docBase)
-    {
-        this.docBase = docBase;
-        this.appName = appName;
+        port = config.getPort();
+        baseDir = config.getBaseDir();
+        appName = config.getAppName();
+        docBase = config.getDocBase();
     }
     
     public void start()
@@ -85,26 +74,6 @@ public class BootStarter
         {
             e.printStackTrace();
         }
-    }
-    
-    public int getPort()
-    {
-        return port;
-    }
-    
-    public void setPort(int port)
-    {
-        this.port = port;
-    }
-    
-    public String getBaseDir()
-    {
-        return baseDir;
-    }
-    
-    public void setBaseDir(String baseDir)
-    {
-        this.baseDir = baseDir;
     }
     
 }
