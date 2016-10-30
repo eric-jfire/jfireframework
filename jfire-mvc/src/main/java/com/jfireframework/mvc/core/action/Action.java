@@ -90,8 +90,6 @@ public class Action
                 case Bytes:
                     contentType = ContentType.STREAM;
                     break;
-                case FreeMakrer:
-                    throw new UnSupportException("尚未支持freemarker，建议使用beetl");
                 default:
                     throw new UnSupportException("方法没有指定返回类型");
             }

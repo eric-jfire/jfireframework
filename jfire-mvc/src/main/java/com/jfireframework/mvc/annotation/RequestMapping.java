@@ -32,7 +32,7 @@ public @interface RequestMapping
      * @return
      * @author windfire(windfire@zailanghua.com)
      */
-    public ResultType resultType() default ResultType.Class_Head;
+    public ResultType resultType();
     
     /**
      * 该方法直接从request中读取流，不进行数据组装处理

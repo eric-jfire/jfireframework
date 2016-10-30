@@ -1,11 +1,7 @@
 package com.jfireframework.mvc.core;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.charset.Charset;
 import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -14,7 +10,6 @@ import com.jfireframework.baseutil.exception.UnSupportException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.codejson.JsonObject;
-import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.mvc.config.MvcStaticConfig;
 import com.jfireframework.mvc.core.action.Action;
 import com.jfireframework.mvc.core.action.ActionCenter;
@@ -32,11 +27,11 @@ public class DispathServletHelper
     private final boolean           devMode;
     private final String            encode;
     
-    public DispathServletHelper(ServletConfig servletConfig)
+    public DispathServletHelper(ServletContext servletContext, JsonObject config)
     {
-        this.servletContext = servletConfig.getServletContext();
+        this.servletContext = servletContext;
         staticResourceDispatcher = getStaticResourceDispatcher();
-        config = readConfigFile();
+        this.config = config;
         encode = config.getWString("encode") == null ? "UTF8" : config.getWString("encode");
         devMode = config.contains("devMode") ? config.getBoolean("devMode") : false;
         if (devMode)
@@ -51,37 +46,6 @@ public class DispathServletHelper
             actionCenter = ActionCenterBulder.generate(config, servletContext, encode);
         }
         
-    }
-    
-    private JsonObject readConfigFile()
-    {
-        FileInputStream inputStream = null;
-        try
-        {
-            inputStream = new FileInputStream(new File(this.getClass().getClassLoader().getResource("mvc.json").toURI()));
-            byte[] src = new byte[inputStream.available()];
-            inputStream.read(src);
-            String value = new String(src, Charset.forName("utf8"));
-            return (JsonObject) JsonTool.fromString(value);
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            if (inputStream != null)
-            {
-                try
-                {
-                    inputStream.close();
-                }
-                catch (IOException e)
-                {
-                    ;
-                }
-            }
-        }
     }
     
     private RequestDispatcher getStaticResourceDispatcher()

@@ -1,10 +1,12 @@
 package com.jfireframework.mvc.viewrender.impl;
 
 import java.nio.charset.Charset;
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.mvc.viewrender.ViewRender;
 
+@Resource
 public class StringRender implements ViewRender
 {
     private final Charset charset;

@@ -20,6 +20,16 @@ import com.jfireframework.mvc.annotation.Controller;
 import com.jfireframework.mvc.annotation.RequestMapping;
 import com.jfireframework.mvc.interceptor.impl.DataBinderInterceptor;
 import com.jfireframework.mvc.interceptor.impl.UploadInterceptor;
+import com.jfireframework.mvc.util.ClasspathBeetlKit;
+import com.jfireframework.mvc.util.WebAppBeetlKit;
+import com.jfireframework.mvc.viewrender.impl.BeetlRender;
+import com.jfireframework.mvc.viewrender.impl.BytesRender;
+import com.jfireframework.mvc.viewrender.impl.HtmlRender;
+import com.jfireframework.mvc.viewrender.impl.JsonRender;
+import com.jfireframework.mvc.viewrender.impl.JspRender;
+import com.jfireframework.mvc.viewrender.impl.NoneRender;
+import com.jfireframework.mvc.viewrender.impl.RedirectRender;
+import com.jfireframework.mvc.viewrender.impl.StringRender;
 
 public class ActionCenterBulder
 {
@@ -51,17 +61,33 @@ public class ActionCenterBulder
         {
             classLoader = Thread.currentThread().getContextClassLoader();
         }
+        jfireContext.addSingletonEntity("charset", Charset.forName(encode));
+        addViewRender(jfireContext);
         jfireContext.readConfig(config);
         jfireContext.addSingletonEntity("servletContext", servletContext);
         jfireContext.addBean(DataBinderInterceptor.class);
         jfireContext.addBean(UploadInterceptor.class);
-        return new ActionCenter(generateActions(servletContext.getContextPath(), jfireContext, Charset.forName(encode), servletContext).toArray(new Action[0]));
+        return new ActionCenter(generateActions(servletContext.getContextPath(), jfireContext).toArray(new Action[0]));
+    }
+    
+    private static void addViewRender(JfireContext jfireContext)
+    {
+        jfireContext.addBean(WebAppBeetlKit.class);
+        jfireContext.addBean(ClasspathBeetlKit.class);
+        jfireContext.addBean(BeetlRender.class);
+        jfireContext.addBean(JspRender.class);
+        jfireContext.addBean(JsonRender.class);
+        jfireContext.addBean(HtmlRender.class);
+        jfireContext.addBean(StringRender.class);
+        jfireContext.addBean(RedirectRender.class);
+        jfireContext.addBean(NoneRender.class);
+        jfireContext.addBean(BytesRender.class);
     }
     
     /**
      * 初始化Beancontext容器，并且抽取其中的ActionClass注解的类，将action实例化
      */
-    private static List<Action> generateActions(String contextUrl, JfireContext jfireContext, Charset charset, ServletContext servletContext)
+    private static List<Action> generateActions(String contextUrl, JfireContext jfireContext)
     {
         Bean[] beans = jfireContext.getBeanByAnnotation(Controller.class);
         Bean[] listenerBeans = jfireContext.getBeanByInterface(ActionInitListener.class);
@@ -74,7 +100,7 @@ public class ActionCenterBulder
         List<Action> list = new ArrayList<Action>();
         for (Bean each : beans)
         {
-            list.addAll(generateActions(each, listeners, jfireContext, contextUrl, charset, servletContext));
+            list.addAll(generateActions(each, listeners, jfireContext, contextUrl));
         }
         return list;
     }
@@ -88,7 +114,7 @@ public class ActionCenterBulder
      * @param jfireContext
      * @return
      */
-    private static List<Action> generateActions(Bean bean, ActionInitListener[] listeners, JfireContext jfireContext, String contextUrl, Charset charset, ServletContext servletContext)
+    private static List<Action> generateActions(Bean bean, ActionInitListener[] listeners, JfireContext jfireContext, String contextUrl)
     {
         Class<?> src = bean.getOriginType();
         String requestUrl = contextUrl;
@@ -104,7 +130,7 @@ public class ActionCenterBulder
         {
             if (AnnotationUtil.isPresent(RequestMapping.class, each))
             {
-                Action action = ActionFactory.buildAction(each, requestUrl, bean, jfireContext, charset, servletContext);
+                Action action = ActionFactory.buildAction(each, requestUrl, bean, jfireContext);
                 list.add(action);
                 for (ActionInitListener listener : listeners)
                 {

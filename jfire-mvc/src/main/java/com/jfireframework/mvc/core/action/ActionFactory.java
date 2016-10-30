@@ -3,11 +3,9 @@ package com.jfireframework.mvc.core.action;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javax.servlet.ServletContext;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.exception.UnSupportException;
@@ -31,7 +29,15 @@ import com.jfireframework.mvc.binder.impl.HttpSessionBinder;
 import com.jfireframework.mvc.config.ResultType;
 import com.jfireframework.mvc.interceptor.ActionInterceptor;
 import com.jfireframework.mvc.rule.RestfulRule;
-import com.jfireframework.mvc.viewrender.RenderFactory;
+import com.jfireframework.mvc.viewrender.ViewRender;
+import com.jfireframework.mvc.viewrender.impl.BeetlRender;
+import com.jfireframework.mvc.viewrender.impl.BytesRender;
+import com.jfireframework.mvc.viewrender.impl.HtmlRender;
+import com.jfireframework.mvc.viewrender.impl.JsonRender;
+import com.jfireframework.mvc.viewrender.impl.JspRender;
+import com.jfireframework.mvc.viewrender.impl.NoneRender;
+import com.jfireframework.mvc.viewrender.impl.RedirectRender;
+import com.jfireframework.mvc.viewrender.impl.StringRender;
 
 public class ActionFactory
 {
@@ -46,7 +52,7 @@ public class ActionFactory
      * @param rootRequestPath 顶级请求路径，实际的请求路径为顶级请求路径/方法请求路径
      * @param beanContext
      */
-    public static Action buildAction(Method method, String requestPath, Bean bean, JfireContext jfireContext, Charset charset, ServletContext servletContext)
+    public static Action buildAction(Method method, String requestPath, Bean bean, JfireContext jfireContext)
     {
         ActionInfo actionInfo = new ActionInfo();
         actionInfo.setMethod(method);
@@ -56,12 +62,12 @@ public class ActionFactory
         actionInfo.setReadStream(requestMapping.readStream());
         actionInfo.setEntity(bean.getInstance());
         actionInfo.setHeaders(requestMapping.headers());
-        if (requestMapping.resultType() == ResultType.Class_Head)
+        if (requestMapping.resultType() == null)
         {
             throw new UnSupportException(StringUtil.format("需要明确指定方法的返回类型，请检查{}.{}", method.getDeclaringClass().getName(), method.getName()));
         }
         actionInfo.setResultType(requestMapping.resultType());
-        actionInfo.setViewRender(RenderFactory.getViewRender(actionInfo.getResultType(), charset, servletContext));
+        actionInfo.setViewRender(getViewRender(requestMapping.resultType(), jfireContext));
         actionInfo.setContentType(requestMapping.contentType());
         actionInfo.setToken(requestMapping.token());
         if (actionInfo.getToken().equals(""))
@@ -93,13 +99,11 @@ public class ActionFactory
                 {
                     for (DataBinder each : actionInfo.getDataBinders())
                     {
-                        if (
-                            each instanceof HttpSessionBinder //
-                                    || each instanceof HttpServletRequestBinder //
-                                    || each instanceof HttpServletResponseBinder //
-                                    || each instanceof CookieBinder //
-                                    || each instanceof HeaderBinder
-                        )
+                        if (each instanceof HttpSessionBinder //
+                                || each instanceof HttpServletRequestBinder //
+                                || each instanceof HttpServletResponseBinder //
+                                || each instanceof CookieBinder //
+                                || each instanceof HeaderBinder)
                         {
                             continue;
                         }
@@ -225,5 +229,29 @@ public class ActionFactory
             }
         }
         return paramNames;
+    }
+    
+    private static ViewRender getViewRender(ResultType resultType, JfireContext jfireContext)
+    {
+        switch (resultType)
+        {
+            case Beetl:
+                return jfireContext.getBean(BeetlRender.class);
+            case Bytes:
+                return jfireContext.getBean(BytesRender.class);
+            case Html:
+                return jfireContext.getBean(HtmlRender.class);
+            case String:
+                return jfireContext.getBean(StringRender.class);
+            case Json:
+                return jfireContext.getBean(JsonRender.class);
+            case Redirect:
+                return jfireContext.getBean(RedirectRender.class);
+            case Jsp:
+                return jfireContext.getBean(JspRender.class);
+            case None:
+                return jfireContext.getBean(NoneRender.class);
+        }
+        throw new NullPointerException();
     }
 }

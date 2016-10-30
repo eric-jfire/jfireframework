@@ -1,8 +1,8 @@
 package com.jfireframework.mvc.core;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -13,8 +13,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
+import com.jfireframework.codejson.JsonObject;
+import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.mvc.core.action.Action;
 import com.jfireframework.mvc.util.ChangeMethodRequest;
 
@@ -42,12 +45,42 @@ public class EasyMvcDispathServlet extends HttpServlet
     public void init(ServletConfig servletConfig) throws ServletException
     {
         logger.debug("初始化Context-mvc Servlet");
-        helper = new DispathServletHelper(servletConfig);
+        JsonObject config = readConfigFile();
+        helper = new DispathServletHelper(servletConfig.getServletContext(), config);
         encode = helper.encode();
-        Set<String> set = new HashSet<String>();
-        set.add("img/");
-        set.add("classpath:i:img/");
-        resourcesHandler = new ResourcesHandler(servletConfig.getServletContext().getContextPath(), set);
+        String[] staticResourceMaps = JsonTool.read(String[].class, config.getJsonArray("staticResource"));
+        resourcesHandler = new ResourcesHandler(servletConfig.getServletContext().getContextPath(), staticResourceMaps);
+    }
+    
+    private JsonObject readConfigFile()
+    {
+        InputStream inputStream = null;
+        try
+        {
+            inputStream = this.getClass().getClassLoader().getResourceAsStream("mvc.json");
+            byte[] src = new byte[inputStream.available()];
+            inputStream.read(src);
+            String value = new String(src, Charset.forName("utf8"));
+            return (JsonObject) JsonTool.fromString(value);
+        }
+        catch (Exception e)
+        {
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (inputStream != null)
+            {
+                try
+                {
+                    inputStream.close();
+                }
+                catch (IOException e)
+                {
+                    ;
+                }
+            }
+        }
     }
     
     @Override

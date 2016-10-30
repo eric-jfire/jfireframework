@@ -1,11 +1,13 @@
 package com.jfireframework.mvc.viewrender.impl;
 
 import java.util.Map.Entry;
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.mvc.core.ModelAndView;
 import com.jfireframework.mvc.viewrender.ViewRender;
 
+@Resource
 public class JspRender implements ViewRender
 {
     

@@ -1,9 +1,10 @@
 package com.jfireframework.boot;
 
+import java.io.File;
 import java.io.InputStream;
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
-import org.apache.catalina.WebResource;
+import org.apache.catalina.Wrapper;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.startup.ContextConfig;
@@ -17,7 +18,7 @@ public class BootStarter
     private int          port = 80;
     private String       baseDir;
     private final String appName;
-    private final String docBase;
+    private String       docBase;
     
     public BootStarter(String appName, Class<?> locationClass)
     {
@@ -49,7 +50,17 @@ public class BootStarter
         tomcat.getHost().setAutoDeploy(true);
         tomcat.getHost().setDeployOnStartup(true);
         Context ctx = new StandardContext();
+        Wrapper mvcServlet = ctx.createWrapper();
+        mvcServlet.setName("easymvcservlet");
+        mvcServlet.setServletClass(EasyMvcDispathServlet.class.getName());
+        mvcServlet.setLoadOnStartup(1);
+        // Otherwise the default location of a Spring DispatcherServlet cannot
+        // be set
+        mvcServlet.setOverridable(true);
+        ctx.addChild(mvcServlet);
+        ctx.addServletMapping("/*", "easymvcservlet");
         ctx.setPath(appName);
+        docBase = new File("").getAbsolutePath();
         ctx.setDocBase(docBase);
         System.out.println(docBase);
         ctx.addLifecycleListener(new DefaultWebXmlListener());

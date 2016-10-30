@@ -1,44 +1,23 @@
 package com.jfireframework.mvc.viewrender.impl;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Enumeration;
-import java.util.Map;
-import javax.servlet.ServletContext;
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.beetl.core.Configuration;
-import org.beetl.core.GroupTemplate;
 import org.beetl.core.Template;
-import org.beetl.core.resource.WebAppResourceLoader;
 import org.beetl.ext.web.SessionWrapper;
 import org.beetl.ext.web.WebVariable;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.mvc.core.ModelAndView;
 import com.jfireframework.mvc.util.JfireMvcResponseWrapper;
+import com.jfireframework.mvc.util.WebAppBeetlKit;
 import com.jfireframework.mvc.viewrender.ViewRender;
 
+@Resource
 public class BeetlRender implements ViewRender
 {
-    
-    GroupTemplate gt = null;
-    
-    public BeetlRender(ServletContext servletContext)
-    {
-        WebAppResourceLoader loader = new WebAppResourceLoader(servletContext.getRealPath(""));
-        Configuration configuration = null;
-        try
-        {
-            configuration = Configuration.defaultConfiguration();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-        configuration.setDirectByteOutput(true);
-        gt = new GroupTemplate(loader, configuration);
-        gt.getConf().setDirectByteOutput(true);
-    }
+    @Resource
+    private WebAppBeetlKit beetlKit;
     
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response, Object result) throws Throwable
@@ -80,43 +59,20 @@ public class BeetlRender implements ViewRender
      */
     public void render(ModelAndView vm, HttpServletRequest request, HttpServletResponse response)
     {
-        String key = vm.getModelName();
-        Map<String, Object> data = vm.getData();
-        String ajaxId = null;
-        Template template = null;
+        
+        WebVariable webVariable = new WebVariable();
+        webVariable.setRequest(request);
+        webVariable.setResponse(response);
+        vm.addObject("session", new SessionWrapper(request, request.getSession(false)));
+        vm.addObject("servlet", webVariable);
+        vm.addObject("request", request);
+        vm.addObject("ctxPath", request.getContextPath());
         try
         {
-            OutputStream os = response.getOutputStream();
-            int ajaxIdIndex = key.lastIndexOf("#");
-            if (ajaxIdIndex != -1)
-            {
-                ajaxId = key.substring(ajaxIdIndex + 1);
-                key = key.substring(0, ajaxIdIndex);
-                template = gt.getAjaxTemplate(key, ajaxId);
-            }
-            else
-            {
-                template = gt.getTemplate(key);
-            }
-            Enumeration<String> attrs = request.getAttributeNames();
-            while (attrs.hasMoreElements())
-            {
-                String attrName = attrs.nextElement();
-                template.binding(attrName, request.getAttribute(attrName));
-            }
-            WebVariable webVariable = new WebVariable();
-            webVariable.setRequest(request);
-            webVariable.setResponse(response);
-            template.binding(data);
-            template.binding("session", new SessionWrapper(request, request.getSession(false)));
-            template.binding("servlet", webVariable);
-            template.binding("request", request);
-            template.binding("ctxPath", request.getContextPath());
-            template.renderTo(os);
-            os.flush();
-            os.close();
+            beetlKit.render(vm, request.getServletContext(), response.getOutputStream());
+            response.getOutputStream().flush();
         }
-        catch (Exception e)
+        catch (IOException e)
         {
             throw new JustThrowException(e);
         }

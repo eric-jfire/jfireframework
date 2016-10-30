@@ -55,16 +55,14 @@ public class BinderFactory
             {
                 binders.add(new BaseBinder(target, prefixName, annotations));
             }
-            else if (
-                target == Integer.class //
-                        || target == Short.class //
-                        || target == Long.class //
-                        || target == Float.class //
-                        || target == Double.class //
-                        || target == Boolean.class //
-                        || target == Byte.class //
-                        || target == Character.class
-            )
+            else if (target == Integer.class //
+                    || target == Short.class //
+                    || target == Long.class //
+                    || target == Float.class //
+                    || target == Double.class //
+                    || target == Boolean.class //
+                    || target == Byte.class //
+                    || target == Character.class)
             {
                 binders.add(new WrapperBinder(target, prefixName, annotations));
             }
