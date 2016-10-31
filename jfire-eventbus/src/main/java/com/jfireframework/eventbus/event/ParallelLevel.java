@@ -21,5 +21,7 @@ public enum ParallelLevel
     /**
      * 事件大类穿行处理。即不同的事件，但是是一个类型，则最多只有一个线程在处理
      */
-    TYPE_SERIAL;
+    TYPE_SERIAL, //
+    RW_EVENT_READ, //
+    RW_EVENT_WRITE;
 }

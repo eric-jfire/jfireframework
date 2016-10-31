@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.mvc.viewrender.ViewRender;
 
+@Resource
 public class JsonRender implements ViewRender
 {
     @Resource

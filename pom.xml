@@ -22,6 +22,7 @@
 		<module>jfire-jnet2</module>
 		<module>jfire-eventbus</module>
 		<module>jfire-schedule</module>
+		<module>jfire-boot</module>
 	</modules>
 	<dependencies>
 		<dependency>
@@ -80,21 +81,6 @@
 		</snapshotRepository>
 	</distributionManagement>
 	<profiles>
-		<profile>
-			<id>boss</id>
-			<distributionManagement>
-				<repository>
-					<id>releases</id>
-					<name>Boss Releases Repository</name>
-					<url>http://172.18.150.69:8081/nexus/content/repositories/releases/</url>
-				</repository>
-				<snapshotRepository>
-					<id>snapshots</id>
-					<name>Boss Snapshots Repository</name>
-					<url>http://172.18.150.69:8081/nexus/content/repositories/snapshots/</url>
-				</snapshotRepository>
-			</distributionManagement>
-		</profile>
 		<profile>
 			<id>release</id>
 			<build>
