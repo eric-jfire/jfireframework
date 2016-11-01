@@ -35,7 +35,7 @@ public class BootStarter
             tomcat.setBaseDir(baseDir);
         }
         tomcat.setPort(port);
-        tomcat.getHost().setAutoDeploy(true);
+        tomcat.getHost().setAutoDeploy(false);
         tomcat.getHost().setDeployOnStartup(true);
         Context ctx = new StandardContext();
         Wrapper mvcServlet = ctx.createWrapper();
