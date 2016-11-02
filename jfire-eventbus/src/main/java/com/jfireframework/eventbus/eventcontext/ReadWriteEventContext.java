@@ -20,4 +20,6 @@ public interface ReadWriteEventContext<T extends Enum<? extends EventConfig>> ex
      * @return
      */
     public int mode();
+    
+    public void setImmediateMode();
 }

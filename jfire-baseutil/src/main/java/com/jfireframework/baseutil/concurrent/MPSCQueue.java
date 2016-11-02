@@ -18,6 +18,27 @@ public class MPSCQueue<E>
         head = tail = new MPSCNode<E>(null);
     }
     
+    public E peek()
+    {
+        if (head != tail)
+        {
+            MPSCNode<E> nextNode = head.next;
+            if (nextNode != null)
+            {
+                return nextNode.value;
+            }
+            while ((nextNode = head.next) == null)
+            {
+                ;
+            }
+            return nextNode.value;
+        }
+        else
+        {
+            return null;
+        }
+    }
+    
     public E poll()
     {
         if (head != tail)
