@@ -13,10 +13,10 @@ public class ReadWriteTest
         bus.addHandler(new ReadHandler());
         bus.addHandler(new WriteHandler());
         bus.start();
-        bus.post("写出1", ReadWriteEvent.write);
         bus.post("读取1", ReadWriteEvent.read);
         bus.post("读取2", ReadWriteEvent.read);
         bus.post("读取3", ReadWriteEvent.read);
+        bus.post("写出1", ReadWriteEvent.write);
         bus.post("读取4", ReadWriteEvent.read);
         bus.post("读取5", ReadWriteEvent.read);
         bus.post("写出2", ReadWriteEvent.write);

@@ -19,9 +19,9 @@ public class WriteHandler implements EventHandler<ReadWriteEvent, String>
     @Override
     public Object handle(String data, EventBus eventBus)
     {
-        LockSupport.parkNanos(1000 * 1000 * 1000);
+        logger.debug("写出前");
         logger.debug(data);
-        LockSupport.parkNanos(1000 * 1000 * 1000);
+        logger.debug("写出后");
         return null;
     }
     

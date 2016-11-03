@@ -16,14 +16,14 @@ public class ReadWriteExecutor implements EventHandlerExecutor
     static final int SHARED_UNIT    = (1 << SHARED_SHIFT);
     static final int EXCLUSIVE_MASK = (1 << SHARED_SHIFT) - 1;
     
-    public static int readLock(int c)
+    public static int readLocks(int c)
     {
         return c >>> SHARED_SHIFT;
     }
     
-    public static int queueLock(int c)
+    public static boolean queueLocks(int c)
     {
-        return c & EXCLUSIVE_MASK;
+        return (c & EXCLUSIVE_MASK) == 1;
     }
     
     /**
@@ -38,33 +38,38 @@ public class ReadWriteExecutor implements EventHandlerExecutor
      */
     static class ReadQueueLock
     {
-        private volatile int resourceCount = 0;
-        static final Unsafe  unsafe        = ReflectUtil.getUnsafe();
-        static final long    offset        = ReflectUtil.getFieldOffset("resourceCount", ReadQueueLock.class);
+        private volatile int state  = 0;
+        static final Unsafe  unsafe = ReflectUtil.getUnsafe();
+        static final long    offset = ReflectUtil.getFieldOffset("state", ReadQueueLock.class);
         
-        public boolean compareAndSet(int expectedValue, int newValue)
+        boolean lockQueue(int now)
+        {
+            return unsafe.compareAndSwapInt(this, offset, now, now + 1);
+        }
+        
+        boolean lockRead(int now)
+        {
+            return unsafe.compareAndSwapInt(this, offset, now, now + SHARED_UNIT);
+        }
+        
+        boolean cas(int expectedValue, int newValue)
         {
             return unsafe.compareAndSwapInt(this, offset, expectedValue, newValue);
         }
         
-        int count()
+        public int lockManyRead(int size)
         {
-            return resourceCount;
-        }
-        
-        public int lockRead()
-        {
-            int now = resourceCount;
-            int t = now + SHARED_UNIT;
-            if (compareAndSet(now, t))
+            int now = state;
+            int t = now + (size << SHARED_SHIFT);
+            if (cas(now, t))
             {
                 return t;
             }
             for (;;)
             {
-                now = resourceCount;
-                t = now + SHARED_UNIT;
-                if (compareAndSet(now, t))
+                now = state;
+                t = now + (size << SHARED_SHIFT);
+                if (cas(now, t))
                 {
                     return t;
                 }
@@ -73,17 +78,17 @@ public class ReadWriteExecutor implements EventHandlerExecutor
         
         public int releaseQueueLock()
         {
-            int now = resourceCount;
+            int now = state;
             int t = now - 1;
-            if (compareAndSet(now, t))
+            if (cas(now, t))
             {
                 return t;
             }
             for (;;)
             {
-                now = resourceCount;
+                now = state;
                 t = now - 1;
-                if (compareAndSet(now, t))
+                if (cas(now, t))
                 {
                     return t;
                 }
@@ -92,17 +97,17 @@ public class ReadWriteExecutor implements EventHandlerExecutor
         
         public int releaseReadLock()
         {
-            int now = resourceCount;
+            int now = state;
             int t = now - SHARED_UNIT;
-            if (compareAndSet(now, t))
+            if (cas(now, t))
             {
                 return t;
             }
             for (;;)
             {
-                now = resourceCount;
+                now = state;
                 t = now - SHARED_UNIT;
-                if (compareAndSet(now, t))
+                if (cas(now, t))
                 {
                     return t;
                 }
@@ -130,9 +135,9 @@ public class ReadWriteExecutor implements EventHandlerExecutor
             {
                 _handle(readWriteEventContext, eventBus);
                 int now = readWriteLock.releaseReadLock();
-                if (readLock(now) == 0 && queueLock(now) > 0)
+                if (readLocks(now) == 0 && queueLocks(now))
                 {
-                    tryHandleWriteSituation(eventBus);
+                    handleQueue(eventBus);
                 }
                 else
                 {
@@ -143,14 +148,14 @@ public class ReadWriteExecutor implements EventHandlerExecutor
         else
         {
             queue.offer(readWriteEventContext);
-            int now = readWriteLock.resourceCount;
-            if (queueLock(now) == 0)
+            int now = readWriteLock.state;
+            if (queueLocks(now) == false)
             {
-                if (readWriteLock.compareAndSet(now, now + 1))
+                if (readWriteLock.lockQueue(now))
                 {
-                    if (readLock(now + 1) == 0)
+                    if (readLocks(now + 1) == 0)
                     {
-                        tryHandleWriteSituation(eventBus);
+                        handleQueue(eventBus);
                     }
                     else
                     {
@@ -161,13 +166,13 @@ public class ReadWriteExecutor implements EventHandlerExecutor
                 {
                     for (;;)
                     {
-                        if (queueLock(now) == 0)
+                        if (queueLocks(now) == false)
                         {
-                            if (readWriteLock.compareAndSet(now, now + 1))
+                            if (readWriteLock.lockQueue(now))
                             {
-                                if (readLock(now + 1) == 0)
+                                if (readLocks(now + 1) == 0)
                                 {
-                                    tryHandleWriteSituation(eventBus);
+                                    handleQueue(eventBus);
                                 }
                                 else
                                 {
@@ -195,46 +200,52 @@ public class ReadWriteExecutor implements EventHandlerExecutor
     
     private boolean tryFastInvokeRead(ReadWriteEventContext<?> readWriteEventContext, EventBus eventBus)
     {
-        int pred = readWriteLock.resourceCount;
-        if (queueLock(pred) != 0)
+        int pred = readWriteLock.state;
+        if (queueLocks(pred))
         {
             queue.offer(readWriteEventContext);
-            int now = readWriteLock.resourceCount;
+            int now = readWriteLock.state;
             if (now == pred)
             {
-                ;
+                return true;
             }
             else
             {
-                if (queueLock(now) == 0)
+                if (queueLocks(now) == false)
                 {
-                    if (readWriteLock.compareAndSet(now, now + 1))
+                    if (readWriteLock.lockQueue(now))
                     {
-                        if (readLock(now + 1) == 0)
+                        if (readLocks(now + 1) == 0)
                         {
-                            tryHandleWriteSituation(eventBus);
+                            handleQueue(eventBus);
                         }
                         else
                         {
                             ;
                         }
+                        return true;
                     }
                     else
                     {
+                        now = readWriteLock.state;
+                        if (queueLocks(now))
+                        {
+                            return true;
+                        }
                         for (;;)
                         {
-                            now = readWriteLock.resourceCount;
-                            if (queueLock(now) == 0)
+                            now = readWriteLock.state;
+                            if (queueLocks(now) == false)
                             {
-                                if (readWriteLock.compareAndSet(now, now + 1))
+                                if (readWriteLock.lockQueue(now))
                                 {
-                                    if (readLock(now + 1) == 0)
+                                    if (readLocks(now + 1) == 0)
                                     {
-                                        tryHandleWriteSituation(eventBus);
+                                        handleQueue(eventBus);
                                     }
                                     else
                                     {
-                                        break;
+                                        return true;
                                     }
                                 }
                                 else
@@ -244,27 +255,26 @@ public class ReadWriteExecutor implements EventHandlerExecutor
                             }
                             else
                             {
-                                break;
+                                return true;
                             }
                         }
                     }
                 }
                 else
                 {
-                    ;
+                    return true;
                 }
             }
-            return true;
         }
         else
         {
-            if (readWriteLock.compareAndSet(pred, pred + SHARED_UNIT))
+            if (readWriteLock.lockRead(pred))
             {
                 _handle(readWriteEventContext, eventBus);
                 int now = readWriteLock.releaseReadLock();
-                if (readLock(now) == 0 && queueLock(now) > 0)
+                if (readLocks(now) == 0 && queueLocks(now))
                 {
-                    tryHandleWriteSituation(eventBus);
+                    handleQueue(eventBus);
                 }
                 else
                 {
@@ -285,32 +295,29 @@ public class ReadWriteExecutor implements EventHandlerExecutor
         boolean invoked = false;
         for (;;)
         {
-            now = readWriteLock.resourceCount;
-            if (queueLock(now) != 0)
+            now = readWriteLock.state;
+            if (queueLocks(now))
             {
                 queue.offer(readWriteEventContext);
                 break;
             }
+            else if (readWriteLock.lockRead(now))
+            {
+                _handle(readWriteEventContext, eventBus);
+                invoked = true;
+                break;
+            }
             else
             {
-                if (readWriteLock.compareAndSet(now, now + SHARED_UNIT))
-                {
-                    _handle(readWriteEventContext, eventBus);
-                    invoked = true;
-                    break;
-                }
-                else
-                {
-                    continue;
-                }
+                continue;
             }
         }
         if (invoked)
         {
             now = readWriteLock.releaseReadLock();
-            if (readLock(now) == 0 && queueLock(now) > 0)
+            if (readLocks(now) == 0 && queueLocks(now))
             {
-                tryHandleWriteSituation(eventBus);
+                handleQueue(eventBus);
             }
             else
             {
@@ -319,14 +326,14 @@ public class ReadWriteExecutor implements EventHandlerExecutor
         }
         else
         {
-            now = readWriteLock.resourceCount;
-            if (queueLock(now) == 0)
+            now = readWriteLock.state;
+            if (queueLocks(now) == false)
             {
-                if (readWriteLock.compareAndSet(now, now + 1))
+                if (readWriteLock.lockQueue(now))
                 {
-                    if (readLock(now + 1) == 0)
+                    if (readLocks(now + 1) == 0)
                     {
-                        tryHandleWriteSituation(eventBus);
+                        handleQueue(eventBus);
                     }
                     else
                     {
@@ -337,14 +344,14 @@ public class ReadWriteExecutor implements EventHandlerExecutor
                 {
                     for (;;)
                     {
-                        now = readWriteLock.resourceCount;
-                        if (queueLock(now) == 0)
+                        now = readWriteLock.state;
+                        if (queueLocks(now) == false)
                         {
-                            if (readWriteLock.compareAndSet(now, now + 1))
+                            if (readWriteLock.lockQueue(now))
                             {
-                                if (readLock(now + 1) == 0)
+                                if (readLocks(now + 1) == 0)
                                 {
-                                    tryHandleWriteSituation(eventBus);
+                                    handleQueue(eventBus);
                                 }
                                 else
                                 {
@@ -370,7 +377,7 @@ public class ReadWriteExecutor implements EventHandlerExecutor
         }
     }
     
-    private void tryHandleWriteSituation(EventBus eventBus)
+    private void handleQueue(EventBus eventBus)
     {
         ReadWriteEventContext<?> pollEvent;
         while ((pollEvent = queue.peek()) != null)
@@ -389,7 +396,6 @@ public class ReadWriteExecutor implements EventHandlerExecutor
                     {
                         pollEvent = queue.poll();
                         pollEvent.setImmediateMode();
-                        readWriteLock.lockRead();
                         list.add(pollEvent);
                     }
                     else
@@ -397,13 +403,16 @@ public class ReadWriteExecutor implements EventHandlerExecutor
                         break;
                     }
                 }
+                readWriteLock.lockManyRead(list.size());
                 for (EventContext<?> each : list)
                 {
                     eventBus.post(each);
                 }
+                // 这里就完成了控制权的让渡。等到最后一个共享操作完成后由那个线程继续后面的流程
                 return;
             }
         }
+        // 如果queue中全都是写操作才会走到这里
         readWriteLock.releaseQueueLock();
         if (queue.isEmpty())
         {
@@ -411,23 +420,23 @@ public class ReadWriteExecutor implements EventHandlerExecutor
         }
         else
         {
-            int now = readWriteLock.resourceCount;
-            if (queueLock(now) == 0 && readWriteLock.compareAndSet(now, now + 1) && readLock(now + 1) == 0)
+            int now = readWriteLock.state;
+            if (queueLocks(now) == false && readWriteLock.lockQueue(now) && readLocks(now + 1) == 0)
             {
-                tryHandleWriteSituation(eventBus);
+                handleQueue(eventBus);
             }
             else
             {
                 for (;;)
                 {
-                    now = readWriteLock.resourceCount;
-                    if (queueLock(now) == 0)
+                    now = readWriteLock.state;
+                    if (queueLocks(now) == false)
                     {
-                        if (readWriteLock.compareAndSet(now, now + 1))
+                        if (readWriteLock.lockQueue(now))
                         {
-                            if (readLock(now + 1) == 0)
+                            if (readLocks(now + 1) == 0)
                             {
-                                tryHandleWriteSituation(eventBus);
+                                handleQueue(eventBus);
                             }
                             else
                             {
