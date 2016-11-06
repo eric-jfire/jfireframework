@@ -1,13 +1,16 @@
 package com.jfireframework.boot;
 
 import java.io.File;
+import javax.servlet.Filter;
 
 public class BootConfig
 {
-    private int    port = 80;
-    private String baseDir;
-    private String appName;
-    private String docBase;
+    private int                       port          = 80;
+    private String                    baseDir;
+    private String                    appName;
+    private String                    docBase;
+    @SuppressWarnings("unchecked")
+    private Class<? extends Filter>[] filterClasses = new Class[0];
     
     public static BootConfig newMavenEnv(String appName)
     {
@@ -56,6 +59,16 @@ public class BootConfig
     public void setDocBase(String docBase)
     {
         this.docBase = docBase;
+    }
+    
+    public Class<? extends Filter>[] getFilterClasses()
+    {
+        return filterClasses;
+    }
+    
+    public void setFilterClasses(Class<? extends Filter>... filterClasses)
+    {
+        this.filterClasses = filterClasses;
     }
     
 }
