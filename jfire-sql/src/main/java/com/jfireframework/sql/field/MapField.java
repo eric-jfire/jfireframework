@@ -34,11 +34,18 @@ public interface MapField
     public String getColName();
     
     /**
-     * 该属性在保存或更新的时候是否会被忽略
+     * 该属性在保存或更新的时候是否会被忽略，该属性只针对DAO的CURD操作有效
      * 
      * @return
      */
     public boolean saveIgnore();
+    
+    /**
+     * 该属性在读取的时候是否会被忽略，该属性只针对DAO的CURD操作有效
+     * 
+     * @return
+     */
+    public boolean loadIgnore();
     
     /**
      * 返回该属性的名字

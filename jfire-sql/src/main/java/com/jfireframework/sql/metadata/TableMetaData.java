@@ -33,7 +33,7 @@ public class TableMetaData
         private final String  fieldName;
         private final Field   field;
         private final int     length;
-        private final boolean daoIgnore;
+        private final boolean loadIgnore;
         private final boolean saveIgnore;
         
         public FieldInfo(Field field, NameStrategy nameStrategy)
@@ -52,21 +52,21 @@ public class TableMetaData
                     dbColName = nameStrategy.toDbName(field.getName());
                 }
                 length = field.getAnnotation(Column.class).length();
-                daoIgnore = column.daoIgnore();
+                loadIgnore = column.loadIgnore();
                 saveIgnore = column.saveIgnore();
             }
             else
             {
                 dbColName = nameStrategy.toDbName(field.getName());
                 length = -1;
-                daoIgnore = false;
+                loadIgnore = false;
                 saveIgnore = false;
             }
         }
         
-        public boolean isDaoIgnore()
+        public boolean isLoadIgnore()
         {
-            return daoIgnore;
+            return loadIgnore;
         }
         
         public boolean isSaveIgnore()

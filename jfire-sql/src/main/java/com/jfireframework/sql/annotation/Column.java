@@ -31,11 +31,11 @@ public @interface Column
     public boolean saveIgnore() default false;
     
     /**
-     * 表示这个属性在dao操作中会被忽略。也就是说在生成的dao的curd语句中，该属性是不存在的
+     * 表示这个属性在dao操作的读取操作会被忽略。
      * 
      * @return
      */
-    public boolean daoIgnore() default false;
+    public boolean loadIgnore() default false;
     
     public int length() default -1;
 }

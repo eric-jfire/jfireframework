@@ -91,7 +91,7 @@ public class MariaDBStructure implements Structure
         cache.append(" primary key").appendComma();
         for (FieldInfo each : tableMetaData.getFieldInfos())
         {
-            if (each.getFieldName().equals(idInfo.getFieldName()) || each.isSaveIgnore() || each.isDaoIgnore())
+            if (each.getFieldName().equals(idInfo.getFieldName()) || each.isSaveIgnore())
             {
                 continue;
             }

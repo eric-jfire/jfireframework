@@ -33,26 +33,24 @@ import sun.misc.Unsafe;
 
 public class DAOBeanImpl<T> implements Dao<T>
 {
-    private final Class<T>              entityClass;
-    // 存储类的属性名和其对应的Mapfield映射关系
-    private final Map<String, MapField> fieldMap     = new HashMap<String, MapField>();
-    private final Map<String, String>   findBySqlMap = new HashMap<String, String>();
+    private final Class<T>            entityClass;
+    private final Map<String, String> findBySqlMap = new HashMap<String, String>();
     // 代表数据库主键id的field
-    private final MapField              idField;
-    private final long                  idOffset;
-    private final IdType                idType;
-    private final static Unsafe         unsafe       = ReflectUtil.getUnsafe();
-    private final String                tableName;
-    private final IdStrategy            idStrategy;
-    private final SqlAndFields          getInfo;
-    private final SqlAndFields          getInShareInfo;
-    private final SqlAndFields          getForUpdateInfo;
-    private final SqlAndFields          insertInfo;
-    private final SqlAndFields          updateInfo;
-    private final String                deleteSql;
-    private final LogInterceptor        logInterceptor;
-    private static final Logger         LOGGER       = ConsoleLogFactory.getLogger();
-    private static final Uid            uid          = AutumnId.instance();
+    private final MapField            idField;
+    private final long                idOffset;
+    private final IdType              idType;
+    private final static Unsafe       unsafe       = ReflectUtil.getUnsafe();
+    private final String              tableName;
+    private final IdStrategy          idStrategy;
+    private final SqlAndFields        getInfo;
+    private final SqlAndFields        getInShareInfo;
+    private final SqlAndFields        getForUpdateInfo;
+    private final SqlAndFields        insertInfo;
+    private final SqlAndFields        updateInfo;
+    private final String              deleteSql;
+    private final LogInterceptor      logInterceptor;
+    private static final Logger       LOGGER       = ConsoleLogFactory.getLogger();
+    private static final Uid          uid          = AutumnId.instance();
     
     enum IdType
     {
@@ -81,10 +79,6 @@ public class DAOBeanImpl<T> implements Dao<T>
         idOffset = unsafe.objectFieldOffset(t_idField);
         idStrategy = metaData.getIdStrategy();
         MapField[] insertOrUpdateFields = buildInsertOrUpdateFields(allMapFields);
-        for (MapField each : insertOrUpdateFields)
-        {
-            fieldMap.put(each.getFieldName(), each);
-        }
         insertInfo = buildInsertSql(insertOrUpdateFields);
         updateInfo = buildUpdateSql(insertOrUpdateFields);
         getInfo = buildGetInfo(allMapFields);
@@ -146,10 +140,6 @@ public class DAOBeanImpl<T> implements Dao<T>
         List<MapField> list = new ArrayList<MapField>(infos.length);
         for (FieldInfo each : infos)
         {
-            if (each.isDaoIgnore())
-            {
-                continue;
-            }
             list.add(MapFieldBuilder.buildMapField(each.getField(), nameStrategy));
         }
         return list.toArray(new MapField[list.size()]);
@@ -197,6 +187,10 @@ public class DAOBeanImpl<T> implements Dao<T>
         cache.append("select ");
         for (MapField each : getFields)
         {
+            if (each.loadIgnore())
+            {
+                continue;
+            }
             cache.append(each.getColName()).append(",");
         }
         cache.deleteLast().append(" from ").append(tableName).append(" where ").append(idField.getColName()).append("=?");
@@ -211,6 +205,10 @@ public class DAOBeanImpl<T> implements Dao<T>
         cache.append("select ");
         for (MapField each : getFields)
         {
+            if (each.loadIgnore())
+            {
+                continue;
+            }
             cache.append(each.getColName()).append(",");
         }
         cache.deleteLast().append(" from ").append(tableName).append(" where ").append(idField.getColName()).append("=? lock in share mode");
@@ -225,6 +223,10 @@ public class DAOBeanImpl<T> implements Dao<T>
         cache.append("select ");
         for (MapField each : allFields)
         {
+            if (each.loadIgnore())
+            {
+                continue;
+            }
             cache.append(each.getColName()).append(",");
         }
         cache.deleteLast().append(" from ").append(tableName).append(" where ").append(idField.getColName()).append("=? for update");
