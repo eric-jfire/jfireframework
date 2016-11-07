@@ -151,8 +151,10 @@ public class TableMetaData
         if (idStrategy == IdStrategy.autoDecision)
         {
             Class<?> type = idField.getType();
-            if (type == Integer.class //
-                    || type == Long.class)
+            if (
+                type == Integer.class //
+                        || type == Long.class
+            )
             {
                 return IdStrategy.nativeDb;
             }
@@ -173,12 +175,13 @@ public class TableMetaData
     
     private boolean notTableField(Field field)
     {
-        if (field.isAnnotationPresent(SqlIgnore.class) //
-                || Map.class.isAssignableFrom(field.getType())//
-                || List.class.isAssignableFrom(field.getType())//
-                || field.getType().isInterface()//
-                || field.getType().isArray()//
-                || Modifier.isStatic(field.getModifiers()))
+        if (
+            field.isAnnotationPresent(SqlIgnore.class) //
+                    || Map.class.isAssignableFrom(field.getType())//
+                    || List.class.isAssignableFrom(field.getType())//
+                    || field.getType().isInterface()//
+                    || Modifier.isStatic(field.getModifiers())
+        )
         {
             return true;
         }

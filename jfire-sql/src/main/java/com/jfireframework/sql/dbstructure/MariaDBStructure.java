@@ -44,6 +44,7 @@ public class MariaDBStructure implements Structure
         dbTypeMap.put(Time.class, new TypeAndLength("time", 0));
         dbTypeMap.put(boolean.class, new TypeAndLength("tinyint", 1));
         dbTypeMap.put(Boolean.class, new TypeAndLength("tinyint", 1));
+        dbTypeMap.put(byte[].class, new TypeAndLength("blob", 0));
     }
     
     @Override

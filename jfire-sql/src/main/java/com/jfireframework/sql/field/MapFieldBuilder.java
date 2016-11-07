@@ -12,6 +12,7 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.dbstructure.NameStrategy;
 import com.jfireframework.sql.field.impl.BooleanField;
+import com.jfireframework.sql.field.impl.ByteArrayField;
 import com.jfireframework.sql.field.impl.CalendarField;
 import com.jfireframework.sql.field.impl.DateField;
 import com.jfireframework.sql.field.impl.DoubleField;
@@ -51,6 +52,7 @@ public class MapFieldBuilder
             fieldMap.put(Float.class, WFloatField.class.getConstructor(Field.class, NameStrategy.class));
             fieldMap.put(Integer.class, IntegerField.class.getConstructor(Field.class, NameStrategy.class));
             fieldMap.put(Long.class, WLongField.class.getConstructor(Field.class, NameStrategy.class));
+            fieldMap.put(byte[].class, ByteArrayField.class.getConstructor(Field.class, NameStrategy.class));
         }
         catch (Exception e)
         {

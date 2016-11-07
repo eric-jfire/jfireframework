@@ -45,7 +45,7 @@ public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<
         {
             for (Field each : ReflectUtil.getAllFields(entityClass))
             {
-                if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || each.getType().isArray() || Modifier.isStatic(each.getModifiers()))
+                if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || Modifier.isStatic(each.getModifiers()))
                 {
                     continue;
                 }
