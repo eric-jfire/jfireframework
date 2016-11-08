@@ -27,7 +27,7 @@ public class DynamicSqlTool
      * @throws NoSuchFieldException
      * @throws SecurityException
      */
-    public static String analyseDynamicSql(String sql, String[] paramNames, Class<?>[] paramTypes, boolean isPage, String countSql, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
+    public static String analyseDynamicSql(String sql, String[] paramNames, Class<?>[] paramTypes, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
     {
         sql = transMapSql(sql, sqlContext, metaContext);
         String bk = "\t";

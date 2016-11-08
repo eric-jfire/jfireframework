@@ -10,7 +10,6 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.annotation.Id;
-import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.extra.dbstructure.NameStrategy;
@@ -20,7 +19,6 @@ public class TableMetaData
     private final String              tableName;
     private final FieldInfo[]         fieldInfos;
     private final FieldInfo           idInfo;
-    private final IdStrategy          idStrategy;
     private final Class<?>            ckass;
     private final Map<String, String> fieldNameMap   = new HashMap<String, String>();
     private final NameStrategy        nameStrategy;
@@ -136,40 +134,10 @@ public class TableMetaData
                 throw new IllegalArgumentException("作为主键的属性不可以使用基本类型，必须使用包装类。请检查" + t_idField.getDeclaringClass().getName() + "." + t_idField.getName());
             }
             idInfo = new FieldInfo(t_idField, nameStrategy);
-            idStrategy = getIdStrategy(t_idField);
         }
         else
         {
             idInfo = null;
-            idStrategy = null;
-        }
-    }
-    
-    private IdStrategy getIdStrategy(Field idField)
-    {
-        IdStrategy idStrategy = idField.getAnnotation(Id.class).idStrategy();
-        if (idStrategy == IdStrategy.autoDecision)
-        {
-            Class<?> type = idField.getType();
-            if (
-                type == Integer.class //
-                        || type == Long.class
-            )
-            {
-                return IdStrategy.nativeDb;
-            }
-            else if (type == String.class)
-            {
-                return IdStrategy.custom;
-            }
-            else
-            {
-                throw new IllegalArgumentException();
-            }
-        }
-        else
-        {
-            return idStrategy;
         }
     }
     
@@ -189,11 +157,6 @@ public class TableMetaData
         {
             return false;
         }
-    }
-    
-    public IdStrategy getIdStrategy()
-    {
-        return idStrategy;
     }
     
     public NameStrategy getNameStrategy()

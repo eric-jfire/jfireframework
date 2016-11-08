@@ -15,7 +15,6 @@ import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.util.enumhandler.AbstractEnumHandler;
@@ -79,13 +78,12 @@ public class MariaDBStructure implements Structure
     {
         String tableName = tableMetaData.getTableName();
         FieldInfo idInfo = tableMetaData.getIdInfo();
-        IdStrategy idStrategy = tableMetaData.getIdStrategy();
         StringCache cache = new StringCache();
         cache.append("CREATE TABLE ").append(tableName).append(" (");
         cache.append(idInfo.getDbColName()).append(' ');
         TypeAndLength typeAndLength = getTypeAndLength(idInfo.getField());
         cache.append(typeAndLength.getDbType());
-        if (idStrategy.equals(IdStrategy.nativeDb) && (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class))
+        if (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class)
         {
             cache.append(" AUTO_INCREMENT ");
         }
@@ -102,7 +100,6 @@ public class MariaDBStructure implements Structure
             }
             catch (Exception e)
             {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -218,7 +215,7 @@ public class MariaDBStructure implements Structure
         if (rs.next())
         {
             // 字段存在，需要执行更新操作
-            if (tableMetaData.getIdStrategy() == IdStrategy.nativeDb && (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class))
+            if (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class)
             {
                 logger.debug("执行sql语句:{}", "alter table " + tableName + " modify " + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType() + " auto_increment");
                 connection.prepareStatement("alter table " + tableName + " modify " + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType() + " auto_increment").execute();
@@ -232,7 +229,7 @@ public class MariaDBStructure implements Structure
         else
         {
             // 字段不存在，需要执行新建动作
-            if (tableMetaData.getIdStrategy() == IdStrategy.nativeDb && (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class))
+            if (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class)
             {
                 logger.warn("执行sql语句:{}", addColSql + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType() + " auto_increment");
                 connection.prepareStatement(addColSql + idInfo.getDbColName() + ' ' + getTypeAndLength(idInfo.getField()).getDbType() + " auto_increment").execute();

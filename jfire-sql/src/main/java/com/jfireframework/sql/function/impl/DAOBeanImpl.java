@@ -16,10 +16,7 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.baseutil.uniqueid.AutumnId;
-import com.jfireframework.baseutil.uniqueid.Uid;
 import com.jfireframework.sql.annotation.FindBy;
-import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.extra.dbstructure.NameStrategy;
 import com.jfireframework.sql.extra.interceptor.SqlPreInterceptor;
@@ -41,7 +38,6 @@ public class DAOBeanImpl<T> implements Dao<T>
     private final IdType              idType;
     private final static Unsafe       unsafe       = ReflectUtil.getUnsafe();
     private final String              tableName;
-    private final IdStrategy          idStrategy;
     private final SqlAndFields        getInfo;
     private final SqlAndFields        getInShareInfo;
     private final SqlAndFields        getForUpdateInfo;
@@ -49,7 +45,6 @@ public class DAOBeanImpl<T> implements Dao<T>
     private final SqlAndFields        updateInfo;
     private final String              deleteSql;
     private static final Logger       LOGGER       = ConsoleLogFactory.getLogger();
-    private static final Uid          uid          = AutumnId.instance();
     private final SqlPreInterceptor[] preInterceptors;
     
     enum IdType
@@ -77,7 +72,6 @@ public class DAOBeanImpl<T> implements Dao<T>
         idType = getIdType(t_idField);
         idField = MapFieldBuilder.buildMapField(t_idField, nameStrategy);
         idOffset = unsafe.objectFieldOffset(t_idField);
-        idStrategy = metaData.getIdStrategy();
         MapField[] insertOrUpdateFields = buildInsertOrUpdateFields(allMapFields);
         insertInfo = buildInsertSql(insertOrUpdateFields);
         updateInfo = buildUpdateSql(insertOrUpdateFields);
@@ -339,12 +333,6 @@ public class DAOBeanImpl<T> implements Dao<T>
         Object idValue = unsafe.getObject(entity, idOffset);
         if (idValue == null)
         {
-            // id值为null，执行插入操作
-            if (idStrategy == IdStrategy.stringUid)
-            {
-                String id = uid.generateDigits();
-                unsafe.putObject(entity, idOffset, id);
-            }
             insert(entity, connection);
         }
         else
@@ -577,12 +565,6 @@ public class DAOBeanImpl<T> implements Dao<T>
     public String getTableName()
     {
         return tableName;
-    }
-    
-    @Override
-    public IdStrategy getIdStrategy()
-    {
-        return idStrategy;
     }
     
     @Override

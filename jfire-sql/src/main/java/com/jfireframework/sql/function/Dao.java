@@ -2,7 +2,6 @@ package com.jfireframework.sql.function;
 
 import java.sql.Connection;
 import java.util.List;
-import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
 
 public interface Dao<T>
@@ -21,13 +20,6 @@ public interface Dao<T>
      * @return
      */
     public String getTableName();
-    
-    /**
-     * 返回id生成策略
-     * 
-     * @return
-     */
-    public IdStrategy getIdStrategy();
     
     /**
      * 返回主键id的mapField

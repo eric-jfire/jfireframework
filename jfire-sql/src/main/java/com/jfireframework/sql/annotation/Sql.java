@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Query
+public @interface Sql
 {
     /**
      * 查询语句
@@ -34,19 +34,4 @@ public @interface Query
      */
     public String paramNames();
     
-    /**
-     * 方法查询返回的类型
-     * 
-     * @return
-     */
-    public Class<?>[] returnTypes() default {};
-    
-    /**
-     * 默认的查询总数的sql语句。为空则让系统自动生成
-     * 
-     * @return
-     */
-    public String countSql() default "";
-    
-    public String selectFields() default "";
 }

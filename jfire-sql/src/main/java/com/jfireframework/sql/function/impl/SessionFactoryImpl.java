@@ -17,8 +17,7 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.context.bean.annotation.field.CanBeNull;
-import com.jfireframework.sql.annotation.Query;
-import com.jfireframework.sql.annotation.Update;
+import com.jfireframework.sql.annotation.Sql;
 import com.jfireframework.sql.extra.dbstructure.DefaultNameStrategy;
 import com.jfireframework.sql.extra.dbstructure.MariaDBStructure;
 import com.jfireframework.sql.extra.dbstructure.NameStrategy;
@@ -192,7 +191,7 @@ public class SessionFactoryImpl implements SessionFactory
                 {
                     for (Method method : each.getMethods())
                     {
-                        if (method.isAnnotationPresent(Query.class) || method.isAnnotationPresent(Update.class))
+                        if (method.isAnnotationPresent(Sql.class))
                         {
                             mappers.put(each, (Mapper) mapperBuilder.build(each).newInstance());
                             continue nextSqlInterface;

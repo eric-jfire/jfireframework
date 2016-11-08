@@ -20,8 +20,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.EnumBoundHandler;
-import com.jfireframework.sql.annotation.Query;
-import com.jfireframework.sql.annotation.Update;
+import com.jfireframework.sql.annotation.Sql;
 import com.jfireframework.sql.function.SqlSession;
 import com.jfireframework.sql.function.mapper.Mapper;
 import com.jfireframework.sql.metadata.MetaContext;
@@ -93,13 +92,18 @@ public class MapperBuilder
         {
             try
             {
-                if (method.isAnnotationPresent(Query.class))
+                if (method.isAnnotationPresent(Sql.class))
                 {
-                    targetCtClass.addMethod(createQueryMethod(targetCtClass, method, method.getAnnotation(Query.class)));
-                }
-                else if (method.isAnnotationPresent(Update.class))
-                {
-                    targetCtClass.addMethod(createUpdateMethod(targetCtClass, method, method.getAnnotation(Update.class)));
+                    Sql sql = method.getAnnotation(Sql.class);
+                    if (sql.sql().startsWith("select"))
+                    {
+                        targetCtClass.addMethod(createQueryMethod(targetCtClass, method, sql.sql(), sql.paramNames().split(",")));
+                        
+                    }
+                    else
+                    {
+                        targetCtClass.addMethod(createUpdateMethod(targetCtClass, method, sql.sql(), sql.paramNames().split(",")));
+                    }
                 }
                 else
                 {
@@ -114,7 +118,7 @@ public class MapperBuilder
         
     }
     
-    private CtMethod createQueryMethod(CtClass weaveClass, Method method, Query query) throws Exception
+    private CtMethod createQueryMethod(CtClass weaveClass, Method method, String sql, String[] paramNames) throws Exception
     {
         SqlContext sqlContext = new SqlContext();
         boolean isPage = false;
@@ -130,14 +134,14 @@ public class MapperBuilder
         {
             isPage = true;
         }
-        boolean isDynamicSql = DynamicSqlTool.isDynamic(query.sql());
+        boolean isDynamicSql = DynamicSqlTool.isDynamic(sql);
         StringCache methodBody = new StringCache(1024);
         methodBody.append("{\n");
         methodBody.append("SqlSession session = sessionFactory.getCurrentSession();\n");
         methodBody.append("if(session==null){throw new NullPointerException(\"current session 为空，请检查\");}\n");
         if (isDynamicSql)
         {
-            methodBody.append(DynamicSqlTool.analyseDynamicSql(query.sql(), query.paramNames().split(","), method.getParameterTypes(), isPage, query.countSql().equals("") ? null : query.countSql(), metaContext, sqlContext));
+            methodBody.append(DynamicSqlTool.analyseDynamicSql(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext));
             if (isList)
             {
                 Type returnParamType = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
@@ -180,7 +184,7 @@ public class MapperBuilder
         }
         else
         {
-            DynamicSqlTool.analyseFormatSql(query.sql(), query.paramNames().split(","), method.getParameterTypes(), metaContext, sqlContext);
+            DynamicSqlTool.analyseFormatSql(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext);
             if (isList)
             {
                 Type returnParamType = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
@@ -253,17 +257,17 @@ public class MapperBuilder
         return new CtMethod(returnType, method.getName(), paramClasses, ctClass);
     }
     
-    private CtMethod createUpdateMethod(CtClass mapperClass, Method method, Update update) throws Exception
+    private CtMethod createUpdateMethod(CtClass mapperClass, Method method, String sql, String[] paramNames) throws Exception
     {
         SqlContext sqlContext = new SqlContext();
         StringCache cache = new StringCache(1024);
         cache.append("{\n");
         cache.append("SqlSession session = sessionFactory.getCurrentSession();\n");
         cache.append("if(session==null){throw new NullPointerException(\"current session 为空，请检查\");}\n");
-        boolean isDynamicSql = DynamicSqlTool.isDynamic(update.sql());
+        boolean isDynamicSql = DynamicSqlTool.isDynamic(sql);
         if (isDynamicSql)
         {
-            cache.append(DynamicSqlTool.analyseDynamicSql(update.sql(), update.paramNames().split(","), method.getParameterTypes(), false, null, metaContext, sqlContext));
+            cache.append(DynamicSqlTool.analyseDynamicSql(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext));
             cache.append("int updateRows=0;\n");
             cache.append("if(list.size()==0){\n");
             cache.append("updateRows = session.update(sql,emptyParams);}\n");
@@ -273,7 +277,7 @@ public class MapperBuilder
         }
         else
         {
-            DynamicSqlTool.analyseFormatSql(update.sql(), update.paramNames().split(","), method.getParameterTypes(), metaContext, sqlContext);
+            DynamicSqlTool.analyseFormatSql(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext);
             cache.append("int updateRows = session.update(\"").append(sqlContext.getSql()).append("\",");
             if (sqlContext.getQueryParams().isEmpty())
             {
