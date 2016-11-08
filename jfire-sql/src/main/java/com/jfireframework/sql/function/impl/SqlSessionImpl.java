@@ -2,29 +2,45 @@ package com.jfireframework.sql.function.impl;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
+import com.jfireframework.sql.extra.interceptor.SqlInterceptor;
+import com.jfireframework.sql.extra.interceptor.SqlInterceptor.InterceptorContext;
+import com.jfireframework.sql.extra.interceptor.SqlPreInterceptor;
 import com.jfireframework.sql.function.LockMode;
 import com.jfireframework.sql.function.SessionFactory;
 import com.jfireframework.sql.function.SqlSession;
+import com.jfireframework.sql.page.Page;
+import com.jfireframework.sql.page.PageParse;
+import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
+import com.jfireframework.sql.resultsettransfer.TransferContext;
 
 public class SqlSessionImpl implements SqlSession
 {
-    private int            transNum = 0;
-    private int            autoOpen = 0;
-    private Connection     connection;
-    private SessionFactory sessionFactory;
-    private static Logger  logger   = ConsoleLogFactory.getLogger();
-    private boolean        closed   = false;
+    private int                       transNum = 0;
+    private int                       autoOpen = 0;
+    private boolean                   closed   = false;
+    private final Connection          connection;
+    private final SessionFactory      sessionFactory;
+    private final static Logger       logger   = ConsoleLogFactory.getLogger();
+    private final SqlPreInterceptor[] preInterceptors;
+    private final SqlInterceptor[]    sqlInterceptors;
+    private final PageParse           pageParse;
+    private final TransferContext     transferContext;
     
-    public SqlSessionImpl(Connection connection, SessionFactory sessionFactory)
+    public SqlSessionImpl(Connection connection, SessionFactory sessionFactory, SqlPreInterceptor[] preInterceptors, SqlInterceptor[] sqlInterceptors, PageParse pageParse, TransferContext transferContext)
     {
         logger.trace("打开sqlsession");
         this.connection = connection;
         this.sessionFactory = sessionFactory;
+        this.preInterceptors = preInterceptors;
+        this.sqlInterceptors = sqlInterceptors;
+        this.pageParse = pageParse;
+        this.transferContext = transferContext;
     }
     
     @Override
@@ -180,38 +196,211 @@ public class SqlSessionImpl implements SqlSession
     }
     
     @Override
-    public int update(String sql)
+    public <T> T findBy(Class<T> entityClass, String name, Object param)
     {
-        PreparedStatement pStat = null;
+        return sessionFactory.getDao(entityClass).findBy(name, param, connection);
+    }
+    
+    @Override
+    public <T> T query(Class<T> type, String sql, Object... params)
+    {
+        for (SqlPreInterceptor each : preInterceptors)
+        {
+            sql = each.preIntercept(sql, params);
+        }
+        PreparedStatement pstat = null;
+        ResultSet resultSet = null;
         try
         {
-            pStat = connection.prepareStatement(sql);
-            return pStat.executeUpdate();
+            if (sqlInterceptors.length != 0)
+            {
+                InterceptorContext context = new InterceptorContext();
+                context.setSql(sql);
+                context.setParams(params);
+                for (SqlInterceptor each : sqlInterceptors)
+                {
+                    each.intercept(context);
+                }
+                sql = context.getSql();
+                params = context.getParams();
+            }
+            pstat = connection.prepareStatement(sql);
+            int index = 1;
+            for (Object each : params)
+            {
+                pstat.setObject(index++, each);
+            }
+            resultSet = pstat.executeQuery();
+            @SuppressWarnings("unchecked")
+            ResultSetTransfer<T> transfer = (ResultSetTransfer<T>) transferContext.get(type);
+            return transfer.transfer(resultSet, sql);
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
             throw new JustThrowException(e);
         }
         finally
         {
-            if (pStat != null)
+            try
             {
-                try
+                if (resultSet != null)
                 {
-                    pStat.close();
+                    resultSet.close();
                 }
-                catch (SQLException e)
+                if (pstat != null)
                 {
-                    throw new JustThrowException(e);
+                    pstat.close();
                 }
+            }
+            catch (SQLException e)
+            {
+                throw new JustThrowException(e);
             }
         }
     }
     
     @Override
-    public <T> T findBy(Class<T> entityClass, String name, Object param)
+    public <T> List<T> queryList(Class<T> type, String sql, Object... params)
     {
-        return sessionFactory.getDao(entityClass).findBy(name, param, connection);
+        for (SqlPreInterceptor each : preInterceptors)
+        {
+            sql = each.preIntercept(sql, params);
+        }
+        PreparedStatement pstat = null;
+        ResultSet resultSet = null;
+        try
+        {
+            if (sqlInterceptors.length != 0)
+            {
+                InterceptorContext context = new InterceptorContext();
+                context.setSql(sql);
+                context.setParams(params);
+                for (SqlInterceptor each : sqlInterceptors)
+                {
+                    each.intercept(context);
+                }
+                sql = context.getSql();
+                params = context.getParams();
+            }
+            pstat = connection.prepareStatement(sql);
+            int index = 1;
+            for (Object each : params)
+            {
+                pstat.setObject(index++, each);
+            }
+            resultSet = pstat.executeQuery();
+            @SuppressWarnings("unchecked")
+            ResultSetTransfer<T> transfer = (ResultSetTransfer<T>) transferContext.get(type);
+            return transfer.transferList(resultSet, sql);
+        }
+        catch (Exception e)
+        {
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            try
+            {
+                if (resultSet != null)
+                {
+                    resultSet.close();
+                }
+                if (pstat != null)
+                {
+                    pstat.close();
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JustThrowException(e);
+            }
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> List<T> queryList(Class<T> type, String sql, Page page, Object... params)
+    {
+        for (SqlPreInterceptor each : preInterceptors)
+        {
+            sql = each.preIntercept(sql, params);
+        }
+        try
+        {
+            if (sqlInterceptors.length != 0)
+            {
+                InterceptorContext context = new InterceptorContext();
+                context.setSql(sql);
+                context.setParams(params);
+                for (SqlInterceptor each : sqlInterceptors)
+                {
+                    each.intercept(context);
+                }
+                sql = context.getSql();
+                params = context.getParams();
+            }
+            pageParse.doQuery(params, connection, sql, type, transferContext, page);
+            return (List<T>) page.getData();
+        }
+        catch (SQLException e)
+        {
+            throw new JustThrowException(e);
+        }
+    }
+    
+    @Override
+    public int update(String sql, Object... params)
+    {
+        for (SqlPreInterceptor each : preInterceptors)
+        {
+            sql = each.preIntercept(sql, params);
+        }
+        PreparedStatement pstat = null;
+        ResultSet resultSet = null;
+        try
+        {
+            if (sqlInterceptors.length != 0)
+            {
+                InterceptorContext context = new InterceptorContext();
+                context.setSql(sql);
+                context.setParams(params);
+                for (SqlInterceptor each : sqlInterceptors)
+                {
+                    each.intercept(context);
+                }
+                sql = context.getSql();
+                params = context.getParams();
+            }
+            pstat = connection.prepareStatement(sql);
+            int index = 1;
+            for (Object each : params)
+            {
+                pstat.setObject(index++, each);
+            }
+            return pstat.executeUpdate();
+        }
+        catch (Exception e)
+        {
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            try
+            {
+                if (resultSet != null)
+                {
+                    resultSet.close();
+                }
+                if (pstat != null)
+                {
+                    pstat.close();
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JustThrowException(e);
+            }
+        }
     }
     
 }

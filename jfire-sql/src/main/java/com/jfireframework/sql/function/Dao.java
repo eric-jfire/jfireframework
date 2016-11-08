@@ -3,7 +3,7 @@ package com.jfireframework.sql.function;
 import java.sql.Connection;
 import java.util.List;
 import com.jfireframework.sql.annotation.IdStrategy;
-import com.jfireframework.sql.field.MapField;
+import com.jfireframework.sql.resultsettransfer.field.MapField;
 
 public interface Dao<T>
 {

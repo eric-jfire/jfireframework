@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.Stack;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
-import com.jfireframework.sql.page.MysqlPage;
 import com.jfireframework.sql.util.MapperBuilder.InvokeNameAndType;
 import com.jfireframework.sql.util.MapperBuilder.SqlContext;
 import com.jfireframework.sql.util.enumhandler.AbstractEnumHandler;
@@ -121,37 +121,9 @@ public class DynamicSqlTool
         {
             context += bk + "builder.append(\"" + section + "\");\n";
         }
-        if (isPage)
-        {
-            if (paramTypes[paramTypes.length - 1] == MysqlPage.class)
-            {
-                if (countSql != null)
-                {
-                    context += bk + "String countSql = \"" + countSql + "\";\n";
-                }
-                else
-                {
-                    context += bk + "String countSql = \"select count(*) \"+builder.substring(builder.indexOf(\"from\"));\n";
-                }
-                context += bk + "Object[] countParam = list.toArray();\n";
-                context += bk + "builder.append(\" limit ?,?\");\n";
-                context += bk + "String sql = builder.toString();\n";
-                context += bk + "list.add(($w)((com.jfireframework.sql.page.Page)$" + paramTypes.length + ").getStart());\n";
-                context += bk + "list.add(($w)((com.jfireframework.sql.page.Page)$" + paramTypes.length + ").getPageSize());\n";
-                context += bk + "Object[] queryParam = list.toArray();\n";
-                return context;
-            }
-            else
-            {
-                throw new RuntimeException("暂不支持该数据的分页");
-            }
-        }
-        else
-        {
-            context += bk + "String sql = builder.toString();\n";
-            context += bk + "Object[] queryParam = list.toArray();\n";
-            return context;
-        }
+        context += bk + "String sql = builder.toString();\n";
+        // context += bk + "Object[] queryParam = list.toArray();\n";
+        return context;
     }
     
     private static String _handleWithTidle(String context, String section, String[] paramNames, Class<?>[] paramTypes, String sql, SqlContext sqlContext) throws SecurityException, NoSuchFieldException
@@ -417,7 +389,14 @@ public class DynamicSqlTool
                     {
                         preIsTableName = true;
                         simpleClassName = tmp;
-                        sqlContext.addMetaData(metaContext.get(simpleClassName));
+                        try
+                        {
+                            sqlContext.addMetaData(metaContext.get(simpleClassName));
+                        }
+                        catch (Exception e)
+                        {
+                            throw new JustThrowException("无法识别" + simpleClassName, e);
+                        }
                     }
                     else if (tmp.equals("as") && end < sql.length() && sql.charAt(end) == ' ')
                     {
@@ -592,8 +571,10 @@ public class DynamicSqlTool
         while (start < sql.length())
         {
             char c = sql.charAt(start);
-            if (c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
-                    || c == '#' || c == '+' || c == '-' || c == '(' || c == ')' || c == ']' || c == '[')
+            if (
+                c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
+                        || c == '#' || c == '+' || c == '-' || c == '(' || c == ')' || c == ']' || c == '['
+            )
             {
                 break;
             }
@@ -611,40 +592,11 @@ public class DynamicSqlTool
      * @throws SecurityException
      * @throws NoSuchFieldException
      */
-    public static void analyseFormatSql(String originalSql, String[] paramNames, Class<?>[] paramTypes, boolean isPage, String annoCountSql, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
+    public static void analyseFormatSql(String originalSql, String[] paramNames, Class<?>[] paramTypes, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
     {
-        String querySql, countSql = null;
         getFormatSql(originalSql, metaContext, sqlContext);
-        querySql = sqlContext.getSql();
-        if (isPage)
-        {
-            if (MysqlPage.class == paramTypes[paramTypes.length - 1])
-            {
-                if (annoCountSql == null)
-                {
-                    int index = querySql.indexOf("from");
-                    countSql = "select count(*) " + querySql.substring(index);
-                }
-                else
-                {
-                    countSql = annoCountSql;
-                }
-                sqlContext.setCountSql(countSql);
-                List<InvokeNameAndType> invokeNameAndTypes = buildParams(sqlContext.getInjectNames(), paramNames, paramTypes, sqlContext);
-                sqlContext.setQueryParams(invokeNameAndTypes);
-                querySql += " limit ?,?";
-                sqlContext.setSql(querySql);
-            }
-            else
-            {
-                throw new RuntimeException("暂不支持该数据库的分页");
-            }
-        }
-        else
-        {
-            List<InvokeNameAndType> invokeNameAndTypes = buildParams(sqlContext.getInjectNames(), paramNames, paramTypes, sqlContext);
-            sqlContext.setQueryParams(invokeNameAndTypes);
-        }
+        List<InvokeNameAndType> invokeNameAndTypes = buildParams(sqlContext.getInjectNames(), paramNames, paramTypes, sqlContext);
+        sqlContext.setQueryParams(invokeNameAndTypes);
     }
     
     /**

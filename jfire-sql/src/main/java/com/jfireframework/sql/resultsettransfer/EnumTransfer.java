@@ -12,7 +12,6 @@ public class EnumTransfer extends AbstractResultsetTransfer<Enum<?>>
     @SuppressWarnings("unchecked")
     public EnumTransfer(Class<?> type)
     {
-        super(null);
         try
         {
             enumHandler = AbstractEnumHandler.getEnumBoundHandler((Class<? extends Enum<?>>) type).getConstructor(Class.class).newInstance(type);
@@ -25,7 +24,7 @@ public class EnumTransfer extends AbstractResultsetTransfer<Enum<?>>
     }
     
     @Override
-    protected Enum<?> valueOf(ResultSet resultSet) throws Exception
+    protected Enum<?> valueOf(ResultSet resultSet, String sql) throws Exception
     {
         return enumHandler.getInstance(resultSet);
     }

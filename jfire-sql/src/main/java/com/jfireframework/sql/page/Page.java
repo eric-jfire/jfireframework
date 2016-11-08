@@ -2,68 +2,56 @@ package com.jfireframework.sql.page;
 
 import java.util.List;
 
-public interface Page
+public class Page
 {
-    /**
-     * 返回这个查询的页数
-     * 
-     * @return
-     */
-    public int getTotal();
+    protected int     total;
+    protected int     page;
+    protected int     pageSize;
+    protected List<?> data;
     
-    /**
-     * 获得当前显示的页，页从1开始
-     * 
-     * @return
-     */
-    public int getPage();
+    public int getTotal()
+    {
+        return total;
+    }
     
-    /**
-     * 一页的大小
-     * 
-     * @return
-     */
-    public int getPageSize();
+    public int getPage()
+    {
+        return page;
+    }
     
-    /**
-     * 返回当页的数据
-     * 
-     * @return
-     */
-    public List<?> getData();
+    public int getStart()
+    {
+        return (page - 1) * pageSize;
+    }
     
-    /**
-     * 设置数据总量
-     * 
-     * @param total
-     */
-    public void setTotal(int total);
+    public int getPageSize()
+    {
+        return pageSize;
+    }
     
-    /**
-     * 设置当前的页数
-     * 
-     * @param page
-     */
-    public void setPage(int page);
+    public List<?> getData()
+    {
+        return data;
+    }
     
-    /**
-     * mysql中查询分页的开始页数
-     * 
-     * @return
-     */
-    public int getStart();
+    public void setTotal(int total)
+    {
+        this.total = total;
+    }
     
-    /**
-     * 设置一页的大小
-     * 
-     * @param pageSize
-     */
-    public void setPageSize(int pageSize);
+    public void setPage(int page)
+    {
+        this.page = page;
+    }
     
-    /**
-     * 设置当前页的数据
-     * 
-     * @param data
-     */
-    public void setData(List<?> data);
+    public void setPageSize(int pageSize)
+    {
+        this.pageSize = pageSize;
+    }
+    
+    public void setData(List<?> data)
+    {
+        this.data = data;
+    }
+    
 }

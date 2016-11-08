@@ -4,7 +4,7 @@ import java.util.List;
 import com.jfireframework.sql.annotation.Query;
 import com.jfireframework.sql.annotation.Update;
 import com.jfireframework.sql.jfirecontext.MapperOp;
-import com.jfireframework.sql.page.MysqlPage;
+import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.test.entity.User;
 import com.jfireframework.sql.test.entity.User.Enumint;
 import com.jfireframework.sql.test.entity.User.Enumstring;
@@ -35,7 +35,7 @@ public interface UserDAO
     public List<String> getUsernames();
     
     @Query(sql = "select username from user order by userid", paramNames = "")
-    public List<String> getUsernames(MysqlPage page);
+    public List<String> getUsernames(Page page);
     
     @Query(sql = "select username from user where userid=$id", paramNames = "id")
     public List<String> getUsernames2(int id);
@@ -71,7 +71,7 @@ public interface UserDAO
     public List<User> dynamicQuery(User user);
     
     @Query(sql = "select * from User where 1=1 [$user.age] and age=$user.age# [$user.name] and username like $%user.name%# [$user.id] and userid=$user.id#", paramNames = "user")
-    public List<User> dynamicQuery2(User user, MysqlPage page);
+    public List<User> dynamicQuery2(User user, Page page);
     
     @Query(sql = "select * from User where id in $~ids and name = '林斌'", paramNames = "ids")
     public List<User> listinquestion(String ids);

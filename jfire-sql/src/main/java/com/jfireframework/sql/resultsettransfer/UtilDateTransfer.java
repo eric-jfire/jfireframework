@@ -6,13 +6,9 @@ import java.util.Date;
 
 public class UtilDateTransfer extends AbstractResultsetTransfer<Date>
 {
-    public UtilDateTransfer(Class<?> type)
-    {
-        super(type);
-    }
     
     @Override
-    protected Date valueOf(ResultSet resultSet) throws Exception
+    protected Date valueOf(ResultSet resultSet, String sql) throws Exception
     {
         Timestamp timestamp = resultSet.getTimestamp(1);
         return new Date(timestamp.getTime());

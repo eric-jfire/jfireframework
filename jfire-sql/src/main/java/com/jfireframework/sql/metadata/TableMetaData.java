@@ -13,7 +13,7 @@ import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.dbstructure.NameStrategy;
+import com.jfireframework.sql.extra.dbstructure.NameStrategy;
 
 public class TableMetaData
 {

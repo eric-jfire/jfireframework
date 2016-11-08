@@ -21,14 +21,14 @@ import com.jfireframework.baseutil.uniqueid.Uid;
 import com.jfireframework.sql.annotation.FindBy;
 import com.jfireframework.sql.annotation.IdStrategy;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.dbstructure.NameStrategy;
-import com.jfireframework.sql.field.MapField;
-import com.jfireframework.sql.field.MapFieldBuilder;
+import com.jfireframework.sql.extra.dbstructure.NameStrategy;
+import com.jfireframework.sql.extra.interceptor.SqlPreInterceptor;
 import com.jfireframework.sql.function.Dao;
 import com.jfireframework.sql.function.LockMode;
-import com.jfireframework.sql.log.LogInterceptor;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
+import com.jfireframework.sql.resultsettransfer.field.MapField;
+import com.jfireframework.sql.resultsettransfer.field.MapFieldBuilder;
 import sun.misc.Unsafe;
 
 public class DAOBeanImpl<T> implements Dao<T>
@@ -48,9 +48,9 @@ public class DAOBeanImpl<T> implements Dao<T>
     private final SqlAndFields        insertInfo;
     private final SqlAndFields        updateInfo;
     private final String              deleteSql;
-    private final LogInterceptor      logInterceptor;
     private static final Logger       LOGGER       = ConsoleLogFactory.getLogger();
     private static final Uid          uid          = AutumnId.instance();
+    private final SqlPreInterceptor[] preInterceptors;
     
     enum IdType
     {
@@ -58,9 +58,9 @@ public class DAOBeanImpl<T> implements Dao<T>
     }
     
     @SuppressWarnings("unchecked")
-    public DAOBeanImpl(TableMetaData metaData, LogInterceptor logInterceptor)
+    public DAOBeanImpl(TableMetaData metaData, SqlPreInterceptor[] preInterceptors)
     {
-        this.logInterceptor = logInterceptor;
+        this.preInterceptors = preInterceptors;
         this.entityClass = (Class<T>) metaData.getEntityClass();
         NameStrategy nameStrategy = metaData.getNameStrategy();
         tableName = entityClass.getAnnotation(TableEntity.class).name();
@@ -278,14 +278,14 @@ public class DAOBeanImpl<T> implements Dao<T>
     @Override
     public T getById(Object pk, Connection connection)
     {
+        for (SqlPreInterceptor each : preInterceptors)
+        {
+            each.preIntercept(getInfo.getSql(), pk);
+        }
         PreparedStatement pStat = null;
         try
         {
             pStat = connection.prepareStatement(getInfo.getSql());
-            if (logInterceptor.isLogOn(getInfo.getSql()))
-            {
-                logInterceptor.log(getInfo.getSql(), pk);
-            }
             switch (idType)
             {
                 case INT:
@@ -349,6 +349,10 @@ public class DAOBeanImpl<T> implements Dao<T>
         }
         else
         {
+            for (SqlPreInterceptor each : preInterceptors)
+            {
+                each.preIntercept(updateInfo.getSql(), entity);
+            }
             // id有值，执行更新操作
             PreparedStatement pStat = null;
             try
@@ -359,10 +363,6 @@ public class DAOBeanImpl<T> implements Dao<T>
                 {
                     each.setStatementValue(pStat, entity, index);
                     index++;
-                }
-                if (logInterceptor.isLogOn(updateInfo.getSql()))
-                {
-                    logInterceptor.log(updateInfo.getSql(), entity);
                 }
                 pStat.executeUpdate();
             }
@@ -391,6 +391,10 @@ public class DAOBeanImpl<T> implements Dao<T>
     @Override
     public int update(T entity, Connection connection)
     {
+        for (SqlPreInterceptor each : preInterceptors)
+        {
+            each.preIntercept(updateInfo.getSql(), entity);
+        }
         PreparedStatement pStat = null;
         try
         {
@@ -400,10 +404,6 @@ public class DAOBeanImpl<T> implements Dao<T>
             {
                 each.setStatementValue(pStat, entity, index);
                 index++;
-            }
-            if (logInterceptor.isLogOn(updateInfo.getSql()))
-            {
-                logInterceptor.log(updateInfo.getSql(), entity);
             }
             return pStat.executeUpdate();
         }
@@ -430,6 +430,10 @@ public class DAOBeanImpl<T> implements Dao<T>
     @Override
     public void batchInsert(List<T> entitys, Connection connection)
     {
+        for (SqlPreInterceptor each : preInterceptors)
+        {
+            each.preIntercept(insertInfo.getSql(), entitys);
+        }
         PreparedStatement pStat = null;
         try
         {
@@ -443,10 +447,6 @@ public class DAOBeanImpl<T> implements Dao<T>
                     index++;
                 }
                 pStat.addBatch();
-            }
-            if (logInterceptor.isLogOn(insertInfo.getSql()))
-            {
-                logInterceptor.log(insertInfo.getSql(), entitys.toArray());
             }
             pStat.executeBatch();
         }
@@ -473,6 +473,10 @@ public class DAOBeanImpl<T> implements Dao<T>
     @Override
     public void insert(T entity, Connection connection)
     {
+        for (SqlPreInterceptor each : preInterceptors)
+        {
+            each.preIntercept(insertInfo.getSql(), entity);
+        }
         PreparedStatement pStat = null;
         try
         {
@@ -482,10 +486,6 @@ public class DAOBeanImpl<T> implements Dao<T>
             {
                 each.setStatementValue(pStat, entity, index);
                 index++;
-            }
-            if (logInterceptor.isLogOn(insertInfo.getSql()))
-            {
-                logInterceptor.log(insertInfo.getSql(), entity);
             }
             pStat.executeUpdate();
             ResultSet resultSet = pStat.getGeneratedKeys();
@@ -529,14 +529,14 @@ public class DAOBeanImpl<T> implements Dao<T>
     public T getById(Object pk, Connection connection, LockMode mode)
     {
         String sql = mode == LockMode.SHARE ? getInShareInfo.getSql() : getForUpdateInfo.getSql();
+        for (SqlPreInterceptor each : preInterceptors)
+        {
+            each.preIntercept(sql, pk);
+        }
         PreparedStatement pStat = null;
         try
         {
             pStat = connection.prepareStatement(sql);
-            if (logInterceptor.isLogOn(sql))
-            {
-                logInterceptor.log(sql, pk);
-            }
             pStat.setObject(1, pk);
             ResultSet resultSet = pStat.executeQuery();
             if (resultSet.next())
@@ -610,14 +610,14 @@ public class DAOBeanImpl<T> implements Dao<T>
         {
             throw new NullPointerException("没有对应条件的findBy");
         }
+        for (SqlPreInterceptor each : preInterceptors)
+        {
+            each.preIntercept(findBy, param);
+        }
         PreparedStatement pStat = null;
         try
         {
             pStat = connection.prepareStatement(findBy);
-            if (logInterceptor.isLogOn(findBy))
-            {
-                logInterceptor.log(findBy, param);
-            }
             pStat.setObject(1, param);
             ResultSet resultSet = pStat.executeQuery();
             if (resultSet.next())

@@ -2,13 +2,6 @@ package com.jfireframework.sql.function;
 
 public interface SessionFactory
 {
-    /**
-     * 获取对应的结果集转换对象
-     * 
-     * @param ckass
-     * @return
-     */
-    public <T> ResultMap<T> getResultMap(Class<T> ckass);
     
     /**
      * 获取对应的类型的Dao对象

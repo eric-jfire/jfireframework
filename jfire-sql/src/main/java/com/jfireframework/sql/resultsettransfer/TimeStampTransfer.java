@@ -6,13 +6,8 @@ import java.sql.Timestamp;
 public class TimeStampTransfer extends AbstractResultsetTransfer<Timestamp>
 {
     
-    public TimeStampTransfer(Class<?> type)
-    {
-        super(type);
-    }
-    
     @Override
-    protected Timestamp valueOf(ResultSet resultSet) throws Exception
+    protected Timestamp valueOf(ResultSet resultSet, String sql) throws Exception
     {
         return resultSet.getTimestamp(1);
     }

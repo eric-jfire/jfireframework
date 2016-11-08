@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
-import com.jfireframework.sql.page.MysqlPage;
+import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.test.entity.User;
 import com.jfireframework.sql.test.entity.User.Enumint;
 import com.jfireframework.sql.test.entity.User.Enumstring;
@@ -177,7 +177,7 @@ public class InterfaceTest extends BaseTestSupport
         UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
         User user = new User();
         user.setName("林斌");
-        MysqlPage page = new MysqlPage();
+        Page page = new Page();
         page.setPage(1);
         page.setPageSize(20);
         List<User> list = userDAO.dynamicQuery2(user, page);
@@ -244,7 +244,7 @@ public class InterfaceTest extends BaseTestSupport
     public void test4()
     {
         UserDAO userDAO = sessionFactory.getMapper(UserDAO.class);
-        MysqlPage page = new MysqlPage();
+        Page page = new Page();
         page.setPage(1);
         page.setPageSize(20);
         userDAO.getUsernames(page);

@@ -1,32 +1,39 @@
 package com.jfireframework.sql.function.impl;
 
 import java.lang.reflect.Method;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
 import com.jfireframework.baseutil.PackageScan;
 import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
+import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.context.bean.annotation.field.CanBeNull;
 import com.jfireframework.sql.annotation.Query;
 import com.jfireframework.sql.annotation.Update;
-import com.jfireframework.sql.dbstructure.DefaultNameStrategy;
-import com.jfireframework.sql.dbstructure.MariaDBStructure;
-import com.jfireframework.sql.dbstructure.NameStrategy;
-import com.jfireframework.sql.dbstructure.Structure;
+import com.jfireframework.sql.extra.dbstructure.DefaultNameStrategy;
+import com.jfireframework.sql.extra.dbstructure.MariaDBStructure;
+import com.jfireframework.sql.extra.dbstructure.NameStrategy;
+import com.jfireframework.sql.extra.dbstructure.Structure;
+import com.jfireframework.sql.extra.interceptor.SqlInterceptor;
+import com.jfireframework.sql.extra.interceptor.SqlPreInterceptor;
 import com.jfireframework.sql.function.Dao;
-import com.jfireframework.sql.function.ResultMap;
 import com.jfireframework.sql.function.SessionFactory;
 import com.jfireframework.sql.function.SqlSession;
 import com.jfireframework.sql.function.mapper.Mapper;
-import com.jfireframework.sql.log.LogInterceptor;
-import com.jfireframework.sql.log.NopLogInterceptor;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
+import com.jfireframework.sql.page.MysqlParse;
+import com.jfireframework.sql.page.PageParse;
+import com.jfireframework.sql.resultsettransfer.TransferContext;
 import com.jfireframework.sql.util.MapperBuilder;
 
 public class SessionFactoryImpl implements SessionFactory
@@ -36,17 +43,21 @@ public class SessionFactoryImpl implements SessionFactory
     @Resource
     @CanBeNull
     protected ClassLoader                       classLoader;
-    protected static ThreadLocal<SqlSession>    sessionLocal = new ThreadLocal<SqlSession>();
+    protected static ThreadLocal<SqlSession>    sessionLocal     = new ThreadLocal<SqlSession>();
     protected String                            scanPackage;
     // 如果值是create，则会创建表。
-    protected String                            tableMode    = "none";
-    // 当前支持的类型有mysql,MariaDB
-    protected String                            dbType;
-    protected IdentityHashMap<Class<?>, Mapper> mappers      = new IdentityHashMap<Class<?>, Mapper>(128);
-    protected IdentityHashMap<Class<?>, Dao<?>> daos         = new IdentityHashMap<Class<?>, Dao<?>>();
-    protected Map<Class<?>, ResultMap<?>>       resultMaps   = new IdentityHashMap<Class<?>, ResultMap<?>>();
-    public static NameStrategy                  nameStrategy = new DefaultNameStrategy();
+    protected String                            tableMode        = "none";
+    protected IdentityHashMap<Class<?>, Mapper> mappers          = new IdentityHashMap<Class<?>, Mapper>(128);
+    protected IdentityHashMap<Class<?>, Dao<?>> daos             = new IdentityHashMap<Class<?>, Dao<?>>();
+    public static NameStrategy                  nameStrategy     = new DefaultNameStrategy();
     protected MetaContext                       metaContext;
+    protected TransferContext                   transferContext  = new TransferContext();
+    protected boolean                           resultFieldCache = true;
+    protected SqlPreInterceptor[]               preInterceptors;
+    protected SqlInterceptor[]                  sqlInterceptors;
+    protected PageParse                         pageParse;
+    protected String                            productName;
+    protected static final Logger               logger           = ConsoleLogFactory.getLogger();
     
     public SessionFactoryImpl()
     {
@@ -72,11 +83,13 @@ public class SessionFactoryImpl implements SessionFactory
                 classLoader = Thread.currentThread().getContextClassLoader();
             }
             Set<Class<?>> set = buildClassNameSet(classLoader);
-            LogInterceptor logInterceptor = findLogInterceptorClass(set);
+            preInterceptors = findSqlPreInterceptors(set);
+            sqlInterceptors = findSqlInterceptor(set);
+            pageParse = findPageParse();
             metaContext = new MetaContext(set);
             createOrUpdateDatabase();
-            createMappers(set, logInterceptor);
-            new DaoBuilder().buildDao(logInterceptor);
+            createMappers(set);
+            new DaoBuilder().buildDao();
         }
         catch (Exception e)
         {
@@ -84,16 +97,68 @@ public class SessionFactoryImpl implements SessionFactory
         }
     }
     
-    private LogInterceptor findLogInterceptorClass(Set<Class<?>> set) throws InstantiationException, IllegalAccessException
+    private SqlPreInterceptor[] findSqlPreInterceptors(Set<Class<?>> set) throws InstantiationException, IllegalAccessException
     {
+        List<SqlPreInterceptor> list = new LinkedList<SqlPreInterceptor>();
         for (Class<?> each : set)
         {
-            if (LogInterceptor.class.isAssignableFrom(each))
+            if (SqlPreInterceptor.class.isAssignableFrom(each))
             {
-                return (LogInterceptor) each.newInstance();
+                list.add((SqlPreInterceptor) each.newInstance());
             }
         }
-        return new NopLogInterceptor();
+        return list.toArray(new SqlPreInterceptor[list.size()]);
+    }
+    
+    private SqlInterceptor[] findSqlInterceptor(Set<Class<?>> set) throws InstantiationException, IllegalAccessException
+    {
+        List<SqlInterceptor> list = new LinkedList<SqlInterceptor>();
+        for (Class<?> each : set)
+        {
+            if (SqlInterceptor.class.isAssignableFrom(each))
+            {
+                list.add((SqlInterceptor) each.newInstance());
+            }
+        }
+        return list.toArray(new SqlInterceptor[list.size()]);
+    }
+    
+    public PageParse findPageParse()
+    {
+        Connection connection = null;
+        try
+        {
+            connection = dataSource.getConnection();
+            DatabaseMetaData md = connection.getMetaData();
+            productName = md.getDatabaseProductName().toLowerCase();
+            if (productName.equals("mariadb") || "mysql".equals(productName))
+            {
+                return new MysqlParse();
+            }
+            else
+            {
+                logger.error("不支持分页的数据库类型：{}", productName);
+                return null;
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            if (connection != null)
+            {
+                try
+                {
+                    connection.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new JustThrowException(e);
+                }
+            }
+        }
     }
     
     private Set<Class<?>> buildClassNameSet(ClassLoader classLoader) throws ClassNotFoundException
@@ -115,12 +180,12 @@ public class SessionFactoryImpl implements SessionFactory
         return types;
     }
     
-    private void createMappers(Set<Class<?>> set, LogInterceptor logInterceptor)
+    private void createMappers(Set<Class<?>> set)
     {
         try
         {
             
-            MapperBuilder mapperBuilder = new MapperBuilder(metaContext);
+            MapperBuilder mapperBuilder = new MapperBuilder(metaContext, transferContext, resultFieldCache);
             nextSqlInterface: for (Class<?> each : set)
             {
                 if (each.isInterface())
@@ -138,7 +203,6 @@ public class SessionFactoryImpl implements SessionFactory
             for (Mapper each : mappers.values())
             {
                 each.setSessionFactory(this);
-                each.setLog(logInterceptor);
             }
         }
         catch (Exception e1)
@@ -147,13 +211,13 @@ public class SessionFactoryImpl implements SessionFactory
         }
     }
     
-    private Structure buildStructure(String dbType)
+    private Structure buildStructure()
     {
-        if (dbType.equals("mysql"))
+        if (productName.equals("mysql"))
         {
             return new MariaDBStructure();
         }
-        else if (dbType.equals("MariaDB"))
+        else if (productName.equals("mariadb"))
         {
             return new MariaDBStructure();
         }
@@ -177,13 +241,13 @@ public class SessionFactoryImpl implements SessionFactory
                 return;
             case create:
             {
-                Structure structure = buildStructure(dbType);
+                Structure structure = buildStructure();
                 structure.createTable(dataSource, metaContext.metaDatas());
                 return;
             }
             case update:
             {
-                Structure structure = buildStructure(dbType);
+                Structure structure = buildStructure();
                 structure.updateTable(dataSource, metaContext.metaDatas());
                 return;
             }
@@ -201,7 +265,7 @@ public class SessionFactoryImpl implements SessionFactory
     {
         try
         {
-            SqlSession session = new SqlSessionImpl(dataSource.getConnection(), this);
+            SqlSession session = new SqlSessionImpl(dataSource.getConnection(), this, preInterceptors, sqlInterceptors, pageParse, transferContext);
             return session;
         }
         catch (SQLException e)
@@ -237,11 +301,6 @@ public class SessionFactoryImpl implements SessionFactory
         tableMode = mode;
     }
     
-    public void setDbType(String dbType)
-    {
-        this.dbType = dbType;
-    }
-    
     @Override
     public SqlSession getOrCreateCurrentSession()
     {
@@ -271,13 +330,13 @@ public class SessionFactoryImpl implements SessionFactory
     class DaoBuilder
     {
         @SuppressWarnings("rawtypes")
-        public void buildDao(LogInterceptor logInterceptor)
+        public void buildDao()
         {
             for (TableMetaData each : metaContext.metaDatas())
             {
                 if (each.getIdInfo() != null)
                 {
-                    daos.put(each.getEntityClass(), new DAOBeanImpl(each, logInterceptor));
+                    daos.put(each.getEntityClass(), new DAOBeanImpl(each, preInterceptors));
                 }
             }
         }
@@ -289,13 +348,6 @@ public class SessionFactoryImpl implements SessionFactory
     public <T> Dao<T> getDao(Class<T> ckass)
     {
         return (Dao<T>) daos.get(ckass);
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> ResultMap<T> getResultMap(Class<T> ckass)
-    {
-        return (ResultMap<T>) resultMaps.get(ckass);
     }
     
 }

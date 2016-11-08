@@ -13,22 +13,20 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.dbstructure.NameStrategy;
-import com.jfireframework.sql.field.MapField;
-import com.jfireframework.sql.field.MapFieldBuilder;
+import com.jfireframework.sql.extra.dbstructure.NameStrategy;
+import com.jfireframework.sql.resultsettransfer.field.MapField;
+import com.jfireframework.sql.resultsettransfer.field.MapFieldBuilder;
 
 public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<T>
 {
-    protected final MapField[] mapFields;
-    protected final Class<?>   entityClass;
+    protected Map<String, MapField> mapFields;
+    protected Class<T>              entityClass;
     
-    public AbstractResultsetTransfer(Class<?> type)
+    public AbstractResultsetTransfer()
     {
-        mapFields = null;
-        entityClass = null;
     }
     
-    public AbstractResultsetTransfer(Class<T> entityClass, String fieldNames)
+    public AbstractResultsetTransfer(Class<T> entityClass)
     {
         this.entityClass = entityClass;
         NameStrategy nameStrategy;
@@ -41,43 +39,27 @@ public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<
             throw new JustThrowException(e);
         }
         List<MapField> list = new ArrayList<MapField>();
-        if (fieldNames == null || fieldNames.equals("*"))
+        for (Field each : ReflectUtil.getAllFields(entityClass))
         {
-            for (Field each : ReflectUtil.getAllFields(entityClass))
+            if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || Modifier.isStatic(each.getModifiers()))
             {
-                if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || Modifier.isStatic(each.getModifiers()))
-                {
-                    continue;
-                }
-                list.add(MapFieldBuilder.buildMapField(each, nameStrategy));
+                continue;
             }
-            mapFields = list.toArray(new MapField[list.size()]);
+            list.add(MapFieldBuilder.buildMapField(each, nameStrategy));
         }
-        else
+        mapFields = new HashMap<String, MapField>();
+        for (MapField each : list)
         {
-            Map<String, MapField> map = new HashMap<String, MapField>();
-            for (Field each : ReflectUtil.getAllFields(entityClass))
-            {
-                if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || each.getType().isArray() || Modifier.isStatic(each.getModifiers()))
-                {
-                    continue;
-                }
-                map.put(each.getName(), MapFieldBuilder.buildMapField(each, nameStrategy));
-            }
-            for (String each : fieldNames.split(","))
-            {
-                list.add(map.get(each));
-            }
-            mapFields = list.toArray(new MapField[list.size()]);
+            mapFields.put(each.getColName(), each);
         }
     }
     
     @Override
-    public T transfer(ResultSet resultSet) throws Exception
+    public T transfer(ResultSet resultSet, String sql) throws Exception
     {
         if (resultSet.next())
         {
-            T result = valueOf(resultSet);
+            T result = valueOf(resultSet, sql);
             if (resultSet.next())
             {
                 throw new IllegalArgumentException(StringUtil.format("存在2行数据，不符合返回值要求。"));
@@ -94,15 +76,15 @@ public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<
     }
     
     @Override
-    public List<T> transferList(ResultSet resultSet) throws Exception
+    public List<T> transferList(ResultSet resultSet, String sql) throws Exception
     {
         List<T> list = new LinkedList<T>();
         while (resultSet.next())
         {
-            list.add(valueOf(resultSet));
+            list.add(valueOf(resultSet, sql));
         }
         return list;
     }
     
-    protected abstract T valueOf(ResultSet resultSet) throws Exception;
+    protected abstract T valueOf(ResultSet resultSet, String sql) throws Exception;
 }

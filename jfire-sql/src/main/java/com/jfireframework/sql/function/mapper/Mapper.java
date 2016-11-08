@@ -2,7 +2,6 @@ package com.jfireframework.sql.function.mapper;
 
 import javax.annotation.Resource;
 import com.jfireframework.sql.function.SessionFactory;
-import com.jfireframework.sql.log.LogInterceptor;
 
 /**
  * 用来给生成接口对象的类作为继承用 方便在其中设置sqlSession
@@ -13,13 +12,8 @@ import com.jfireframework.sql.log.LogInterceptor;
 public abstract class Mapper
 {
     @Resource
-    protected SessionFactory sessionFactory;
-    protected LogInterceptor log;
-    
-    public void setLog(LogInterceptor log)
-    {
-        this.log = log;
-    }
+    protected SessionFactory        sessionFactory;
+    protected static final Object[] emptyParams = new Object[0];
     
     public void setSessionFactory(SessionFactory sessionFactory)
     {

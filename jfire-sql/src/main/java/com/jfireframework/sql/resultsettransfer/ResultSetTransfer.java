@@ -5,7 +5,7 @@ import java.util.List;
 
 public interface ResultSetTransfer<T>
 {
-    public T transfer(ResultSet resultSet) throws Exception;
+    public T transfer(ResultSet resultSet, String sql) throws Exception;
     
-    public List<T> transferList(ResultSet resultSet) throws Exception;
+    public List<T> transferList(ResultSet resultSet, String sql) throws Exception;
 }
