@@ -5,9 +5,10 @@ import org.junit.Test;
 import com.alibaba.druid.pool.DruidDataSource;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.JfireContextImpl;
-import com.jfireframework.context.bean.BeanConfig;
+import com.jfireframework.context.config.BeanInfo;
 import com.jfireframework.dbunit.schema.DbUnit;
 import com.jfireframework.sql.function.impl.SessionFactoryImpl;
+import com.jfireframework.sql.jfirecontext.MapperLoadFactory;
 
 public class HolderTest
 {
@@ -31,10 +32,11 @@ public class HolderTest
             e.printStackTrace();
         }
         jfireContext.addSingletonEntity("dataSource", dataSource);
-        jfireContext.addBean(SessionFactoryImpl.class);
-        BeanConfig beanConfig = new BeanConfig("com.jfireframework.sql.function.impl.SessionFactoryImpl");
+        jfireContext.addBean(MapperLoadFactory.class);
+        BeanInfo beanConfig = new BeanInfo();
+        beanConfig.setBeanName("sessionFactory");
         beanConfig.putParam("scanPackage", "com.jfireframework.sql.test");
-        jfireContext.addBeanConfig(beanConfig);
+        jfireContext.addBeanInfo(beanConfig);
         DbUnit testUnit = new DbUnit(DbUnit.SAVE_IN_MEM, dataSource);
         testUnit.clearSchemaData();
         testUnit.importExcelFile();
