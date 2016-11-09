@@ -125,7 +125,9 @@ public class MapperBuilder
         boolean isList = (List.class.isAssignableFrom(method.getReturnType()) ? true : false);
         if (isList)
         {
-            Verify.True(((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0].getClass().equals(Class.class), "方法{}.{}返回类型是泛型，不允许，请指定具体的类型", method.getDeclaringClass(), method.getName());
+            Verify.True(
+                    ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0].getClass().equals(Class.class), "方法{}.{}返回类型是泛型，不允许，请指定具体的类型", method.getDeclaringClass(), method.getName()
+            );
             Type returnParamType = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
             // 确认方法放回不是List<T>的形式
             Verify.False(returnParamType instanceof WildcardType, "接口的返回类型不能是泛型，请检查{}.{}", method.getDeclaringClass().getName(), method.getName());
@@ -173,6 +175,7 @@ public class MapperBuilder
             else
             {
                 Class<?> returnType = method.getReturnType();
+                transferContext.add(returnType, resultFieldCache);
                 methodBody.append("if(list.size()==0){");
                 methodBody.append("return ($r)session.query(").append(returnType.getName()).append(".class,sql")//
                         .append(",emptyParams);}\n");
