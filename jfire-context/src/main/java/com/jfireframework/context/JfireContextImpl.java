@@ -9,7 +9,6 @@ import java.lang.annotation.Annotation;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -32,27 +31,25 @@ import com.jfireframework.codejson.JsonTool;
 import com.jfireframework.context.aliasanno.AnnotationUtil;
 import com.jfireframework.context.aop.AopUtil;
 import com.jfireframework.context.bean.Bean;
-import com.jfireframework.context.bean.BeanConfig;
-import com.jfireframework.context.bean.build.BeanClassBuilder;
-import com.jfireframework.context.bean.build.BuildBy;
 import com.jfireframework.context.bean.field.FieldFactory;
+import com.jfireframework.context.bean.impl.DefaultBean;
+import com.jfireframework.context.bean.impl.LoadByBean;
+import com.jfireframework.context.bean.impl.OuterEntityBean;
 import com.jfireframework.context.bean.load.LoadBy;
-import com.jfireframework.context.config.BeanAttribute;
 import com.jfireframework.context.config.BeanInfo;
 import com.jfireframework.context.config.ContextConfig;
 
 public class JfireContextImpl implements JfireContext
 {
-    private Map<Class<?>, BeanClassBuilder> builders    = new IdentityHashMap<Class<?>, BeanClassBuilder>();
-    private Map<String, BeanConfig>         configMap   = new HashMap<String, BeanConfig>();
-    private Map<String, Bean>               beanNameMap = new HashMap<String, Bean>();
-    private Map<Class<?>, Bean>             beanTypeMap = new HashMap<Class<?>, Bean>();
-    private boolean                         init        = false;
-    private List<String>                    classNames  = new LinkedList<String>();
-    private static Logger                   logger      = ConsoleLogFactory.getLogger();
-    private ClassLoader                     classLoader = JfireContextImpl.class.getClassLoader();
-    private BeanUtil                        beanUtil    = new BeanUtil();
-    private Map<String, String>             properties  = new HashMap<String, String>();
+    private Map<String, BeanInfo> configMap   = new HashMap<String, BeanInfo>();
+    private Map<String, Bean>     beanNameMap = new HashMap<String, Bean>();
+    private Map<Class<?>, Bean>   beanTypeMap = new HashMap<Class<?>, Bean>();
+    private boolean               init        = false;
+    private List<String>          classNames  = new LinkedList<String>();
+    private static Logger         logger      = ConsoleLogFactory.getLogger();
+    private ClassLoader           classLoader = JfireContextImpl.class.getClassLoader();
+    private BeanUtil              beanUtil    = new BeanUtil();
+    private Map<String, String>   properties  = new HashMap<String, String>();
     
     public JfireContextImpl()
     {
@@ -103,26 +100,11 @@ public class JfireContextImpl implements JfireContext
             addPackageNames(contextConfig.getPackageNames());
             readProperties(contextConfig.getProperties());
             handleBeanInfos(contextConfig.getBeans());
-            handleBeanAttribute(contextConfig.getBeanConfigs());
+            addBeanInfo(contextConfig.getBeanConfigs());
         }
         catch (ClassNotFoundException e)
         {
             logger.error("配置的className错误", e);
-        }
-    }
-    
-    private void handleBeanAttribute(BeanAttribute[] attributes)
-    {
-        for (BeanAttribute each : attributes)
-        {
-            if (each.getParams().size() > 0 || each.getDependencies().size() > 0 || each.getPostConstructMethod() != null)
-            {
-                BeanConfig beanConfig = new BeanConfig(each.getBeanName());
-                beanConfig.getParamMap().putAll(each.getParams());
-                beanConfig.getDependencyMap().putAll(each.getDependencies());
-                beanConfig.setPostConstructMethod(each.getPostConstructMethod());
-                addBeanConfig(beanConfig);
-            }
         }
     }
     
@@ -134,17 +116,7 @@ public class JfireContextImpl implements JfireContext
             String className = info.getClassName();
             boolean prototype = info.isPrototype();
             addBean(beanName, prototype, classLoader.loadClass(className));
-            Map<String, String> dependencies = info.getDependencies();
-            Map<String, String> params = info.getParams();
-            String postConstructMethod = info.getPostConstructMethod();
-            if (dependencies.size() > 0 || params.size() > 0 || postConstructMethod != null)
-            {
-                BeanConfig beanConfig = new BeanConfig(beanName);
-                beanConfig.getParamMap().putAll(params);
-                beanConfig.getDependencyMap().putAll(dependencies);
-                beanConfig.setPostConstructMethod(postConstructMethod);
-                addBeanConfig(beanConfig);
-            }
+            addBeanInfo(info);
         }
     }
     
@@ -207,7 +179,7 @@ public class JfireContextImpl implements JfireContext
         {
             if (AnnotationUtil.isPresent(Resource.class, src))
             {
-                Bean bean = new Bean(src, this);
+                Bean bean = new DefaultBean(src);
                 beanNameMap.put(bean.getBeanName(), bean);
             }
         }
@@ -217,17 +189,20 @@ public class JfireContextImpl implements JfireContext
     public void addBean(String resourceName, boolean prototype, Class<?> src)
     {
         Verify.False(init, "不能在容器初始化后再加入Bean");
-        Bean bean = new Bean(resourceName, prototype, src, this);
+        Bean bean = new DefaultBean(resourceName, src, prototype);
         beanNameMap.put(resourceName, bean);
     }
     
     @Override
-    public void addBeanConfig(BeanConfig... beanConfigs)
+    public void addBeanInfo(BeanInfo... beanInfos)
     {
         Verify.False(init, "不能在容器初始化后再加入Bean配置");
-        for (BeanConfig beanConfig : beanConfigs)
+        for (BeanInfo beanInfo : beanInfos)
         {
-            configMap.put(beanConfig.getBeanName(), beanConfig);
+            if (configMap.put(beanInfo.getBeanName(), beanInfo) != null)
+            {
+                throw new UnSupportException(StringUtil.format("bean:{}配置存在两份", beanInfo.getBeanName()));
+            }
         }
     }
     
@@ -241,18 +216,18 @@ public class JfireContextImpl implements JfireContext
         for (Bean each : beanNameMap.values())
         {
             beanTypeMap.put(each.getOriginType(), each);
-            BeanConfig beanConfig = configMap.get(each.getBeanName());
-            if (beanConfig != null)
+            BeanInfo beanInfo = configMap.get(each.getBeanName());
+            if (beanInfo != null)
             {
-                each.setBeanConfig(beanConfig);
+                each.setBeanConfig(beanInfo);
                 configMap.remove(each.getBeanName());
-                if (beanConfig.getPostConstructMethod() != null)
+                if (beanInfo.getPostConstructMethod() != null)
                 {
-                    each.setPostConstructMethod(ReflectUtil.fastMethod(ReflectUtil.getMethodWithoutParam(beanConfig.getPostConstructMethod(), each.getOriginType())));
+                    each.setPostConstructMethod(ReflectUtil.fastMethod(ReflectUtil.getMethodWithoutParam(beanInfo.getPostConstructMethod(), each.getOriginType())));
                 }
             }
         }
-        for (BeanConfig each : configMap.values())
+        for (BeanInfo each : configMap.values())
         {
             logger.warn("存在配置没有可识别的bean，请检查配置文件，其中需要配置的beanName为:{}", each.getBeanName());
         }
@@ -301,9 +276,9 @@ public class JfireContextImpl implements JfireContext
     
     private void replaceValueFromPropertiesToBeancfg()
     {
-        for (BeanConfig config : configMap.values())
+        for (BeanInfo config : configMap.values())
         {
-            for (Entry<String, String> entry : config.getParamMap().entrySet())
+            for (Entry<String, String> entry : config.getParams().entrySet())
             {
                 String value = entry.getValue();
                 if (value.startsWith("${"))
@@ -409,7 +384,7 @@ public class JfireContextImpl implements JfireContext
     public void addSingletonEntity(String beanName, Object entity)
     {
         Verify.False(init, "不能在容器初始化后还加入bean,请检查{}", CodeLocation.getCodeLocation(2));
-        Bean bean = new Bean(beanName, entity, this);
+        Bean bean = new OuterEntityBean(beanName, entity);
         beanNameMap.put(beanName, bean);
     }
     
@@ -486,34 +461,14 @@ public class JfireContextImpl implements JfireContext
                 return;
             }
             Bean bean = null;
-            if (AnnotationUtil.isPresent(BuildBy.class, res))
-            {
-                BuildBy buildBy = AnnotationUtil.getAnnotation(BuildBy.class, res);
-                Class<? extends BeanClassBuilder> builder_class = buildBy.buildFrom();
-                BeanClassBuilder builder = builders.get(builder_class);
-                if (builder == null)
-                {
-                    try
-                    {
-                        builder = builder_class.newInstance();
-                        builder.setInitArgument(buildBy.initArgument());
-                        builders.put(builder_class, builder);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new JustThrowException(e);
-                    }
-                }
-                bean = builder.build(res, JfireContextImpl.this);
-            }
-            else if (AnnotationUtil.isPresent(LoadBy.class, res))
+            if (AnnotationUtil.isPresent(LoadBy.class, res))
             {
                 LoadBy loadBy = AnnotationUtil.getAnnotation(LoadBy.class, res);
-                bean = new Bean(res, loadBy.factoryBeanName(), JfireContextImpl.this);
+                bean = new LoadByBean(JfireContextImpl.this, res, loadBy.factoryBeanName());
             }
             else if (res.isInterface() == false)
             {
-                bean = new Bean(res, JfireContextImpl.this);
+                bean = new DefaultBean(res);
             }
             else
             {
@@ -541,9 +496,9 @@ public class JfireContextImpl implements JfireContext
         {
             for (Bean bean : beanNameMap.values())
             {
-                if (bean.canModify())
+                if (bean.canInject())
                 {
-                    BeanConfig beanConfig = bean.getBeanConfig();
+                    BeanInfo beanConfig = bean.getBeanInfo();
                     bean.setInjectFields(FieldFactory.buildDependencyField(bean, beanNameMap, beanTypeMap, beanConfig));
                     if (beanConfig != null)
                     {

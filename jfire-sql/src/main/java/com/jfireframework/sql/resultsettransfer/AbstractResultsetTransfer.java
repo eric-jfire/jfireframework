@@ -13,6 +13,7 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.extra.dbstructure.DefaultNameStrategy;
 import com.jfireframework.sql.extra.dbstructure.NameStrategy;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
 import com.jfireframework.sql.resultsettransfer.field.MapFieldBuilder;
@@ -32,7 +33,14 @@ public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<
         NameStrategy nameStrategy;
         try
         {
-            nameStrategy = entityClass.getAnnotation(TableEntity.class).nameStrategy().newInstance();
+            if (entityClass.isAnnotationPresent(TableEntity.class))
+            {
+                nameStrategy = entityClass.getAnnotation(TableEntity.class).nameStrategy().newInstance();
+            }
+            else
+            {
+                nameStrategy = new DefaultNameStrategy();
+            }
         }
         catch (Exception e)
         {
@@ -41,7 +49,11 @@ public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<
         List<MapField> list = new ArrayList<MapField>();
         for (Field each : ReflectUtil.getAllFields(entityClass))
         {
-            if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || Modifier.isStatic(each.getModifiers()))
+            if (
+                each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(
+                        each.getType()
+                ) || each.getType().isInterface() || Modifier.isStatic(each.getModifiers())
+            )
             {
                 continue;
             }

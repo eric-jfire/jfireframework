@@ -180,7 +180,7 @@ public class MapperBuilder
                 methodBody.append("return ($r)session.query(").append(returnType.getName()).append(".class,sql")//
                         .append(",emptyParams);}\n");
                 methodBody.append("else{");
-                methodBody.append("return ($r)session.queryList(").append(returnType.getName()).append(".class,")//
+                methodBody.append("return ($r)session.query(").append(returnType.getName()).append(".class,")//
                         .append("sql,list.toArray());\n}");
                 methodBody.append("}");
             }

@@ -6,7 +6,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.JfireContextImpl;
-import com.jfireframework.context.bean.BeanConfig;
+import com.jfireframework.context.config.BeanInfo;
 
 public class InitMethodTest
 {
@@ -24,9 +24,10 @@ public class InitMethodTest
     public void testcfg()
     {
         JfireContext jfireContext = new JfireContextImpl("com.jfireframework.context.test.function.initmethod");
-        BeanConfig beanConfig = new BeanConfig("p2");
-        beanConfig.setPostConstructMethod("initage");
-        jfireContext.addBeanConfig(beanConfig);
+        BeanInfo beanInfo = new BeanInfo();
+        beanInfo.setBeanName("p2");
+        beanInfo.setPostConstructMethod("initage");
+        jfireContext.addBeanInfo(beanInfo);
         Person2 person2 = jfireContext.getBean(Person2.class);
         System.out.println("dsasdasd");
         Assert.assertEquals(12, person2.getAge());

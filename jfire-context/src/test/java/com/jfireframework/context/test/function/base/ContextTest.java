@@ -12,7 +12,7 @@ import com.jfireframework.context.ContextInitFinish;
 import com.jfireframework.context.JfireContext;
 import com.jfireframework.context.JfireContextImpl;
 import com.jfireframework.context.bean.Bean;
-import com.jfireframework.context.bean.BeanConfig;
+import com.jfireframework.context.config.BeanInfo;
 import com.jfireframework.context.test.function.base.data.House;
 import com.jfireframework.context.test.function.base.data.ImmutablePerson;
 import com.jfireframework.context.test.function.base.data.MutablePerson;
@@ -58,12 +58,13 @@ public class ContextTest
     public void testParam()
     {
         JfireContext jfireContext = new JfireContextImpl("com.jfireframework.context.test.function.base");
-        BeanConfig beanConfig = new BeanConfig(ImmutablePerson.class.getName());
-        beanConfig.putParam("name", "林斌");
-        beanConfig.putParam("age", "25");
-        beanConfig.putParam("boy", "true");
-        beanConfig.putParam("arrays", "12,1212,1212121");
-        jfireContext.addBeanConfig(beanConfig);
+        BeanInfo beanInfo = new BeanInfo();
+        beanInfo.setBeanName(ImmutablePerson.class.getName());
+        beanInfo.putParam("name", "林斌");
+        beanInfo.putParam("age", "25");
+        beanInfo.putParam("boy", "true");
+        beanInfo.putParam("arrays", "12,1212,1212121");
+        jfireContext.addBeanInfo(beanInfo);
         testParam(jfireContext);
         assertEquals("林斌的房子", jfireContext.getBean(House.class).getName());
         ImmutablePerson person = jfireContext.getBean(ImmutablePerson.class);

@@ -35,6 +35,7 @@ public class AllLoader implements BeanLoadFactory
         );
     }
     
+    @SuppressWarnings("unchecked")
     @Override
     public <T, E extends T> E load(Class<T> ckass)
     {

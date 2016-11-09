@@ -5,7 +5,7 @@ import java.lang.annotation.Annotation;
 import java.util.Properties;
 import com.jfireframework.codejson.JsonObject;
 import com.jfireframework.context.bean.Bean;
-import com.jfireframework.context.bean.BeanConfig;
+import com.jfireframework.context.config.BeanInfo;
 
 public interface JfireContext
 {
@@ -55,7 +55,7 @@ public interface JfireContext
      * 
      * @param beanConfigs
      */
-    public void addBeanConfig(BeanConfig... beanConfigs);
+    public void addBeanInfo(BeanInfo... beanInfos);
     
     /**
      * 初始化方法，主要负责

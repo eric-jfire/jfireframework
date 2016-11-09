@@ -15,7 +15,6 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.context.aliasanno.AnnotationUtil;
 import com.jfireframework.context.bean.Bean;
-import com.jfireframework.context.bean.BeanConfig;
 import com.jfireframework.context.bean.annotation.field.CanBeNull;
 import com.jfireframework.context.bean.annotation.field.MapKey;
 import com.jfireframework.context.bean.field.dependency.DependencyField;
@@ -27,6 +26,7 @@ import com.jfireframework.context.bean.field.dependency.impl.NullInjectField;
 import com.jfireframework.context.bean.field.dependency.impl.ValueMapField;
 import com.jfireframework.context.bean.field.param.AbstractParamField;
 import com.jfireframework.context.bean.field.param.ParamField;
+import com.jfireframework.context.config.BeanInfo;
 import sun.reflect.MethodAccessor;
 
 public class FieldFactory
@@ -40,14 +40,14 @@ public class FieldFactory
      * @param beanConfig
      * @return
      */
-    public static DependencyField[] buildDependencyField(Bean bean, Map<String, Bean> beanNameMap, Map<Class<?>, Bean> beanTypeMap, BeanConfig beanConfig)
+    public static DependencyField[] buildDependencyField(Bean bean, Map<String, Bean> beanNameMap, Map<Class<?>, Bean> beanTypeMap, BeanInfo beanInfo)
     {
         Field[] fields = ReflectUtil.getAllFields(bean.getType());
         List<DependencyField> list = new LinkedList<DependencyField>();
         Map<String, String> dependencyMap = null;
-        if (beanConfig != null)
+        if (beanInfo != null)
         {
-            dependencyMap = beanConfig.getDependencyMap();
+            dependencyMap = beanInfo.getDependencies();
         }
         // 优先以配置中的为准
         for (Field field : fields)
@@ -417,9 +417,9 @@ public class FieldFactory
      * @param beanConfig
      * @return
      */
-    public static ParamField[] buildParamField(Bean bean, BeanConfig beanConfig, ClassLoader classLoader)
+    public static ParamField[] buildParamField(Bean bean, BeanInfo beanInfo, ClassLoader classLoader)
     {
-        Map<String, String> map = beanConfig.getParamMap();
+        Map<String, String> map = beanInfo.getParams();
         Field[] fields = ReflectUtil.getAllFields(bean.getType());
         List<ParamField> list = new LinkedList<ParamField>();
         for (Field field : fields)

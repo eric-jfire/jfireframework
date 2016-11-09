@@ -2,10 +2,10 @@ package com.jfireframework.context.config;
 
 public class ContextConfig
 {
-    private String[]        packageNames = new String[0];
-    private BeanInfo[]      beans        = new BeanInfo[0];
-    private BeanAttribute[] beanConfigs  = new BeanAttribute[0];
-    private String[]        properties   = new String[0];
+    private String[]   packageNames = new String[0];
+    private BeanInfo[] beans        = new BeanInfo[0];
+    private BeanInfo[] beanConfigs  = new BeanInfo[0];
+    private String[]   properties   = new String[0];
     
     public String[] getProperties()
     {
@@ -37,12 +37,12 @@ public class ContextConfig
         this.beans = beans;
     }
     
-    public BeanAttribute[] getBeanConfigs()
+    public BeanInfo[] getBeanConfigs()
     {
         return beanConfigs;
     }
     
-    public void setBeanConfigs(BeanAttribute[] beanConfigs)
+    public void setBeanConfigs(BeanInfo[] beanConfigs)
     {
         this.beanConfigs = beanConfigs;
     }

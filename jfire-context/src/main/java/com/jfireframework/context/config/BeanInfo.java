@@ -71,4 +71,8 @@ public class BeanInfo
         this.postConstructMethod = postConstructMethod;
     }
     
+    public void putParam(String key, String value)
+    {
+        params.put(key, value);
+    }
 }

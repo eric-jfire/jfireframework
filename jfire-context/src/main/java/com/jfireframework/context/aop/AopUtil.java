@@ -126,7 +126,7 @@ public class AopUtil
     {
         for (Bean bean : beanMap.values())
         {
-            if (bean.canModify() == false)
+            if (bean.canEnhance() == false)
             {
                 continue;
             }
@@ -165,14 +165,13 @@ public class AopUtil
     {
         for (Bean aopBean : beanMap.values())
         {
-            
             EnhanceClass enhanceClass = AnnotationUtil.getAnnotation(EnhanceClass.class, aopBean.getType());
             if (enhanceClass != null)
             {
                 String rule = enhanceClass.value();
                 for (Bean targetBean : beanMap.values())
                 {
-                    if (targetBean.canModify())
+                    if (targetBean.canEnhance())
                     {
                         if (StringUtil.match(targetBean.getOriginType().getName(), rule))
                         {
@@ -233,7 +232,7 @@ public class AopUtil
         {
             /**
              * aop增强,采用的是将增强类作为目标类的属性注入到目标类中.所以在开始增强前,需要确定注入属性的名称.
-             * 由于一个增强类中的多个EnhanceAnnoInfo的属性名是相同的,所以在这里进行注入并且去重
+             * 由于一个增强类中的多个EnhanceAnnoInfo的共用同一个属性名，所以在这里进行去重。只要放入一个即可
              */
             HashSet<String> enHanceNameSet = new HashSet<String>();
             for (EnhanceAnnoInfo info : bean.getEnHanceAnnos())

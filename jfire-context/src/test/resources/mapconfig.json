@@ -1,20 +1,15 @@
 {
     "packageNames": [
         "com.jfireframework.context.test.function.base.maptest"
-    ],
-    "beanConfigs": [
-        {
-            "beanName": "house",
-            "dependencies": {
-                "map": "version2!p1:person1|p2:person2"
-            }
-        }
-    ],
+    ]
     "beans": [
     {
             "beanName": "house",
             "prototype": false,
-            "className": "com.jfireframework.context.test.function.base.maptest.House"
+            "className": "com.jfireframework.context.test.function.base.maptest.House",
+            "dependencies": {
+                "map": "version2!p1:person1|p2:person2"
+            }
         },
         {
             "beanName": "person1",
