@@ -31,7 +31,7 @@ public class DefaultBean extends AbstractBean
         {
             beanName = resource.name();
         }
-        prototype = resource.shareable() == false;
+        prototype = (resource.shareable() == false);
         configBean(beanName, prototype, ckass);
     }
     

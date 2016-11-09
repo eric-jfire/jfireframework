@@ -1,9 +1,9 @@
 {
     "packageNames": [
         "com.jfireframework.context.test.function.base.maptest"
-    ]
+    ],
     "beans": [
-    {
+        {
             "beanName": "house",
             "prototype": false,
             "className": "com.jfireframework.context.test.function.base.maptest.House",

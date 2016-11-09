@@ -64,6 +64,13 @@ public interface Bean
     
     public BeanInfo getBeanInfo();
     
-    public void setBeanConfig(BeanInfo beanInfo);
+    public void setBeanInfo(BeanInfo beanInfo);
     
+    /**
+     * 在完成依赖注入，参数注入，初始化方式设置后。所有的bean都会被调用一次该方法。为一些bean可以实现一些特殊的目的
+     * 
+     * @param beanNameMap
+     * @param beanTypeMap
+     */
+    public void decorateSelf(Map<String, Bean> beanNameMap, Map<Class<?>, Bean> beanTypeMap);
 }

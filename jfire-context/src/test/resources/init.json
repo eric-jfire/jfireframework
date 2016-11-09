@@ -1,6 +1,8 @@
-{"beanConfigs": [
+{
+    "beans": [
         {
             "beanName": "p2",
-            "postConstructMethod":"initage"
+            "postConstructMethod": "initage"
         }
-    ]}
+    ]
+}

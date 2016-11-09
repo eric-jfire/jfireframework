@@ -1,12 +1,15 @@
-
 {
-    "packageNames" : ["com.jfireframework.context.test.function.base"],
-    "beanConfigs":[
-    {"beanName":"com.jfireframework.context.test.function.base.data.ImmutablePerson",
-    "params":{
-    "name":"林斌",
-    "age":"${age}||25",
-    "boy":"true"
-    }}
+    "packageNames": [
+        "com.jfireframework.context.test.function.base"
+    ],
+    "beans": [
+        {
+            "beanName": "com.jfireframework.context.test.function.base.data.ImmutablePerson",
+            "params": {
+                "name": "林斌",
+                "age": "${age}||25",
+                "boy": "true"
+            }
+        }
     ]
 }

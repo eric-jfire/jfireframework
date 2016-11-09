@@ -100,7 +100,6 @@ public class JfireContextImpl implements JfireContext
             addPackageNames(contextConfig.getPackageNames());
             readProperties(contextConfig.getProperties());
             handleBeanInfos(contextConfig.getBeans());
-            addBeanInfo(contextConfig.getBeanConfigs());
         }
         catch (ClassNotFoundException e)
         {
@@ -112,11 +111,22 @@ public class JfireContextImpl implements JfireContext
     {
         for (BeanInfo info : infos)
         {
-            String beanName = info.getBeanName();
             String className = info.getClassName();
-            boolean prototype = info.isPrototype();
-            addBean(beanName, prototype, classLoader.loadClass(className));
-            addBeanInfo(info);
+            // 如果有className就是定义一个全新的bean，否则的话，就是单纯的给已经存在的bean做配置
+            if (StringUtil.isNotBlank(className))
+            {
+                String beanName = info.getBeanName();
+                boolean prototype = info.isPrototype();
+                addBean(beanName, prototype, classLoader.loadClass(className));
+            }
+            else
+            {
+                ;
+            }
+            if (configMap.put(info.getBeanName(), info) != null)
+            {
+                throw new UnSupportException(StringUtil.format("bean:{}配置存在两份", info.getBeanName()));
+            }
         }
     }
     
@@ -197,12 +207,13 @@ public class JfireContextImpl implements JfireContext
     public void addBeanInfo(BeanInfo... beanInfos)
     {
         Verify.False(init, "不能在容器初始化后再加入Bean配置");
-        for (BeanInfo beanInfo : beanInfos)
+        try
         {
-            if (configMap.put(beanInfo.getBeanName(), beanInfo) != null)
-            {
-                throw new UnSupportException(StringUtil.format("bean:{}配置存在两份", beanInfo.getBeanName()));
-            }
+            handleBeanInfos(beanInfos);
+        }
+        catch (ClassNotFoundException e)
+        {
+            throw new JustThrowException(e);
         }
     }
     
@@ -215,11 +226,12 @@ public class JfireContextImpl implements JfireContext
         beanUtil.buildBean(classNames);
         for (Bean each : beanNameMap.values())
         {
+            // 这个时候来放入typeMap，才是bean最全的时候
             beanTypeMap.put(each.getOriginType(), each);
             BeanInfo beanInfo = configMap.get(each.getBeanName());
             if (beanInfo != null)
             {
-                each.setBeanConfig(beanInfo);
+                each.setBeanInfo(beanInfo);
                 configMap.remove(each.getBeanName());
                 if (beanInfo.getPostConstructMethod() != null)
                 {
@@ -238,6 +250,10 @@ public class JfireContextImpl implements JfireContext
          */
         AopUtil.enhance(beanNameMap, classLoader);
         beanUtil.initDependencyAndParamFields();
+        for (Bean bean : beanNameMap.values())
+        {
+            bean.decorateSelf(beanNameMap, beanTypeMap);
+        }
         // 提前实例化单例，避免第一次惩罚以及由于是在单线程中实例化，就不会出现多线程可能的单例被实例化不止一次的情况
         for (Bean bean : beanNameMap.values())
         {
@@ -464,7 +480,7 @@ public class JfireContextImpl implements JfireContext
             if (AnnotationUtil.isPresent(LoadBy.class, res))
             {
                 LoadBy loadBy = AnnotationUtil.getAnnotation(LoadBy.class, res);
-                bean = new LoadByBean(JfireContextImpl.this, res, loadBy.factoryBeanName());
+                bean = new LoadByBean(res, loadBy.factoryBeanName());
             }
             else if (res.isInterface() == false)
             {

@@ -4,7 +4,6 @@ public class ContextConfig
 {
     private String[]   packageNames = new String[0];
     private BeanInfo[] beans        = new BeanInfo[0];
-    private BeanInfo[] beanConfigs  = new BeanInfo[0];
     private String[]   properties   = new String[0];
     
     public String[] getProperties()
@@ -35,16 +34,6 @@ public class ContextConfig
     public void setBeans(BeanInfo[] beans)
     {
         this.beans = beans;
-    }
-    
-    public BeanInfo[] getBeanConfigs()
-    {
-        return beanConfigs;
-    }
-    
-    public void setBeanConfigs(BeanInfo[] beanConfigs)
-    {
-        this.beanConfigs = beanConfigs;
     }
     
 }

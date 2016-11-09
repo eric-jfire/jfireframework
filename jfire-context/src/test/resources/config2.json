@@ -9,17 +9,15 @@
             "beanName": "com.jfireframework.context.test.function.base.data.ImmutablePerson",
             "prototype": false,
             "className": "com.jfireframework.context.test.function.base.data.ImmutablePerson",
-           
-                "params": {
-                    "name": "林斌",
-                    "age": "25",
-                    "boy": "true"
-                }
-
+            "params": {
+                "name": "林斌",
+                "age": "25",
+                "boy": "true"
+            }
         },
         {
             "beanName": "com.jfireframework.context.test.function.base.data.MutablePerson",
-            "prototype":true,
+            "prototype": true,
             "className": "com.jfireframework.context.test.function.base.data.MutablePerson"
         }
     ]
