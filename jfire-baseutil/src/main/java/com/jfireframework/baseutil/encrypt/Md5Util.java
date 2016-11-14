@@ -6,9 +6,9 @@ import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.charset.Charset;
+import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
 
@@ -25,6 +25,25 @@ public class Md5Util
             return result;
         }
         catch (NoSuchAlgorithmException e)
+        {
+            throw new JustThrowException(e);
+        }
+    }
+    
+    public static byte[] md5(byte[] array, int off, int length)
+    {
+        try
+        {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.digest(array, off, length);
+            byte[] result = md.digest();
+            return result;
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new JustThrowException(e);
+        }
+        catch (DigestException e)
         {
             throw new JustThrowException(e);
         }
