@@ -68,9 +68,12 @@ public abstract class AbstractSingleReadHandler implements SingleReadHandler
      * 
      * @param exc
      */
+    @Override
     public void catchThrowable(Throwable exc)
     {
-        if (serverChannel.closeChannel())
+        serverChannel.closeChannel();
+        // 在single模式中，写线程成功后才会再次注册读取。只有失败的时候才会调用这个异常方法。所以可以这个方法中直接释放iobuf。因为后续不会再有对iobuf的操作。
+        if (iobufReleseState.close())
         {
             InternalResult task = new InternalResultImpl();
             task.setChannelInfo(serverChannel);
@@ -89,8 +92,6 @@ public abstract class AbstractSingleReadHandler implements SingleReadHandler
                 e.printStackTrace();
             }
         }
-        //在single模式中，写线程成功后才会再次注册读取。只有失败的时候才会调用这个异常方法。所以可以这个方法中直接释放iobuf。因为后续不会再有对iobuf的操作。
-        iobufReleseState.close();
     }
     
     public void doRead()
@@ -111,6 +112,7 @@ public abstract class AbstractSingleReadHandler implements SingleReadHandler
     /**
      * 开始空闲读取等待，并且将倒数计时状态重置为false
      */
+    @Override
     public void readAndWait()
     {
         startCountdown = false;

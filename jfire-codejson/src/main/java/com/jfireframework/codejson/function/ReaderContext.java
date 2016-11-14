@@ -1,5 +1,6 @@
 package com.jfireframework.codejson.function;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
@@ -20,6 +21,7 @@ import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.codejson.annotation.JsonIgnore;
 import com.jfireframework.codejson.function.impl.read.DateReader;
+import com.jfireframework.codejson.function.impl.read.FileReader;
 import com.jfireframework.codejson.function.impl.read.ObjectReader;
 import com.jfireframework.codejson.function.impl.read.array.BooleanArrayReader;
 import com.jfireframework.codejson.function.impl.read.array.ByteArrayReader;
@@ -114,6 +116,7 @@ public class ReaderContext
         readerMap.put(String[].class, new StringArrayReader());
         readerMap.put(Object.class, new ObjectReader());
         readerMap.put(Date.class, new DateReader());
+        readerMap.put(File.class, new FileReader());
     }
     
     public static Object read(Type entityType, Object value)

@@ -3,8 +3,7 @@ package com.jfireframework.baseutil.encrypt;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel.MapMode;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.DigestException;
 import java.security.MessageDigest;
@@ -22,6 +21,21 @@ public class Md5Util
         {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] result = md.digest(array);
+            return result;
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new JustThrowException(e);
+        }
+    }
+    
+    public static byte[] md5(ByteBuffer array)
+    {
+        try
+        {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(array);
+            byte[] result = md.digest();
             return result;
         }
         catch (NoSuchAlgorithmException e)
@@ -78,7 +92,6 @@ public class Md5Util
         try
         {
             randomAccessFile = new RandomAccessFile(file, "r");
-            final MappedByteBuffer buffer = randomAccessFile.getChannel().map(MapMode.READ_ONLY, offset, length);
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] src;
             if (length > 1024 * 1024)
@@ -89,14 +102,22 @@ public class Md5Util
             {
                 src = new byte[(int) length];
             }
+            randomAccessFile.seek(offset);
+            if (randomAccessFile.length() < offset + length)
+            {
+                throw new IllegalArgumentException();
+            }
             long index = 0;
             for (; index + src.length < length; index += src.length)
             {
-                buffer.get(src);
+                randomAccessFile.read(src);
                 md.update(src);
             }
-            buffer.get(src, 0, (int) (length - index));
-            md.update(src, 0, (int) (length - index));
+            if (length - index > 0)
+            {
+                randomAccessFile.read(src, 0, (int) (length - index));
+                md.update(src, 0, (int) (length - index));
+            }
             return StringUtil.toHexString(md.digest());
         }
         catch (Exception e)

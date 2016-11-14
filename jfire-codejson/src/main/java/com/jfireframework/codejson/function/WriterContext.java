@@ -1,5 +1,6 @@
 package com.jfireframework.codejson.function;
 
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -29,6 +30,7 @@ import com.jfireframework.codejson.function.impl.write.array.ShortArrayWriter;
 import com.jfireframework.codejson.function.impl.write.array.StringArrayWriter;
 import com.jfireframework.codejson.function.impl.write.extra.ArrayListWriter;
 import com.jfireframework.codejson.function.impl.write.extra.DateWriter;
+import com.jfireframework.codejson.function.impl.write.extra.FileWriter;
 import com.jfireframework.codejson.function.impl.write.wrapper.BooleanWriter;
 import com.jfireframework.codejson.function.impl.write.wrapper.ByteWriter;
 import com.jfireframework.codejson.function.impl.write.wrapper.CharacterWriter;
@@ -100,6 +102,7 @@ public class WriterContext
         writerMap.put(String[].class, new StringArrayWriter());
         writerMap.put(ArrayList.class, new ArrayListWriter());
         writerMap.put(Date.class, new DateWriter());
+        writerMap.put(File.class, new FileWriter());
         writerMap.put(java.sql.Date.class, new DateWriter());
     }
     

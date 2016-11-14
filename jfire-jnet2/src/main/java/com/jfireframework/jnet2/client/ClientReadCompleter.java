@@ -49,7 +49,6 @@ public class ClientReadCompleter implements CompletionHandler<Integer, ClientCha
         if (result == -1)
         {
             catchThrowable(EndOfStreamException.instance);
-            bufState.close();
             return;
         }
         ioBuf.addWriteIndex(result);
@@ -113,12 +112,12 @@ public class ClientReadCompleter implements CompletionHandler<Integer, ClientCha
     public void failed(Throwable exc, ClientChannel channelInfo)
     {
         catchThrowable(exc);
-        bufState.close();
     }
     
     private void catchThrowable(Throwable e)
     {
-        if (channelInfo.closeChannel())
+        channelInfo.closeChannel();
+        if (bufState.close())
         {
             Object tmp = e;
             for (DataHandler each : handlers)
